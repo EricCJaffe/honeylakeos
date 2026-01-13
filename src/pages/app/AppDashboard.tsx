@@ -1,0 +1,116 @@
+import { motion } from "framer-motion";
+import { 
+  LayoutDashboard, 
+  CheckCircle2, 
+  Calendar, 
+  FileText, 
+  MessageSquare, 
+  Globe, 
+  Workflow, 
+  BookOpen,
+  ArrowRight
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/lib/auth";
+
+const modules = [
+  { icon: LayoutDashboard, name: "Projects", href: "/app/projects", description: "Manage your projects" },
+  { icon: CheckCircle2, name: "Tasks", href: "/app/tasks", description: "Track your tasks" },
+  { icon: Calendar, name: "Calendar", href: "/app/calendar", description: "View your schedule" },
+  { icon: FileText, name: "Documents", href: "/app/documents", description: "Organize files" },
+  { icon: MessageSquare, name: "Notes", href: "/app/notes", description: "Capture ideas" },
+  { icon: Globe, name: "Forms", href: "/app/forms", description: "Build forms" },
+  { icon: Workflow, name: "Workflows", href: "/app/workflows", description: "Automate processes" },
+  { icon: BookOpen, name: "LMS", href: "/app/lms", description: "Learning management" },
+];
+
+export default function AppDashboard() {
+  const { user } = useAuth();
+  const firstName = user?.user_metadata?.first_name || "User";
+
+  return (
+    <div className="p-6 lg:p-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8"
+      >
+        <h1 className="text-3xl font-bold text-foreground mb-2">
+          Welcome back, {firstName}!
+        </h1>
+        <p className="text-muted-foreground">
+          Here's an overview of your workspace.
+        </p>
+      </motion.div>
+
+      {/* Quick Stats */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {[
+          { label: "Active Projects", value: "12" },
+          { label: "Pending Tasks", value: "24" },
+          { label: "Documents", value: "156" },
+          { label: "Team Members", value: "8" },
+        ].map((stat, index) => (
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+          >
+            <Card className="border-border/50">
+              <CardContent className="pt-6">
+                <p className="text-sm text-muted-foreground mb-1">{stat.label}</p>
+                <p className="text-3xl font-bold text-foreground">{stat.value}</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Modules Grid */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-foreground mb-4">Modules</h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {modules.map((module, index) => (
+            <motion.div
+              key={module.name}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.05 }}
+            >
+              <Link to={module.href}>
+                <Card className="h-full border-border/50 hover:border-primary/50 hover:shadow-md transition-all group cursor-pointer">
+                  <CardHeader className="pb-2">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary/20 transition-colors">
+                      <module.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <CardTitle className="text-base flex items-center justify-between">
+                      {module.name}
+                      <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">{module.description}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Recent Activity Placeholder */}
+      <Card className="border-border/50">
+        <CardHeader>
+          <CardTitle className="text-lg">Recent Activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground text-sm">
+            No recent activity to display. Start by exploring the modules above!
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
