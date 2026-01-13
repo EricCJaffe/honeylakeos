@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -51,60 +52,54 @@ const modules = [
 
 export default function HomePage() {
   return (
-    <div className="relative overflow-hidden">
+    <div className="relative">
       {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex items-center justify-center py-20 lg:py-32">
-        {/* Background decorations */}
-        <div className="absolute inset-0 gradient-subtle" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
+      <section className="py-20 lg:py-28">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 0.5 }}
             >
-              <span className="inline-block px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-                ✨ Unify Your Organization
+              <span className="inline-block px-3 py-1 rounded-full bg-accent text-accent-foreground text-sm font-medium mb-6">
+                Unify Your Organization
               </span>
             </motion.div>
 
             <motion.h1
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-4xl md:text-5xl lg:text-7xl font-bold text-foreground mb-6 leading-tight"
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight tracking-tight"
             >
-              The Operating System{" "}
-              <span className="text-gradient">for Your Business</span>
+              The Operating System for Your Business
             </motion.h1>
 
             <motion.p
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto"
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto"
             >
               BibleOS is a powerful multi-tenant intranet platform that brings together
-              teams, projects, documents, and workflows in one secure, beautiful space.
+              teams, projects, documents, and workflows in one secure space.
             </motion.p>
 
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center"
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="flex flex-col sm:flex-row gap-3 justify-center"
             >
               <Link to="/signup">
-                <Button variant="hero" size="xl">
+                <Button size="lg">
                   Start Free Trial
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
               <Link to="/features">
-                <Button variant="outline" size="xl">
+                <Button variant="outline" size="lg">
                   Explore Features
                 </Button>
               </Link>
@@ -114,8 +109,8 @@ export default function HomePage() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="mt-12 flex flex-wrap items-center justify-center gap-8 text-muted-foreground"
+              transition={{ duration: 0.5, delay: 0.5 }}
+              className="mt-12 flex flex-wrap items-center justify-center gap-6 text-muted-foreground"
             >
               <div className="flex items-center gap-2">
                 <Lock className="h-4 w-4" />
@@ -127,7 +122,7 @@ export default function HomePage() {
               </div>
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                <span className="text-sm">10k+ Users Trust Us</span>
+                <span className="text-sm">10k+ Users</span>
               </div>
             </motion.div>
           </div>
@@ -135,26 +130,25 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 lg:py-32 bg-muted/30">
+      <section className="py-20 bg-muted/50">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <motion.h2
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               className="text-3xl md:text-4xl font-bold text-foreground mb-4"
             >
-              Everything You Need to{" "}
-              <span className="text-gradient">Run Your Business</span>
+              Everything You Need to Run Your Business
             </motion.h2>
             <motion.p
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
               className="text-lg text-muted-foreground max-w-2xl mx-auto"
             >
-              Built for modern teams who demand flexibility, security, and beautiful design.
+              Built for modern teams who demand flexibility, security, and clarity.
             </motion.p>
           </div>
 
@@ -162,17 +156,17 @@ export default function HomePage() {
             {features.map((feature, index) => (
               <motion.div
                 key={feature.title}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className="h-full gradient-card border-border/50 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <Card className="h-full border-border hover:shadow-md transition-shadow">
                   <CardContent className="p-6">
-                    <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center mb-4">
-                      <feature.icon className="h-6 w-6 text-primary-foreground" />
+                    <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center mb-4">
+                      <feature.icon className="h-5 w-5 text-primary" />
                     </div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">
+                    <h3 className="text-base font-semibold text-foreground mb-2">
                       {feature.title}
                     </h3>
                     <p className="text-muted-foreground text-sm">
@@ -187,21 +181,20 @@ export default function HomePage() {
       </section>
 
       {/* Modules Preview */}
-      <section className="py-20 lg:py-32">
+      <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <motion.h2
-                initial={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, x: -16 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="text-3xl md:text-4xl font-bold text-foreground mb-6"
+                className="text-3xl md:text-4xl font-bold text-foreground mb-4"
               >
-                Powerful Modules for{" "}
-                <span className="text-gradient">Every Need</span>
+                Powerful Modules for Every Need
               </motion.h2>
               <motion.p
-                initial={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, x: -16 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.1 }}
@@ -211,17 +204,17 @@ export default function HomePage() {
                 all the tools your organization needs to thrive.
               </motion.p>
               
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {modules.map((module, index) => (
                   <motion.div
                     key={module.name}
-                    initial={{ opacity: 0, scale: 0.9 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ delay: index * 0.05 }}
-                    className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border/50 hover:border-primary/50 hover:shadow-md transition-all"
+                    className="flex items-center gap-2 p-3 rounded-md bg-card border border-border hover:border-primary/50 transition-colors"
                   >
-                    <module.icon className="h-5 w-5 text-primary" />
+                    <module.icon className="h-4 w-4 text-primary" />
                     <span className="text-sm font-medium text-foreground">{module.name}</span>
                   </motion.div>
                 ))}
@@ -229,26 +222,17 @@ export default function HomePage() {
             </div>
 
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: 16 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               className="relative"
             >
-              <div className="aspect-square rounded-2xl gradient-primary p-1 shadow-glow">
-                <div className="w-full h-full rounded-xl bg-card flex items-center justify-center">
-                  <div className="text-center p-8">
-                    <LayoutDashboard className="h-24 w-24 text-primary mx-auto mb-4" />
-                    <p className="text-lg font-medium text-foreground">Dashboard Preview</p>
-                    <p className="text-sm text-muted-foreground">Beautiful, intuitive interface</p>
-                  </div>
+              <div className="aspect-video rounded-lg border border-border bg-card shadow-lg flex items-center justify-center">
+                <div className="text-center p-8">
+                  <LayoutDashboard className="h-16 w-16 text-primary mx-auto mb-4" />
+                  <p className="text-lg font-medium text-foreground">Dashboard Preview</p>
+                  <p className="text-sm text-muted-foreground">Clean, intuitive interface</p>
                 </div>
-              </div>
-              {/* Floating elements */}
-              <div className="absolute -top-4 -right-4 w-20 h-20 rounded-xl gradient-primary shadow-lg animate-float flex items-center justify-center">
-                <Zap className="h-8 w-8 text-primary-foreground" />
-              </div>
-              <div className="absolute -bottom-4 -left-4 w-16 h-16 rounded-xl bg-card border border-border shadow-lg animate-float flex items-center justify-center" style={{ animationDelay: "1s" }}>
-                <CheckCircle2 className="h-6 w-6 text-primary" />
               </div>
             </motion.div>
           </div>
@@ -256,45 +240,33 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 lg:py-32">
+      <section className="py-20 bg-muted/50">
         <div className="container mx-auto px-4">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="relative rounded-3xl gradient-primary p-12 lg:p-20 text-center overflow-hidden"
+            className="max-w-2xl mx-auto text-center"
           >
-            {/* Background decoration */}
-            <div className="absolute inset-0 opacity-20">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-primary-foreground rounded-full blur-3xl" />
-              <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary-foreground rounded-full blur-3xl" />
-            </div>
-
-            <div className="relative z-10">
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-primary-foreground mb-6">
-                Ready to Transform Your Organization?
-              </h2>
-              <p className="text-lg text-primary-foreground/80 max-w-2xl mx-auto mb-10">
-                Join thousands of companies already using BibleOS to streamline
-                operations and empower their teams.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link to="/signup">
-                  <Button variant="hero-outline" size="xl">
-                    Start Free Trial
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-                <Link to="/contact">
-                  <Button
-                    variant="ghost"
-                    size="xl"
-                    className="text-primary-foreground hover:bg-primary-foreground/10"
-                  >
-                    Talk to Sales
-                  </Button>
-                </Link>
-              </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Ready to Transform Your Organization?
+            </h2>
+            <p className="text-lg text-muted-foreground mb-8">
+              Join thousands of companies already using BibleOS to streamline
+              operations and empower their teams.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link to="/signup">
+                <Button size="lg">
+                  Start Free Trial
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+              <Link to="/contact">
+                <Button variant="outline" size="lg">
+                  Talk to Sales
+                </Button>
+              </Link>
             </div>
           </motion.div>
         </div>

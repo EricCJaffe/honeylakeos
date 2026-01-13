@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -17,7 +18,6 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { signIn, user, loading } = useAuth();
 
-  // Redirect if already logged in
   useEffect(() => {
     if (!loading && user) {
       navigate("/app");
@@ -54,17 +54,17 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex">
-      <div className="hidden lg:flex lg:w-1/2 gradient-primary items-center justify-center p-12">
+      <div className="hidden lg:flex lg:w-1/2 bg-primary items-center justify-center p-12">
         <div className="max-w-md text-center">
-          <h2 className="text-3xl font-bold text-primary-foreground mb-4">Welcome Back</h2>
+          <h2 className="text-2xl font-bold text-primary-foreground mb-3">Welcome Back</h2>
           <p className="text-primary-foreground/80">Sign in to access your organization's workspace.</p>
         </div>
       </div>
       <div className="flex-1 flex items-center justify-center p-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
           <Link to="/" className="inline-block mb-8"><Logo /></Link>
           <h1 className="text-2xl font-bold text-foreground mb-2">Sign in to your account</h1>
-          <p className="text-muted-foreground mb-8">Enter your credentials to continue</p>
+          <p className="text-muted-foreground mb-6 text-sm">Enter your credentials to continue</p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -93,7 +93,7 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
-            <Button type="submit" variant="hero" className="w-full" size="lg" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign in"}
             </Button>
           </form>

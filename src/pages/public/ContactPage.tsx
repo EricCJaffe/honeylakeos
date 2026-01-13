@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, MapPin, Phone, Send } from "lucide-react";
@@ -33,7 +34,6 @@ export default function ContactPage() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate form submission
     await new Promise((resolve) => setTimeout(resolve, 1000));
     
     toast.success("Message sent! We'll get back to you soon.");
@@ -42,55 +42,52 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="relative overflow-hidden">
+    <div className="relative">
       {/* Hero */}
-      <section className="relative py-20 lg:py-32">
-        <div className="absolute inset-0 gradient-subtle" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/10 rounded-full blur-3xl" />
-
-        <div className="container mx-auto px-4 relative z-10">
+      <section className="py-20 lg:py-28">
+        <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <motion.h1
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6"
+              className="text-4xl md:text-5xl font-bold text-foreground mb-4 tracking-tight"
             >
-              Get in <span className="text-gradient">Touch</span>
+              Get in Touch
             </motion.h1>
             <motion.p
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-lg md:text-xl text-muted-foreground mb-8"
+              className="text-lg text-muted-foreground"
             >
-              Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+              Have questions? We'd love to hear from you.
             </motion.p>
           </div>
         </div>
       </section>
 
       {/* Contact Form & Info */}
-      <section className="py-12 pb-32">
+      <section className="pb-20">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-3 gap-12 max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-3 gap-10 max-w-5xl mx-auto">
             {/* Contact Info */}
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, x: -16 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               className="space-y-6"
             >
-              <h2 className="text-2xl font-bold text-foreground mb-6">
+              <h2 className="text-xl font-semibold text-foreground mb-4">
                 Contact Information
               </h2>
               {contactInfo.map((info) => (
-                <div key={info.label} className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <info.icon className="h-5 w-5 text-primary" />
+                <div key={info.label} className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <info.icon className="h-4 w-4 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">{info.label}</p>
-                    <p className="text-foreground font-medium">{info.value}</p>
+                    <p className="text-xs text-muted-foreground">{info.label}</p>
+                    <p className="text-sm text-foreground font-medium">{info.value}</p>
                   </div>
                 </div>
               ))}
@@ -98,15 +95,15 @@ export default function ContactPage() {
 
             {/* Contact Form */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               className="lg:col-span-2"
             >
-              <Card className="border-border/50">
-                <CardContent className="p-8">
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid sm:grid-cols-2 gap-6">
+              <Card className="border-border">
+                <CardContent className="p-6">
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="firstName">First Name</Label>
                         <Input
@@ -148,15 +145,13 @@ export default function ContactPage() {
                       <Textarea
                         id="message"
                         placeholder="How can we help you?"
-                        rows={5}
+                        rows={4}
                         required
                       />
                     </div>
 
                     <Button
                       type="submit"
-                      variant="hero"
-                      size="lg"
                       className="w-full sm:w-auto"
                       disabled={isSubmitting}
                     >
