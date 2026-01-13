@@ -108,7 +108,7 @@ export function PublicFooter() {
 
         <div className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} BibleOS. All rights reserved.
+            © {new Date().getFullYear()} BusinessOS. All rights reserved. <span className="text-muted-foreground/60">by BibleOS</span>
           </p>
           <div className="flex gap-6">
             <a

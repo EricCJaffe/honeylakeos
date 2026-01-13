@@ -82,7 +82,7 @@ export default function HomePage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto"
             >
-              BibleOS is a powerful multi-tenant intranet platform that brings together
+              BusinessOS is a powerful multi-tenant intranet platform that brings together
               teams, projects, documents, and workflows in one secure space.
             </motion.p>
 
@@ -200,7 +200,7 @@ export default function HomePage() {
                 transition={{ delay: 0.1 }}
                 className="text-lg text-muted-foreground mb-8"
               >
-                From project management to learning management, BibleOS provides
+                From project management to learning management, BusinessOS provides
                 all the tools your organization needs to thrive.
               </motion.p>
               
@@ -252,7 +252,7 @@ export default function HomePage() {
               Ready to Transform Your Organization?
             </h2>
             <p className="text-lg text-muted-foreground mb-8">
-              Join thousands of companies already using BibleOS to streamline
+              Join thousands of companies already using BusinessOS to streamline
               operations and empower their teams.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">

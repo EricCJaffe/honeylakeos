@@ -64,7 +64,7 @@ export default function SignUpPage() {
     <div className="min-h-screen flex">
       <div className="hidden lg:flex lg:w-1/2 bg-primary items-center justify-center p-12">
         <div className="max-w-md text-center">
-          <h2 className="text-2xl font-bold text-primary-foreground mb-3">Join BibleOS</h2>
+          <h2 className="text-2xl font-bold text-primary-foreground mb-3">Join BusinessOS</h2>
           <p className="text-primary-foreground/80">Start your free trial and transform your organization today.</p>
         </div>
       </div>
