@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -39,27 +40,25 @@ export default function ModulePage() {
   return (
     <div className="p-6 lg:p-8">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <div className="flex items-center gap-4 mb-4">
-          <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
-            <Icon className="h-6 w-6 text-primary-foreground" />
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-9 h-9 rounded-md bg-primary flex items-center justify-center">
+            <Icon className="h-4 w-4 text-primary-foreground" />
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">{config.title}</h1>
-            <p className="text-muted-foreground">{config.description}</p>
-          </div>
+          <h1 className="text-2xl font-bold text-foreground">{config.title}</h1>
         </div>
+        <p className="text-muted-foreground text-sm ml-12">{config.description}</p>
       </motion.div>
 
-      <Card className="border-border/50 border-dashed">
-        <CardContent className="py-16 text-center">
-          <Construction className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-foreground mb-2">Coming Soon</h2>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            This module is currently under development. Check back soon for updates!
+      <Card className="border-border border-dashed">
+        <CardContent className="py-12 text-center">
+          <Construction className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-foreground mb-2">Coming Soon</h2>
+          <p className="text-muted-foreground text-sm max-w-md mx-auto">
+            This module is currently under development. Check back soon for updates.
           </p>
         </CardContent>
       </Card>

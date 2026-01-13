@@ -1,3 +1,4 @@
+import * as React from "react";
 import { motion } from "framer-motion";
 import { 
   LayoutDashboard, 
@@ -32,14 +33,14 @@ export default function AppDashboard() {
   return (
     <div className="p-6 lg:p-8">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <h1 className="text-3xl font-bold text-foreground mb-2">
-          Welcome back, {firstName}!
+        <h1 className="text-2xl font-bold text-foreground mb-1">
+          Welcome back, {firstName}
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Here's an overview of your workspace.
         </p>
       </motion.div>
@@ -54,14 +55,14 @@ export default function AppDashboard() {
         ].map((stat, index) => (
           <motion.div
             key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Card className="border-border/50">
-              <CardContent className="pt-6">
-                <p className="text-sm text-muted-foreground mb-1">{stat.label}</p>
-                <p className="text-3xl font-bold text-foreground">{stat.value}</p>
+            <Card className="border-border">
+              <CardContent className="pt-5 pb-4">
+                <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
+                <p className="text-2xl font-bold text-foreground">{stat.value}</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -70,28 +71,28 @@ export default function AppDashboard() {
 
       {/* Modules Grid */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-foreground mb-4">Modules</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4">Modules</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {modules.map((module, index) => (
             <motion.div
               key={module.name}
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.05 }}
             >
               <Link to={module.href}>
-                <Card className="h-full border-border/50 hover:border-primary/50 hover:shadow-md transition-all group cursor-pointer">
+                <Card className="h-full border-border hover:border-primary/50 hover:shadow-sm transition-all group cursor-pointer">
                   <CardHeader className="pb-2">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary/20 transition-colors">
-                      <module.icon className="h-5 w-5 text-primary" />
+                    <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary/15 transition-colors">
+                      <module.icon className="h-4 w-4 text-primary" />
                     </div>
-                    <CardTitle className="text-base flex items-center justify-between">
+                    <CardTitle className="text-sm flex items-center justify-between">
                       {module.name}
-                      <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <ArrowRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">{module.description}</p>
+                  <CardContent className="pt-0">
+                    <p className="text-xs text-muted-foreground">{module.description}</p>
                   </CardContent>
                 </Card>
               </Link>
@@ -101,13 +102,13 @@ export default function AppDashboard() {
       </div>
 
       {/* Recent Activity Placeholder */}
-      <Card className="border-border/50">
-        <CardHeader>
-          <CardTitle className="text-lg">Recent Activity</CardTitle>
+      <Card className="border-border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Recent Activity</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-sm">
-            No recent activity to display. Start by exploring the modules above!
+            No recent activity to display. Start by exploring the modules above.
           </p>
         </CardContent>
       </Card>
