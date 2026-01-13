@@ -13,7 +13,7 @@ const contactInfo = [
   {
     icon: Mail,
     label: "Email",
-    value: "hello@bibleos.com",
+    value: "hello@businessos.com",
   },
   {
     icon: Phone,

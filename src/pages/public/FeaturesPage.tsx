@@ -268,7 +268,7 @@ export default function FeaturesPage() {
               Ready to Get Started?
             </h2>
             <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
-              Start your free trial today and see how BibleOS can transform your organization.
+              Start your free trial today and see how BusinessOS can transform your organization.
             </p>
             <Link to="/signup">
               <Button size="lg">Start Free Trial</Button>

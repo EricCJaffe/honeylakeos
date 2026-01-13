@@ -47,7 +47,7 @@ export default function AboutPage() {
               animate={{ opacity: 1, y: 0 }}
               className="text-4xl md:text-5xl font-bold text-foreground mb-4 tracking-tight"
             >
-              About BibleOS
+              About BusinessOS
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 16 }}
@@ -73,12 +73,12 @@ export default function AboutPage() {
               <h2 className="text-2xl font-bold text-foreground mb-4">Our Story</h2>
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  BibleOS was born from a simple observation: organizations spend too much time
+                  BusinessOS was born from a simple observation: organizations spend too much time
                   wrestling with disconnected tools and complex systems. We believed there had to
                   be a better way.
                 </p>
                 <p>
-                  Today, BibleOS serves hundreds of organizations worldwide, helping them
+                  Today, BusinessOS serves hundreds of organizations worldwide, helping them
                   streamline operations, empower their teams, and focus on what matters most—their
                   mission.
                 </p>

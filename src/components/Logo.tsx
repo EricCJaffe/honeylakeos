@@ -26,7 +26,7 @@ export function Logo({ className = "", showText = true, size = "md" }: LogoProps
       </div>
       {showText && (
         <span className={`font-semibold ${textSizes[size]} text-foreground`}>
-          BibleOS
+          BusinessOS
         </span>
       )}
     </div>
