@@ -14,36 +14,348 @@ export type Database = {
   }
   public: {
     Tables: {
+      companies: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          primary_color: string | null
+          site_id: string
+          status: Database["public"]["Enums"]["company_status"]
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          primary_color?: string | null
+          site_id: string
+          status?: Database["public"]["Enums"]["company_status"]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          primary_color?: string | null
+          site_id?: string
+          status?: Database["public"]["Enums"]["company_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "companies_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_modules: {
+        Row: {
+          company_id: string
+          configuration: Json
+          expires_at: string | null
+          granted_at: string
+          granted_by: string | null
+          id: string
+          module_id: string
+          status: Database["public"]["Enums"]["module_status"]
+        }
+        Insert: {
+          company_id: string
+          configuration?: Json
+          expires_at?: string | null
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          module_id: string
+          status?: Database["public"]["Enums"]["module_status"]
+        }
+        Update: {
+          company_id?: string
+          configuration?: Json
+          expires_at?: string | null
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          module_id?: string
+          status?: Database["public"]["Enums"]["module_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_modules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_modules_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      locations: {
+        Row: {
+          address_line1: string | null
+          address_line2: string | null
+          city: string | null
+          company_id: string
+          country: string | null
+          created_at: string
+          id: string
+          name: string
+          postal_code: string | null
+          state: string | null
+          status: string | null
+          timezone: string | null
+          type: string | null
+        }
+        Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          company_id: string
+          country?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          postal_code?: string | null
+          state?: string | null
+          status?: string | null
+          timezone?: string | null
+          type?: string | null
+        }
+        Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          company_id?: string
+          country?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          postal_code?: string | null
+          state?: string | null
+          status?: string | null
+          timezone?: string | null
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memberships: {
+        Row: {
+          company_id: string
+          created_at: string
+          default_location_id: string | null
+          expires_at: string | null
+          id: string
+          member_type: string
+          role: Database["public"]["Enums"]["membership_role"]
+          status: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          default_location_id?: string | null
+          expires_at?: string | null
+          id?: string
+          member_type?: string
+          role?: Database["public"]["Enums"]["membership_role"]
+          status?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          default_location_id?: string | null
+          expires_at?: string | null
+          id?: string
+          member_type?: string
+          role?: Database["public"]["Enums"]["membership_role"]
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memberships_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memberships_default_location_id_fkey"
+            columns: ["default_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modules: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean
+          name: string
+          slug: string
+          version: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          name: string
+          slug: string
+          version?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          name?: string
+          slug?: string
+          version?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          active_company_id: string | null
+          active_location_id: string | null
           avatar_url: string | null
           created_at: string
           email: string | null
           first_name: string | null
+          full_name: string | null
           id: string
           last_name: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          active_company_id?: string | null
+          active_location_id?: string | null
           avatar_url?: string | null
           created_at?: string
           email?: string | null
           first_name?: string | null
+          full_name?: string | null
           id?: string
           last_name?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          active_company_id?: string | null
+          active_location_id?: string | null
           avatar_url?: string | null
           created_at?: string
           email?: string | null
           first_name?: string | null
+          full_name?: string | null
           id?: string
           last_name?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_active_company_id_fkey"
+            columns: ["active_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_active_location_id_fkey"
+            columns: ["active_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_memberships: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["site_role"]
+          site_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["site_role"]
+          site_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["site_role"]
+          site_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_memberships_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sites: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          status: string
+          subdomain: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          status?: string
+          subdomain?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          status?: string
+          subdomain?: string | null
         }
         Relationships: []
       }
@@ -52,10 +364,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_company_admin: { Args: { p_company_id: string }; Returns: boolean }
+      is_company_member: { Args: { p_company_id: string }; Returns: boolean }
+      is_site_admin: { Args: { p_site_id: string }; Returns: boolean }
+      is_super_admin: { Args: never; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      company_status:
+        | "active"
+        | "inactive"
+        | "archived"
+        | "pending"
+        | "suspended"
+      membership_role:
+        | "company_admin"
+        | "location_admin"
+        | "module_admin"
+        | "user"
+        | "external"
+      module_status: "active" | "trial" | "expired" | "suspended"
+      site_role: "super_admin" | "site_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -182,6 +510,23 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      company_status: [
+        "active",
+        "inactive",
+        "archived",
+        "pending",
+        "suspended",
+      ],
+      membership_role: [
+        "company_admin",
+        "location_admin",
+        "module_admin",
+        "user",
+        "external",
+      ],
+      module_status: ["active", "trial", "expired", "suspended"],
+      site_role: ["super_admin", "site_admin"],
+    },
   },
 } as const
