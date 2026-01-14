@@ -54,7 +54,7 @@ const automationNavItems = [
 ];
 
 const orgNavItems = [
-  { title: "Groups", url: "/app/groups", icon: Users },
+  { title: "Groups", url: "/app/org/groups", icon: Users },
 ];
 
 const companyAdminItems = [
