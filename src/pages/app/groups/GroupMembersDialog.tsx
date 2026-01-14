@@ -22,6 +22,17 @@ import { toast } from "sonner";
 import { EmptyState } from "@/components/EmptyState";
 import type { Tables } from "@/integrations/supabase/types";
 
+interface Profile {
+  user_id: string;
+  full_name: string | null;
+  email: string | null;
+}
+
+interface MemberWithProfile {
+  user_id: string;
+  profile?: Profile;
+}
+
 interface GroupMembersDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -40,32 +51,29 @@ export function GroupMembersDialog({
   // Fetch group members with profile info
   const { data: members = [], isLoading: loadingMembers } = useQuery({
     queryKey: ["group-members", group?.id],
-    queryFn: async (): Promise<Array<{ user_id: string; created_at: string; profile?: { user_id: string; full_name: string | null; email: string | null } }>> => {
+    queryFn: async (): Promise<MemberWithProfile[]> => {
       if (!group) return [];
+      
+      // 1) Fetch group_members selecting only user_id
       const { data, error } = await supabase
         .from("group_members")
-        .select(`
-          user_id,
-          created_at
-        `)
+        .select("user_id")
         .eq("group_id", group.id);
 
       if (error) throw error;
+      if (!data || data.length === 0) return [];
       
-      // Fetch profiles for members
-      if (data.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("user_id, full_name, email")
-          .in("user_id", data.map(m => m.user_id));
-        
-        return data.map(member => ({
-          ...member,
-          profile: profiles?.find(p => p.user_id === member.user_id),
-        }));
-      }
+      // 2) Fetch profiles for those user_ids
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, email")
+        .in("user_id", data.map(m => m.user_id));
       
-      return data;
+      // 3) Merge into array with profile object
+      return data.map(member => ({
+        user_id: member.user_id,
+        profile: profiles?.find(p => p.user_id === member.user_id),
+      }));
     },
     enabled: !!group && open,
   });
@@ -73,8 +81,10 @@ export function GroupMembersDialog({
   // Fetch company members for adding
   const { data: companyMembers = [] } = useQuery({
     queryKey: ["company-members", activeCompanyId],
-    queryFn: async () => {
+    queryFn: async (): Promise<MemberWithProfile[]> => {
       if (!activeCompanyId) return [];
+      
+      // 1) Fetch memberships selecting only user_id
       const { data, error } = await supabase
         .from("memberships")
         .select("user_id")
@@ -82,20 +92,19 @@ export function GroupMembersDialog({
         .eq("status", "active");
 
       if (error) throw error;
+      if (!data || data.length === 0) return [];
       
-      if (data.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("user_id, full_name, email")
-          .in("user_id", data.map(m => m.user_id));
-        
-        return data.map(member => ({
-          ...member,
-          profile: profiles?.find(p => p.user_id === member.user_id),
-        }));
-      }
+      // 2) Fetch profiles for those user_ids
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, email")
+        .in("user_id", data.map(m => m.user_id));
       
-      return data;
+      // 3) Merge into array with profile object
+      return data.map(member => ({
+        user_id: member.user_id,
+        profile: profiles?.find(p => p.user_id === member.user_id),
+      }));
     },
     enabled: !!activeCompanyId && open,
   });
