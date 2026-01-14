@@ -39,6 +39,7 @@ import UsersPage from "@/pages/app/admin/UsersPage";
 import SiteSettingsPage from "@/pages/app/admin/SiteSettingsPage";
 import DbCheckPage from "@/pages/app/dev/DbCheckPage";
 import BootstrapPage from "@/pages/app/dev/BootstrapPage";
+import DevCompaniesPage from "@/pages/app/dev/DevCompaniesPage";
 import OnboardingPage from "@/pages/app/onboarding/OnboardingPage";
 import NotFound from "@/pages/NotFound";
 
@@ -112,6 +113,7 @@ function App() {
                     <Route path="admin/settings" element={<SiteSettingsPage />} />
                     <Route path="dev/db-check" element={<DbCheckPage />} />
                     <Route path="dev/bootstrap" element={<BootstrapPage />} />
+                    <Route path="dev/companies" element={<DevCompaniesPage />} />
                   </Route>
                   
                   {/* Catch all */}

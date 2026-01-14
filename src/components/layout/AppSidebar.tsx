@@ -73,6 +73,7 @@ const siteAdminItems = [
 const devItems = [
   { title: "DB Check", url: "/app/dev/db-check", icon: Settings },
   { title: "Bootstrap", url: "/app/dev/bootstrap", icon: Rocket },
+  { title: "Companies (Dev)", url: "/app/dev/companies", icon: Building2 },
 ];
 
 export function AppSidebar() {
