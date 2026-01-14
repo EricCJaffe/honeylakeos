@@ -95,11 +95,25 @@ export default function DbCheckPage() {
             .in("user_id", userIds);
           
           console.log("👤 ShareDialog profiles query result:", profilesRes.data);
-          const profilesColumns = profilesRes.data?.[0] ? Object.keys(profilesRes.data[0]) : [];
+          
+          // Build the exact array ShareDialog expects
+          const combined = membersRes.data.map(m => ({
+            user_id: m.user_id,
+            profile: profilesRes.data?.find(p => p.user_id === m.user_id) ?? null
+          }));
+          
+          console.log("🔗 ShareDialog combined array (what UI expects):", combined);
+          if (combined.length > 0) {
+            console.log("🔗 Sample row keys:", Object.keys(combined[0]));
+            console.log("🔗 Sample row:", combined[0]);
+            console.log("🔗 Sample profile keys:", combined[0].profile ? Object.keys(combined[0].profile) : "(profile is null)");
+          }
+          
+          const combinedColumns = combined[0] ? ["user_id", "profile"] : [];
           setCompanyMembers({
-            data: profilesRes.data,
+            data: combined,
             error: profilesRes.error?.message || null,
-            columns: profilesColumns,
+            columns: combinedColumns,
           });
         }
       }
