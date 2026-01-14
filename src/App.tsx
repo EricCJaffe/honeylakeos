@@ -33,6 +33,7 @@ import FoldersPage from "@/pages/app/folders/FoldersPage";
 import CompanySettingsPage from "@/pages/app/admin/CompanySettingsPage";
 import MembersPage from "@/pages/app/admin/MembersPage";
 import EmployeesPage from "@/pages/app/admin/EmployeesPage";
+import InvitePage from "@/pages/app/InvitePage";
 import SitesPage from "@/pages/app/admin/SitesPage";
 import CompaniesPage from "@/pages/app/admin/CompaniesPage";
 import ModulesPage from "@/pages/app/admin/ModulesPage";
@@ -69,6 +70,9 @@ function App() {
                   {/* Auth Routes */}
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/signup" element={<SignUpPage />} />
+                  
+                  {/* Invite Route */}
+                  <Route path="/invite" element={<InvitePage />} />
                   
                   {/* Company Selection */}
                   <Route
