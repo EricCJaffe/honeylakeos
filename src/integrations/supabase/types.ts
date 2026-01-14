@@ -1128,6 +1128,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      entity_acl_company_id: {
+        Args: { p_entity_id: string; p_entity_type: string }
+        Returns: string
+      }
+      entity_acl_is_owner: {
+        Args: { p_entity_id: string; p_entity_type: string }
+        Returns: boolean
+      }
       get_table_columns: {
         Args: never
         Returns: {
