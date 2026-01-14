@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Navigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Navigate, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ interface BootstrapResult {
 
 export default function BootstrapPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<BootstrapResult | null>(null);
@@ -52,7 +53,7 @@ export default function BootstrapPage() {
 
       const { data, error: rpcError } = await supabase.rpc("bootstrap_first_site", {
         p_site_name: "BibleOS",
-        p_company_name: `${user.email?.split("@")[0] || "My"} Company`,
+        p_company_name: "First Company",
       });
 
       if (rpcError) {
@@ -60,13 +61,18 @@ export default function BootstrapPage() {
         throw new Error(rpcError.message);
       }
 
-      const result = data as unknown as BootstrapResult;
-      if (!result || !result.ok) {
+      const bootstrapResult = data as unknown as BootstrapResult;
+      if (!bootstrapResult || !bootstrapResult.ok) {
         throw new Error("Bootstrap returned unexpected result");
       }
 
-      console.log("[Bootstrap] Bootstrap complete:", result);
-      setResult(result);
+      console.log("[Bootstrap] Bootstrap complete:", bootstrapResult);
+      setResult(bootstrapResult);
+
+      // Auto-navigate to dashboard after short delay
+      setTimeout(() => {
+        navigate("/app");
+      }, 2000);
 
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error occurred";
