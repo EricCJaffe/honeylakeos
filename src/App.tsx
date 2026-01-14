@@ -30,6 +30,7 @@ import NoteDetailPage from "@/pages/app/notes/NoteDetailPage";
 import DocumentsPage from "@/pages/app/documents/DocumentsPage";
 import DocumentDetailPage from "@/pages/app/documents/DocumentDetailPage";
 import FoldersPage from "@/pages/app/folders/FoldersPage";
+import DbCheckPage from "@/pages/app/dev/DbCheckPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -99,6 +100,7 @@ function App() {
                     <Route path="admin/users" element={<ModulePage />} />
                     <Route path="admin/modules" element={<ModulePage />} />
                     <Route path="admin/settings" element={<ModulePage />} />
+                    <Route path="dev/db-check" element={<DbCheckPage />} />
                   </Route>
                   
                   {/* Catch all */}
