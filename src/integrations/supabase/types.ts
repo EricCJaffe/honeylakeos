@@ -1136,6 +1136,25 @@ export type Database = {
         Args: { p_entity_id: string; p_entity_type: string }
         Returns: boolean
       }
+      get_acl_grantee_profile: {
+        Args: {
+          p_entity_id: string
+          p_entity_type: string
+          p_grantee_id: string
+        }
+        Returns: {
+          email: string
+          full_name: string
+        }[]
+      }
+      get_company_member_directory: {
+        Args: { p_company_id: string }
+        Returns: {
+          email: string
+          full_name: string
+          user_id: string
+        }[]
+      }
       get_table_columns: {
         Args: never
         Returns: {

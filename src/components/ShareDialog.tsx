@@ -66,16 +66,21 @@ export function ShareDialog({
 
       if (error) throw error;
       
-      // Fetch profile/group info for each entry
+      // Fetch profile/group info for each entry using secure RPC
       const entries: ACLEntry[] = [];
       for (const entry of data || []) {
         if (entry.grantee_type === "user") {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("full_name, email")
-            .eq("user_id", entry.grantee_id)
-            .maybeSingle();
-          entries.push({ ...entry, profile: profile || undefined });
+          const { data: profileData } = await supabase
+            .rpc("get_acl_grantee_profile", {
+              p_grantee_id: entry.grantee_id,
+              p_entity_type: entityType,
+              p_entity_id: entityId,
+            });
+          const profile = profileData?.[0];
+          entries.push({ 
+            ...entry, 
+            profile: profile ? { full_name: profile.full_name, email: profile.email } : undefined 
+          });
         } else {
           const { data: group } = await supabase
             .from("groups")
@@ -90,33 +95,25 @@ export function ShareDialog({
     enabled: open,
   });
 
-  // Fetch users/groups for adding
+  // Fetch users for adding - use secure RPC (admin-only)
   const { data: companyMembers = [] } = useQuery({
     queryKey: ["company-members-share", activeCompanyId],
     queryFn: async () => {
       if (!activeCompanyId) return [];
-      const { data, error } = await supabase
-        .from("memberships")
-        .select("user_id")
-        .eq("company_id", activeCompanyId)
-        .eq("status", "active");
+      
+      // Use secure RPC that only returns data for company admins
+      const { data, error } = await supabase.rpc("get_company_member_directory", {
+        p_company_id: activeCompanyId,
+      });
 
       if (error) throw error;
       
-      if (data.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("user_id, full_name, email")
-          .in("user_id", data.map(m => m.user_id));
-        
-        return data.map(m => ({
-          user_id: m.user_id,
-          profile: profiles?.find(p => p.user_id === m.user_id),
-        }));
-      }
-      return [];
+      return (data || []).map((m: { user_id: string; full_name: string | null; email: string | null }) => ({
+        user_id: m.user_id,
+        profile: { full_name: m.full_name, email: m.email },
+      }));
     },
-    enabled: !!activeCompanyId && open && granteeType === "user",
+    enabled: !!activeCompanyId && open && granteeType === "user" && isCompanyAdmin,
   });
 
   const { data: groups = [] } = useQuery({
