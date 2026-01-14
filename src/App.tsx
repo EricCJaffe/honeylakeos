@@ -25,6 +25,11 @@ import ProjectDetailPage from "@/pages/app/projects/ProjectDetailPage";
 import TasksPage from "@/pages/app/tasks/TasksPage";
 import CalendarPage from "@/pages/app/calendar/CalendarPage";
 import GroupsPage from "@/pages/app/groups/GroupsPage";
+import NotesPage from "@/pages/app/notes/NotesPage";
+import NoteDetailPage from "@/pages/app/notes/NoteDetailPage";
+import DocumentsPage from "@/pages/app/documents/DocumentsPage";
+import DocumentDetailPage from "@/pages/app/documents/DocumentDetailPage";
+import FoldersPage from "@/pages/app/folders/FoldersPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -78,8 +83,11 @@ function App() {
                     <Route path="tasks" element={<TasksPage />} />
                     <Route path="calendar" element={<CalendarPage />} />
                     <Route path="groups" element={<GroupsPage />} />
-                    <Route path="documents" element={<ModulePage />} />
-                    <Route path="notes" element={<ModulePage />} />
+                    <Route path="notes" element={<NotesPage />} />
+                    <Route path="notes/:noteId" element={<NoteDetailPage />} />
+                    <Route path="documents" element={<DocumentsPage />} />
+                    <Route path="documents/:documentId" element={<DocumentDetailPage />} />
+                    <Route path="folders" element={<FoldersPage />} />
                     <Route path="forms" element={<ModulePage />} />
                     <Route path="workflows" element={<ModulePage />} />
                     <Route path="lms" element={<ModulePage />} />

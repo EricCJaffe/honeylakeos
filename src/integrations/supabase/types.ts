@@ -106,6 +106,102 @@ export type Database = {
           },
         ]
       }
+      documents: {
+        Row: {
+          access_level: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          file_path: string
+          file_size: number | null
+          folder_id: string | null
+          id: string
+          mime_type: string | null
+          name: string
+          tags: Json
+          updated_at: string
+        }
+        Insert: {
+          access_level?: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          file_path: string
+          file_size?: number | null
+          folder_id?: string | null
+          id?: string
+          mime_type?: string | null
+          name: string
+          tags?: Json
+          updated_at?: string
+        }
+        Update: {
+          access_level?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          file_path?: string
+          file_size?: number | null
+          folder_id?: string | null
+          id?: string
+          mime_type?: string | null
+          name?: string
+          tags?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entity_acl: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          granted_by: string | null
+          grantee_id: string
+          grantee_type: string
+          id: string
+          permission: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          granted_by?: string | null
+          grantee_id: string
+          grantee_type: string
+          id?: string
+          permission: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          granted_by?: string | null
+          grantee_id?: string
+          grantee_type?: string
+          id?: string
+          permission?: string
+        }
+        Relationships: []
+      }
       event_attendees: {
         Row: {
           created_at: string
@@ -125,6 +221,42 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "event_attendees_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_documents: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          document_id: string
+          event_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          document_id: string
+          event_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          document_id?: string
+          event_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_documents_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_documents_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
@@ -217,6 +349,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "events_linked_note_fkey"
+            columns: ["linked_note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "events_linked_task_id_fkey"
             columns: ["linked_task_id"]
             isOneToOne: false
@@ -235,6 +374,51 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      folders: {
+        Row: {
+          access_level: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          parent_folder_id: string | null
+        }
+        Insert: {
+          access_level?: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          parent_folder_id?: string | null
+        }
+        Update: {
+          access_level?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          parent_folder_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "folders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "folders_parent_folder_id_fkey"
+            columns: ["parent_folder_id"]
+            isOneToOne: false
+            referencedRelation: "folders"
             referencedColumns: ["id"]
           },
         ]
@@ -452,6 +636,66 @@ export type Database = {
         }
         Relationships: []
       }
+      notes: {
+        Row: {
+          access_level: string
+          color: string | null
+          company_id: string
+          content: string | null
+          created_at: string
+          created_by: string | null
+          folder_id: string | null
+          id: string
+          is_pinned: boolean
+          tags: Json
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          access_level?: string
+          color?: string | null
+          company_id: string
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          folder_id?: string | null
+          id?: string
+          is_pinned?: boolean
+          tags?: Json
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          access_level?: string
+          color?: string | null
+          company_id?: string
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          folder_id?: string | null
+          id?: string
+          is_pinned?: boolean
+          tags?: Json
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           active_company_id: string | null
@@ -502,6 +746,42 @@ export type Database = {
             columns: ["active_location_id"]
             isOneToOne: false
             referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_documents: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          document_id: string
+          project_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          document_id: string
+          project_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          document_id?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_documents_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_documents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -685,6 +965,42 @@ export type Database = {
           },
         ]
       }
+      task_documents: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          document_id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          document_id: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          document_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_documents_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_documents_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assigned_by: string | null
@@ -782,6 +1098,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_linked_note_fkey"
+            columns: ["linked_note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
             referencedColumns: ["id"]
           },
           {
