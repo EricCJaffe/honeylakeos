@@ -94,7 +94,8 @@ function App() {
                     <Route path="projects/:projectId" element={<ProjectDetailPage />} />
                     <Route path="tasks" element={<TasksPage />} />
                     <Route path="calendar" element={<CalendarPage />} />
-                    <Route path="groups" element={<GroupsPage />} />
+                    <Route path="org/groups" element={<GroupsPage />} />
+                    <Route path="groups" element={<GroupsPage />} /> {/* Legacy route alias */}
                     <Route path="notes" element={<NotesPage />} />
                     <Route path="notes/:noteId" element={<NoteDetailPage />} />
                     <Route path="documents" element={<DocumentsPage />} />
