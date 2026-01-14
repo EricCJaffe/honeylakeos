@@ -20,6 +20,11 @@ import SignUpPage from "@/pages/auth/SignUpPage";
 import AppDashboard from "@/pages/app/AppDashboard";
 import CompanySelector from "@/pages/app/CompanySelector";
 import ModulePage from "@/pages/app/ModulePage";
+import ProjectsPage from "@/pages/app/projects/ProjectsPage";
+import ProjectDetailPage from "@/pages/app/projects/ProjectDetailPage";
+import TasksPage from "@/pages/app/tasks/TasksPage";
+import CalendarPage from "@/pages/app/calendar/CalendarPage";
+import GroupsPage from "@/pages/app/groups/GroupsPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -68,16 +73,18 @@ function App() {
                     }
                   >
                     <Route index element={<AppDashboard />} />
-                    <Route path="projects" element={<ModulePage />} />
-                    <Route path="tasks" element={<ModulePage />} />
-                    <Route path="calendar" element={<ModulePage />} />
+                    <Route path="projects" element={<ProjectsPage />} />
+                    <Route path="projects/:projectId" element={<ProjectDetailPage />} />
+                    <Route path="tasks" element={<TasksPage />} />
+                    <Route path="calendar" element={<CalendarPage />} />
+                    <Route path="groups" element={<GroupsPage />} />
                     <Route path="documents" element={<ModulePage />} />
                     <Route path="notes" element={<ModulePage />} />
                     <Route path="forms" element={<ModulePage />} />
                     <Route path="workflows" element={<ModulePage />} />
                     <Route path="lms" element={<ModulePage />} />
                     <Route path="settings" element={<ModulePage />} />
-                    <Route path="team" element={<ModulePage />} />
+                    <Route path="team" element={<GroupsPage />} />
                     <Route path="company-settings" element={<ModulePage />} />
                     <Route path="admin" element={<ModulePage />} />
                     <Route path="admin/companies" element={<ModulePage />} />
