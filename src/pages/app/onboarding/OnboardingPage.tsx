@@ -2,7 +2,7 @@ import * as React from "react";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Building2, AlertCircle, Loader2, Rocket, Info, FlaskConical, CheckCircle2, XCircle } from "lucide-react";
+import { Building2, AlertCircle, Loader2, Rocket, Info, FlaskConical, CheckCircle2, XCircle, Bug } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useMembership } from "@/lib/membership";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 
 interface TestResult {
   name: string;
@@ -41,13 +42,14 @@ export default function OnboardingPage() {
   const [detectedSiteId, setDetectedSiteId] = useState<string | null>(null);
 
   const isDev = import.meta.env.DEV;
+  const forceMode = isDev && new URLSearchParams(window.location.search).get("force") === "1";
 
-  // If user already has memberships, redirect to dashboard
+  // If user already has memberships, redirect to dashboard (unless force mode)
   React.useEffect(() => {
-    if (!loading && memberships.length > 0) {
+    if (!loading && memberships.length > 0 && !forceMode) {
       navigate("/app");
     }
-  }, [loading, memberships, navigate]);
+  }, [loading, memberships, navigate, forceMode]);
 
   // Log debug info to console
   React.useEffect(() => {
@@ -403,6 +405,12 @@ export default function OnboardingPage() {
       >
         <Card className="border-border">
           <CardHeader className="text-center pb-4">
+            {forceMode && (
+              <Badge variant="outline" className="mx-auto mb-2 text-amber-600 border-amber-500 bg-amber-500/10">
+                <Bug className="h-3 w-3 mr-1" />
+                FORCE MODE (dev)
+              </Badge>
+            )}
             <div className="mx-auto w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
               <Building2 className="h-6 w-6 text-primary" />
             </div>
