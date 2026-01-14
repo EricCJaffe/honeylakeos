@@ -15,6 +15,7 @@ import {
   Briefcase,
   UserCog,
   Shield,
+  KeyRound,
   Boxes,
   Rocket,
 } from "lucide-react";
@@ -261,7 +262,23 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={isActive("/app/settings")}
+              isActive={isActive("/app/settings/my-access")}
+              tooltip="My Access"
+            >
+              <NavLink
+                to="/app/settings/my-access"
+                className="flex items-center gap-3"
+                activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+              >
+                <KeyRound className="h-4 w-4" />
+                <span>My Access</span>
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={location.pathname === "/app/settings"}
               tooltip="Settings"
             >
               <NavLink

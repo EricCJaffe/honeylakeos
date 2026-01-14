@@ -43,6 +43,7 @@ import DbCheckPage from "@/pages/app/dev/DbCheckPage";
 import BootstrapPage from "@/pages/app/dev/BootstrapPage";
 import DevCompaniesPage from "@/pages/app/dev/DevCompaniesPage";
 import OnboardingPage from "@/pages/app/onboarding/OnboardingPage";
+import MyAccessPage from "@/pages/app/settings/MyAccessPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -110,6 +111,7 @@ function App() {
                     <Route path="workflows" element={<ModulePage />} />
                     <Route path="lms" element={<ModulePage />} />
                     <Route path="settings" element={<ModulePage />} />
+                    <Route path="settings/my-access" element={<MyAccessPage />} />
                     <Route path="admin/company" element={<CompanySettingsPage />} />
                     <Route path="admin/members" element={<MembersPage />} />
                     <Route path="admin/employees" element={<EmployeesPage />} />
