@@ -15,8 +15,11 @@ import {
   ShieldX,
   UserCheck,
   UserX,
+  Mail,
+  Send,
 } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,6 +48,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -59,6 +69,14 @@ interface EmployeeFormData {
   email: string;
   title: string;
 }
+
+const INVITE_ROLES = [
+  { value: "user", label: "User" },
+  { value: "company_admin", label: "Company Admin" },
+  { value: "location_admin", label: "Location Admin" },
+  { value: "module_admin", label: "Module Admin" },
+  { value: "external", label: "External" },
+];
 
 export default function EmployeesPage() {
   const queryClient = useQueryClient();
@@ -79,6 +97,11 @@ export default function EmployeesPage() {
     email: "",
     title: "",
   });
+
+  // Invite dialog state
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [inviteEmployee, setInviteEmployee] = useState<Employee | null>(null);
+  const [inviteRole, setInviteRole] = useState<string>("user");
 
   const hasAdminAccess = isCompanyAdmin || isSiteAdmin || isSuperAdmin;
 
@@ -201,6 +224,61 @@ export default function EmployeesPage() {
     },
   });
 
+  // Send invite mutation
+  const sendInviteMutation = useMutation({
+    mutationFn: async ({ employeeId, role }: { employeeId: string; role: string }) => {
+      // 1. Create invite via RPC
+      const { data: inviteData, error: rpcError } = await supabase
+        .rpc("create_employee_invite", {
+          p_employee_id: employeeId,
+          p_role: role,
+        });
+
+      if (rpcError) throw rpcError;
+      if (!inviteData || inviteData.length === 0) throw new Error("Failed to create invite");
+
+      const invite = inviteData[0];
+
+      // 2. Send email via edge function
+      const { error: emailError } = await supabase.functions.invoke(
+        "send-employee-invite-email",
+        {
+          body: { invite_id: invite.invite_id },
+        }
+      );
+
+      if (emailError) {
+        console.error("Email error:", emailError);
+        // Don't throw - invite was created, just email failed
+        return { invite, emailSent: false };
+      }
+
+      return { invite, emailSent: true };
+    },
+    onSuccess: (result) => {
+      if (result.emailSent) {
+        toast.success("Invitation sent successfully!");
+      } else {
+        toast.warning("Invitation created but email could not be sent. Check the console for details.");
+      }
+      setInviteDialogOpen(false);
+      setInviteEmployee(null);
+      setInviteRole("user");
+    },
+    onError: (error: any) => {
+      console.error("Invite error:", error);
+      if (error.message?.includes("already linked")) {
+        toast.error("This employee is already linked to a user account.");
+      } else if (error.message?.includes("no email")) {
+        toast.error("This employee has no email address.");
+      } else if (error.message?.includes("not active")) {
+        toast.error("This employee is not active.");
+      } else {
+        toast.error(`Failed to send invitation: ${error.message}`);
+      }
+    },
+  });
+
   const openCreateDialog = () => {
     setEditingEmployee(null);
     setFormData({ full_name: "", email: "", title: "" });
@@ -223,6 +301,12 @@ export default function EmployeesPage() {
     setFormData({ full_name: "", email: "", title: "" });
   };
 
+  const openInviteDialog = (employee: Employee) => {
+    setInviteEmployee(employee);
+    setInviteRole("user");
+    setInviteDialogOpen(true);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.full_name.trim()) {
@@ -241,6 +325,14 @@ export default function EmployeesPage() {
     const newStatus = employee.status === "active" ? "inactive" : "active";
     updateStatusMutation.mutate({ id: employee.id, status: newStatus });
   };
+
+  const handleSendInvite = () => {
+    if (!inviteEmployee) return;
+    sendInviteMutation.mutate({ employeeId: inviteEmployee.id, role: inviteRole });
+  };
+
+  const canInvite = (employee: Employee) => 
+    employee.email && !employee.user_id && employee.status === "active";
 
   // Access denied state
   if (!hasAdminAccess) {
@@ -405,6 +497,12 @@ export default function EmployeesPage() {
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Edit
                               </DropdownMenuItem>
+                              {canInvite(employee) && (
+                                <DropdownMenuItem onClick={() => openInviteDialog(employee)}>
+                                  <Mail className="h-4 w-4 mr-2" />
+                                  Send Invite
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleStatusToggle(employee)}>
                                 {employee.status === "active" ? (
@@ -466,6 +564,12 @@ export default function EmployeesPage() {
                             <Pencil className="h-4 w-4 mr-2" />
                             Edit
                           </DropdownMenuItem>
+                          {canInvite(employee) && (
+                            <DropdownMenuItem onClick={() => openInviteDialog(employee)}>
+                              <Mail className="h-4 w-4 mr-2" />
+                              Send Invite
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => handleStatusToggle(employee)}>
                             {employee.status === "active" ? (
@@ -499,7 +603,7 @@ export default function EmployeesPage() {
             <DialogDescription>
               {editingEmployee
                 ? "Update employee information."
-                : "Add a new employee to the company. Email is optional but required for future login linking."}
+                : "Add a new employee to the company. Email is optional but required for invitation."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
@@ -524,7 +628,7 @@ export default function EmployeesPage() {
                   placeholder="john@example.com"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Required for auto-linking when the employee signs up.
+                  Required for sending invitations and auto-linking accounts.
                 </p>
               </div>
               <div className="space-y-2">
@@ -552,6 +656,58 @@ export default function EmployeesPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite Dialog */}
+      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send Invitation</DialogTitle>
+            <DialogDescription>
+              Send an email invitation to <strong>{inviteEmployee?.full_name}</strong> ({inviteEmployee?.email}).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="invite_role">Role</Label>
+              <Select value={inviteRole} onValueChange={setInviteRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {INVITE_ROLES.map((role) => (
+                    <SelectItem key={role.value} value={role.value}>
+                      {role.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                The role they'll have when they accept the invitation.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setInviteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSendInvite}
+              disabled={sendInviteMutation.isPending}
+            >
+              {sendInviteMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4 mr-2" />
+              )}
+              Send Invitation
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
