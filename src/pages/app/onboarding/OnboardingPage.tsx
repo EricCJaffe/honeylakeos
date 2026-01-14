@@ -43,58 +43,34 @@ export default function OnboardingPage() {
     setError(null);
 
     try {
-      // Step A: Find or create a site
+      // Step A: Find an existing site - DO NOT create sites or site_memberships
+      // First check if user already has a site membership
       let siteId: string | null = null;
 
-      // First, check if user has site memberships
       if (siteMemberships.length > 0) {
         siteId = siteMemberships[0].site_id;
       }
 
-      // If no site membership, try to find any existing site
+      // If no site membership, query for the default (oldest) site
       if (!siteId) {
         const { data: existingSites, error: siteQueryError } = await supabase
           .from("sites")
           .select("id")
+          .order("created_at", { ascending: true })
           .limit(1);
 
-        if (!siteQueryError && existingSites && existingSites.length > 0) {
-          siteId = existingSites[0].id;
+        if (siteQueryError) {
+          throw new Error("Unable to verify platform configuration. Please contact an administrator.");
         }
+
+        if (!existingSites || existingSites.length === 0) {
+          throw new Error("No site exists yet. Ask an administrator to bootstrap the platform.");
+        }
+
+        siteId = existingSites[0].id;
       }
 
-      // If still no site, create one and make user super_admin
-      if (!siteId) {
-        const { data: newSite, error: createSiteError } = await supabase
-          .from("sites")
-          .insert({
-            name: "Default Site",
-            status: "active",
-          })
-          .select("id")
-          .single();
-
-        if (createSiteError) {
-          throw new Error(`Failed to create site: ${createSiteError.message}`);
-        }
-
-        siteId = newSite.id;
-
-        // Also create site_membership for the user as super_admin
-        const { error: siteMembershipError } = await supabase
-          .from("site_memberships")
-          .insert({
-            site_id: siteId,
-            user_id: user.id,
-            role: "super_admin",
-          });
-
-        if (siteMembershipError) {
-          console.warn("Could not create site membership:", siteMembershipError.message);
-        }
-      }
-
-      // Step B: Create the company
+      // Step B: Create the company under the existing site
       const { data: newCompany, error: createCompanyError } = await supabase
         .from("companies")
         .insert({
@@ -123,7 +99,7 @@ export default function OnboardingPage() {
         });
 
       if (membershipError) {
-        // It might already exist from a trigger
+        // Might already exist from a trigger
         console.warn("Could not create membership:", membershipError.message);
       }
 
