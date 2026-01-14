@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/EmptyState";
 import type { Tables } from "@/integrations/supabase/types";
@@ -30,6 +31,7 @@ interface Profile {
 
 interface MemberWithProfile {
   user_id: string;
+  role: string;
   profile?: Profile;
 }
 
@@ -48,16 +50,16 @@ export function GroupMembersDialog({
   const queryClient = useQueryClient();
   const [selectedUserId, setSelectedUserId] = useState<string>("");
 
-  // Fetch group members with profile info
+  // Fetch group members with profile info and role
   const { data: members = [], isLoading: loadingMembers } = useQuery({
     queryKey: ["group-members", group?.id],
     queryFn: async (): Promise<MemberWithProfile[]> => {
       if (!group) return [];
       
-      // 1) Fetch group_members selecting only user_id
+      // 1) Fetch group_members selecting user_id and role
       const { data, error } = await supabase
         .from("group_members")
-        .select("user_id")
+        .select("user_id, role")
         .eq("group_id", group.id);
 
       if (error) throw error;
@@ -69,9 +71,10 @@ export function GroupMembersDialog({
         .select("user_id, full_name, email")
         .in("user_id", data.map(m => m.user_id));
       
-      // 3) Merge into array with profile object
+      // 3) Merge into array with profile object and role
       return data.map(member => ({
         user_id: member.user_id,
+        role: member.role,
         profile: profiles?.find(p => p.user_id === member.user_id),
       }));
     },
@@ -81,7 +84,7 @@ export function GroupMembersDialog({
   // Fetch company members for adding
   const { data: companyMembers = [] } = useQuery({
     queryKey: ["company-members", activeCompanyId],
-    queryFn: async (): Promise<MemberWithProfile[]> => {
+    queryFn: async (): Promise<Omit<MemberWithProfile, "role">[]> => {
       if (!activeCompanyId) return [];
       
       // 1) Fetch memberships selecting only user_id
@@ -114,12 +117,16 @@ export function GroupMembersDialog({
     (cm) => !members.some((m) => m.user_id === cm.user_id)
   );
 
+  // Count managers for safety check
+  const managerCount = members.filter(m => m.role === "manager").length;
+
   const addMember = useMutation({
     mutationFn: async (userId: string) => {
       if (!group) throw new Error("No group");
       const { error } = await supabase.from("group_members").insert({
         group_id: group.id,
         user_id: userId,
+        role: "member",
       });
       if (error) throw error;
     },
@@ -153,6 +160,34 @@ export function GroupMembersDialog({
       toast.error("Failed to remove member");
     },
   });
+
+  const updateRole = useMutation({
+    mutationFn: async ({ userId, newRole }: { userId: string; newRole: string }) => {
+      if (!group) throw new Error("No group");
+      const { error } = await supabase
+        .from("group_members")
+        .update({ role: newRole })
+        .eq("group_id", group.id)
+        .eq("user_id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["group-members", group?.id] });
+      toast.success("Role updated");
+    },
+    onError: () => {
+      toast.error("Failed to update role");
+    },
+  });
+
+  const handleRoleChange = (userId: string, currentRole: string, newRole: string) => {
+    // Safety: prevent demoting the last manager
+    if (currentRole === "manager" && newRole === "member" && managerCount <= 1) {
+      toast.error("Cannot demote the last manager");
+      return;
+    }
+    updateRole.mutate({ userId, newRole });
+  };
 
   const handleAddMember = () => {
     if (selectedUserId) {
@@ -204,16 +239,36 @@ export function GroupMembersDialog({
             members.map((member) => (
               <div
                 key={member.user_id}
-                className="flex items-center justify-between p-3 rounded-lg border"
+                className="flex items-center justify-between p-3 rounded-lg border gap-2"
               >
-                <div>
-                  <p className="text-sm font-medium">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
                     {member.profile?.full_name || "Unnamed User"}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground truncate">
                     {member.profile?.email || member.user_id}
                   </p>
                 </div>
+                
+                {/* Role Dropdown */}
+                <Select
+                  value={member.role}
+                  onValueChange={(newRole) => handleRoleChange(member.user_id, member.role, newRole)}
+                  disabled={updateRole.isPending}
+                >
+                  <SelectTrigger className="w-28">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="member">
+                      <Badge variant="secondary" className="font-normal">Member</Badge>
+                    </SelectItem>
+                    <SelectItem value="manager">
+                      <Badge variant="default" className="font-normal">Manager</Badge>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+
                 <Button
                   variant="ghost"
                   size="icon"
