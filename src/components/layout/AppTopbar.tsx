@@ -1,4 +1,4 @@
-import { LogOut, User, Shield } from "lucide-react";
+import { LogOut, User, Shield, ArrowRightLeft } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -57,9 +57,11 @@ function getPageTitle(pathname: string): string {
 
 export function AppTopbar() {
   const { user, signOut } = useAuth();
-  const { isSiteAdmin, isSuperAdmin, isCompanyAdmin } = useMembership();
+  const { memberships, isSiteAdmin, isSuperAdmin, isCompanyAdmin } = useMembership();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const hasMultipleCompanies = memberships.length > 1;
 
   const firstName = user?.user_metadata?.first_name || "";
   const lastName = user?.user_metadata?.last_name || "";
@@ -114,6 +116,12 @@ export function AppTopbar() {
               <User className="mr-2 h-4 w-4" />
               Profile Settings
             </DropdownMenuItem>
+            {hasMultipleCompanies && (
+              <DropdownMenuItem onClick={() => navigate("/app/select-company")}>
+                <ArrowRightLeft className="mr-2 h-4 w-4" />
+                Switch Company
+              </DropdownMenuItem>
+            )}
             {(isSiteAdmin || isSuperAdmin) && (
               <DropdownMenuItem onClick={() => navigate("/app/admin/companies")}>
                 <Shield className="mr-2 h-4 w-4" />
