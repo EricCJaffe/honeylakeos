@@ -33,6 +33,7 @@ import FoldersPage from "@/pages/app/folders/FoldersPage";
 import CompanySettingsPage from "@/pages/app/admin/CompanySettingsPage";
 import MembersPage from "@/pages/app/admin/MembersPage";
 import DbCheckPage from "@/pages/app/dev/DbCheckPage";
+import BootstrapPage from "@/pages/app/dev/BootstrapPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -102,6 +103,7 @@ function App() {
                     <Route path="admin/modules" element={<ModulePage />} />
                     <Route path="admin/settings" element={<ModulePage />} />
                     <Route path="dev/db-check" element={<DbCheckPage />} />
+                    <Route path="dev/bootstrap" element={<BootstrapPage />} />
                   </Route>
                   
                   {/* Catch all */}
