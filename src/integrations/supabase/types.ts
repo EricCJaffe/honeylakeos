@@ -1128,6 +1128,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_document_file: {
+        Args: { object_name: string }
+        Returns: boolean
+      }
+      can_delete_document_file: {
+        Args: { object_name: string }
+        Returns: boolean
+      }
       entity_acl_company_id: {
         Args: { p_entity_id: string; p_entity_type: string }
         Returns: string
@@ -1169,6 +1177,11 @@ export type Database = {
       is_company_member: { Args: { p_company_id: string }; Returns: boolean }
       is_site_admin: { Args: { p_site_id: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      storage_path_company_id: {
+        Args: { object_name: string }
+        Returns: string
+      }
+      storage_path_user_id: { Args: { object_name: string }; Returns: string }
     }
     Enums: {
       company_status:
