@@ -15,7 +15,7 @@ import {
   UserCog,
   Shield,
   Boxes,
-  ChevronRight,
+  Rocket,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Logo } from "@/components/Logo";
@@ -63,10 +63,16 @@ const companyAdminItems = [
 ];
 
 const siteAdminItems = [
+  { title: "Sites", url: "/app/admin/sites", icon: Shield },
   { title: "Companies", url: "/app/admin/companies", icon: Building2 },
   { title: "All Users", url: "/app/admin/users", icon: Users },
   { title: "Modules", url: "/app/admin/modules", icon: Boxes },
-  { title: "Site Settings", url: "/app/admin/settings", icon: Shield },
+  { title: "Site Settings", url: "/app/admin/settings", icon: Settings },
+];
+
+const devItems = [
+  { title: "DB Check", url: "/app/dev/db-check", icon: Settings },
+  { title: "Bootstrap", url: "/app/dev/bootstrap", icon: Rocket },
 ];
 
 export function AppSidebar() {
@@ -193,6 +199,37 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {siteAdminItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.url)}
+                      tooltip={item.title}
+                    >
+                      <NavLink
+                        to={item.url}
+                        className="flex items-center gap-3"
+                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Dev Tools (only in development) */}
+        {import.meta.env.DEV && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-xs uppercase tracking-wider text-amber-600 dark:text-amber-400">
+              Dev Tools
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {devItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
