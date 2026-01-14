@@ -15,7 +15,8 @@ export default function DbCheckPage() {
   const [notes, setNotes] = useState<QueryResult>({ data: null, error: null, columns: [] });
   const [documents, setDocuments] = useState<QueryResult>({ data: null, error: null, columns: [] });
   const [entityAcl, setEntityAcl] = useState<QueryResult>({ data: null, error: null, columns: [] });
-  const [schemaInfo, setSchemaInfo] = useState<string | null>(null);
+  const [schemaInfo, setSchemaInfo] = useState<any[] | null>(null);
+  const [schemaError, setSchemaError] = useState<string | null>(null);
   const [companyMembers, setCompanyMembers] = useState<QueryResult>({ data: null, error: null, columns: [] });
 
   useEffect(() => {
@@ -64,9 +65,17 @@ export default function DbCheckPage() {
       console.log("🔐 entity_acl result:", aclRes.data);
       console.log("🔐 entity_acl columns:", aclColumns);
 
-      // 5. Schema info - we can't query information_schema directly via supabase-js
-      // So we just note what we see from the actual queries
-      setSchemaInfo("Schema info unavailable via client. Check console logs for actual column shapes.");
+      // 5. Schema info via RPC
+      const schemaRes = await supabase.rpc("get_table_columns");
+      if (schemaRes.error) {
+        console.log("⚠️ Schema RPC failed:", schemaRes.error.message);
+        setSchemaError(schemaRes.error.message);
+        setSchemaInfo(null);
+      } else {
+        setSchemaInfo(schemaRes.data);
+        setSchemaError(null);
+        console.log("📊 Schema info from RPC:", schemaRes.data);
+      }
 
       // 6. ShareDialog companyMembers query simulation
       if (activeCompanyId) {
@@ -174,10 +183,18 @@ export default function DbCheckPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Schema Info</CardTitle>
+          <CardTitle className="text-lg">Schema Info (from get_table_columns RPC)</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">{schemaInfo}</p>
+          {schemaError ? (
+            <p className="text-destructive">Error: {schemaError}</p>
+          ) : schemaInfo ? (
+            <pre className="text-xs bg-muted p-2 rounded overflow-auto max-h-64">
+              {JSON.stringify(schemaInfo, null, 2)}
+            </pre>
+          ) : (
+            <p className="text-muted-foreground">Loading schema info...</p>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -1128,6 +1128,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_table_columns: {
+        Args: never
+        Returns: {
+          column_name: string
+          data_type: string
+          is_nullable: string
+          ordinal_position: number
+          table_name: string
+        }[]
+      }
       is_company_admin: { Args: { p_company_id: string }; Returns: boolean }
       is_company_member: { Args: { p_company_id: string }; Returns: boolean }
       is_site_admin: { Args: { p_site_id: string }; Returns: boolean }
