@@ -1,0 +1,181 @@
+import * as React from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { CheckCircle2, Circle, MoreHorizontal, Pencil, Calendar, ArrowRight } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/EmptyState";
+
+interface TaskListProps {
+  tasks: any[];
+  projectId?: string;
+  onAddTask?: () => void;
+  onEditTask?: (task: any) => void;
+  showProject?: boolean;
+}
+
+export function TaskList({
+  tasks,
+  projectId,
+  onAddTask,
+  onEditTask,
+  showProject = false,
+}: TaskListProps) {
+  const queryClient = useQueryClient();
+
+  const toggleStatus = useMutation({
+    mutationFn: async ({ taskId, currentStatus }: { taskId: string; currentStatus: string }) => {
+      const newStatus = currentStatus === "done" ? "to_do" : "done";
+      const { error } = await supabase
+        .from("tasks")
+        .update({ status: newStatus })
+        .eq("id", taskId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["project-tasks"] });
+    },
+    onError: () => {
+      toast.error("Failed to update task");
+    },
+  });
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "urgent":
+        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+      case "high":
+        return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
+      case "low":
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
+      default:
+        return "bg-muted text-muted-foreground";
+    }
+  };
+
+  if (tasks.length === 0) {
+    return (
+      <div className="py-12">
+        <EmptyState
+          icon={CheckCircle2}
+          title="No tasks yet"
+          description="Create a task to get started."
+          actionLabel={onAddTask ? "Add Task" : undefined}
+          onAction={onAddTask}
+        />
+      </div>
+    );
+  }
+
+  // Group tasks by status
+  const todoTasks = tasks.filter((t) => t.status === "to_do");
+  const inProgressTasks = tasks.filter((t) => t.status === "in_progress");
+  const doneTasks = tasks.filter((t) => t.status === "done");
+
+  const renderTaskGroup = (groupTasks: any[], label: string) => {
+    if (groupTasks.length === 0) return null;
+
+    return (
+      <div className="mb-4 last:mb-0">
+        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-2 border-b">
+          {label} ({groupTasks.length})
+        </h4>
+        <div>
+          {groupTasks.map((task) => (
+            <div
+              key={task.id}
+              className={cn(
+                "flex items-center gap-3 px-4 py-3 border-b last:border-b-0 hover:bg-muted/50 transition-colors group",
+                task.status === "done" && "opacity-60"
+              )}
+            >
+              <button
+                onClick={() =>
+                  toggleStatus.mutate({ taskId: task.id, currentStatus: task.status })
+                }
+                className="shrink-0 text-muted-foreground hover:text-primary transition-colors"
+              >
+                {task.status === "done" ? (
+                  <CheckCircle2 className="h-5 w-5 text-primary" />
+                ) : (
+                  <Circle className="h-5 w-5" />
+                )}
+              </button>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={cn(
+                      "text-sm font-medium truncate",
+                      task.status === "done" && "line-through text-muted-foreground"
+                    )}
+                  >
+                    {task.title}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  {showProject && task.project && (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      {task.project.emoji} {task.project.name}
+                    </span>
+                  )}
+                  {task.due_date && (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {format(new Date(task.due_date), "MMM d")}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <Badge variant="secondary" className={cn("shrink-0", getPriorityColor(task.priority))}>
+                {task.priority}
+              </Badge>
+
+              {onEditTask && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onEditTask(task)}>
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Edit
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div>
+      {renderTaskGroup(todoTasks, "To Do")}
+      {renderTaskGroup(inProgressTasks, "In Progress")}
+      {renderTaskGroup(doneTasks, "Done")}
+    </div>
+  );
+}
