@@ -1181,6 +1181,7 @@ export type Database = {
       is_company_member: { Args: { p_company_id: string }; Returns: boolean }
       is_site_admin: { Args: { p_site_id: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      promote_self_to_super_admin: { Args: never; Returns: Json }
       storage_path_company_id: {
         Args: { object_name: string }
         Returns: string
