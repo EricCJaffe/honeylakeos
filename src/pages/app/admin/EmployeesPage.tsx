@@ -129,6 +129,11 @@ export default function EmployeesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
 
+  // Link user dialog state
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkEmployee, setLinkEmployee] = useState<Employee | null>(null);
+  const [linkEmail, setLinkEmail] = useState("");
+
   const hasAdminAccess = isCompanyAdmin || isSiteAdmin || isSuperAdmin;
 
   // Get APP_URL from window location
@@ -456,6 +461,48 @@ export default function EmployeesPage() {
     },
   });
 
+  // Link user mutation
+  const linkUserMutation = useMutation({
+    mutationFn: async ({ employeeId, email }: { employeeId: string; email: string }) => {
+      // First, find the profile with that email
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("user_id, email, full_name")
+        .eq("email", email.trim().toLowerCase())
+        .maybeSingle();
+
+      if (profileError) throw profileError;
+
+      if (!profile) {
+        throw new Error("No user account found for that email yet.");
+      }
+
+      // Update the employee with the user_id
+      const { error: updateError } = await supabase
+        .from("employees")
+        .update({ user_id: profile.user_id })
+        .eq("id", employeeId);
+
+      if (updateError) throw updateError;
+
+      return { profile };
+    },
+    onSuccess: (result) => {
+      toast.success(`Employee linked to user: ${result.profile.full_name || result.profile.email}`);
+      setLinkDialogOpen(false);
+      setLinkEmployee(null);
+      setLinkEmail("");
+      queryClient.invalidateQueries({ queryKey: ["employees", activeCompanyId] });
+    },
+    onError: (error: any) => {
+      if (error.code === "42501" || error.message?.includes("policy")) {
+        toast.error("You don't have permission to manage employees.");
+      } else {
+        toast.error(error.message || "Failed to link user");
+      }
+    },
+  });
+
   const openCreateDialog = () => {
     setEditingEmployee(null);
     setFormData({ full_name: "", email: "", title: "" });
@@ -488,6 +535,20 @@ export default function EmployeesPage() {
     setEmployeeToDelete(employee);
     setDeleteDialogOpen(true);
   };
+
+  const openLinkDialog = (employee: Employee) => {
+    setLinkEmployee(employee);
+    setLinkEmail(employee.email || "");
+    setLinkDialogOpen(true);
+  };
+
+  const handleLinkUser = () => {
+    if (!linkEmployee || !linkEmail.trim()) return;
+    linkUserMutation.mutate({ employeeId: linkEmployee.id, email: linkEmail.trim() });
+  };
+
+  const canLink = (employee: Employee) =>
+    !employee.user_id && employee.status !== "archived";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -687,14 +748,18 @@ export default function EmployeesPage() {
                             </TableCell>
                             <TableCell>
                               {employee.user_id ? (
-                                <Badge variant="outline" className="gap-1">
+                                <Badge variant="outline" className="gap-1 text-green-600 border-green-600/30">
                                   <Link2 className="h-3 w-3" />
                                   Linked
                                 </Badge>
-                              ) : (
-                                <span className="text-muted-foreground flex items-center gap-1">
+                              ) : employee.email ? (
+                                <Badge variant="secondary" className="gap-1 text-amber-600">
                                   <Link2Off className="h-3 w-3" />
-                                  No
+                                  Not linked
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground text-sm italic">
+                                  No email
                                 </span>
                               )}
                             </TableCell>
@@ -714,6 +779,12 @@ export default function EmployeesPage() {
                                     <DropdownMenuItem onClick={() => openInviteDialog(employee)}>
                                       <Mail className="h-4 w-4 mr-2" />
                                       Send Invite
+                                    </DropdownMenuItem>
+                                  )}
+                                  {canLink(employee) && (
+                                    <DropdownMenuItem onClick={() => openLinkDialog(employee)}>
+                                      <Link2 className="h-4 w-4 mr-2" />
+                                      Link User
                                     </DropdownMenuItem>
                                   )}
                                   <DropdownMenuSeparator />
@@ -762,16 +833,21 @@ export default function EmployeesPage() {
                             {employee.title && (
                               <p className="text-sm text-muted-foreground">{employee.title}</p>
                             )}
-                            <div className="flex items-center gap-2 pt-1">
+                            <div className="flex items-center gap-2 pt-1 flex-wrap">
                               <Badge variant={employee.status === "active" ? "default" : "secondary"}>
                                 {employee.status}
                               </Badge>
-                              {employee.user_id && (
-                                <Badge variant="outline" className="gap-1">
+                              {employee.user_id ? (
+                                <Badge variant="outline" className="gap-1 text-green-600 border-green-600/30">
                                   <Link2 className="h-3 w-3" />
                                   Linked
                                 </Badge>
-                              )}
+                              ) : employee.email ? (
+                                <Badge variant="secondary" className="gap-1 text-amber-600">
+                                  <Link2Off className="h-3 w-3" />
+                                  Not linked
+                                </Badge>
+                              ) : null}
                             </div>
                           </div>
                           <DropdownMenu>
@@ -789,6 +865,12 @@ export default function EmployeesPage() {
                                 <DropdownMenuItem onClick={() => openInviteDialog(employee)}>
                                   <Mail className="h-4 w-4 mr-2" />
                                   Send Invite
+                                </DropdownMenuItem>
+                              )}
+                              {canLink(employee) && (
+                                <DropdownMenuItem onClick={() => openLinkDialog(employee)}>
+                                  <Link2 className="h-4 w-4 mr-2" />
+                                  Link User
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuSeparator />
@@ -1162,6 +1244,53 @@ export default function EmployeesPage() {
                 <Send className="h-4 w-4 mr-2" />
               )}
               Send Invitation
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Link User Dialog */}
+      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Link User Account</DialogTitle>
+            <DialogDescription>
+              Link <strong>{linkEmployee?.full_name}</strong> to an existing user account. Enter the email address of the user you want to link.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="link_email">User Email</Label>
+              <Input
+                id="link_email"
+                type="email"
+                value={linkEmail}
+                onChange={(e) => setLinkEmail(e.target.value)}
+                placeholder="user@example.com"
+              />
+              <p className="text-xs text-muted-foreground">
+                The user must have already signed up with this email address.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setLinkDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleLinkUser}
+              disabled={linkUserMutation.isPending || !linkEmail.trim()}
+            >
+              {linkUserMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Link2 className="h-4 w-4 mr-2" />
+              )}
+              Link User
             </Button>
           </DialogFooter>
         </DialogContent>
