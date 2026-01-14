@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/lib/theme";
 import { AuthProvider } from "@/lib/auth";
 import { MembershipProvider } from "@/lib/membership";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { ModuleGuard } from "@/components/ModuleGuard";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { AppLayout } from "@/components/layout/AppLayout";
 import HomePage from "@/pages/public/HomePage";
@@ -97,21 +98,21 @@ function App() {
                   >
                     <Route index element={<AppDashboard />} />
                     <Route path="onboarding" element={<OnboardingPage />} />
-                    <Route path="projects" element={<ProjectsPage />} />
-                    <Route path="projects/:projectId" element={<ProjectDetailPage />} />
-                    <Route path="tasks" element={<TasksPage />} />
-                    <Route path="calendar" element={<CalendarPage />} />
-                    <Route path="org/groups" element={<GroupsPage />} />
-                    <Route path="org/locations" element={<LocationsPage />} />
-                    <Route path="groups" element={<GroupsPage />} /> {/* Legacy route alias */}
-                    <Route path="notes" element={<NotesPage />} />
-                    <Route path="notes/:noteId" element={<NoteDetailPage />} />
-                    <Route path="documents" element={<DocumentsPage />} />
-                    <Route path="documents/:documentId" element={<DocumentDetailPage />} />
-                    <Route path="folders" element={<FoldersPage />} />
-                    <Route path="forms" element={<ModulePage />} />
-                    <Route path="workflows" element={<ModulePage />} />
-                    <Route path="lms" element={<ModulePage />} />
+                    <Route path="projects" element={<ModuleGuard moduleKey="projects" moduleName="Projects"><ProjectsPage /></ModuleGuard>} />
+                    <Route path="projects/:projectId" element={<ModuleGuard moduleKey="projects" moduleName="Projects"><ProjectDetailPage /></ModuleGuard>} />
+                    <Route path="tasks" element={<ModuleGuard moduleKey="tasks" moduleName="Tasks"><TasksPage /></ModuleGuard>} />
+                    <Route path="calendar" element={<ModuleGuard moduleKey="calendar" moduleName="Calendar"><CalendarPage /></ModuleGuard>} />
+                    <Route path="org/groups" element={<ModuleGuard moduleKey="groups" moduleName="Groups"><GroupsPage /></ModuleGuard>} />
+                    <Route path="org/locations" element={<ModuleGuard moduleKey="locations" moduleName="Locations"><LocationsPage /></ModuleGuard>} />
+                    <Route path="groups" element={<ModuleGuard moduleKey="groups" moduleName="Groups"><GroupsPage /></ModuleGuard>} /> {/* Legacy route alias */}
+                    <Route path="notes" element={<ModuleGuard moduleKey="notes" moduleName="Notes"><NotesPage /></ModuleGuard>} />
+                    <Route path="notes/:noteId" element={<ModuleGuard moduleKey="notes" moduleName="Notes"><NoteDetailPage /></ModuleGuard>} />
+                    <Route path="documents" element={<ModuleGuard moduleKey="documents" moduleName="Documents"><DocumentsPage /></ModuleGuard>} />
+                    <Route path="documents/:documentId" element={<ModuleGuard moduleKey="documents" moduleName="Documents"><DocumentDetailPage /></ModuleGuard>} />
+                    <Route path="folders" element={<ModuleGuard moduleKey="folders" moduleName="Folders"><FoldersPage /></ModuleGuard>} />
+                    <Route path="forms" element={<ModuleGuard moduleKey="forms" moduleName="Forms"><ModulePage /></ModuleGuard>} />
+                    <Route path="workflows" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><ModulePage /></ModuleGuard>} />
+                    <Route path="lms" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><ModulePage /></ModuleGuard>} />
                     <Route path="settings" element={<ModulePage />} />
                     <Route path="settings/my-access" element={<MyAccessPage />} />
                     <Route path="admin/company" element={<CompanySettingsPage />} />
