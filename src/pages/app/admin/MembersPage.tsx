@@ -126,6 +126,8 @@ export default function MembersPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<MembershipRole>("user");
   const [isInviting, setIsInviting] = useState(false);
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<MemberRow | null>(null);
 
   const hasAdminAccess = isCompanyAdmin || isSiteAdmin || isSuperAdmin;
 
@@ -246,6 +248,49 @@ export default function MembersPage() {
       }
     },
   });
+
+  // Delete membership mutation
+  const deleteMembershipMutation = useMutation({
+    mutationFn: async (membershipId: string) => {
+      const { error } = await supabase
+        .from("memberships")
+        .delete()
+        .eq("id", membershipId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Member removed successfully");
+      setRemoveDialogOpen(false);
+      setMemberToRemove(null);
+      queryClient.invalidateQueries({ queryKey: ["memberships", activeCompanyId] });
+      refreshMemberships();
+    },
+    onError: (error: any) => {
+      if (error.code === "42501" || error.message?.includes("policy")) {
+        // Check if it's the last admin protection
+        if (error.message?.includes("last") || error.message?.includes("admin")) {
+          toast.error("Cannot remove the last company admin.");
+        } else {
+          toast.error("You don't have permission to remove members.");
+        }
+      } else {
+        toast.error(`Failed to remove member: ${error.message}`);
+      }
+    },
+  });
+
+  // Handle remove member
+  const handleRemoveClick = (member: MemberRow) => {
+    setMemberToRemove(member);
+    setRemoveDialogOpen(true);
+  };
+
+  const handleConfirmRemove = () => {
+    if (memberToRemove) {
+      deleteMembershipMutation.mutate(memberToRemove.membership_id);
+    }
+  };
 
   // Handle role change with self-demotion protection
   const handleRoleChange = (member: MemberRow, newRole: MembershipRole) => {
@@ -504,7 +549,8 @@ export default function MembersPage() {
                             activeAdminCount={activeAdminCount}
                             onRoleChange={handleRoleChange}
                             onStatusToggle={handleStatusToggle}
-                            isUpdating={updateRoleMutation.isPending || updateStatusMutation.isPending}
+                            onRemove={handleRemoveClick}
+                            isUpdating={updateRoleMutation.isPending || updateStatusMutation.isPending || deleteMembershipMutation.isPending}
                           />
                         </TableCell>
                       </TableRow>
@@ -555,7 +601,8 @@ export default function MembersPage() {
                         activeAdminCount={activeAdminCount}
                         onRoleChange={handleRoleChange}
                         onStatusToggle={handleStatusToggle}
-                        isUpdating={updateRoleMutation.isPending || updateStatusMutation.isPending}
+                        onRemove={handleRemoveClick}
+                        isUpdating={updateRoleMutation.isPending || updateStatusMutation.isPending || deleteMembershipMutation.isPending}
                       />
                     </div>
                   </Card>
@@ -619,6 +666,42 @@ export default function MembersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Remove Member Confirmation Dialog */}
+      <Dialog open={removeDialogOpen} onOpenChange={(open) => {
+        setRemoveDialogOpen(open);
+        if (!open) setMemberToRemove(null);
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove Member</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove{" "}
+              <strong>{memberToRemove?.profile?.full_name || memberToRemove?.profile?.email || "this member"}</strong>{" "}
+              from the company? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRemoveDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmRemove}
+              disabled={deleteMembershipMutation.isPending}
+            >
+              {deleteMembershipMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Removing...
+                </>
+              ) : (
+                "Remove Member"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -630,6 +713,7 @@ function MemberActionsMenu({
   activeAdminCount,
   onRoleChange,
   onStatusToggle,
+  onRemove,
   isUpdating,
 }: {
   member: MemberRow;
@@ -637,10 +721,11 @@ function MemberActionsMenu({
   activeAdminCount: number;
   onRoleChange: (member: MemberRow, newRole: MembershipRole) => void;
   onStatusToggle: (member: MemberRow) => void;
+  onRemove: (member: MemberRow) => void;
   isUpdating: boolean;
 }) {
   const isSelf = member.user_id === currentUserId;
-  const isLastAdmin = isSelf && member.role === "company_admin" && activeAdminCount <= 1;
+  const isLastAdmin = member.role === "company_admin" && member.status === "active" && activeAdminCount <= 1;
 
   return (
     <DropdownMenu>
@@ -684,17 +769,27 @@ function MemberActionsMenu({
           )}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DropdownMenuItem disabled className="text-muted-foreground opacity-50">
-              <UserMinus className="h-4 w-4 mr-2" />
-              Remove Member
-            </DropdownMenuItem>
-          </TooltipTrigger>
-          <TooltipContent side="left">
-            <p>Requires delete policy on memberships table</p>
-          </TooltipContent>
-        </Tooltip>
+        {isLastAdmin ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenuItem disabled className="text-muted-foreground opacity-50">
+                <UserMinus className="h-4 w-4 mr-2" />
+                Remove Member
+              </DropdownMenuItem>
+            </TooltipTrigger>
+            <TooltipContent side="left">
+              <p>Cannot remove the last company admin</p>
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <DropdownMenuItem
+            onClick={() => onRemove(member)}
+            className="flex items-center gap-2 text-destructive focus:text-destructive"
+          >
+            <UserMinus className="h-4 w-4" />
+            Remove Member
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

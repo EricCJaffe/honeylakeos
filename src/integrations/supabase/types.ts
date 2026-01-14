@@ -1140,6 +1140,10 @@ export type Database = {
         Args: { object_name: string }
         Returns: boolean
       }
+      can_delete_membership: {
+        Args: { p_membership_id: string }
+        Returns: boolean
+      }
       entity_acl_company_id: {
         Args: { p_entity_id: string; p_entity_type: string }
         Returns: string
