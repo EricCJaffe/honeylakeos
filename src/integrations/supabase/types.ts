@@ -1128,6 +1128,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      bootstrap_first_site: {
+        Args: { p_company_name?: string; p_site_name?: string }
+        Returns: Json
+      }
       can_access_document_file: {
         Args: { object_name: string }
         Returns: boolean
