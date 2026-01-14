@@ -1,15 +1,27 @@
 import * as React from "react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { UserPlus, X, Users } from "lucide-react";
+import { UserPlus, X, Users, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
+import { useMembership } from "@/lib/membership";
+import { useAuth } from "@/lib/auth";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -19,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/EmptyState";
 import type { Tables } from "@/integrations/supabase/types";
@@ -47,8 +60,11 @@ export function GroupMembersDialog({
   group,
 }: GroupMembersDialogProps) {
   const { activeCompanyId } = useActiveCompany();
+  const { isCompanyAdmin, isSiteAdmin, isSuperAdmin } = useMembership();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [memberToRemove, setMemberToRemove] = useState<MemberWithProfile | null>(null);
 
   // Fetch group members with profile info and role
   const { data: members = [], isLoading: loadingMembers } = useQuery({
@@ -56,7 +72,6 @@ export function GroupMembersDialog({
     queryFn: async (): Promise<MemberWithProfile[]> => {
       if (!group) return [];
       
-      // 1) Fetch group_members selecting user_id and role
       const { data, error } = await supabase
         .from("group_members")
         .select("user_id, role")
@@ -65,13 +80,11 @@ export function GroupMembersDialog({
       if (error) throw error;
       if (!data || data.length === 0) return [];
       
-      // 2) Fetch profiles for those user_ids
       const { data: profiles } = await supabase
         .from("profiles")
         .select("user_id, full_name, email")
         .in("user_id", data.map(m => m.user_id));
       
-      // 3) Merge into array with profile object and role
       return data.map(member => ({
         user_id: member.user_id,
         role: member.role,
@@ -87,7 +100,6 @@ export function GroupMembersDialog({
     queryFn: async (): Promise<Omit<MemberWithProfile, "role">[]> => {
       if (!activeCompanyId) return [];
       
-      // 1) Fetch memberships selecting only user_id
       const { data, error } = await supabase
         .from("memberships")
         .select("user_id")
@@ -97,13 +109,11 @@ export function GroupMembersDialog({
       if (error) throw error;
       if (!data || data.length === 0) return [];
       
-      // 2) Fetch profiles for those user_ids
       const { data: profiles } = await supabase
         .from("profiles")
         .select("user_id, full_name, email")
         .in("user_id", data.map(m => m.user_id));
       
-      // 3) Merge into array with profile object
       return data.map(member => ({
         user_id: member.user_id,
         profile: profiles?.find(p => p.user_id === member.user_id),
@@ -119,6 +129,20 @@ export function GroupMembersDialog({
 
   // Count managers for safety check
   const managerCount = members.filter(m => m.role === "manager").length;
+
+  // Check if current user can manage this group
+  const canManage = useMemo(() => {
+    // Admin access always allows management
+    if (isCompanyAdmin || isSiteAdmin || isSuperAdmin) return true;
+    
+    // Check if current user is a group manager
+    if (user?.id) {
+      const currentUserMembership = members.find(m => m.user_id === user.id);
+      if (currentUserMembership?.role === "manager") return true;
+    }
+    
+    return false;
+  }, [isCompanyAdmin, isSiteAdmin, isSuperAdmin, user?.id, members]);
 
   const addMember = useMutation({
     mutationFn: async (userId: string) => {
@@ -136,8 +160,12 @@ export function GroupMembersDialog({
       toast.success("Member added");
       setSelectedUserId("");
     },
-    onError: () => {
-      toast.error("Failed to add member");
+    onError: (error: any) => {
+      if (error?.code === "42501" || error?.message?.includes("policy")) {
+        toast.error("You don't have permission to add members");
+      } else {
+        toast.error("Failed to add member");
+      }
     },
   });
 
@@ -155,14 +183,15 @@ export function GroupMembersDialog({
       queryClient.invalidateQueries({ queryKey: ["group-members", group?.id] });
       queryClient.invalidateQueries({ queryKey: ["groups"] });
       toast.success("Member removed");
+      setMemberToRemove(null);
     },
     onError: (error: any) => {
-      // Friendly error for RLS block (last manager protection)
       if (error?.code === "42501" || error?.message?.includes("policy")) {
         toast.error("Cannot remove the last manager from this group");
       } else {
         toast.error("Failed to remove member");
       }
+      setMemberToRemove(null);
     },
   });
 
@@ -181,7 +210,6 @@ export function GroupMembersDialog({
       toast.success("Role updated");
     },
     onError: (error: any) => {
-      // Friendly error for RLS block (last manager protection)
       if (error?.code === "42501" || error?.message?.includes("policy")) {
         toast.error("Cannot demote the last manager in this group");
       } else {
@@ -195,7 +223,6 @@ export function GroupMembersDialog({
     member.role === "manager" && managerCount <= 1;
 
   const handleRoleChange = (userId: string, currentRole: string, newRole: string) => {
-    // Safety: prevent demoting the last manager
     if (currentRole === "manager" && newRole === "member" && managerCount <= 1) {
       toast.error("Cannot demote the last manager");
       return;
@@ -209,100 +236,164 @@ export function GroupMembersDialog({
     }
   };
 
+  const handleRemoveClick = (member: MemberWithProfile) => {
+    setMemberToRemove(member);
+  };
+
+  const handleConfirmRemove = () => {
+    if (memberToRemove) {
+      removeMember.mutate(memberToRemove.user_id);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Manage Members - {group?.name}</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {canManage ? "Manage Members" : "Group Members"} - {group?.name}
+            </DialogTitle>
+          </DialogHeader>
 
-        {/* Add Member */}
-        <div className="flex gap-2">
-          <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Select a member to add" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableMembers.map((member) => (
-                <SelectItem key={member.user_id} value={member.user_id}>
-                  {member.profile?.full_name || member.profile?.email || member.user_id}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button onClick={handleAddMember} disabled={!selectedUserId || addMember.isPending}>
-            <UserPlus className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Member List */}
-        <div className="space-y-2 max-h-64 overflow-y-auto">
-          {loadingMembers ? (
-            <div className="animate-pulse space-y-2">
-              {[1, 2].map((i) => (
-                <div key={i} className="h-12 bg-muted rounded" />
-              ))}
+          {/* Add Member - only shown if user can manage */}
+          {canManage && (
+            <div className="flex gap-2">
+              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select a member to add" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableMembers.length === 0 ? (
+                    <div className="p-2 text-sm text-muted-foreground text-center">
+                      No available members
+                    </div>
+                  ) : (
+                    availableMembers.map((member) => (
+                      <SelectItem key={member.user_id} value={member.user_id}>
+                        {member.profile?.full_name || member.profile?.email || member.user_id}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              <Button onClick={handleAddMember} disabled={!selectedUserId || addMember.isPending}>
+                <UserPlus className="h-4 w-4" />
+              </Button>
             </div>
-          ) : members.length === 0 ? (
-            <EmptyState
-              icon={Users}
-              title="No members"
-              description="Add members to this group."
-            />
-          ) : (
-            members.map((member) => (
-              <div
-                key={member.user_id}
-                className="flex items-center justify-between p-3 rounded-lg border gap-2"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {member.profile?.full_name || "Unnamed User"}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {member.profile?.email || member.user_id}
-                  </p>
-                </div>
-                
-                {/* Role Dropdown */}
-                <Select
-                  value={member.role}
-                  onValueChange={(newRole) => handleRoleChange(member.user_id, member.role, newRole)}
-                  disabled={updateRole.isPending || isLastManager(member)}
-                >
-                  <SelectTrigger className="w-28">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="member" disabled={isLastManager(member)}>
-                      <Badge variant="secondary" className="font-normal">Member</Badge>
-                    </SelectItem>
-                    <SelectItem value="manager">
-                      <Badge variant="default" className="font-normal">Manager</Badge>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeMember.mutate(member.user_id)}
-                  disabled={removeMember.isPending || isLastManager(member)}
-                  title={isLastManager(member) ? "Cannot remove the last manager" : "Remove member"}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ))
           )}
-        </div>
 
-        <div className="flex justify-end pt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Done
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+          {/* Read-only notice for non-managers */}
+          {!canManage && (
+            <Alert variant="default" className="bg-muted/50">
+              <Info className="h-4 w-4" />
+              <AlertDescription className="text-sm">
+                You can view group members but only managers can make changes.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Member List */}
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {loadingMembers ? (
+              <div className="animate-pulse space-y-2">
+                {[1, 2].map((i) => (
+                  <div key={i} className="h-12 bg-muted rounded" />
+                ))}
+              </div>
+            ) : members.length === 0 ? (
+              <EmptyState
+                icon={Users}
+                title="No members"
+                description={canManage ? "Add members to this group." : "This group has no members."}
+              />
+            ) : (
+              members.map((member) => (
+                <div
+                  key={member.user_id}
+                  className="flex items-center justify-between p-3 rounded-lg border gap-2"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {member.profile?.full_name || "Unnamed User"}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {member.profile?.email || member.user_id}
+                    </p>
+                  </div>
+                  
+                  {canManage ? (
+                    <>
+                      {/* Role Dropdown - editable */}
+                      <Select
+                        value={member.role}
+                        onValueChange={(newRole) => handleRoleChange(member.user_id, member.role, newRole)}
+                        disabled={updateRole.isPending || isLastManager(member)}
+                      >
+                        <SelectTrigger className="w-28">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="member" disabled={isLastManager(member)}>
+                            <Badge variant="secondary" className="font-normal">Member</Badge>
+                          </SelectItem>
+                          <SelectItem value="manager">
+                            <Badge variant="default" className="font-normal">Manager</Badge>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveClick(member)}
+                        disabled={removeMember.isPending || isLastManager(member)}
+                        title={isLastManager(member) ? "Cannot remove the last manager" : "Remove member"}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    /* Read-only badge */
+                    <Badge variant={member.role === "manager" ? "default" : "secondary"}>
+                      {member.role === "manager" ? "Manager" : "Member"}
+                    </Badge>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="flex justify-end pt-4">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Done
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove Member Confirmation Dialog */}
+      <AlertDialog open={!!memberToRemove} onOpenChange={(open) => !open && setMemberToRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Member</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove{" "}
+              <strong>{memberToRemove?.profile?.full_name || memberToRemove?.profile?.email || "this member"}</strong>{" "}
+              from the group?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmRemove}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
