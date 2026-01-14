@@ -1,9 +1,43 @@
-import { Outlet } from "react-router-dom";
+import * as React from "react";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import { AppTopbar } from "./AppTopbar";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { useMembership } from "@/lib/membership";
+import { useAuth } from "@/lib/auth";
+import { Loader2 } from "lucide-react";
 
 export function AppLayout() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+  const { memberships, loading } = useMembership();
+
+  // Redirect to onboarding if user has no companies
+  React.useEffect(() => {
+    if (loading || !user) return;
+
+    const isOnboardingRoute = location.pathname === "/app/onboarding";
+    const isDevRoute = location.pathname.startsWith("/app/dev");
+
+    // Skip redirect for onboarding and dev routes
+    if (isOnboardingRoute || isDevRoute) return;
+
+    // If no memberships, redirect to onboarding
+    if (memberships.length === 0) {
+      navigate("/app/onboarding");
+    }
+  }, [loading, user, memberships, navigate, location.pathname]);
+
+  // Show loading state while checking memberships
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">

@@ -39,6 +39,7 @@ import UsersPage from "@/pages/app/admin/UsersPage";
 import SiteSettingsPage from "@/pages/app/admin/SiteSettingsPage";
 import DbCheckPage from "@/pages/app/dev/DbCheckPage";
 import BootstrapPage from "@/pages/app/dev/BootstrapPage";
+import OnboardingPage from "@/pages/app/onboarding/OnboardingPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -87,6 +88,7 @@ function App() {
                     }
                   >
                     <Route index element={<AppDashboard />} />
+                    <Route path="onboarding" element={<OnboardingPage />} />
                     <Route path="projects" element={<ProjectsPage />} />
                     <Route path="projects/:projectId" element={<ProjectDetailPage />} />
                     <Route path="tasks" element={<TasksPage />} />
