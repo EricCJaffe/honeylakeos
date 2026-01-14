@@ -156,8 +156,13 @@ export function GroupMembersDialog({
       queryClient.invalidateQueries({ queryKey: ["groups"] });
       toast.success("Member removed");
     },
-    onError: () => {
-      toast.error("Failed to remove member");
+    onError: (error: any) => {
+      // Friendly error for RLS block (last manager protection)
+      if (error?.code === "42501" || error?.message?.includes("policy")) {
+        toast.error("Cannot remove the last manager from this group");
+      } else {
+        toast.error("Failed to remove member");
+      }
     },
   });
 
@@ -175,10 +180,19 @@ export function GroupMembersDialog({
       queryClient.invalidateQueries({ queryKey: ["group-members", group?.id] });
       toast.success("Role updated");
     },
-    onError: () => {
-      toast.error("Failed to update role");
+    onError: (error: any) => {
+      // Friendly error for RLS block (last manager protection)
+      if (error?.code === "42501" || error?.message?.includes("policy")) {
+        toast.error("Cannot demote the last manager in this group");
+      } else {
+        toast.error("Failed to update role");
+      }
     },
   });
+
+  // Check if this member is the last manager (for disabling controls)
+  const isLastManager = (member: MemberWithProfile) => 
+    member.role === "manager" && managerCount <= 1;
 
   const handleRoleChange = (userId: string, currentRole: string, newRole: string) => {
     // Safety: prevent demoting the last manager
@@ -254,13 +268,13 @@ export function GroupMembersDialog({
                 <Select
                   value={member.role}
                   onValueChange={(newRole) => handleRoleChange(member.user_id, member.role, newRole)}
-                  disabled={updateRole.isPending}
+                  disabled={updateRole.isPending || isLastManager(member)}
                 >
                   <SelectTrigger className="w-28">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="member">
+                    <SelectItem value="member" disabled={isLastManager(member)}>
                       <Badge variant="secondary" className="font-normal">Member</Badge>
                     </SelectItem>
                     <SelectItem value="manager">
@@ -273,7 +287,8 @@ export function GroupMembersDialog({
                   variant="ghost"
                   size="icon"
                   onClick={() => removeMember.mutate(member.user_id)}
-                  disabled={removeMember.isPending}
+                  disabled={removeMember.isPending || isLastManager(member)}
+                  title={isLastManager(member) ? "Cannot remove the last manager" : "Remove member"}
                 >
                   <X className="h-4 w-4" />
                 </Button>
