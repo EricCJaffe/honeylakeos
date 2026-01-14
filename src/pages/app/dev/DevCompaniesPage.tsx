@@ -66,22 +66,23 @@ export default function DevCompaniesPage() {
     fetchCompanies();
   }, [fetchCompanies]);
 
-  // Get default site ID through fallback chain
+  // Get default site ID using the secure RPC
   async function getDefaultSiteId(): Promise<string | null> {
-    // 1) Try RPC "get_default_site_id" if it exists
-    try {
-      const { data: rpcData, error: rpcError } = await supabase.rpc("get_default_site_id" as any);
-      if (!rpcError && rpcData) {
-        console.log("[DevCompanies] Got site_id from get_default_site_id RPC:", rpcData);
-        return rpcData as string;
-      }
-    } catch {
-      // RPC doesn't exist, continue
+    // 1) Try RPC "get_default_site_id"
+    const { data: rpcData, error: rpcError } = await supabase.rpc("get_default_site_id");
+    
+    if (!rpcError && rpcData) {
+      console.log("[DevCompanies] Got site_id from get_default_site_id RPC:", rpcData);
+      return rpcData as string;
     }
 
-    // 2) Try getting site_id from an existing company
+    if (rpcError) {
+      console.warn("[DevCompanies] get_default_site_id RPC error:", rpcError);
+    }
+
+    // 2) Fallback: Try getting site_id from an existing company (if any are visible)
     if (companies.length > 0) {
-      console.log("[DevCompanies] Got site_id from existing company:", companies[0].site_id);
+      console.log("[DevCompanies] Fallback: Got site_id from existing company:", companies[0].site_id);
       return companies[0].site_id;
     }
 
