@@ -21,6 +21,8 @@ import {
   Clock,
   Copy,
   RotateCcw,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -156,6 +158,29 @@ export default function EmployeesPage() {
     enabled: !!activeCompanyId,
   });
 
+  // Fetch archived employees
+  const {
+    data: archivedEmployees = [],
+    isLoading: isLoadingArchived,
+    refetch: refetchArchived,
+  } = useQuery({
+    queryKey: ["employees-archived", activeCompanyId],
+    queryFn: async () => {
+      if (!activeCompanyId) return [];
+
+      const { data, error } = await supabase
+        .from("employees")
+        .select("*")
+        .eq("company_id", activeCompanyId)
+        .eq("status", "archived")
+        .order("full_name", { ascending: true });
+
+      if (error) throw error;
+      return data as Employee[];
+    },
+    enabled: !!activeCompanyId && hasAdminAccess,
+  });
+
   // Fetch pending invites
   const { data: pendingInvites = [], refetch: refetchInvites } = useQuery({
     queryKey: ["employee-invites", activeCompanyId],
@@ -266,12 +291,37 @@ export default function EmployeesPage() {
       setDeleteDialogOpen(false);
       setEmployeeToDelete(null);
       queryClient.invalidateQueries({ queryKey: ["employees", activeCompanyId] });
+      queryClient.invalidateQueries({ queryKey: ["employees-archived", activeCompanyId] });
     },
     onError: (error: any) => {
       if (error.code === "42501" || error.message?.includes("policy")) {
-        toast.error("You don't have permission to delete employees.");
+        toast.error("You don't have permission to manage employees.");
       } else {
-        toast.error(`Failed to delete employee: ${error.message}`);
+        toast.error(`Failed to archive employee: ${error.message}`);
+      }
+    },
+  });
+
+  // Restore employee mutation
+  const restoreMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("employees")
+        .update({ status: "active" })
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Employee restored successfully");
+      queryClient.invalidateQueries({ queryKey: ["employees", activeCompanyId] });
+      queryClient.invalidateQueries({ queryKey: ["employees-archived", activeCompanyId] });
+    },
+    onError: (error: any) => {
+      if (error.code === "42501" || error.message?.includes("policy")) {
+        toast.error("You don't have permission to manage employees.");
+      } else {
+        toast.error(`Failed to restore employee: ${error.message}`);
       }
     },
   });
@@ -553,7 +603,7 @@ export default function EmployeesPage() {
               <span>
                 <strong className="text-foreground">{employees.filter((e) => e.status === "inactive").length}</strong> inactive
               </span>
-              <Button variant="ghost" size="icon" onClick={() => { refetch(); refetchInvites(); }} title="Refresh">
+              <Button variant="ghost" size="icon" onClick={() => { refetch(); refetchInvites(); refetchArchived(); }} title="Refresh">
                 <RefreshCw className="h-4 w-4" />
               </Button>
             </div>
@@ -571,6 +621,10 @@ export default function EmployeesPage() {
           <TabsTrigger value="invites" className="gap-2">
             <Mail className="h-4 w-4" />
             Pending Invites ({pendingInvites.length})
+          </TabsTrigger>
+          <TabsTrigger value="archived" className="gap-2">
+            <Archive className="h-4 w-4" />
+            Archived ({archivedEmployees.length})
           </TabsTrigger>
         </TabsList>
 
@@ -681,8 +735,8 @@ export default function EmployeesPage() {
                                     onClick={() => openDeleteDialog(employee)}
                                     className="text-destructive focus:text-destructive"
                                   >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Delete
+                                    <Archive className="h-4 w-4 mr-2" />
+                                    Archive
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -756,8 +810,8 @@ export default function EmployeesPage() {
                                 onClick={() => openDeleteDialog(employee)}
                                 className="text-destructive focus:text-destructive"
                               >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
+                                <Archive className="h-4 w-4 mr-2" />
+                                Archive
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -874,6 +928,123 @@ export default function EmployeesPage() {
                     </TableBody>
                   </Table>
                 </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Archived Tab */}
+        <TabsContent value="archived">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Archive className="h-5 w-5" />
+                Archived Employees
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoadingArchived ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : archivedEmployees.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  No archived employees.
+                </div>
+              ) : (
+                <>
+                  {/* Desktop Table */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Linked</TableHead>
+                          <TableHead className="w-12"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {archivedEmployees.map((employee) => (
+                          <TableRow key={employee.id} className="opacity-70">
+                            <TableCell className="font-medium">{employee.full_name}</TableCell>
+                            <TableCell>
+                              {employee.email ? (
+                                employee.email
+                              ) : (
+                                <span className="text-muted-foreground text-sm italic">
+                                  No email
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell>{employee.title || "—"}</TableCell>
+                            <TableCell>
+                              {employee.user_id ? (
+                                <Badge variant="outline" className="gap-1">
+                                  <Link2 className="h-3 w-3" />
+                                  Linked
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground flex items-center gap-1">
+                                  <Link2Off className="h-3 w-3" />
+                                  No
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => restoreMutation.mutate(employee.id)}
+                                disabled={restoreMutation.isPending}
+                              >
+                                <ArchiveRestore className="h-4 w-4 mr-2" />
+                                Restore
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Mobile Cards */}
+                  <div className="md:hidden space-y-3">
+                    {archivedEmployees.map((employee) => (
+                      <Card key={employee.id} className="p-4 opacity-70">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <p className="font-medium">{employee.full_name}</p>
+                            {employee.email ? (
+                              <p className="text-sm text-muted-foreground">{employee.email}</p>
+                            ) : (
+                              <p className="text-sm text-muted-foreground italic">No email</p>
+                            )}
+                            {employee.title && (
+                              <p className="text-sm text-muted-foreground">{employee.title}</p>
+                            )}
+                            {employee.user_id && (
+                              <Badge variant="outline" className="gap-1 mt-1">
+                                <Link2 className="h-3 w-3" />
+                                Linked
+                              </Badge>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => restoreMutation.mutate(employee.id)}
+                            disabled={restoreMutation.isPending}
+                          >
+                            <ArchiveRestore className="h-4 w-4 mr-2" />
+                            Restore
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
@@ -996,14 +1167,13 @@ export default function EmployeesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Archive Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Employee</AlertDialogTitle>
+            <AlertDialogTitle>Archive Employee</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete <strong>{employeeToDelete?.full_name}</strong>?
-              This will archive the employee record. This action cannot be undone.
+              This will remove <strong>{employeeToDelete?.full_name}</strong> from active lists. You can restore them later.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1014,7 +1184,7 @@ export default function EmployeesPage() {
               disabled={archiveMutation.isPending}
             >
               {archiveMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Delete
+              Archive
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
