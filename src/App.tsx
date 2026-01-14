@@ -32,6 +32,7 @@ import DocumentDetailPage from "@/pages/app/documents/DocumentDetailPage";
 import FoldersPage from "@/pages/app/folders/FoldersPage";
 import CompanySettingsPage from "@/pages/app/admin/CompanySettingsPage";
 import MembersPage from "@/pages/app/admin/MembersPage";
+import EmployeesPage from "@/pages/app/admin/EmployeesPage";
 import SitesPage from "@/pages/app/admin/SitesPage";
 import CompaniesPage from "@/pages/app/admin/CompaniesPage";
 import ModulesPage from "@/pages/app/admin/ModulesPage";
@@ -107,6 +108,7 @@ function App() {
                     <Route path="settings" element={<ModulePage />} />
                     <Route path="admin/company" element={<CompanySettingsPage />} />
                     <Route path="admin/members" element={<MembersPage />} />
+                    <Route path="admin/employees" element={<EmployeesPage />} />
                     <Route path="admin/sites" element={<SitesPage />} />
                     <Route path="admin/companies" element={<CompaniesPage />} />
                     <Route path="admin/users" element={<UsersPage />} />

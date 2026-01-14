@@ -12,6 +12,7 @@ import {
   Users,
   Settings,
   Building2,
+  Briefcase,
   UserCog,
   Shield,
   Boxes,
@@ -60,6 +61,7 @@ const orgNavItems = [
 const companyAdminItems = [
   { title: "Company Settings", url: "/app/admin/company", icon: Building2 },
   { title: "Members", url: "/app/admin/members", icon: UserCog },
+  { title: "Employees", url: "/app/admin/employees", icon: Briefcase },
 ];
 
 const siteAdminItems = [
