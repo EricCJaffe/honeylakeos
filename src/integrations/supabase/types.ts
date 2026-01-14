@@ -169,6 +169,50 @@ export type Database = {
           },
         ]
       }
+      employees: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          email: string | null
+          full_name: string
+          id: string
+          status: string
+          title: string | null
+          user_id: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          status?: string
+          title?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          status?: string
+          title?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entity_acl: {
         Row: {
           created_at: string
@@ -560,6 +604,7 @@ export type Database = {
           company_id: string
           created_at: string
           default_location_id: string | null
+          employee_id: string | null
           expires_at: string | null
           id: string
           member_type: string
@@ -571,6 +616,7 @@ export type Database = {
           company_id: string
           created_at?: string
           default_location_id?: string | null
+          employee_id?: string | null
           expires_at?: string | null
           id?: string
           member_type?: string
@@ -582,6 +628,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           default_location_id?: string | null
+          employee_id?: string | null
           expires_at?: string | null
           id?: string
           member_type?: string
@@ -602,6 +649,13 @@ export type Database = {
             columns: ["default_location_id"]
             isOneToOne: false
             referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memberships_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]
