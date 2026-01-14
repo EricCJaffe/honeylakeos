@@ -21,6 +21,7 @@ interface TestResult {
   success: boolean;
   message: string;
   details?: string;
+  companyId?: string;
 }
 
 export default function OnboardingPage() {
@@ -110,11 +111,12 @@ export default function OnboardingPage() {
     // Get siteId for subsequent tests
     const testSiteId = sitesData?.[0]?.id;
 
-    // ===== TEST B: INSERT companies (dry-run) =====
+    // ===== TEST B: INSERT companies (keep for Test C) =====
     let testCompanyId: string | null = null;
+    let testCompanyName = "";
 
     if (testSiteId) {
-      const testCompanyName = `[TEST] Onboarding Test ${Date.now()}`;
+      testCompanyName = `[TEST] Onboarding Test ${Date.now()}`;
       console.log("[Test B] Attempting to INSERT company:", testCompanyName);
 
       const { data: companyData, error: companyError } = await supabase
@@ -122,7 +124,7 @@ export default function OnboardingPage() {
         .insert({
           name: testCompanyName,
           site_id: testSiteId,
-          status: "pending",
+          status: "archived", // Create as archived immediately
           created_by: user.id,
         })
         .select("id")
@@ -140,45 +142,13 @@ export default function OnboardingPage() {
         testCompanyId = companyData.id;
         console.log("[Test B] INSERT SUCCESS, company id:", testCompanyId);
 
-        // Try to delete the test company
-        const { error: deleteError } = await supabase
-          .from("companies")
-          .delete()
-          .eq("id", testCompanyId);
-
-        if (deleteError) {
-          console.warn("[Test B] DELETE failed, trying UPDATE:", deleteError);
-          // Try to mark it as inactive instead
-          const { error: updateError } = await supabase
-            .from("companies")
-            .update({ status: "archived", name: `[CLEANUP] ${testCompanyName}` })
-            .eq("id", testCompanyId);
-
-          if (updateError) {
-            results.push({
-              name: "B) INSERT companies",
-              success: true,
-              message: "Insert succeeded, but cleanup failed",
-              details: `Created: ${testCompanyId.slice(0, 8)}... DELETE error: ${deleteError.message}, UPDATE error: ${updateError.message}`,
-            });
-          } else {
-            results.push({
-              name: "B) INSERT companies",
-              success: true,
-              message: "Insert succeeded, marked as archived (manual cleanup needed)",
-              details: `Created: ${testCompanyId.slice(0, 8)}...`,
-            });
-          }
-        } else {
-          results.push({
-            name: "B) INSERT companies",
-            success: true,
-            message: "Insert and cleanup both succeeded",
-            details: `Created and deleted: ${testCompanyId.slice(0, 8)}...`,
-          });
-          testCompanyId = null; // Cleaned up
-          console.log("[Test B] Cleanup SUCCESS");
-        }
+        results.push({
+          name: "B) INSERT companies",
+          success: true,
+          message: "Insert succeeded (kept for Test C)",
+          details: `Company ID: ${testCompanyId}`,
+          companyId: testCompanyId,
+        });
       }
     } else {
       results.push({
@@ -189,7 +159,9 @@ export default function OnboardingPage() {
       });
     }
 
-    // ===== TEST C: INSERT memberships =====
+    // ===== TEST C: INSERT memberships (using same company from Test B) =====
+    let testMembershipCreated = false;
+
     if (testCompanyId) {
       console.log("[Test C] Attempting to INSERT membership for company:", testCompanyId);
 
@@ -209,80 +181,19 @@ export default function OnboardingPage() {
           success: false,
           message: "Failed to insert membership",
           details: `Code: ${membershipError.code}, Message: ${membershipError.message}, Hint: ${membershipError.hint || "none"}`,
+          companyId: testCompanyId,
         });
         console.error("[Test C] FAILED:", membershipError);
       } else {
+        testMembershipCreated = true;
         results.push({
           name: "C) INSERT memberships",
           success: true,
           message: "Membership insert succeeded",
-          details: `Role: company_admin, Status: active`,
+          details: `Role: company_admin, Status: active, Company ID: ${testCompanyId}`,
+          companyId: testCompanyId,
         });
         console.log("[Test C] SUCCESS");
-
-        // Try to clean up the membership
-        await supabase
-          .from("memberships")
-          .delete()
-          .eq("company_id", testCompanyId)
-          .eq("user_id", user.id);
-      }
-    } else if (testSiteId) {
-      // Company was cleaned up, so we need to create a fresh one for membership test
-      const tempCompanyName = `[TEST] Membership Test ${Date.now()}`;
-      const { data: tempCompany, error: tempCompanyError } = await supabase
-        .from("companies")
-        .insert({
-          name: tempCompanyName,
-          site_id: testSiteId,
-          status: "pending",
-          created_by: user.id,
-        })
-        .select("id")
-        .single();
-
-      if (tempCompanyError) {
-        results.push({
-          name: "C) INSERT memberships",
-          success: false,
-          message: "Skipped - could not create temp company for test",
-          details: tempCompanyError.message,
-        });
-      } else {
-        console.log("[Test C] Created temp company for membership test:", tempCompany.id);
-
-        const { error: membershipError } = await supabase
-          .from("memberships")
-          .insert({
-            company_id: tempCompany.id,
-            user_id: user.id,
-            role: "company_admin",
-            status: "active",
-            member_type: "internal",
-          });
-
-        if (membershipError) {
-          results.push({
-            name: "C) INSERT memberships",
-            success: false,
-            message: "Failed to insert membership",
-            details: `Code: ${membershipError.code}, Message: ${membershipError.message}, Hint: ${membershipError.hint || "none"}`,
-          });
-          console.error("[Test C] FAILED:", membershipError);
-        } else {
-          results.push({
-            name: "C) INSERT memberships",
-            success: true,
-            message: "Membership insert succeeded",
-            details: `Role: company_admin, Status: active`,
-          });
-          console.log("[Test C] SUCCESS");
-        }
-
-        // Cleanup: delete membership then company
-        await supabase.from("memberships").delete().eq("company_id", tempCompany.id);
-        await supabase.from("companies").delete().eq("id", tempCompany.id);
-        console.log("[Test C] Cleanup completed");
       }
     } else {
       results.push({
@@ -291,6 +202,73 @@ export default function OnboardingPage() {
         message: "Skipped - no company available from Test B",
         details: "Cannot test membership creation without a valid company.",
       });
+    }
+
+    // ===== CLEANUP: Delete membership first, then company =====
+    if (testCompanyId) {
+      console.log("[Cleanup] Starting cleanup for company:", testCompanyId);
+
+      // Delete membership first (if created)
+      if (testMembershipCreated) {
+        const { error: deleteMembershipError } = await supabase
+          .from("memberships")
+          .delete()
+          .eq("company_id", testCompanyId)
+          .eq("user_id", user.id);
+
+        if (deleteMembershipError) {
+          console.warn("[Cleanup] Membership DELETE failed:", deleteMembershipError);
+        } else {
+          console.log("[Cleanup] Membership deleted successfully");
+        }
+      }
+
+      // Try to delete company
+      const { error: deleteCompanyError } = await supabase
+        .from("companies")
+        .delete()
+        .eq("id", testCompanyId);
+
+      if (deleteCompanyError) {
+        console.warn("[Cleanup] Company DELETE failed, trying UPDATE:", deleteCompanyError);
+
+        // Fallback: update to archived with [CLEANUP] prefix
+        const { error: updateError } = await supabase
+          .from("companies")
+          .update({
+            status: "archived",
+            name: `[CLEANUP] ${testCompanyName}`,
+          })
+          .eq("id", testCompanyId);
+
+        if (updateError) {
+          console.error("[Cleanup] Company UPDATE also failed:", updateError);
+          results.push({
+            name: "Cleanup",
+            success: false,
+            message: "Both DELETE and UPDATE failed",
+            details: `DELETE: ${deleteCompanyError.message}, UPDATE: ${updateError.message}`,
+            companyId: testCompanyId,
+          });
+        } else {
+          console.log("[Cleanup] Company marked as archived with [CLEANUP] prefix");
+          results.push({
+            name: "Cleanup",
+            success: true,
+            message: "Company marked as archived (manual cleanup needed)",
+            details: `Company ID: ${testCompanyId}`,
+            companyId: testCompanyId,
+          });
+        }
+      } else {
+        console.log("[Cleanup] Company deleted successfully");
+        results.push({
+          name: "Cleanup",
+          success: true,
+          message: "All test data cleaned up successfully",
+          details: `Deleted company: ${testCompanyId}`,
+        });
+      }
     }
 
     setTestResults(results);
@@ -608,6 +586,11 @@ export default function OnboardingPage() {
                           </span>
                         </div>
                         <div className="mt-1 text-muted-foreground">{result.message}</div>
+                        {result.companyId && (
+                          <div className="mt-1 font-mono text-[10px] text-blue-500">
+                            Test Company ID: {result.companyId}
+                          </div>
+                        )}
                         {result.details && (
                           <div className="mt-1 font-mono text-[10px] text-muted-foreground/70 break-all">
                             {result.details}
