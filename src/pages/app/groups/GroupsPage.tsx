@@ -1,13 +1,14 @@
 import * as React from "react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Users, MoreHorizontal, Pencil, Trash2, UserPlus } from "lucide-react";
+import { Users, MoreHorizontal, Pencil, Trash2, UserPlus, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +30,7 @@ export default function GroupsPage() {
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
   const [membersGroup, setMembersGroup] = useState<Group | null>(null);
+  const [search, setSearch] = useState("");
 
   const { data: groups = [], isLoading } = useQuery({
     queryKey: ["groups", activeCompanyId],
@@ -48,6 +50,15 @@ export default function GroupsPage() {
     },
     enabled: !!activeCompanyId,
   });
+
+  const filteredGroups = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return groups;
+    return groups.filter(g =>
+      (g.name || "").toLowerCase().includes(q) ||
+      (g.description || "").toLowerCase().includes(q)
+    );
+  }, [groups, search]);
 
   const deleteGroup = useMutation({
     mutationFn: async (groupId: string) => {
@@ -114,6 +125,19 @@ export default function GroupsPage() {
         showAction={isCompanyAdmin}
       />
 
+      {/* Search Input */}
+      {groups.length > 0 && (
+        <div className="relative mb-6 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search groups…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      )}
+
       {groups.length === 0 ? (
         <EmptyState
           icon={Users}
@@ -126,9 +150,15 @@ export default function GroupsPage() {
           actionLabel={isCompanyAdmin ? "Create Group" : undefined}
           onAction={isCompanyAdmin ? handleCreate : undefined}
         />
+      ) : filteredGroups.length === 0 ? (
+        <EmptyState
+          icon={Search}
+          title="No matching groups"
+          description="Try a different search term."
+        />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {groups.map((group, index) => (
+          {filteredGroups.map((group, index) => (
             <motion.div
               key={group.id}
               initial={{ opacity: 0, y: 12 }}
