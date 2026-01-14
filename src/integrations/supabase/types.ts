@@ -169,6 +169,66 @@ export type Database = {
           },
         ]
       }
+      employee_invites: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          company_id: string
+          created_at: string
+          created_by: string
+          email: string
+          employee_id: string
+          expires_at: string
+          id: string
+          role: string
+          status: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          company_id: string
+          created_at?: string
+          created_by: string
+          email: string
+          employee_id: string
+          expires_at?: string
+          id?: string
+          role?: string
+          status?: string
+          token: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          email?: string
+          employee_id?: string
+          expires_at?: string
+          id?: string
+          role?: string
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_invites_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_invites_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           company_id: string
@@ -1212,6 +1272,15 @@ export type Database = {
           p_target_user_id: string
         }
         Returns: boolean
+      }
+      create_employee_invite: {
+        Args: { p_employee_id: string; p_role?: string }
+        Returns: {
+          email: string
+          expires_at: string
+          invite_id: string
+          token: string
+        }[]
       }
       entity_acl_company_id: {
         Args: { p_entity_id: string; p_entity_type: string }
