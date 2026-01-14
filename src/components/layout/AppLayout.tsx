@@ -11,23 +11,31 @@ export function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { memberships, loading } = useMembership();
+  const { memberships, activeCompanyId, loading } = useMembership();
 
-  // Redirect to onboarding if user has no companies
+  // Redirect logic based on memberships and active company
   React.useEffect(() => {
     if (loading || !user) return;
 
     const isOnboardingRoute = location.pathname === "/app/onboarding";
     const isDevRoute = location.pathname.startsWith("/app/dev");
+    const isSelectCompanyRoute = location.pathname === "/app/select-company";
 
-    // Skip redirect for onboarding and dev routes
-    if (isOnboardingRoute || isDevRoute) return;
+    // Skip redirect for special routes
+    if (isOnboardingRoute || isDevRoute || isSelectCompanyRoute) return;
 
     // If no memberships, redirect to onboarding
     if (memberships.length === 0) {
       navigate("/app/onboarding");
+      return;
     }
-  }, [loading, user, memberships, navigate, location.pathname]);
+
+    // If user has multiple companies but no active company selected, redirect to selector
+    if (memberships.length > 1 && !activeCompanyId) {
+      navigate("/app/select-company");
+      return;
+    }
+  }, [loading, user, memberships, activeCompanyId, navigate, location.pathname]);
 
   // Show loading state while checking memberships
   if (loading) {
