@@ -111,9 +111,17 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // 5. Extract nested data (Supabase returns objects for singular FK relations)
-    const employeeData = invite.employee as { full_name: string } | null;
-    const companyData = invite.company as { name: string } | null;
+    // 5. Extract nested data - handle both array and object shapes from Supabase
+    const rawEmployee = invite.employee as unknown;
+    const rawCompany = invite.company as unknown;
+    
+    // Supabase may return array or object depending on the relation
+    const employeeData = Array.isArray(rawEmployee) 
+      ? (rawEmployee[0] as { full_name: string } | undefined)
+      : (rawEmployee as { full_name: string } | null);
+    const companyData = Array.isArray(rawCompany)
+      ? (rawCompany[0] as { name: string } | undefined)
+      : (rawCompany as { name: string } | null);
 
     const companyName = companyData?.name || "the company";
     const employeeName = employeeData?.full_name || "there";
