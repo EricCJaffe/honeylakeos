@@ -12,16 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-
-function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .slice(0, 50);
-}
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
@@ -29,12 +21,11 @@ export default function OnboardingPage() {
   const { user } = useAuth();
   const { isSuperAdmin, isSiteAdmin, memberships, loading, refreshMemberships, siteMemberships } = useMembership();
 
-  const [siteName, setSiteName] = useState("");
   const [companyName, setCompanyName] = useState("");
+  const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isElevated = isSuperAdmin || isSiteAdmin;
   const isDev = import.meta.env.DEV;
 
   // If user already has memberships, redirect to dashboard
@@ -55,34 +46,29 @@ export default function OnboardingPage() {
       // Step A: Find or create a site
       let siteId: string | null = null;
 
-      // First, try to find an existing site the user can administer
+      // First, check if user has site memberships
       if (siteMemberships.length > 0) {
         siteId = siteMemberships[0].site_id;
       }
 
-      // If no site membership, try to find any site (for super admins)
+      // If no site membership, try to find any existing site
       if (!siteId) {
         const { data: existingSites, error: siteQueryError } = await supabase
           .from("sites")
           .select("id")
           .limit(1);
 
-        if (siteQueryError) {
-          throw new Error(`Failed to query sites: ${siteQueryError.message}`);
-        }
-
-        if (existingSites && existingSites.length > 0) {
+        if (!siteQueryError && existingSites && existingSites.length > 0) {
           siteId = existingSites[0].id;
         }
       }
 
-      // If still no site, create one
+      // If still no site, create one and make user super_admin
       if (!siteId) {
-        const newSiteName = siteName.trim() || "Default Site";
         const { data: newSite, error: createSiteError } = await supabase
           .from("sites")
           .insert({
-            name: newSiteName,
+            name: "Default Site",
             status: "active",
           })
           .select("id")
@@ -113,6 +99,7 @@ export default function OnboardingPage() {
         .from("companies")
         .insert({
           name: companyName.trim(),
+          description: description.trim() || null,
           site_id: siteId,
           status: "active",
           created_by: user.id,
@@ -187,87 +174,68 @@ export default function OnboardingPage() {
             </div>
             <CardTitle className="text-xl">Create your first company</CardTitle>
             <CardDescription>
-              You don't have access to any companies yet.
+              Set up your organization to get started.
             </CardDescription>
           </CardHeader>
 
           <CardContent>
-            {isElevated ? (
-              <form onSubmit={handleCreateCompany} className="space-y-4">
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="siteName">Site Name (optional)</Label>
-                  <Input
-                    id="siteName"
-                    value={siteName}
-                    onChange={(e) => setSiteName(e.target.value)}
-                    placeholder="Default Site"
-                    disabled={isSubmitting}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Leave empty to use an existing site or create a default one.
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="companyName">Company Name *</Label>
-                  <Input
-                    id="companyName"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    placeholder="Acme Inc."
-                    required
-                    disabled={isSubmitting}
-                  />
-                </div>
-
-                {companyName && (
-                  <p className="text-xs text-muted-foreground">
-                    Slug: {generateSlug(companyName)}
-                  </p>
-                )}
-
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={!companyName.trim() || isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    "Create Company"
-                  )}
-                </Button>
-              </form>
-            ) : (
-              <div className="space-y-4">
-                <Alert>
+            <form onSubmit={handleCreateCompany} className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    You don't have permission to create a site or company.
-                    Ask a super admin to invite you, or run bootstrap to elevate your account.
-                  </AlertDescription>
+                  <AlertDescription>{error}</AlertDescription>
                 </Alert>
+              )}
 
-                {isDev && (
-                  <div className="pt-2">
-                    <Link to="/app/dev/bootstrap">
-                      <Button variant="outline" size="sm" className="w-full">
-                        <Rocket className="mr-2 h-4 w-4" />
-                        Go to Dev Tools → Bootstrap
-                      </Button>
-                    </Link>
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="companyName">Company Name *</Label>
+                <Input
+                  id="companyName"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  placeholder="Acme Inc."
+                  required
+                  disabled={isSubmitting}
+                  autoFocus
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Description (optional)</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="A brief description of your company"
+                  disabled={isSubmitting}
+                  rows={3}
+                />
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={!companyName.trim() || isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Company"
                 )}
+              </Button>
+            </form>
+
+            {isDev && (
+              <div className="mt-4 pt-4 border-t border-border">
+                <Link to="/app/dev/bootstrap">
+                  <Button variant="ghost" size="sm" className="w-full text-muted-foreground">
+                    <Rocket className="mr-2 h-4 w-4" />
+                    Dev Tools → Bootstrap
+                  </Button>
+                </Link>
               </div>
             )}
           </CardContent>
