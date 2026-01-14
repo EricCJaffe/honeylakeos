@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMembership } from "@/lib/membership";
@@ -9,7 +10,14 @@ interface QueryResult {
   columns: string[];
 }
 
+const isDevToolsEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEV_TOOLS === 'true';
+
 export default function DbCheckPage() {
+  // Redirect if dev tools not enabled
+  if (!isDevToolsEnabled) {
+    return <Navigate to="/app" replace />;
+  }
+
   const { activeCompanyId } = useMembership();
   const [folders, setFolders] = useState<QueryResult>({ data: null, error: null, columns: [] });
   const [notes, setNotes] = useState<QueryResult>({ data: null, error: null, columns: [] });
