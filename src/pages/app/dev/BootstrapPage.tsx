@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Navigate, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +16,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, Rocket, CheckCircle2, AlertCircle, ArrowRight } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Loader2, Rocket, CheckCircle2, AlertCircle, ArrowRight, Shield } from "lucide-react";
 
 interface BootstrapResult {
   ok: boolean;
@@ -30,8 +31,10 @@ export default function BootstrapPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [promoteLoading, setPromoteLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<BootstrapResult | null>(null);
+  const [promoteResult, setPromoteResult] = useState<string | null>(null);
 
   // Redirect to /app in production
   if (!import.meta.env.DEV) {
@@ -80,6 +83,43 @@ export default function BootstrapPage() {
       setError(message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePromote = async () => {
+    if (!user) {
+      setError("No authenticated user found");
+      return;
+    }
+
+    setPromoteLoading(true);
+    setError(null);
+    setPromoteResult(null);
+
+    try {
+      console.log("[Promote] Calling promote_self_to_super_admin RPC for user:", user.id);
+
+      const { data, error: rpcError } = await supabase.rpc("promote_self_to_super_admin");
+
+      if (rpcError) {
+        console.error("[Promote] RPC error:", rpcError);
+        throw new Error(rpcError.message);
+      }
+
+      console.log("[Promote] Promotion complete:", data);
+      setPromoteResult(JSON.stringify(data, null, 2));
+
+      // Reload the app after short delay
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error occurred";
+      console.error("[Promote] Error:", message);
+      setError(message);
+    } finally {
+      setPromoteLoading(false);
     }
   };
 
@@ -134,10 +174,23 @@ export default function BootstrapPage() {
             </Alert>
           )}
 
+          {promoteResult && (
+            <Alert className="border-green-500 bg-green-50 dark:bg-green-900/20">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <AlertTitle className="text-green-800 dark:text-green-200">Promotion Complete!</AlertTitle>
+              <AlertDescription className="text-green-700 dark:text-green-300">
+                <pre className="mt-2 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-40">
+                  {promoteResult}
+                </pre>
+                <p className="mt-2 text-sm">Reloading app...</p>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {!result && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button className="w-full" disabled={loading}>
+                <Button className="w-full" disabled={loading || promoteLoading}>
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -163,6 +216,43 @@ export default function BootstrapPage() {
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction onClick={handleBootstrap}>
                     Confirm Bootstrap
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
+          <Separator />
+
+          {!promoteResult && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="w-full" disabled={loading || promoteLoading}>
+                  {promoteLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Promoting...
+                    </>
+                  ) : (
+                    <>
+                      <Shield className="mr-2 h-4 w-4" />
+                      Promote Me to Super Admin
+                    </>
+                  )}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Promote to Super Admin?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will grant you super_admin privileges on the first site. 
+                    This action only works if no super_admin exists yet.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handlePromote}>
+                    Confirm Promotion
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
