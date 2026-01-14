@@ -172,6 +172,9 @@ export default function DevCompaniesPage() {
       // Step 5: Invalidate queries and refresh
       queryClient.invalidateQueries({ queryKey: ["companies"] });
       queryClient.invalidateQueries({ queryKey: ["memberships"] });
+      if (activeCompanyId) {
+        queryClient.invalidateQueries({ queryKey: ["memberships", activeCompanyId] });
+      }
       queryClient.invalidateQueries({ queryKey: ["active-company"] });
 
       // Refresh membership context
