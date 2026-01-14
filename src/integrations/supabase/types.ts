@@ -106,6 +106,212 @@ export type Database = {
           },
         ]
       }
+      event_attendees: {
+        Row: {
+          created_at: string
+          event_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_attendees_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          all_day: boolean
+          category: string | null
+          color: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_at: string | null
+          id: string
+          is_recurring_template: boolean
+          last_generated_at: string | null
+          linked_note_id: string | null
+          linked_task_id: string | null
+          location_text: string | null
+          parent_recurring_event_id: string | null
+          project_id: string | null
+          recurrence_exceptions: Json
+          recurrence_instance_at: string | null
+          recurrence_rules: string | null
+          reminder_minutes: number | null
+          start_at: string
+          timezone: string
+          title: string
+        }
+        Insert: {
+          all_day?: boolean
+          category?: string | null
+          color?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_at?: string | null
+          id?: string
+          is_recurring_template?: boolean
+          last_generated_at?: string | null
+          linked_note_id?: string | null
+          linked_task_id?: string | null
+          location_text?: string | null
+          parent_recurring_event_id?: string | null
+          project_id?: string | null
+          recurrence_exceptions?: Json
+          recurrence_instance_at?: string | null
+          recurrence_rules?: string | null
+          reminder_minutes?: number | null
+          start_at: string
+          timezone?: string
+          title: string
+        }
+        Update: {
+          all_day?: boolean
+          category?: string | null
+          color?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_at?: string | null
+          id?: string
+          is_recurring_template?: boolean
+          last_generated_at?: string | null
+          linked_note_id?: string | null
+          linked_task_id?: string | null
+          location_text?: string | null
+          parent_recurring_event_id?: string | null
+          project_id?: string | null
+          recurrence_exceptions?: Json
+          recurrence_instance_at?: string | null
+          recurrence_rules?: string | null
+          reminder_minutes?: number | null
+          start_at?: string
+          timezone?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_linked_task_id_fkey"
+            columns: ["linked_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_parent_recurring_event_id_fkey"
+            columns: ["parent_recurring_event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_members: {
+        Row: {
+          created_at: string
+          group_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          group_type: string | null
+          id: string
+          leader_user_id: string | null
+          name: string
+          settings: Json
+          status: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          group_type?: string | null
+          id?: string
+          leader_user_id?: string | null
+          name: string
+          settings?: Json
+          status?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          group_type?: string | null
+          id?: string
+          leader_user_id?: string | null
+          name?: string
+          settings?: Json
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "groups_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       locations: {
         Row: {
           address_line1: string | null
@@ -300,6 +506,103 @@ export type Database = {
           },
         ]
       }
+      project_members: {
+        Row: {
+          created_at: string
+          project_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          project_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          project_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_members_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          color: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          emoji: string
+          id: string
+          is_template: boolean
+          name: string
+          owner_user_id: string
+          phases: Json
+          progress: number
+          settings: Json
+          start_date: string | null
+          status: string
+          template_category: string | null
+        }
+        Insert: {
+          color?: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          emoji?: string
+          id?: string
+          is_template?: boolean
+          name: string
+          owner_user_id: string
+          phases?: Json
+          progress?: number
+          settings?: Json
+          start_date?: string | null
+          status?: string
+          template_category?: string | null
+        }
+        Update: {
+          color?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          emoji?: string
+          id?: string
+          is_template?: boolean
+          name?: string
+          owner_user_id?: string
+          phases?: Json
+          progress?: number
+          settings?: Json
+          start_date?: string | null
+          status?: string
+          template_category?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_memberships: {
         Row: {
           created_at: string
@@ -355,6 +658,147 @@ export type Database = {
           subdomain?: string | null
         }
         Relationships: []
+      }
+      task_assignees: {
+        Row: {
+          created_at: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_assignees_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          assigned_by: string | null
+          attachments: Json
+          category: Json
+          company_id: string
+          created_at: string
+          created_by: string | null
+          custom_fields: Json
+          description: string | null
+          due_date: string | null
+          estimated_time: number | null
+          id: string
+          is_recurring_template: boolean
+          is_virtual_instance: boolean
+          last_generated_date: string | null
+          linked_note_id: string | null
+          notes: string | null
+          order_index: number
+          parent_recurring_task_id: string | null
+          phase: string | null
+          priority: string
+          project_id: string | null
+          recurrence_exceptions: Json
+          recurrence_instance_date: string | null
+          recurrence_rules: string | null
+          status: string
+          subtasks: Json
+          tags: Json
+          title: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          attachments?: Json
+          category?: Json
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          custom_fields?: Json
+          description?: string | null
+          due_date?: string | null
+          estimated_time?: number | null
+          id?: string
+          is_recurring_template?: boolean
+          is_virtual_instance?: boolean
+          last_generated_date?: string | null
+          linked_note_id?: string | null
+          notes?: string | null
+          order_index?: number
+          parent_recurring_task_id?: string | null
+          phase?: string | null
+          priority?: string
+          project_id?: string | null
+          recurrence_exceptions?: Json
+          recurrence_instance_date?: string | null
+          recurrence_rules?: string | null
+          status?: string
+          subtasks?: Json
+          tags?: Json
+          title: string
+        }
+        Update: {
+          assigned_by?: string | null
+          attachments?: Json
+          category?: Json
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          custom_fields?: Json
+          description?: string | null
+          due_date?: string | null
+          estimated_time?: number | null
+          id?: string
+          is_recurring_template?: boolean
+          is_virtual_instance?: boolean
+          last_generated_date?: string | null
+          linked_note_id?: string | null
+          notes?: string | null
+          order_index?: number
+          parent_recurring_task_id?: string | null
+          phase?: string | null
+          priority?: string
+          project_id?: string | null
+          recurrence_exceptions?: Json
+          recurrence_instance_date?: string | null
+          recurrence_rules?: string | null
+          status?: string
+          subtasks?: Json
+          tags?: Json
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_parent_recurring_task_id_fkey"
+            columns: ["parent_recurring_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
