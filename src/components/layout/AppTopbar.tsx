@@ -35,7 +35,9 @@ const routeTitles: Record<string, string> = {
   "/app/admin/users": "All Users",
   "/app/admin/modules": "Modules",
   "/app/admin/settings": "Site Settings",
+  "/app/admin/sites": "Sites",
   "/app/dev/db-check": "Database Check",
+  "/app/dev/bootstrap": "System Bootstrap",
 };
 
 function getPageTitle(pathname: string): string {

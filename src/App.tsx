@@ -32,6 +32,11 @@ import DocumentDetailPage from "@/pages/app/documents/DocumentDetailPage";
 import FoldersPage from "@/pages/app/folders/FoldersPage";
 import CompanySettingsPage from "@/pages/app/admin/CompanySettingsPage";
 import MembersPage from "@/pages/app/admin/MembersPage";
+import SitesPage from "@/pages/app/admin/SitesPage";
+import CompaniesPage from "@/pages/app/admin/CompaniesPage";
+import ModulesPage from "@/pages/app/admin/ModulesPage";
+import UsersPage from "@/pages/app/admin/UsersPage";
+import SiteSettingsPage from "@/pages/app/admin/SiteSettingsPage";
 import DbCheckPage from "@/pages/app/dev/DbCheckPage";
 import BootstrapPage from "@/pages/app/dev/BootstrapPage";
 import NotFound from "@/pages/NotFound";
@@ -98,10 +103,11 @@ function App() {
                     <Route path="settings" element={<ModulePage />} />
                     <Route path="admin/company" element={<CompanySettingsPage />} />
                     <Route path="admin/members" element={<MembersPage />} />
-                    <Route path="admin/companies" element={<ModulePage />} />
-                    <Route path="admin/users" element={<ModulePage />} />
-                    <Route path="admin/modules" element={<ModulePage />} />
-                    <Route path="admin/settings" element={<ModulePage />} />
+                    <Route path="admin/sites" element={<SitesPage />} />
+                    <Route path="admin/companies" element={<CompaniesPage />} />
+                    <Route path="admin/users" element={<UsersPage />} />
+                    <Route path="admin/modules" element={<ModulesPage />} />
+                    <Route path="admin/settings" element={<SiteSettingsPage />} />
                     <Route path="dev/db-check" element={<DbCheckPage />} />
                     <Route path="dev/bootstrap" element={<BootstrapPage />} />
                   </Route>
