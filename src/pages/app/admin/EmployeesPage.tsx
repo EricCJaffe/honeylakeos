@@ -17,6 +17,10 @@ import {
   UserX,
   Mail,
   Send,
+  Trash2,
+  Clock,
+  Copy,
+  RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -49,6 +53,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -56,6 +70,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useMembership } from "@/lib/membership";
@@ -63,11 +78,16 @@ import { useAuth } from "@/lib/auth";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Employee = Tables<"employees">;
+type EmployeeInvite = Tables<"employee_invites">;
 
 interface EmployeeFormData {
   full_name: string;
   email: string;
   title: string;
+}
+
+interface InviteWithEmployee extends EmployeeInvite {
+  employees: { full_name: string } | null;
 }
 
 const INVITE_ROLES = [
@@ -103,9 +123,16 @@ export default function EmployeesPage() {
   const [inviteEmployee, setInviteEmployee] = useState<Employee | null>(null);
   const [inviteRole, setInviteRole] = useState<string>("user");
 
+  // Delete confirmation dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
+
   const hasAdminAccess = isCompanyAdmin || isSiteAdmin || isSuperAdmin;
 
-  // Fetch employees
+  // Get APP_URL from window location
+  const appUrl = typeof window !== "undefined" ? window.location.origin : "";
+
+  // Fetch employees (exclude archived for main view)
   const {
     data: employees = [],
     isLoading,
@@ -120,12 +147,35 @@ export default function EmployeesPage() {
         .from("employees")
         .select("*")
         .eq("company_id", activeCompanyId)
+        .neq("status", "archived")
         .order("full_name", { ascending: true });
 
       if (error) throw error;
       return data as Employee[];
     },
     enabled: !!activeCompanyId,
+  });
+
+  // Fetch pending invites
+  const { data: pendingInvites = [], refetch: refetchInvites } = useQuery({
+    queryKey: ["employee-invites", activeCompanyId],
+    queryFn: async () => {
+      if (!activeCompanyId) return [];
+
+      const { data, error } = await supabase
+        .from("employee_invites")
+        .select(`
+          *,
+          employees(full_name)
+        `)
+        .eq("company_id", activeCompanyId)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data as InviteWithEmployee[];
+    },
+    enabled: !!activeCompanyId && hasAdminAccess,
   });
 
   // Filter by search
@@ -201,6 +251,31 @@ export default function EmployeesPage() {
     },
   });
 
+  // Archive employee mutation (soft delete)
+  const archiveMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("employees")
+        .update({ status: "archived" })
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Employee archived successfully");
+      setDeleteDialogOpen(false);
+      setEmployeeToDelete(null);
+      queryClient.invalidateQueries({ queryKey: ["employees", activeCompanyId] });
+    },
+    onError: (error: any) => {
+      if (error.code === "42501" || error.message?.includes("policy")) {
+        toast.error("You don't have permission to delete employees.");
+      } else {
+        toast.error(`Failed to delete employee: ${error.message}`);
+      }
+    },
+  });
+
   // Update status mutation
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
@@ -240,7 +315,7 @@ export default function EmployeesPage() {
       const invite = inviteData[0];
 
       // 2. Send email via edge function
-      const { error: emailError } = await supabase.functions.invoke(
+      const { data, error: emailError } = await supabase.functions.invoke(
         "send-employee-invite-email",
         {
           body: { invite_id: invite.invite_id },
@@ -249,8 +324,12 @@ export default function EmployeesPage() {
 
       if (emailError) {
         console.error("Email error:", emailError);
-        // Don't throw - invite was created, just email failed
-        return { invite, emailSent: false };
+        return { invite, emailSent: false, error: emailError.message };
+      }
+
+      const result = data as { success: boolean; error?: string };
+      if (!result.success) {
+        return { invite, emailSent: false, error: result.error };
       }
 
       return { invite, emailSent: true };
@@ -259,11 +338,12 @@ export default function EmployeesPage() {
       if (result.emailSent) {
         toast.success("Invitation sent successfully!");
       } else {
-        toast.warning("Invitation created but email could not be sent. Check the console for details.");
+        toast.warning(`Invitation created but email failed: ${result.error || "Unknown error"}`);
       }
       setInviteDialogOpen(false);
       setInviteEmployee(null);
       setInviteRole("user");
+      refetchInvites();
     },
     onError: (error: any) => {
       console.error("Invite error:", error);
@@ -276,6 +356,53 @@ export default function EmployeesPage() {
       } else {
         toast.error(`Failed to send invitation: ${error.message}`);
       }
+    },
+  });
+
+  // Resend invite mutation
+  const resendInviteMutation = useMutation({
+    mutationFn: async (inviteId: string) => {
+      const { data, error } = await supabase.functions.invoke(
+        "send-employee-invite-email",
+        {
+          body: { invite_id: inviteId },
+        }
+      );
+
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string };
+      if (!result.success) {
+        throw new Error(result.error || "Failed to send email");
+      }
+
+      return result;
+    },
+    onSuccess: () => {
+      toast.success("Invitation resent successfully!");
+      refetchInvites();
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to resend: ${error.message}`);
+    },
+  });
+
+  // Revoke invite mutation
+  const revokeInviteMutation = useMutation({
+    mutationFn: async (inviteId: string) => {
+      const { error } = await supabase
+        .from("employee_invites")
+        .update({ status: "revoked" })
+        .eq("id", inviteId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Invitation revoked");
+      refetchInvites();
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to revoke: ${error.message}`);
     },
   });
 
@@ -307,6 +434,11 @@ export default function EmployeesPage() {
     setInviteDialogOpen(true);
   };
 
+  const openDeleteDialog = (employee: Employee) => {
+    setEmployeeToDelete(employee);
+    setDeleteDialogOpen(true);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.full_name.trim()) {
@@ -331,8 +463,21 @@ export default function EmployeesPage() {
     sendInviteMutation.mutate({ employeeId: inviteEmployee.id, role: inviteRole });
   };
 
-  const canInvite = (employee: Employee) => 
+  const handleArchive = () => {
+    if (!employeeToDelete) return;
+    archiveMutation.mutate(employeeToDelete.id);
+  };
+
+  const copyInviteLink = (token: string) => {
+    const link = `${appUrl}/invite?token=${token}`;
+    navigator.clipboard.writeText(link);
+    toast.success("Invite link copied to clipboard");
+  };
+
+  const canInvite = (employee: Employee) =>
     employee.email && !employee.user_id && employee.status === "active";
+
+  const isInviteExpired = (expiresAt: string) => new Date(expiresAt) < new Date();
 
   // Access denied state
   if (!hasAdminAccess) {
@@ -406,9 +551,9 @@ export default function EmployeesPage() {
                 <strong className="text-foreground">{employees.filter((e) => e.status === "active").length}</strong> active
               </span>
               <span>
-                <strong className="text-foreground">{employees.filter((e) => e.status !== "active").length}</strong> inactive
+                <strong className="text-foreground">{employees.filter((e) => e.status === "inactive").length}</strong> inactive
               </span>
-              <Button variant="ghost" size="icon" onClick={() => refetch()} title="Refresh">
+              <Button variant="ghost" size="icon" onClick={() => { refetch(); refetchInvites(); }} title="Refresh">
                 <RefreshCw className="h-4 w-4" />
               </Button>
             </div>
@@ -416,76 +561,165 @@ export default function EmployeesPage() {
         </CardContent>
       </Card>
 
-      {/* Employees Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Users className="h-5 w-5" />
+      {/* Tabs for Employees and Pending Invites */}
+      <Tabs defaultValue="employees" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="employees" className="gap-2">
+            <Users className="h-4 w-4" />
             Employees ({filteredEmployees.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : error ? (
-            <div className="flex items-center justify-center py-12 text-destructive">
-              <AlertCircle className="h-5 w-5 mr-2" />
-              Failed to load employees
-            </div>
-          ) : filteredEmployees.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              {searchQuery ? "No employees match your search." : "No employees yet. Add your first employee!"}
-            </div>
-          ) : (
-            <>
-              {/* Desktop Table */}
-              <div className="hidden md:block overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Linked</TableHead>
-                      <TableHead className="w-12"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+          </TabsTrigger>
+          <TabsTrigger value="invites" className="gap-2">
+            <Mail className="h-4 w-4" />
+            Pending Invites ({pendingInvites.length})
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Employees Tab */}
+        <TabsContent value="employees">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Users className="h-5 w-5" />
+                Employees
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : error ? (
+                <div className="flex items-center justify-center py-12 text-destructive">
+                  <AlertCircle className="h-5 w-5 mr-2" />
+                  Failed to load employees
+                </div>
+              ) : filteredEmployees.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  {searchQuery ? "No employees match your search." : "No employees yet. Add your first employee!"}
+                </div>
+              ) : (
+                <>
+                  {/* Desktop Table */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Linked</TableHead>
+                          <TableHead className="w-12"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredEmployees.map((employee) => (
+                          <TableRow key={employee.id}>
+                            <TableCell className="font-medium">{employee.full_name}</TableCell>
+                            <TableCell>
+                              {employee.email ? (
+                                employee.email
+                              ) : (
+                                <span className="text-muted-foreground text-sm italic">
+                                  No email
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell>{employee.title || "—"}</TableCell>
+                            <TableCell>
+                              <Badge variant={employee.status === "active" ? "default" : "secondary"}>
+                                {employee.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {employee.user_id ? (
+                                <Badge variant="outline" className="gap-1">
+                                  <Link2 className="h-3 w-3" />
+                                  Linked
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground flex items-center gap-1">
+                                  <Link2Off className="h-3 w-3" />
+                                  No
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => openEditDialog(employee)}>
+                                    <Pencil className="h-4 w-4 mr-2" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  {canInvite(employee) && (
+                                    <DropdownMenuItem onClick={() => openInviteDialog(employee)}>
+                                      <Mail className="h-4 w-4 mr-2" />
+                                      Send Invite
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => handleStatusToggle(employee)}>
+                                    {employee.status === "active" ? (
+                                      <>
+                                        <UserX className="h-4 w-4 mr-2" />
+                                        Deactivate
+                                      </>
+                                    ) : (
+                                      <>
+                                        <UserCheck className="h-4 w-4 mr-2" />
+                                        Activate
+                                      </>
+                                    )}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => openDeleteDialog(employee)}
+                                    className="text-destructive focus:text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Mobile Cards */}
+                  <div className="md:hidden space-y-3">
                     {filteredEmployees.map((employee) => (
-                      <TableRow key={employee.id}>
-                        <TableCell className="font-medium">{employee.full_name}</TableCell>
-                        <TableCell>
-                          {employee.email ? (
-                            employee.email
-                          ) : (
-                            <span className="text-muted-foreground text-sm italic">
-                              No email (cannot invite)
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell>{employee.title || "—"}</TableCell>
-                        <TableCell>
-                          <Badge variant={employee.status === "active" ? "default" : "secondary"}>
-                            {employee.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {employee.user_id ? (
-                            <Badge variant="outline" className="gap-1">
-                              <Link2 className="h-3 w-3" />
-                              Linked
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground flex items-center gap-1">
-                              <Link2Off className="h-3 w-3" />
-                              No
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell>
+                      <Card key={employee.id} className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <p className="font-medium">{employee.full_name}</p>
+                            {employee.email ? (
+                              <p className="text-sm text-muted-foreground">{employee.email}</p>
+                            ) : (
+                              <p className="text-sm text-muted-foreground italic">No email</p>
+                            )}
+                            {employee.title && (
+                              <p className="text-sm text-muted-foreground">{employee.title}</p>
+                            )}
+                            <div className="flex items-center gap-2 pt-1">
+                              <Badge variant={employee.status === "active" ? "default" : "secondary"}>
+                                {employee.status}
+                              </Badge>
+                              {employee.user_id && (
+                                <Badge variant="outline" className="gap-1">
+                                  <Link2 className="h-3 w-3" />
+                                  Linked
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon">
@@ -517,83 +751,134 @@ export default function EmployeesPage() {
                                   </>
                                 )}
                               </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => openDeleteDialog(employee)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {/* Mobile Cards */}
-              <div className="md:hidden space-y-3">
-                {filteredEmployees.map((employee) => (
-                  <Card key={employee.id} className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <p className="font-medium">{employee.full_name}</p>
-                        {employee.email ? (
-                          <p className="text-sm text-muted-foreground">{employee.email}</p>
-                        ) : (
-                          <p className="text-sm text-muted-foreground italic">No email (cannot invite)</p>
-                        )}
-                        {employee.title && (
-                          <p className="text-sm text-muted-foreground">{employee.title}</p>
-                        )}
-                        <div className="flex items-center gap-2 pt-1">
-                          <Badge variant={employee.status === "active" ? "default" : "secondary"}>
-                            {employee.status}
-                          </Badge>
-                          {employee.user_id && (
-                            <Badge variant="outline" className="gap-1">
-                              <Link2 className="h-3 w-3" />
-                              Linked
-                            </Badge>
-                          )}
                         </div>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEditDialog(employee)}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          {canInvite(employee) && (
-                            <DropdownMenuItem onClick={() => openInviteDialog(employee)}>
-                              <Mail className="h-4 w-4 mr-2" />
-                              Send Invite
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleStatusToggle(employee)}>
-                            {employee.status === "active" ? (
-                              <>
-                                <UserX className="h-4 w-4 mr-2" />
-                                Deactivate
-                              </>
-                            ) : (
-                              <>
-                                <UserCheck className="h-4 w-4 mr-2" />
-                                Activate
-                              </>
-                            )}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+                      </Card>
+                    ))}
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Pending Invites Tab */}
+        <TabsContent value="invites">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Mail className="h-5 w-5" />
+                Pending Invitations
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {pendingInvites.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  No pending invitations.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Employee</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead>Sent</TableHead>
+                        <TableHead>Expires</TableHead>
+                        <TableHead className="w-12"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingInvites.map((invite) => {
+                        const expired = isInviteExpired(invite.expires_at);
+                        return (
+                          <TableRow key={invite.id} className={expired ? "opacity-60" : ""}>
+                            <TableCell className="font-medium">
+                              {invite.employees?.full_name || "Unknown"}
+                            </TableCell>
+                            <TableCell>{invite.email}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {INVITE_ROLES.find((r) => r.value === invite.role)?.label || invite.role}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {format(new Date(invite.created_at), "MMM d, yyyy")}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {invite.sent_at ? (
+                                <span className="text-green-600">
+                                  {format(new Date(invite.sent_at), "MMM d, HH:mm")}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground italic">Not sent</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {expired ? (
+                                <Badge variant="destructive" className="gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  Expired
+                                </Badge>
+                              ) : (
+                                <span className="text-sm text-muted-foreground">
+                                  {format(new Date(invite.expires_at), "MMM d, yyyy")}
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={() => resendInviteMutation.mutate(invite.id)}
+                                    disabled={resendInviteMutation.isPending}
+                                  >
+                                    <RotateCcw className="h-4 w-4 mr-2" />
+                                    Resend Email
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => copyInviteLink(invite.token)}>
+                                    <Copy className="h-4 w-4 mr-2" />
+                                    Copy Link
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => revokeInviteMutation.mutate(invite.id)}
+                                    className="text-destructive focus:text-destructive"
+                                    disabled={revokeInviteMutation.isPending}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Revoke
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Add/Edit Dialog */}
       <Dialog open={formDialogOpen} onOpenChange={setFormDialogOpen}>
@@ -710,6 +995,30 @@ export default function EmployeesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Employee</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>{employeeToDelete?.full_name}</strong>?
+              This will archive the employee record. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleArchive}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={archiveMutation.isPending}
+            >
+              {archiveMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

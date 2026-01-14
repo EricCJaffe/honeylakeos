@@ -181,6 +181,7 @@ export type Database = {
           expires_at: string
           id: string
           role: string
+          sent_at: string | null
           status: string
           token: string
         }
@@ -195,6 +196,7 @@ export type Database = {
           expires_at?: string
           id?: string
           role?: string
+          sent_at?: string | null
           status?: string
           token: string
         }
@@ -209,6 +211,7 @@ export type Database = {
           expires_at?: string
           id?: string
           role?: string
+          sent_at?: string | null
           status?: string
           token?: string
         }
@@ -1245,6 +1248,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_employee_invite: { Args: { p_token: string }; Returns: Json }
       bootstrap_first_site: {
         Args: { p_company_name?: string; p_site_name?: string }
         Returns: Json
@@ -1310,6 +1314,15 @@ export type Database = {
         }[]
       }
       get_default_site_id: { Args: never; Returns: string }
+      get_employee_invite_public: {
+        Args: { p_token: string }
+        Returns: {
+          company_name: string
+          employee_name: string
+          expires_at: string
+          status: string
+        }[]
+      }
       get_table_columns: {
         Args: never
         Returns: {

@@ -2,8 +2,6 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -21,25 +19,62 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
+    // 1. Validate required environment variables
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    const emailFrom = Deno.env.get("EMAIL_FROM");
+    const appUrl = Deno.env.get("APP_URL");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error("Missing Supabase environment variables");
+    if (!resendApiKey) {
+      console.error("RESEND_API_KEY is not set");
+      return new Response(
+        JSON.stringify({ success: false, error: "RESEND_API_KEY is not configured" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
-    // Use service role to read invite data
+    if (!emailFrom) {
+      console.error("EMAIL_FROM is not set");
+      return new Response(
+        JSON.stringify({ success: false, error: "EMAIL_FROM is not configured" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!appUrl) {
+      console.error("APP_URL is not set");
+      return new Response(
+        JSON.stringify({ success: false, error: "APP_URL is not configured" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error("Missing Supabase environment variables");
+      return new Response(
+        JSON.stringify({ success: false, error: "Missing Supabase configuration" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // 2. Initialize clients
+    const resend = new Resend(resendApiKey);
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // 3. Parse request
     const { invite_id }: SendInviteRequest = await req.json();
 
     if (!invite_id) {
-      throw new Error("invite_id is required");
+      return new Response(
+        JSON.stringify({ success: false, error: "invite_id is required" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     console.log("Fetching invite:", invite_id);
 
-    // Fetch invite with employee and company info
+    // 4. Fetch invite with employee and company info using explicit foreign key aliases
     const { data: invite, error: inviteError } = await supabase
       .from("employee_invites")
       .select(`
@@ -48,40 +83,51 @@ serve(async (req: Request): Promise<Response> => {
         token,
         expires_at,
         status,
-        employees!inner(full_name, company_id),
-        companies!inner(name)
+        employee:employees!employee_invites_employee_id_fkey(full_name),
+        company:companies!employee_invites_company_id_fkey(name)
       `)
       .eq("id", invite_id)
       .single();
 
     if (inviteError) {
       console.error("Error fetching invite:", inviteError);
-      throw new Error(`Failed to fetch invite: ${inviteError.message}`);
+      return new Response(
+        JSON.stringify({ success: false, error: `Failed to fetch invite: ${inviteError.message}` }),
+        { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     if (!invite) {
-      throw new Error("Invite not found");
+      return new Response(
+        JSON.stringify({ success: false, error: "Invite not found" }),
+        { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     if (invite.status !== "pending") {
-      throw new Error(`Invite is not pending (status: ${invite.status})`);
+      return new Response(
+        JSON.stringify({ success: false, error: `Invite is not pending (status: ${invite.status})` }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
-    // Extract nested data (Supabase returns objects for singular relations)
-    const employeeData = invite.employees as unknown as { full_name: string; company_id: string };
-    const companyData = invite.companies as unknown as { name: string };
+    // 5. Extract nested data (Supabase returns objects for singular FK relations)
+    const employeeData = invite.employee as { full_name: string } | null;
+    const companyData = invite.company as { name: string } | null;
+
+    const companyName = companyData?.name || "the company";
+    const employeeName = employeeData?.full_name || "there";
 
     console.log("Invite found:", {
       email: invite.email,
-      company: companyData?.name,
-      employee: employeeData?.full_name,
+      company: companyName,
+      employee: employeeName,
     });
 
-    // Build the invite URL
-    const appUrl = Deno.env.get("APP_URL") || "https://bible-link-hub.lovable.app";
+    // 6. Build the invite URL
     const inviteUrl = `${appUrl}/invite?token=${invite.token}`;
 
-    // Format expiry date
+    // 7. Format expiry date
     const expiryDate = new Date(invite.expires_at).toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
@@ -89,12 +135,11 @@ serve(async (req: Request): Promise<Response> => {
       day: "numeric",
     });
 
-    const companyName = companyData?.name || "the company";
-    const employeeName = employeeData?.full_name || "there";
+    // 8. Send email via Resend
+    console.log("Sending email to:", invite.email, "from:", emailFrom);
 
-    // Send email
     const emailResponse = await resend.emails.send({
-      from: "Invitations <onboarding@resend.dev>",
+      from: emailFrom,
       to: [invite.email],
       subject: `You've been invited to join ${companyName}`,
       html: `
@@ -142,21 +187,26 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log("Email sent successfully:", emailResponse);
 
+    // 9. Update sent_at on the invite
+    const { error: updateError } = await supabase
+      .from("employee_invites")
+      .update({ sent_at: new Date().toISOString() })
+      .eq("id", invite_id);
+
+    if (updateError) {
+      console.warn("Failed to update sent_at:", updateError);
+      // Don't fail the request, email was sent
+    }
+
     return new Response(
-      JSON.stringify({ success: true, message: "Invitation email sent" }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      JSON.stringify({ success: true }),
+      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: any) {
     console.error("Error in send-employee-invite-email function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      JSON.stringify({ success: false, error: error.message }),
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 });
