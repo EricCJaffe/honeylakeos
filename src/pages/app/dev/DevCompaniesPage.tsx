@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, Building2, AlertCircle, Bug } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Building2, AlertCircle, Bug, Plus } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -15,6 +16,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { format } from "date-fns";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 interface Company {
   id: string;
@@ -25,38 +28,168 @@ interface Company {
   created_by: string | null;
 }
 
+// Known singleton site ID for dev fallback
+const DEV_FALLBACK_SITE_ID = "52af4137-edb4-45ab-9bfe-cd7cfad2f55d";
+
 export default function DevCompaniesPage() {
   const { user } = useAuth();
-  const { activeCompanyId } = useMembership();
+  const { activeCompanyId, refreshMemberships } = useMembership();
+  const queryClient = useQueryClient();
   const [companies, setCompanies] = React.useState<Company[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [creating, setCreating] = React.useState(false);
   const [error, setError] = React.useState<{ code: string; message: string } | null>(null);
 
-  React.useEffect(() => {
-    async function fetchCompanies() {
-      setLoading(true);
-      setError(null);
+  const fetchCompanies = React.useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-      const { data, error: queryError } = await supabase
-        .from("companies")
-        .select("id,name,status,site_id,created_at,created_by")
-        .order("created_at", { ascending: true });
+    const { data, error: queryError } = await supabase
+      .from("companies")
+      .select("id,name,status,site_id,created_at,created_by")
+      .order("created_at", { ascending: true });
 
-      if (queryError) {
-        setError({
-          code: queryError.code || "UNKNOWN",
-          message: queryError.message,
-        });
-        setCompanies([]);
-      } else {
-        setCompanies(data || []);
-      }
-
-      setLoading(false);
+    if (queryError) {
+      setError({
+        code: queryError.code || "UNKNOWN",
+        message: queryError.message,
+      });
+      setCompanies([]);
+    } else {
+      setCompanies(data || []);
     }
 
-    fetchCompanies();
+    setLoading(false);
   }, []);
+
+  React.useEffect(() => {
+    fetchCompanies();
+  }, [fetchCompanies]);
+
+  // Get default site ID through fallback chain
+  async function getDefaultSiteId(): Promise<string | null> {
+    // 1) Try RPC "get_default_site_id" if it exists
+    try {
+      const { data: rpcData, error: rpcError } = await supabase.rpc("get_default_site_id" as any);
+      if (!rpcError && rpcData) {
+        console.log("[DevCompanies] Got site_id from get_default_site_id RPC:", rpcData);
+        return rpcData as string;
+      }
+    } catch {
+      // RPC doesn't exist, continue
+    }
+
+    // 2) Try getting site_id from an existing company
+    if (companies.length > 0) {
+      console.log("[DevCompanies] Got site_id from existing company:", companies[0].site_id);
+      return companies[0].site_id;
+    }
+
+    // 3) Dev-only fallback: hardcoded singleton site ID
+    if (import.meta.env.DEV) {
+      console.log("[DevCompanies] Using hardcoded fallback site_id:", DEV_FALLBACK_SITE_ID);
+      return DEV_FALLBACK_SITE_ID;
+    }
+
+    return null;
+  }
+
+  async function handleCreateTestCompany() {
+    if (!user?.id) {
+      toast.error("Not authenticated");
+      return;
+    }
+
+    setCreating(true);
+
+    try {
+      // Step 1: Get the site ID
+      const siteId = await getDefaultSiteId();
+      if (!siteId) {
+        toast.error("Could not determine site ID");
+        setCreating(false);
+        return;
+      }
+
+      const timestamp = Date.now();
+      const companyName = `Test Company ${timestamp}`;
+
+      // Step 2: Insert the company
+      const { data: companyData, error: companyError } = await supabase
+        .from("companies")
+        .insert({
+          name: companyName,
+          description: "Dev test company",
+          site_id: siteId,
+          status: "active",
+          created_by: user.id,
+        })
+        .select("id")
+        .single();
+
+      if (companyError) {
+        toast.error(`Company insert failed: [${companyError.code}] ${companyError.message}`);
+        setCreating(false);
+        return;
+      }
+
+      const newCompanyId = companyData.id;
+      console.log("[DevCompanies] Created company:", newCompanyId);
+
+      // Step 3: Insert membership
+      const { error: membershipError } = await supabase
+        .from("memberships")
+        .insert({
+          company_id: newCompanyId,
+          user_id: user.id,
+          role: "company_admin",
+          status: "active",
+          member_type: "internal",
+        });
+
+      if (membershipError) {
+        toast.error(`Membership insert failed: [${membershipError.code}] ${membershipError.message}`);
+        setCreating(false);
+        return;
+      }
+
+      console.log("[DevCompanies] Created membership for user:", user.id);
+
+      // Step 4: Update profile's active_company_id
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ active_company_id: newCompanyId })
+        .eq("user_id", user.id);
+
+      if (profileError) {
+        toast.error(`Profile update failed: [${profileError.code}] ${profileError.message}`);
+        setCreating(false);
+        return;
+      }
+
+      console.log("[DevCompanies] Updated active_company_id in profile");
+
+      // Step 5: Invalidate queries and refresh
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
+      queryClient.invalidateQueries({ queryKey: ["memberships"] });
+      queryClient.invalidateQueries({ queryKey: ["active-company"] });
+
+      // Refresh membership context
+      await refreshMemberships();
+
+      // Refresh local companies list
+      await fetchCompanies();
+
+      toast.success(`Created company: ${newCompanyId}`, {
+        description: companyName,
+      });
+    } catch (err) {
+      console.error("[DevCompanies] Unexpected error:", err);
+      toast.error("Unexpected error during company creation");
+    } finally {
+      setCreating(false);
+    }
+  }
 
   // Only show in dev mode
   if (!import.meta.env.DEV) {
@@ -136,15 +269,30 @@ export default function DevCompaniesPage() {
       {/* Companies Table */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
-            Companies
-            {!loading && !error && (
-              <Badge variant="secondary" className="ml-2">
-                {companies.length} total
-              </Badge>
-            )}
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Companies
+              {!loading && !error && (
+                <Badge variant="secondary" className="ml-2">
+                  {companies.length} total
+                </Badge>
+              )}
+            </CardTitle>
+            <Button
+              onClick={handleCreateTestCompany}
+              disabled={creating || !user?.id}
+              size="sm"
+              className="gap-2"
+            >
+              {creating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
+              Create Test Company
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
