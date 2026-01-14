@@ -1144,7 +1144,7 @@ export type Database = {
         Returns: boolean
       }
       can_delete_group_member: {
-        Args: { p_group_id: string; p_user_id: string }
+        Args: { p_group_id: string; p_target_user_id: string }
         Returns: boolean
       }
       can_delete_membership: {
@@ -1152,7 +1152,11 @@ export type Database = {
         Returns: boolean
       }
       can_update_group_member_role: {
-        Args: { p_group_id: string; p_new_role: string; p_user_id: string }
+        Args: {
+          p_group_id: string
+          p_new_role: string
+          p_target_user_id: string
+        }
         Returns: boolean
       }
       entity_acl_company_id: {
@@ -1183,7 +1187,6 @@ export type Database = {
         }[]
       }
       get_default_site_id: { Args: never; Returns: string }
-      get_group_company_id: { Args: { p_group_id: string }; Returns: string }
       get_table_columns: {
         Args: never
         Returns: {
@@ -1196,7 +1199,10 @@ export type Database = {
       }
       is_company_admin: { Args: { p_company_id: string }; Returns: boolean }
       is_company_member: { Args: { p_company_id: string }; Returns: boolean }
-      is_group_manager: { Args: { p_group_id: string }; Returns: boolean }
+      is_group_manager: {
+        Args: { p_group_id: string; p_user_id: string }
+        Returns: boolean
+      }
       is_site_admin: { Args: { p_site_id: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       promote_self_to_super_admin: { Args: never; Returns: Json }
