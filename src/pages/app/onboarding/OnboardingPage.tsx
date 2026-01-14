@@ -347,10 +347,28 @@ export default function OnboardingPage() {
         });
 
       if (membershipError) {
-        console.warn("[Onboarding] Membership creation warning:", membershipError);
-      } else {
-        console.log("[Onboarding] Membership created");
+        throw new Error(`Failed to create membership. (${membershipError.code}: ${membershipError.message})`);
       }
+
+      console.log("[Onboarding] Membership insert completed, verifying...");
+
+      // Step C.1: Hard verification that membership was actually created
+      const { data: membershipCheck, error: membershipCheckError } = await supabase
+        .from("memberships")
+        .select("id")
+        .eq("company_id", newCompany.id)
+        .eq("user_id", user.id)
+        .limit(1);
+
+      if (membershipCheckError) {
+        throw new Error(`Membership verification failed. (${membershipCheckError.code}: ${membershipCheckError.message})`);
+      }
+
+      if (!membershipCheck || membershipCheck.length === 0) {
+        throw new Error("Membership was not created. Onboarding aborted.");
+      }
+
+      console.log("[Onboarding] Membership verified:", membershipCheck[0].id);
 
       // Step D: Update profile with active_company_id
       const { error: profileError } = await supabase
