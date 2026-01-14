@@ -30,6 +30,8 @@ import NoteDetailPage from "@/pages/app/notes/NoteDetailPage";
 import DocumentsPage from "@/pages/app/documents/DocumentsPage";
 import DocumentDetailPage from "@/pages/app/documents/DocumentDetailPage";
 import FoldersPage from "@/pages/app/folders/FoldersPage";
+import CompanySettingsPage from "@/pages/app/admin/CompanySettingsPage";
+import MembersPage from "@/pages/app/admin/MembersPage";
 import DbCheckPage from "@/pages/app/dev/DbCheckPage";
 import NotFound from "@/pages/NotFound";
 
@@ -93,9 +95,8 @@ function App() {
                     <Route path="workflows" element={<ModulePage />} />
                     <Route path="lms" element={<ModulePage />} />
                     <Route path="settings" element={<ModulePage />} />
-                    <Route path="team" element={<GroupsPage />} />
-                    <Route path="company-settings" element={<ModulePage />} />
-                    <Route path="admin" element={<ModulePage />} />
+                    <Route path="admin/company" element={<CompanySettingsPage />} />
+                    <Route path="admin/members" element={<MembersPage />} />
                     <Route path="admin/companies" element={<ModulePage />} />
                     <Route path="admin/users" element={<ModulePage />} />
                     <Route path="admin/modules" element={<ModulePage />} />

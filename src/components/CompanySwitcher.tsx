@@ -11,10 +11,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useMembership } from "@/lib/membership";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 export function CompanySwitcher() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { memberships, activeCompany, activeCompanyId, setActiveCompany, loading } = useMembership();
   const [switching, setSwitching] = React.useState(false);
 
@@ -24,6 +26,18 @@ export function CompanySwitcher() {
     setSwitching(true);
     try {
       await setActiveCompany(companyId);
+      
+      // Invalidate all company-scoped queries
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["folders"] });
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      queryClient.invalidateQueries({ queryKey: ["groups"] });
+      queryClient.invalidateQueries({ queryKey: ["company-members"] });
+      queryClient.invalidateQueries({ queryKey: ["entity-acl"] });
+      
       toast.success("Switched company");
     } catch (error) {
       toast.error("Failed to switch company");
@@ -52,8 +66,8 @@ export function CompanySwitcher() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="ghost"
-          className="flex items-center gap-2 h-9 px-3"
+          variant="outline"
+          className="flex items-center gap-2 h-9 px-3 border-border"
           disabled={switching}
         >
           <Building2 className="h-4 w-4 text-muted-foreground" />
@@ -63,7 +77,7 @@ export function CompanySwitcher() {
           <ChevronDown className="h-3 w-3 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-64">
+      <DropdownMenuContent align="start" className="w-64 bg-popover">
         <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
           Switch Company
         </DropdownMenuLabel>
