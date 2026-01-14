@@ -74,44 +74,39 @@ export default function OnboardingPage() {
 
     const results: TestResult[] = [];
 
-    // ===== TEST A: SELECT sites =====
-    console.log("[Test A] Attempting to SELECT sites...");
-    const { data: sitesData, error: sitesError } = await supabase
-      .from("sites")
-      .select("id, created_at")
-      .order("created_at", { ascending: true })
-      .limit(1);
+    // ===== TEST A: Get default site via RPC =====
+    console.log("[Test A] Calling get_default_site_id RPC...");
+    const { data: defaultSiteId, error: rpcError } = await supabase.rpc("get_default_site_id");
 
-    if (sitesError) {
+    if (rpcError) {
       results.push({
-        name: "A) SELECT sites",
+        name: "A) get_default_site_id RPC",
         success: false,
-        message: "Failed to query sites table",
-        details: `Code: ${sitesError.code}, Message: ${sitesError.message}, Hint: ${sitesError.hint || "none"}`,
+        message: "Failed to call get_default_site_id",
+        details: `Code: ${rpcError.code}, Message: ${rpcError.message}, Hint: ${rpcError.hint || "none"}`,
       });
-      console.error("[Test A] FAILED:", sitesError);
-    } else if (!sitesData || sitesData.length === 0) {
+      console.error("[Test A] FAILED:", rpcError);
+    } else if (!defaultSiteId) {
       results.push({
-        name: "A) SELECT sites",
+        name: "A) get_default_site_id RPC",
         success: false,
-        message: "No sites found in database",
+        message: "No active site exists",
         details: "The platform needs to be bootstrapped by an administrator first.",
       });
-      console.warn("[Test A] No sites found");
+      console.warn("[Test A] No site found");
     } else {
-      const siteId = sitesData[0].id;
-      setDetectedSiteId(siteId);
+      setDetectedSiteId(defaultSiteId);
       results.push({
-        name: "A) SELECT sites",
+        name: "A) get_default_site_id RPC",
         success: true,
-        message: `Found site: ${siteId.slice(0, 8)}...`,
-        details: `created_at: ${sitesData[0].created_at}`,
+        message: `Found site: ${defaultSiteId.slice(0, 8)}...`,
+        details: `Site ID: ${defaultSiteId}`,
       });
-      console.log("[Test A] SUCCESS:", sitesData[0]);
+      console.log("[Test A] SUCCESS:", defaultSiteId);
     }
 
     // Get siteId for subsequent tests
-    const testSiteId = sitesData?.[0]?.id;
+    const testSiteId = defaultSiteId;
 
     // ===== TEST B: INSERT companies (keep for Test C) =====
     let testCompanyId: string | null = null;
@@ -294,7 +289,7 @@ export default function OnboardingPage() {
     setError(null);
 
     try {
-      // Step A: Find an existing site - DO NOT create sites or site_memberships
+      // Step A: Find an existing site using the secure RPC
       let siteId: string | null = null;
 
       if (siteMemberships.length > 0) {
@@ -302,25 +297,21 @@ export default function OnboardingPage() {
         console.log("[Onboarding] Using site from siteMemberships:", siteId);
       }
 
-      // If no site membership, query for the default (oldest) site
+      // If no site membership, use the secure RPC to get the default site
       if (!siteId) {
-        const { data: existingSites, error: siteQueryError } = await supabase
-          .from("sites")
-          .select("id")
-          .order("created_at", { ascending: true })
-          .limit(1);
+        const { data: defaultSiteId, error: rpcError } = await supabase.rpc("get_default_site_id");
 
-        if (siteQueryError) {
-          console.error("[Onboarding] Site query error:", siteQueryError);
-          throw new Error(`Unable to verify platform configuration. (${siteQueryError.code}: ${siteQueryError.message})`);
+        if (rpcError) {
+          console.error("[Onboarding] get_default_site_id error:", rpcError);
+          throw new Error(`Unable to verify platform configuration. (${rpcError.code}: ${rpcError.message})`);
         }
 
-        if (!existingSites || existingSites.length === 0) {
-          throw new Error("No site exists yet. Ask an administrator to bootstrap the platform.");
+        if (!defaultSiteId) {
+          throw new Error("No active site exists. Ask an administrator to bootstrap the platform.");
         }
 
-        siteId = existingSites[0].id;
-        console.log("[Onboarding] Using site from query:", siteId);
+        siteId = defaultSiteId;
+        console.log("[Onboarding] Using site from RPC:", siteId);
       }
 
       // Step B: Create the company under the existing site

@@ -1171,6 +1171,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_default_site_id: { Args: never; Returns: string }
       get_table_columns: {
         Args: never
         Returns: {
