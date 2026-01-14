@@ -606,6 +606,35 @@ export type Database = {
           },
         ]
       }
+      location_members: {
+        Row: {
+          created_at: string
+          location_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          location_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          location_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_members_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       locations: {
         Row: {
           address_line1: string | null
@@ -1265,6 +1294,10 @@ export type Database = {
         Args: { p_group_id: string; p_target_user_id: string }
         Returns: boolean
       }
+      can_delete_location_member: {
+        Args: { p_location_id: string; p_target_user_id: string }
+        Returns: boolean
+      }
       can_delete_membership: {
         Args: { p_membership_id: string }
         Returns: boolean
@@ -1272,6 +1305,14 @@ export type Database = {
       can_update_group_member_role: {
         Args: {
           p_group_id: string
+          p_new_role: string
+          p_target_user_id: string
+        }
+        Returns: boolean
+      }
+      can_update_location_member_role: {
+        Args: {
+          p_location_id: string
           p_new_role: string
           p_target_user_id: string
         }
@@ -1337,6 +1378,10 @@ export type Database = {
       is_company_member: { Args: { p_company_id: string }; Returns: boolean }
       is_group_manager: {
         Args: { p_group_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      is_location_manager: {
+        Args: { p_location_id: string; p_user_id: string }
         Returns: boolean
       }
       is_site_admin: { Args: { p_site_id: string }; Returns: boolean }

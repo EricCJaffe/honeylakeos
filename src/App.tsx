@@ -25,6 +25,7 @@ import ProjectDetailPage from "@/pages/app/projects/ProjectDetailPage";
 import TasksPage from "@/pages/app/tasks/TasksPage";
 import CalendarPage from "@/pages/app/calendar/CalendarPage";
 import GroupsPage from "@/pages/app/groups/GroupsPage";
+import LocationsPage from "@/pages/app/locations/LocationsPage";
 import NotesPage from "@/pages/app/notes/NotesPage";
 import NoteDetailPage from "@/pages/app/notes/NoteDetailPage";
 import DocumentsPage from "@/pages/app/documents/DocumentsPage";
@@ -101,6 +102,7 @@ function App() {
                     <Route path="tasks" element={<TasksPage />} />
                     <Route path="calendar" element={<CalendarPage />} />
                     <Route path="org/groups" element={<GroupsPage />} />
+                    <Route path="org/locations" element={<LocationsPage />} />
                     <Route path="groups" element={<GroupsPage />} /> {/* Legacy route alias */}
                     <Route path="notes" element={<NotesPage />} />
                     <Route path="notes/:noteId" element={<NoteDetailPage />} />

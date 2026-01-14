@@ -18,6 +18,7 @@ import {
   KeyRound,
   Boxes,
   Rocket,
+  MapPin,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Logo } from "@/components/Logo";
@@ -57,6 +58,7 @@ const automationNavItems = [
 
 const orgNavItems = [
   { title: "Groups", url: "/app/org/groups", icon: Users },
+  { title: "Locations", url: "/app/org/locations", icon: MapPin },
 ];
 
 const companyAdminItems = [
