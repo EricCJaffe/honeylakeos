@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Users, MoreHorizontal, Pencil, Trash2, UserPlus, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
+import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,8 +25,13 @@ import type { Tables } from "@/integrations/supabase/types";
 
 type Group = Tables<"groups">;
 
+interface GroupWithMembers extends Group {
+  group_members: { user_id: string; role: string }[];
+}
+
 export default function GroupsPage() {
   const { activeCompanyId, isCompanyAdmin, loading: membershipLoading } = useActiveCompany();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
@@ -40,16 +46,29 @@ export default function GroupsPage() {
         .from("groups")
         .select(`
           *,
-          group_members(user_id)
+          group_members(user_id, role)
         `)
         .eq("company_id", activeCompanyId)
         .order("name", { ascending: true });
 
       if (error) throw error;
-      return data;
+      return data as GroupWithMembers[];
     },
     enabled: !!activeCompanyId,
   });
+
+  // Check if current user is a manager of a specific group
+  const isGroupManager = (group: GroupWithMembers) => {
+    if (!user) return false;
+    return group.group_members?.some(
+      (m) => m.user_id === user.id && m.role === "manager"
+    );
+  };
+
+  // Can manage members if company admin OR group manager
+  const canManageMembers = (group: GroupWithMembers) => {
+    return isCompanyAdmin || isGroupManager(group);
+  };
 
   const filteredGroups = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -179,7 +198,7 @@ export default function GroupsPage() {
                         </Badge>
                       </div>
                     </div>
-                    {isCompanyAdmin && (
+                    {(isCompanyAdmin || canManageMembers(group)) && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -191,21 +210,27 @@ export default function GroupsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleManageMembers(group)}>
-                            <UserPlus className="h-4 w-4 mr-2" />
-                            Manage Members
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEdit(group)}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => deleteGroup.mutate(group.id)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
+                          {canManageMembers(group) && (
+                            <DropdownMenuItem onClick={() => handleManageMembers(group)}>
+                              <UserPlus className="h-4 w-4 mr-2" />
+                              Manage Members
+                            </DropdownMenuItem>
+                          )}
+                          {isCompanyAdmin && (
+                            <>
+                              <DropdownMenuItem onClick={() => handleEdit(group)}>
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => deleteGroup.mutate(group.id)}
+                                className="text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}
