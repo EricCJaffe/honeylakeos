@@ -19,6 +19,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
+import { usePhaseTemplates } from "@/hooks/useProjectPhases";
 
 const projectSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -39,6 +41,7 @@ const projectSchema = z.object({
   status: z.string().default("active"),
   emoji: z.string().default("📋"),
   color: z.string().default("#2563eb"),
+  phase_template_id: z.string().optional().nullable(),
 });
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
@@ -67,6 +70,9 @@ export function ProjectFormDialog({
   const queryClient = useQueryClient();
   const isEditing = !!project;
 
+  // Fetch phase templates for new project creation
+  const { data: phaseTemplates = [] } = usePhaseTemplates();
+
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
@@ -75,6 +81,7 @@ export function ProjectFormDialog({
       status: "active",
       emoji: "📋",
       color: "#2563eb",
+      phase_template_id: null,
     },
   });
 
@@ -86,6 +93,7 @@ export function ProjectFormDialog({
         status: project.status,
         emoji: project.emoji,
         color: project.color,
+        phase_template_id: null,
       });
     } else {
       form.reset({
@@ -94,6 +102,7 @@ export function ProjectFormDialog({
         status: "active",
         emoji: "📋",
         color: "#2563eb",
+        phase_template_id: null,
       });
     }
   }, [project, form]);
@@ -115,21 +124,49 @@ export function ProjectFormDialog({
           .eq("id", project.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("projects").insert({
-          company_id: activeCompanyId,
-          owner_user_id: user.id,
-          name: values.name,
-          description: values.description || null,
-          status: values.status,
-          emoji: values.emoji,
-          color: values.color,
-          created_by: user.id,
-        });
+        // Create project
+        const { data: newProject, error } = await supabase
+          .from("projects")
+          .insert({
+            company_id: activeCompanyId,
+            owner_user_id: user.id,
+            name: values.name,
+            description: values.description || null,
+            status: values.status,
+            emoji: values.emoji,
+            color: values.color,
+            created_by: user.id,
+          })
+          .select()
+          .single();
         if (error) throw error;
+
+        // If a phase template is selected, create phases from it
+        if (values.phase_template_id && newProject) {
+          const template = phaseTemplates.find((t) => t.id === values.phase_template_id);
+          if (template && Array.isArray(template.phases) && template.phases.length > 0) {
+            const phasesToInsert = template.phases.map((p: { name: string; sort_order: number }) => ({
+              company_id: activeCompanyId,
+              project_id: newProject.id,
+              name: p.name,
+              sort_order: p.sort_order,
+              created_by: user.id,
+            }));
+
+            const { error: phaseError } = await supabase
+              .from("project_phases")
+              .insert(phasesToInsert);
+            if (phaseError) {
+              console.error("Failed to create phases:", phaseError);
+              // Don't throw - project is already created
+            }
+          }
+        }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["project-phases"] });
       toast.success(isEditing ? "Project updated" : "Project created");
       onOpenChange(false);
       form.reset();
@@ -232,6 +269,40 @@ export function ProjectFormDialog({
                 </FormItem>
               )}
             />
+
+            {/* Phase Template - only for new projects */}
+            {!isEditing && phaseTemplates.length > 0 && (
+              <FormField
+                control={form.control}
+                name="phase_template_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phase Template</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || undefined}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select template (optional)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {phaseTemplates.map((template) => (
+                          <SelectItem key={template.id} value={template.id}>
+                            {template.name} ({template.phases.length} phases)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Pre-populate project with phases from a template
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <div className="flex justify-end gap-2 pt-4">
               <Button

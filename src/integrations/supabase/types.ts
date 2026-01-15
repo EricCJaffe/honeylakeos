@@ -1179,6 +1179,89 @@ export type Database = {
           },
         ]
       }
+      project_phase_templates: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          phases: Json
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          phases?: Json
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          phases?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_phase_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_phases: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          project_id: string
+          sort_order: number
+          status: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          project_id: string
+          sort_order?: number
+          status?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          project_id?: string
+          sort_order?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_phases_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_phases_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           color: string
@@ -1481,6 +1564,7 @@ export type Database = {
           order_index: number
           parent_recurring_task_id: string | null
           phase: string | null
+          phase_id: string | null
           priority: string
           project_id: string | null
           recurrence_count: number | null
@@ -1516,6 +1600,7 @@ export type Database = {
           order_index?: number
           parent_recurring_task_id?: string | null
           phase?: string | null
+          phase_id?: string | null
           priority?: string
           project_id?: string | null
           recurrence_count?: number | null
@@ -1551,6 +1636,7 @@ export type Database = {
           order_index?: number
           parent_recurring_task_id?: string | null
           phase?: string | null
+          phase_id?: string | null
           priority?: string
           project_id?: string | null
           recurrence_count?: number | null
@@ -1585,6 +1671,13 @@ export type Database = {
             columns: ["parent_recurring_task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "project_phases"
             referencedColumns: ["id"]
           },
           {

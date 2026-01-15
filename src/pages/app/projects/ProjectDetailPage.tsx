@@ -2,7 +2,7 @@ import * as React from "react";
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { FolderKanban, Users, CheckCircle2, Calendar } from "lucide-react";
+import { FolderKanban, Users, CheckCircle2, Calendar, Layers } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,9 +11,10 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
-import { TaskList } from "../tasks/TaskList";
 import { TaskFormDialog } from "../tasks/TaskFormDialog";
 import { EntityLinksPanel } from "@/components/EntityLinksPanel";
+import { PhasesManager } from "@/components/projects/PhasesManager";
+import { PhaseGroupedTaskList } from "@/components/projects/PhaseGroupedTaskList";
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -156,17 +157,26 @@ export default function ProjectDetailPage() {
       <Tabs defaultValue="tasks" className="space-y-4">
         <TabsList>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="phases">Phases</TabsTrigger>
           <TabsTrigger value="members">Members</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tasks">
           <Card>
             <CardContent className="p-0">
-              <TaskList
+              <PhaseGroupedTaskList
                 tasks={tasks}
-                projectId={projectId}
+                projectId={projectId!}
                 onAddTask={() => setIsTaskDialogOpen(true)}
               />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="phases">
+          <Card>
+            <CardContent className="py-6">
+              <PhasesManager projectId={projectId!} />
             </CardContent>
           </Card>
         </TabsContent>
