@@ -65,6 +65,7 @@ const companyAdminItems = [
   { title: "Company Settings", url: "/app/admin/company", icon: Building2 },
   { title: "Members", url: "/app/admin/members", icon: UserCog },
   { title: "Employees", url: "/app/admin/employees", icon: Briefcase },
+  { title: "Audit Log", url: "/app/admin/audit-log", icon: Shield },
 ];
 
 const siteAdminItems = [
