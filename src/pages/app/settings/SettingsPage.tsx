@@ -169,8 +169,9 @@ export default function SettingsPage() {
 
     setIsUploadingAvatar(true);
     try {
-      const fileExt = file.name.split(".").pop();
-      const filePath = `${user.id}/avatar.${fileExt}`;
+      const fileExt = file.name.split(".").pop()?.toLowerCase() || "png";
+      const timestamp = Date.now();
+      const filePath = `${user.id}/${timestamp}.${fileExt}`;
 
       // Upload to storage
       const { error: uploadError } = await supabase.storage
