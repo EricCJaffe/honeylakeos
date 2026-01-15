@@ -1,22 +1,20 @@
-import * as React from "react";
 import { useEffect, useRef } from "react";
 import { useMembership } from "@/lib/membership";
 import { useQueryClient } from "@tanstack/react-query";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Building2,
   UserCog,
   Briefcase,
-  Shield,
   ShieldCheck,
   Users,
   MapPin,
-  Settings,
   ClipboardList,
+  Boxes,
 } from "lucide-react";
 
 // Import embedded panel components
@@ -26,6 +24,7 @@ import EmployeesPanel from "./company-console/EmployeesPanel";
 import AuditLogPanel from "./company-console/AuditLogPanel";
 import GroupsPanel from "./company-console/GroupsPanel";
 import LocationsPanel from "./company-console/LocationsPanel";
+import CompanyModulesPanel from "./company-console/ModulesPanel";
 
 const adminSections = [
   {
@@ -59,6 +58,12 @@ const adminSections = [
     description: "Manage physical locations, offices, and assign location managers.",
   },
   {
+    id: "modules",
+    label: "Modules",
+    icon: Boxes,
+    description: "Enable or disable feature modules for your company.",
+  },
+  {
     id: "audit",
     label: "Audit Logs",
     icon: ClipboardList,
@@ -78,6 +83,8 @@ export default function CompanyConsolePage() {
       // Clear all company-scoped queries
       queryClient.invalidateQueries({ queryKey: ["company-settings"] });
       queryClient.invalidateQueries({ queryKey: ["company-members"] });
+      queryClient.invalidateQueries({ queryKey: ["company-modules"] });
+      queryClient.invalidateQueries({ queryKey: ["company-module"] });
       queryClient.invalidateQueries({ queryKey: ["employees"] });
       queryClient.invalidateQueries({ queryKey: ["groups"] });
       queryClient.invalidateQueries({ queryKey: ["locations"] });
@@ -160,6 +167,7 @@ export default function CompanyConsolePage() {
             {section.id === "employees" && <EmployeesPanel />}
             {section.id === "groups" && <GroupsPanel />}
             {section.id === "locations" && <LocationsPanel />}
+            {section.id === "modules" && <CompanyModulesPanel />}
             {section.id === "audit" && <AuditLogPanel />}
           </TabsContent>
         ))}

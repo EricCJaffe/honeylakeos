@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { useActiveCompany } from "@/hooks/useActiveCompany";
 import type { Json } from "@/integrations/supabase/types";
 
 type AuditAction =
@@ -46,7 +47,14 @@ type AuditAction =
   | "membership.deleted"
   // Company actions
   | "company.created"
-  | "company.updated";
+  | "company.updated"
+  // Module actions
+  | "module.enabled"
+  | "module.disabled"
+  // Template actions
+  | "template.created"
+  | "template.updated"
+  | "template.deactivated";
 
 type EntityType =
   | "employee"
@@ -57,7 +65,9 @@ type EntityType =
   | "location"
   | "location_member"
   | "membership"
-  | "company";
+  | "company"
+  | "company_module"
+  | "template";
 
 interface LogAuditEventParams {
   companyId: string;
@@ -99,8 +109,12 @@ export async function logAuditEvent({
 
 /**
  * Hook that provides audit logging bound to the active company.
+ * Can be called with a specific companyId or will use the active company.
  */
-export function useAuditLog(companyId: string | null) {
+export function useAuditLog(providedCompanyId?: string | null) {
+  const { activeCompanyId } = useActiveCompany();
+  const companyId = providedCompanyId ?? activeCompanyId;
+
   const log = async (
     action: AuditAction,
     entityType: EntityType,
