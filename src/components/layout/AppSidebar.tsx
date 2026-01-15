@@ -85,6 +85,7 @@ const devItems = [
   { title: "Bootstrap", url: "/app/dev/bootstrap", icon: Rocket },
   { title: "Companies (Dev)", url: "/app/dev/companies", icon: Building2 },
   { title: "RLS Test", url: "/app/dev/rls-test", icon: Shield },
+  { title: "Deferred Tasks", url: "/app/dev/deferred", icon: ListTodo },
 ];
 
 export function AppSidebar() {

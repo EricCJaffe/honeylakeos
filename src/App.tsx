@@ -37,7 +37,8 @@ import MembersPage from "@/pages/app/admin/MembersPage";
 import EmployeesPage from "@/pages/app/admin/EmployeesPage";
 import AuditLogPage from "@/pages/app/admin/AuditLogPage";
 import PermissionsCheckPage from "@/pages/app/admin/PermissionsCheckPage";
-import DeferredTasksPage from "@/pages/app/admin/DeferredTasksPage";
+import AdminDeferredTasksPage from "@/pages/app/admin/DeferredTasksPage";
+import DevDeferredTasksPage from "@/pages/app/dev/DeferredTasksPage";
 import InvitePage from "@/pages/app/InvitePage";
 import SitesPage from "@/pages/app/admin/SitesPage";
 import CompaniesPage from "@/pages/app/admin/CompaniesPage";
@@ -124,7 +125,7 @@ function App() {
                     <Route path="admin/employees" element={<EmployeesPage />} />
                     <Route path="admin/audit-log" element={<AuditLogPage />} />
                     <Route path="admin/permissions-check" element={<PermissionsCheckPage />} />
-                    <Route path="admin/deferred" element={<DeferredTasksPage />} />
+                    <Route path="admin/deferred" element={<AdminDeferredTasksPage />} />
                     <Route path="admin/sites" element={<SitesPage />} />
                     <Route path="admin/companies" element={<CompaniesPage />} />
                     <Route path="admin/users" element={<UsersPage />} />
@@ -134,6 +135,7 @@ function App() {
                     <Route path="dev/bootstrap" element={<BootstrapPage />} />
                     <Route path="dev/companies" element={<DevCompaniesPage />} />
                     <Route path="dev/rls-test" element={<RlsTestPage />} />
+                    <Route path="dev/deferred" element={<DevDeferredTasksPage />} />
                   </Route>
                   
                   {/* Catch all */}
