@@ -350,6 +350,50 @@ export type Database = {
         }
         Relationships: []
       }
+      entity_links: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string
+          from_id: string
+          from_type: string
+          id: string
+          link_type: string
+          to_id: string
+          to_type: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by: string
+          from_id: string
+          from_type: string
+          id?: string
+          link_type?: string
+          to_id: string
+          to_type: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          from_id?: string
+          from_type?: string
+          id?: string
+          link_type?: string
+          to_id?: string
+          to_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_links_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_attendees: {
         Row: {
           created_at: string
@@ -1392,6 +1436,18 @@ export type Database = {
           token: string
         }[]
       }
+      create_entity_link: {
+        Args: {
+          p_company_id: string
+          p_from_id: string
+          p_from_type: string
+          p_link_type?: string
+          p_to_id: string
+          p_to_type: string
+        }
+        Returns: string
+      }
+      delete_entity_link: { Args: { p_link_id: string }; Returns: boolean }
       entity_acl_company_id: {
         Args: { p_entity_id: string; p_entity_type: string }
         Returns: string
@@ -1428,6 +1484,10 @@ export type Database = {
           expires_at: string
           status: string
         }[]
+      }
+      get_entity_company_id: {
+        Args: { p_entity_id: string; p_entity_type: string }
+        Returns: string
       }
       get_table_columns: {
         Args: never

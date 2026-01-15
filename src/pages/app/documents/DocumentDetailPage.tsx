@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { DocumentFormDialog } from "./DocumentFormDialog";
 import { ShareDialog } from "@/components/ShareDialog";
 import { LinkDocumentDialog } from "@/components/LinkDocumentDialog";
+import { EntityLinksPanel } from "@/components/EntityLinksPanel";
 
 export default function DocumentDetailPage() {
   const { documentId } = useParams<{ documentId: string }>();
@@ -184,6 +185,11 @@ export default function DocumentDetailPage() {
           </>
         )}
       </PageHeader>
+
+      {/* Universal Links */}
+      <div className="mb-6">
+        <EntityLinksPanel entityType="document" entityId={document.id} />
+      </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Document Info */}

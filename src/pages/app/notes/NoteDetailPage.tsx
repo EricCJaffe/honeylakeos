@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { ArrowLeft, Pencil, Trash2, Share2, Lock, Users } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Share2, Lock, Users, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
@@ -16,7 +16,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { NoteFormDialog } from "./NoteFormDialog";
 import { ShareDialog } from "@/components/ShareDialog";
-import { MessageSquare } from "lucide-react";
+import { EntityLinksPanel } from "@/components/EntityLinksPanel";
 
 export default function NoteDetailPage() {
   const { noteId } = useParams<{ noteId: string }>();
@@ -162,6 +162,11 @@ export default function NoteDetailPage() {
         <span className="text-sm text-muted-foreground">
           Last updated {format(new Date(note.updated_at), "MMM d, yyyy 'at' h:mm a")}
         </span>
+      </div>
+
+      {/* Links */}
+      <div className="mb-6">
+        <EntityLinksPanel entityType="note" entityId={note.id} />
       </div>
 
       <Card
