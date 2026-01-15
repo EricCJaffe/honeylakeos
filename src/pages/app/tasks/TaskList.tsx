@@ -1,7 +1,8 @@
 import * as React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { CheckCircle2, Circle, MoreHorizontal, Pencil, Calendar, ArrowRight } from "lucide-react";
+import { CheckCircle2, Circle, MoreHorizontal, Pencil, Calendar, Repeat } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ export function TaskList({
   showProject = false,
 }: TaskListProps) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const toggleStatus = useMutation({
     mutationFn: async ({ taskId, currentStatus }: { taskId: string; currentStatus: string }) => {
@@ -98,14 +100,16 @@ export function TaskList({
             <div
               key={task.id}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 border-b last:border-b-0 hover:bg-muted/50 transition-colors group",
+                "flex items-center gap-3 px-4 py-3 border-b last:border-b-0 hover:bg-muted/50 transition-colors group cursor-pointer",
                 task.status === "done" && "opacity-60"
               )}
+              onClick={() => navigate(`/app/tasks/${task.id}`)}
             >
               <button
-                onClick={() =>
-                  toggleStatus.mutate({ taskId: task.id, currentStatus: task.status })
-                }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleStatus.mutate({ taskId: task.id, currentStatus: task.status });
+                }}
                 className="shrink-0 text-muted-foreground hover:text-primary transition-colors"
               >
                 {task.status === "done" ? (
@@ -125,6 +129,9 @@ export function TaskList({
                   >
                     {task.title}
                   </span>
+                  {task.is_recurring_template && (
+                    <Repeat className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   {showProject && task.project && (
@@ -152,12 +159,16 @@ export function TaskList({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEditTask(task)}>
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation();
+                      onEditTask(task);
+                    }}>
                       <Pencil className="h-4 w-4 mr-2" />
                       Edit
                     </DropdownMenuItem>

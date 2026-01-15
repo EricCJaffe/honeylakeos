@@ -40,6 +40,12 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  RecurrenceSelector,
+  RecurrenceConfig,
+  configToRRule,
+  rruleToConfig,
+} from "@/components/tasks/RecurrenceSelector";
 
 const taskSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -57,6 +63,7 @@ interface TaskFormDialogProps {
   onOpenChange: (open: boolean) => void;
   task?: any;
   projectId?: string;
+  editMode?: "single" | "series"; // For recurring tasks
 }
 
 const statuses = [
@@ -77,11 +84,15 @@ export function TaskFormDialog({
   onOpenChange,
   task,
   projectId,
+  editMode = "series",
 }: TaskFormDialogProps) {
   const { activeCompanyId } = useActiveCompany();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const isEditing = !!task;
+
+  // Recurrence state
+  const [recurrenceConfig, setRecurrenceConfig] = React.useState<RecurrenceConfig | null>(null);
 
   // Fetch projects for dropdown
   const { data: projects = [] } = useQuery({
@@ -122,6 +133,12 @@ export function TaskFormDialog({
         due_date: task.due_date ? new Date(task.due_date) : null,
         project_id: task.project_id || null,
       });
+      // Load recurrence config if exists
+      if (task.recurrence_rules) {
+        setRecurrenceConfig(rruleToConfig(task.recurrence_rules, task.recurrence_timezone));
+      } else {
+        setRecurrenceConfig(null);
+      }
     } else {
       form.reset({
         title: "",
@@ -131,12 +148,16 @@ export function TaskFormDialog({
         due_date: null,
         project_id: projectId || null,
       });
+      setRecurrenceConfig(null);
     }
   }, [task, projectId, form]);
 
   const mutation = useMutation({
     mutationFn: async (values: TaskFormValues) => {
       if (!activeCompanyId || !user) throw new Error("Missing context");
+
+      const rrule = configToRRule(recurrenceConfig);
+      const isRecurring = !!rrule;
 
       const taskData = {
         title: values.title,
@@ -145,14 +166,39 @@ export function TaskFormDialog({
         priority: values.priority,
         due_date: values.due_date ? format(values.due_date, "yyyy-MM-dd") : null,
         project_id: values.project_id || null,
+        recurrence_rules: rrule,
+        recurrence_timezone: recurrenceConfig?.timezone || "America/New_York",
+        is_recurring_template: isRecurring,
+        recurrence_start_at: isRecurring && values.due_date 
+          ? values.due_date.toISOString() 
+          : null,
+        recurrence_end_at: recurrenceConfig?.endDate 
+          ? recurrenceConfig.endDate.toISOString() 
+          : null,
+        recurrence_count: recurrenceConfig?.endCount || null,
       };
 
       if (isEditing && task) {
-        const { error } = await supabase
-          .from("tasks")
-          .update(taskData)
-          .eq("id", task.id);
-        if (error) throw error;
+        // If editing a single occurrence, create an override
+        if (editMode === "single" && task.is_recurring_template) {
+          const { error } = await supabase.rpc("create_task_occurrence_override", {
+            p_series_task_id: task.id,
+            p_occurrence_start_at: task.recurrence_start_at || new Date().toISOString(),
+            p_title: values.title,
+            p_description: values.description || null,
+            p_due_date: values.due_date ? format(values.due_date, "yyyy-MM-dd") : null,
+            p_priority: values.priority,
+            p_status: values.status,
+          });
+          if (error) throw error;
+        } else {
+          // Update the entire series or regular task
+          const { error } = await supabase
+            .from("tasks")
+            .update(taskData)
+            .eq("id", task.id);
+          if (error) throw error;
+        }
       } else {
         const { error } = await supabase.from("tasks").insert({
           ...taskData,
@@ -166,9 +212,12 @@ export function TaskFormDialog({
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["project-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["recurring-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["task-occurrences"] });
       toast.success(isEditing ? "Task updated" : "Task created");
       onOpenChange(false);
       form.reset();
+      setRecurrenceConfig(null);
     },
     onError: (error) => {
       toast.error(error.message || "Something went wrong");
@@ -179,11 +228,19 @@ export function TaskFormDialog({
     mutation.mutate(values);
   };
 
+  const dueDate = form.watch("due_date");
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Task" : "New Task"}</DialogTitle>
+          <DialogTitle>
+            {isEditing 
+              ? editMode === "single" 
+                ? "Edit This Occurrence" 
+                : "Edit Task" 
+              : "New Task"}
+          </DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -339,6 +396,18 @@ export function TaskFormDialog({
                 </FormItem>
               )}
             />
+
+            {/* Recurrence - only show when creating new or editing series */}
+            {editMode === "series" && (
+              <div className="space-y-2">
+                <FormLabel>Repeat</FormLabel>
+                <RecurrenceSelector
+                  value={recurrenceConfig}
+                  onChange={setRecurrenceConfig}
+                  startDate={dueDate || undefined}
+                />
+              </div>
+            )}
 
             <div className="flex justify-end gap-2 pt-4">
               <Button
