@@ -24,7 +24,9 @@ import ModulePage from "@/pages/app/ModulePage";
 import ProjectsPage from "@/pages/app/projects/ProjectsPage";
 import ProjectDetailPage from "@/pages/app/projects/ProjectDetailPage";
 import TasksPage from "@/pages/app/tasks/TasksPage";
+import TaskDetailPage from "@/pages/app/tasks/TaskDetailPage";
 import CalendarPage from "@/pages/app/calendar/CalendarPage";
+import EventDetailPage from "@/pages/app/calendar/EventDetailPage";
 import GroupsPage from "@/pages/app/groups/GroupsPage";
 import LocationsPage from "@/pages/app/locations/LocationsPage";
 import NotesPage from "@/pages/app/notes/NotesPage";
@@ -108,7 +110,9 @@ function App() {
                     <Route path="projects" element={<ModuleGuard moduleKey="projects" moduleName="Projects"><ProjectsPage /></ModuleGuard>} />
                     <Route path="projects/:projectId" element={<ModuleGuard moduleKey="projects" moduleName="Projects"><ProjectDetailPage /></ModuleGuard>} />
                     <Route path="tasks" element={<ModuleGuard moduleKey="tasks" moduleName="Tasks"><TasksPage /></ModuleGuard>} />
+                    <Route path="tasks/:taskId" element={<ModuleGuard moduleKey="tasks" moduleName="Tasks"><TaskDetailPage /></ModuleGuard>} />
                     <Route path="calendar" element={<ModuleGuard moduleKey="calendar" moduleName="Calendar"><CalendarPage /></ModuleGuard>} />
+                    <Route path="calendar/:eventId" element={<ModuleGuard moduleKey="calendar" moduleName="Calendar"><EventDetailPage /></ModuleGuard>} />
                     <Route path="org/groups" element={<ModuleGuard moduleKey="groups" moduleName="Groups"><GroupsPage /></ModuleGuard>} />
                     <Route path="org/locations" element={<ModuleGuard moduleKey="locations" moduleName="Locations"><LocationsPage /></ModuleGuard>} />
                     <Route path="groups" element={<ModuleGuard moduleKey="groups" moduleName="Groups"><GroupsPage /></ModuleGuard>} /> {/* Legacy route alias */}

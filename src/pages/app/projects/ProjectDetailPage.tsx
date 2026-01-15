@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { TaskList } from "../tasks/TaskList";
 import { TaskFormDialog } from "../tasks/TaskFormDialog";
+import { EntityLinksPanel } from "@/components/EntityLinksPanel";
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -143,6 +144,13 @@ export default function ProjectDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Links */}
+      {projectId && (
+        <div className="mb-6">
+          <EntityLinksPanel entityType="project" entityId={projectId} />
+        </div>
+      )}
 
       {/* Tabs */}
       <Tabs defaultValue="tasks" className="space-y-4">

@@ -1,0 +1,187 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useActiveCompany } from "./useActiveCompany";
+import { toast } from "sonner";
+
+export type EntityType = "task" | "project" | "note" | "document" | "event";
+export type LinkType = "related" | "blocks" | "depends_on" | "reference";
+
+export interface EntityLink {
+  id: string;
+  company_id: string;
+  from_type: EntityType;
+  from_id: string;
+  to_type: EntityType;
+  to_id: string;
+  link_type: LinkType;
+  created_by: string;
+  created_at: string;
+}
+
+export interface LinkedEntity {
+  link: EntityLink;
+  entity: {
+    id: string;
+    name: string;
+    type: EntityType;
+  };
+}
+
+export function useEntityLinks(entityType: EntityType, entityId: string | undefined) {
+  const { activeCompanyId } = useActiveCompany();
+  const queryClient = useQueryClient();
+
+  const { data: links = [], isLoading } = useQuery({
+    queryKey: ["entity-links", entityType, entityId, activeCompanyId],
+    queryFn: async () => {
+      if (!entityId || !activeCompanyId) return [];
+
+      // Get links where this entity is the source
+      const { data: fromLinks, error: fromError } = await supabase
+        .from("entity_links")
+        .select("*")
+        .eq("company_id", activeCompanyId)
+        .eq("from_type", entityType)
+        .eq("from_id", entityId);
+
+      if (fromError) throw fromError;
+
+      // Get links where this entity is the target
+      const { data: toLinks, error: toError } = await supabase
+        .from("entity_links")
+        .select("*")
+        .eq("company_id", activeCompanyId)
+        .eq("to_type", entityType)
+        .eq("to_id", entityId);
+
+      if (toError) throw toError;
+
+      return [...(fromLinks || []), ...(toLinks || [])] as EntityLink[];
+    },
+    enabled: !!entityId && !!activeCompanyId,
+  });
+
+  const createLink = useMutation({
+    mutationFn: async ({
+      toType,
+      toId,
+      linkType = "related",
+    }: {
+      toType: EntityType;
+      toId: string;
+      linkType?: LinkType;
+    }) => {
+      if (!entityId || !activeCompanyId) throw new Error("Missing entity or company");
+
+      const { data, error } = await supabase.rpc("create_entity_link", {
+        p_company_id: activeCompanyId,
+        p_from_type: entityType,
+        p_from_id: entityId,
+        p_to_type: toType,
+        p_to_id: toId,
+        p_link_type: linkType,
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["entity-links"] });
+      toast.success("Link created");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to create link");
+    },
+  });
+
+  const deleteLink = useMutation({
+    mutationFn: async (linkId: string) => {
+      const { data, error } = await supabase.rpc("delete_entity_link", {
+        p_link_id: linkId,
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["entity-links"] });
+      toast.success("Link removed");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to remove link");
+    },
+  });
+
+  return {
+    links,
+    isLoading,
+    createLink,
+    deleteLink,
+  };
+}
+
+export function useEntitySearch(entityType: EntityType, searchQuery: string) {
+  const { activeCompanyId } = useActiveCompany();
+
+  return useQuery({
+    queryKey: ["entity-search", entityType, searchQuery, activeCompanyId],
+    queryFn: async () => {
+      if (!activeCompanyId || !searchQuery || searchQuery.length < 2) return [];
+
+      let query;
+      switch (entityType) {
+        case "task":
+          query = supabase
+            .from("tasks")
+            .select("id, title")
+            .eq("company_id", activeCompanyId)
+            .ilike("title", `%${searchQuery}%`)
+            .limit(10);
+          break;
+        case "project":
+          query = supabase
+            .from("projects")
+            .select("id, name")
+            .eq("company_id", activeCompanyId)
+            .ilike("name", `%${searchQuery}%`)
+            .limit(10);
+          break;
+        case "note":
+          query = supabase
+            .from("notes")
+            .select("id, title")
+            .eq("company_id", activeCompanyId)
+            .ilike("title", `%${searchQuery}%`)
+            .limit(10);
+          break;
+        case "document":
+          query = supabase
+            .from("documents")
+            .select("id, name")
+            .eq("company_id", activeCompanyId)
+            .ilike("name", `%${searchQuery}%`)
+            .limit(10);
+          break;
+        case "event":
+          query = supabase
+            .from("events")
+            .select("id, title")
+            .eq("company_id", activeCompanyId)
+            .ilike("title", `%${searchQuery}%`)
+            .limit(10);
+          break;
+        default:
+          return [];
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      return (data || []).map((item: Record<string, unknown>) => ({
+        id: item.id as string,
+        name: (item.title || item.name) as string,
+      }));
+    },
+    enabled: !!activeCompanyId && searchQuery.length >= 2,
+  });
+}
