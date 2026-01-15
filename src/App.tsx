@@ -47,6 +47,7 @@ import SiteSettingsPage from "@/pages/app/admin/SiteSettingsPage";
 import DbCheckPage from "@/pages/app/dev/DbCheckPage";
 import BootstrapPage from "@/pages/app/dev/BootstrapPage";
 import DevCompaniesPage from "@/pages/app/dev/DevCompaniesPage";
+import RlsTestPage from "@/pages/app/dev/RlsTestPage";
 import OnboardingPage from "@/pages/app/onboarding/OnboardingPage";
 import MyAccessPage from "@/pages/app/settings/MyAccessPage";
 import NotFound from "@/pages/NotFound";
@@ -132,6 +133,7 @@ function App() {
                     <Route path="dev/db-check" element={<DbCheckPage />} />
                     <Route path="dev/bootstrap" element={<BootstrapPage />} />
                     <Route path="dev/companies" element={<DevCompaniesPage />} />
+                    <Route path="dev/rls-test" element={<RlsTestPage />} />
                   </Route>
                   
                   {/* Catch all */}

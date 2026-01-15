@@ -27,7 +27,10 @@ export function CompanySwitcher() {
     try {
       await setActiveCompany(companyId);
       
-      // Invalidate all company-scoped queries
+      // Clear all queries to ensure no stale data leaks between companies
+      queryClient.clear();
+      
+      // Invalidate membership-related queries to refetch fresh data
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["events"] });
@@ -35,8 +38,11 @@ export function CompanySwitcher() {
       queryClient.invalidateQueries({ queryKey: ["notes"] });
       queryClient.invalidateQueries({ queryKey: ["documents"] });
       queryClient.invalidateQueries({ queryKey: ["groups"] });
+      queryClient.invalidateQueries({ queryKey: ["locations"] });
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
       queryClient.invalidateQueries({ queryKey: ["company-members"] });
       queryClient.invalidateQueries({ queryKey: ["entity-acl"] });
+      queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
       
       toast.success("Switched company");
     } catch (error) {
