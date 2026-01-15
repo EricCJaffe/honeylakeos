@@ -891,13 +891,19 @@ export type Database = {
           active_company_id: string | null
           active_location_id: string | null
           address: string | null
+          address_line1: string | null
+          address_line2: string | null
           avatar_url: string | null
+          city: string | null
+          country: string | null
           created_at: string
           email: string | null
           first_name: string | null
           full_name: string | null
           last_name: string | null
           phone: string | null
+          postal_code: string | null
+          state: string | null
           updated_at: string
           user_id: string
         }
@@ -905,13 +911,19 @@ export type Database = {
           active_company_id?: string | null
           active_location_id?: string | null
           address?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
           avatar_url?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           email?: string | null
           first_name?: string | null
           full_name?: string | null
           last_name?: string | null
           phone?: string | null
+          postal_code?: string | null
+          state?: string | null
           updated_at?: string
           user_id: string
         }
@@ -919,13 +931,19 @@ export type Database = {
           active_company_id?: string | null
           active_location_id?: string | null
           address?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
           avatar_url?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           email?: string | null
           first_name?: string | null
           full_name?: string | null
           last_name?: string | null
           phone?: string | null
+          postal_code?: string | null
+          state?: string | null
           updated_at?: string
           user_id?: string
         }
