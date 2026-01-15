@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import type { Json } from "@/integrations/supabase/types";
 
-type AuditAction =
+export type AuditAction =
   // Employee actions
   | "employee.created"
   | "employee.updated"
@@ -54,9 +54,14 @@ type AuditAction =
   // Template actions
   | "template.created"
   | "template.updated"
-  | "template.deactivated";
+  | "template.deactivated"
+  // Task occurrence actions
+  | "task.occurrence_completed"
+  | "task.occurrence_uncompleted"
+  | "task.occurrence_skipped"
+  | "task.occurrence_overridden_created";
 
-type EntityType =
+export type EntityType =
   | "employee"
   | "employee_invite"
   | "invite"
@@ -67,7 +72,8 @@ type EntityType =
   | "membership"
   | "company"
   | "company_module"
-  | "template";
+  | "template"
+  | "task";
 
 interface LogAuditEventParams {
   companyId: string;
