@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CalendarIcon, Clock } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
@@ -34,6 +34,12 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  RecurrenceSelector,
+  RecurrenceConfig,
+  configToRRule,
+  rruleToConfig,
+} from "@/components/tasks/RecurrenceSelector";
 
 const eventSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -53,6 +59,8 @@ interface EventFormDialogProps {
   onOpenChange: (open: boolean) => void;
   event?: any;
   defaultDate?: Date | null;
+  editMode?: "single" | "series";
+  occurrenceDate?: Date;
 }
 
 const colors = [
@@ -69,11 +77,16 @@ export function EventFormDialog({
   onOpenChange,
   event,
   defaultDate,
+  editMode = "series",
+  occurrenceDate,
 }: EventFormDialogProps) {
   const { activeCompanyId } = useActiveCompany();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const isEditing = !!event;
+
+  // Recurrence state
+  const [recurrenceConfig, setRecurrenceConfig] = React.useState<RecurrenceConfig | null>(null);
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
@@ -102,6 +115,12 @@ export function EventFormDialog({
         location_text: event.location_text || "",
         color: event.color || "#2563eb",
       });
+      // Load recurrence config
+      if (event.recurrence_rules) {
+        setRecurrenceConfig(rruleToConfig(event.recurrence_rules, event.timezone));
+      } else {
+        setRecurrenceConfig(null);
+      }
     } else {
       form.reset({
         title: "",
@@ -113,6 +132,7 @@ export function EventFormDialog({
         location_text: "",
         color: "#2563eb",
       });
+      setRecurrenceConfig(null);
     }
   }, [event, defaultDate, form]);
 
@@ -139,6 +159,9 @@ export function EventFormDialog({
         }
       }
 
+      const rrule = configToRRule(recurrenceConfig);
+      const isRecurring = !!rrule;
+
       const eventData = {
         title: values.title,
         description: values.description || null,
@@ -147,14 +170,39 @@ export function EventFormDialog({
         all_day: values.all_day,
         location_text: values.location_text || null,
         color: values.color || null,
+        recurrence_rules: rrule,
+        timezone: recurrenceConfig?.timezone || "America/New_York",
+        is_recurring_template: isRecurring,
+        recurrence_start_at: isRecurring ? startAt.toISOString() : null,
+        recurrence_end_at: recurrenceConfig?.endDate 
+          ? recurrenceConfig.endDate.toISOString() 
+          : null,
+        recurrence_count: recurrenceConfig?.endCount || null,
       };
 
       if (isEditing && event) {
-        const { error } = await supabase
-          .from("events")
-          .update(eventData)
-          .eq("id", event.id);
-        if (error) throw error;
+        // If editing a single occurrence, create an override
+        if (editMode === "single" && event.is_recurring_template && occurrenceDate) {
+          const { error } = await supabase.rpc("create_event_occurrence_override", {
+            p_series_event_id: event.id,
+            p_occurrence_start_at: occurrenceDate.toISOString(),
+            p_title: values.title,
+            p_description: values.description || null,
+            p_start_at: startAt.toISOString(),
+            p_end_at: endAt?.toISOString() || null,
+            p_all_day: values.all_day,
+            p_location_text: values.location_text || null,
+            p_color: values.color || null,
+          });
+          if (error) throw error;
+        } else {
+          // Update the entire series or regular event
+          const { error } = await supabase
+            .from("events")
+            .update(eventData)
+            .eq("id", event.id);
+          if (error) throw error;
+        }
       } else {
         const { error } = await supabase.from("events").insert({
           ...eventData,
@@ -166,9 +214,13 @@ export function EventFormDialog({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["recurring-events"] });
+      queryClient.invalidateQueries({ queryKey: ["event-occurrences"] });
+      queryClient.invalidateQueries({ queryKey: ["all-event-occurrences"] });
       toast.success(isEditing ? "Event updated" : "Event created");
       onOpenChange(false);
       form.reset();
+      setRecurrenceConfig(null);
     },
     onError: (error) => {
       toast.error(error.message || "Something went wrong");
@@ -180,12 +232,19 @@ export function EventFormDialog({
   };
 
   const allDay = form.watch("all_day");
+  const startDate = form.watch("start_date");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Event" : "New Event"}</DialogTitle>
+          <DialogTitle>
+            {isEditing 
+              ? editMode === "single" 
+                ? "Edit This Event" 
+                : "Edit Event" 
+              : "New Event"}
+          </DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -298,6 +357,18 @@ export function EventFormDialog({
                       <FormMessage />
                     </FormItem>
                   )}
+                />
+              </div>
+            )}
+
+            {/* Recurrence - only show when creating new or editing series */}
+            {editMode === "series" && (
+              <div className="space-y-2">
+                <FormLabel>Repeat</FormLabel>
+                <RecurrenceSelector
+                  value={recurrenceConfig}
+                  onChange={setRecurrenceConfig}
+                  startDate={startDate}
                 />
               </div>
             )}

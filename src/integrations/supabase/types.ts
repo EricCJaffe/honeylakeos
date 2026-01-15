@@ -456,6 +456,100 @@ export type Database = {
           },
         ]
       }
+      event_recurrence_exceptions: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          event_id: string
+          exception_date: string
+          id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          event_id: string
+          exception_date: string
+          id?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          event_id?: string
+          exception_date?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_recurrence_exceptions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_recurrence_exceptions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_recurrence_overrides: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          occurrence_start_at: string
+          override_event_id: string
+          series_event_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          occurrence_start_at: string
+          override_event_id: string
+          series_event_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          occurrence_start_at?: string
+          override_event_id?: string
+          series_event_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_recurrence_overrides_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_recurrence_overrides_override_event_id_fkey"
+            columns: ["override_event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_recurrence_overrides_series_event_id_fkey"
+            columns: ["series_event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           all_day: boolean
@@ -467,6 +561,7 @@ export type Database = {
           description: string | null
           end_at: string | null
           id: string
+          is_recurrence_exception: boolean | null
           is_recurring_template: boolean
           last_generated_at: string | null
           linked_note_id: string | null
@@ -474,9 +569,12 @@ export type Database = {
           location_text: string | null
           parent_recurring_event_id: string | null
           project_id: string | null
+          recurrence_count: number | null
+          recurrence_end_at: string | null
           recurrence_exceptions: Json
           recurrence_instance_at: string | null
           recurrence_rules: string | null
+          recurrence_start_at: string | null
           reminder_minutes: number | null
           start_at: string
           timezone: string
@@ -492,6 +590,7 @@ export type Database = {
           description?: string | null
           end_at?: string | null
           id?: string
+          is_recurrence_exception?: boolean | null
           is_recurring_template?: boolean
           last_generated_at?: string | null
           linked_note_id?: string | null
@@ -499,9 +598,12 @@ export type Database = {
           location_text?: string | null
           parent_recurring_event_id?: string | null
           project_id?: string | null
+          recurrence_count?: number | null
+          recurrence_end_at?: string | null
           recurrence_exceptions?: Json
           recurrence_instance_at?: string | null
           recurrence_rules?: string | null
+          recurrence_start_at?: string | null
           reminder_minutes?: number | null
           start_at: string
           timezone?: string
@@ -517,6 +619,7 @@ export type Database = {
           description?: string | null
           end_at?: string | null
           id?: string
+          is_recurrence_exception?: boolean | null
           is_recurring_template?: boolean
           last_generated_at?: string | null
           linked_note_id?: string | null
@@ -524,9 +627,12 @@ export type Database = {
           location_text?: string | null
           parent_recurring_event_id?: string | null
           project_id?: string | null
+          recurrence_count?: number | null
+          recurrence_end_at?: string | null
           recurrence_exceptions?: Json
           recurrence_instance_at?: string | null
           recurrence_rules?: string | null
+          recurrence_start_at?: string | null
           reminder_minutes?: number | null
           start_at?: string
           timezone?: string
@@ -1556,6 +1662,20 @@ export type Database = {
         }
         Returns: string
       }
+      create_event_occurrence_override: {
+        Args: {
+          p_all_day?: boolean
+          p_color?: string
+          p_description?: string
+          p_end_at?: string
+          p_location_text?: string
+          p_occurrence_start_at: string
+          p_series_event_id: string
+          p_start_at?: string
+          p_title: string
+        }
+        Returns: string
+      }
       create_task_occurrence_override: {
         Args: {
           p_description?: string
@@ -1576,6 +1696,15 @@ export type Database = {
       entity_acl_is_owner: {
         Args: { p_entity_id: string; p_entity_type: string }
         Returns: boolean
+      }
+      expand_event_series: {
+        Args: { p_event_id: string; p_range_end: string; p_range_start: string }
+        Returns: {
+          is_exception: boolean
+          is_override: boolean
+          occurrence_date: string
+          override_event_id: string
+        }[]
       }
       expand_task_series: {
         Args: { p_range_end: string; p_range_start: string; p_task_id: string }
@@ -1653,6 +1782,10 @@ export type Database = {
         Returns: string
       }
       promote_self_to_super_admin: { Args: never; Returns: Json }
+      skip_event_occurrence: {
+        Args: { p_event_id: string; p_occurrence_date: string }
+        Returns: string
+      }
       skip_task_occurrence: {
         Args: { p_occurrence_date: string; p_task_id: string }
         Returns: string
