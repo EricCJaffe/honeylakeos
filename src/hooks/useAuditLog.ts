@@ -9,7 +9,13 @@ type AuditAction =
   | "employee.restored"
   | "employee.deleted"
   | "employee.linked"
-  // Invite actions
+  | "employee.status_changed"
+  // Employee invite actions (dot notation)
+  | "employee.invite.created"
+  | "employee.invite.resent"
+  | "employee.invite.revoked"
+  | "employee.invite.accepted"
+  // Legacy invite actions (keep for backwards compatibility with triggers)
   | "invite.created"
   | "invite.sent"
   | "invite.resent"
@@ -44,6 +50,7 @@ type AuditAction =
 
 type EntityType =
   | "employee"
+  | "employee_invite"
   | "invite"
   | "group"
   | "group_member"

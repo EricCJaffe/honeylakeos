@@ -6,6 +6,7 @@ import { Building2, AlertCircle, Loader2, Rocket, Info, FlaskConical, CheckCircl
 import { useAuth } from "@/lib/auth";
 import { useMembership } from "@/lib/membership";
 import { supabase } from "@/integrations/supabase/client";
+import { logAuditEvent } from "@/hooks/useAuditLog";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -385,6 +386,18 @@ export default function OnboardingPage() {
       // Invalidate queries and refresh memberships
       await queryClient.invalidateQueries();
       await refreshMemberships();
+
+      // Audit log for company creation
+      await logAuditEvent({
+        companyId: newCompany.id,
+        action: "company.created",
+        entityType: "company",
+        entityId: newCompany.id,
+        metadata: {
+          name: companyName.trim(),
+          site_id: siteId,
+        },
+      });
 
       toast.success("Company created successfully!");
       navigate("/app");
