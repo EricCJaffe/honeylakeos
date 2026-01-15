@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          company_id: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          company_id: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          company_id?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           created_at: string
@@ -1386,6 +1427,17 @@ export type Database = {
       }
       is_site_admin: { Args: { p_site_id: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      log_audit_event: {
+        Args: {
+          p_action: string
+          p_actor_user_id?: string
+          p_company_id: string
+          p_entity_id?: string
+          p_entity_type: string
+          p_metadata?: Json
+        }
+        Returns: string
+      }
       promote_self_to_super_admin: { Args: never; Returns: Json }
       storage_path_company_id: {
         Args: { object_name: string }
