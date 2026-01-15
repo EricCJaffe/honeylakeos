@@ -15,11 +15,10 @@ import {
   Briefcase,
   UserCog,
   Shield,
-  Boxes,
-  Rocket,
   MapPin,
   ShieldCheck,
   ListTodo,
+  Terminal,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Logo } from "@/components/Logo";
@@ -69,22 +68,6 @@ const companyAdminItems = [
   { title: "Audit Log", url: "/app/admin/audit-log", icon: Shield },
   { title: "Permissions Check", url: "/app/admin/permissions-check", icon: ShieldCheck },
   { title: "Deferred Tasks", url: "/app/admin/deferred", icon: ListTodo },
-];
-
-const siteAdminItems = [
-  { title: "Sites", url: "/app/admin/sites", icon: Shield },
-  { title: "Companies", url: "/app/admin/companies", icon: Building2 },
-  { title: "All Users", url: "/app/admin/users", icon: Users },
-  { title: "Modules", url: "/app/admin/modules", icon: Boxes },
-  { title: "Site Settings", url: "/app/admin/settings", icon: Settings },
-];
-
-const devItems = [
-  { title: "DB Check", url: "/app/dev/db-check", icon: Settings },
-  { title: "Bootstrap", url: "/app/dev/bootstrap", icon: Rocket },
-  { title: "Companies (Dev)", url: "/app/dev/companies", icon: Building2 },
-  { title: "RLS Test", url: "/app/dev/rls-test", icon: Shield },
-  { title: "Deferred Tasks", url: "/app/dev/deferred", icon: ListTodo },
 ];
 
 export function AppSidebar() {
@@ -202,7 +185,7 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        {/* Site Admin Navigation */}
+        {/* Site Admin Console - single entry point for site/super admins */}
         {showSiteAdmin && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-xs uppercase tracking-wider text-primary/80">
@@ -210,55 +193,22 @@ export function AppSidebar() {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {siteAdminItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive(item.url)}
-                      tooltip={item.title}
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive("/app/admin/site-console")}
+                    tooltip="Site Admin Console"
+                  >
+                    <NavLink
+                      to="/app/admin/site-console"
+                      className="flex items-center gap-3"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                     >
-                      <NavLink
-                        to={item.url}
-                        className="flex items-center gap-3"
-                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                      >
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {/* Dev Tools (only in development) */}
-        {import.meta.env.DEV && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-xs uppercase tracking-wider text-amber-600 dark:text-amber-400">
-              Dev Tools
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {devItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive(item.url)}
-                      tooltip={item.title}
-                    >
-                      <NavLink
-                        to={item.url}
-                        className="flex items-center gap-3"
-                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                      >
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                      <Terminal className="h-4 w-4" />
+                      <span>Site Admin Console</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

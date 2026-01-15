@@ -45,6 +45,7 @@ import CompaniesPage from "@/pages/app/admin/CompaniesPage";
 import ModulesPage from "@/pages/app/admin/ModulesPage";
 import UsersPage from "@/pages/app/admin/UsersPage";
 import SiteSettingsPage from "@/pages/app/admin/SiteSettingsPage";
+import SiteConsolePage from "@/pages/app/admin/SiteConsolePage";
 import DbCheckPage from "@/pages/app/dev/DbCheckPage";
 import BootstrapPage from "@/pages/app/dev/BootstrapPage";
 import DevCompaniesPage from "@/pages/app/dev/DevCompaniesPage";
@@ -125,6 +126,7 @@ function App() {
                     <Route path="admin/audit-log" element={<AuditLogPage />} />
                     <Route path="admin/permissions-check" element={<PermissionsCheckPage />} />
                     <Route path="admin/deferred" element={<AdminDeferredTasksPage />} />
+                    <Route path="admin/site-console" element={<SiteConsolePage />} />
                     <Route path="admin/sites" element={<SitesPage />} />
                     <Route path="admin/companies" element={<CompaniesPage />} />
                     <Route path="admin/users" element={<UsersPage />} />
