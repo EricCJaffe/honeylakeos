@@ -47,6 +47,8 @@ import {
   rruleToConfig,
 } from "@/components/tasks/RecurrenceSelector";
 import { useProjectPhases } from "@/hooks/useProjectPhases";
+import { TemplateSelector } from "@/components/templates/TemplateSelector";
+import { applyTemplateToForm, Template } from "@/hooks/useTemplates";
 
 const taskSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -257,6 +259,20 @@ export function TaskFormDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Template Selector - only for new tasks */}
+            {!isEditing && (
+              <TemplateSelector
+                templateType="task"
+                hasExistingData={!!form.watch("title") || !!form.watch("description")}
+                onSelect={(template, overwrite) => {
+                  const payload = template.payload as Record<string, any>;
+                  const currentValues = form.getValues();
+                  const newValues = applyTemplateToForm(currentValues, payload, overwrite);
+                  form.reset(newValues);
+                }}
+              />
+            )}
+
             <FormField
               control={form.control}
               name="title"
