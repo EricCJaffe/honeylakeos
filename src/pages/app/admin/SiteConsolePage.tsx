@@ -16,8 +16,10 @@ import {
   Rocket,
   Database,
   ListTodo,
+  Globe,
+  ClipboardList,
+  Lock,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 
 // Import embedded panel components
 import SitesPanel from "./site-console/SitesPanel";
@@ -34,19 +36,39 @@ import RlsTestPanel from "./site-console/RlsTestPanel";
 import DeferredTasksPanel from "./site-console/DeferredTasksPanel";
 
 const siteAdminSections = [
-  { id: "sites", label: "Sites", icon: Shield },
-  { id: "companies", label: "Companies", icon: Building2 },
-  { id: "users", label: "All Users", icon: Users },
-  { id: "modules", label: "Modules", icon: Boxes },
-  { id: "settings", label: "Site Settings", icon: Settings },
+  {
+    id: "platform",
+    label: "Platform",
+    icon: Globe,
+    description: "Manage platform-wide sites and global configuration settings.",
+  },
+  {
+    id: "companies",
+    label: "Companies",
+    icon: Building2,
+    description: "View and manage all companies registered on the platform.",
+  },
+  {
+    id: "audit",
+    label: "Audit Logs",
+    icon: ClipboardList,
+    description: "Review platform-wide administrative actions and security events.",
+  },
+  {
+    id: "security",
+    label: "Security/RLS",
+    icon: Lock,
+    description: "Review Row Level Security policies and access control configurations.",
+  },
 ];
 
 const devToolSections = [
-  { id: "db-check", label: "DB Check", icon: Database },
-  { id: "bootstrap", label: "Bootstrap", icon: Rocket },
-  { id: "dev-companies", label: "Companies (Dev)", icon: Building2 },
-  { id: "rls-test", label: "RLS Test", icon: ShieldCheck },
-  { id: "deferred", label: "Deferred Tasks", icon: ListTodo },
+  {
+    id: "dev-tools",
+    label: "Dev Tools",
+    icon: Bug,
+    description: "Development utilities for testing, debugging, and system diagnostics.",
+  },
 ];
 
 export default function SiteConsolePage() {
@@ -70,7 +92,7 @@ export default function SiteConsolePage() {
     <div className="container py-6 max-w-7xl">
       <PageHeader
         title="Site Administration Console"
-        description="Centralized access to all site-level administration and development tools."
+        description="Centralized access to platform management, security, and development tools."
       />
 
       <div className="flex items-center gap-2 mb-6">
@@ -86,17 +108,21 @@ export default function SiteConsolePage() {
         )}
       </div>
 
-      <Tabs defaultValue="sites" className="space-y-6">
-        <TabsList className="flex-wrap h-auto gap-1 p-1">
+      <Tabs defaultValue="platform" className="space-y-6">
+        <TabsList className="flex-wrap h-auto gap-1 p-1 bg-muted/50">
           {/* Site Admin Tabs */}
           {siteAdminSections.map((section) => (
-            <TabsTrigger key={section.id} value={section.id} className="gap-2">
+            <TabsTrigger 
+              key={section.id} 
+              value={section.id} 
+              className="gap-2 data-[state=active]:bg-background"
+            >
               <section.icon className="h-4 w-4" />
               {section.label}
             </TabsTrigger>
           ))}
           
-          {/* Dev Tools Tabs - only in DEV mode */}
+          {/* Dev Tools Tab - only in DEV mode */}
           {showDevTools && (
             <>
               <div className="w-px h-6 bg-border mx-1" />
@@ -104,7 +130,7 @@ export default function SiteConsolePage() {
                 <TabsTrigger
                   key={section.id}
                   value={section.id}
-                  className="gap-2 text-amber-600 data-[state=active]:text-amber-700"
+                  className="gap-2 text-amber-600 data-[state=active]:text-amber-700 data-[state=active]:bg-amber-50 dark:data-[state=active]:bg-amber-950/30"
                 >
                   <section.icon className="h-4 w-4" />
                   {section.label}
@@ -114,42 +140,164 @@ export default function SiteConsolePage() {
           )}
         </TabsList>
 
-        {/* Site Admin Panels */}
-        <TabsContent value="sites">
-          <SitesPanel />
-        </TabsContent>
-        <TabsContent value="companies">
-          <CompaniesPanel />
-        </TabsContent>
-        <TabsContent value="users">
+        {/* Platform Tab */}
+        <TabsContent value="platform" className="space-y-4">
+          <Card className="border-dashed">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Globe className="h-5 w-5 text-muted-foreground" />
+                <CardTitle className="text-lg">Platform</CardTitle>
+              </div>
+              <CardDescription>
+                Manage platform-wide sites and global configuration settings.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+          <div className="grid gap-4 md:grid-cols-2">
+            <SitesPanel />
+            <SiteSettingsPanel />
+          </div>
           <UsersPanel />
-        </TabsContent>
-        <TabsContent value="modules">
           <ModulesPanel />
         </TabsContent>
-        <TabsContent value="settings">
-          <SiteSettingsPanel />
+
+        {/* Companies Tab */}
+        <TabsContent value="companies" className="space-y-4">
+          <Card className="border-dashed">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-muted-foreground" />
+                <CardTitle className="text-lg">Companies</CardTitle>
+              </div>
+              <CardDescription>
+                View and manage all companies registered on the platform.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+          <CompaniesPanel />
         </TabsContent>
 
-        {/* Dev Tools Panels */}
+        {/* Audit Logs Tab */}
+        <TabsContent value="audit" className="space-y-4">
+          <Card className="border-dashed">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <ClipboardList className="h-5 w-5 text-muted-foreground" />
+                <CardTitle className="text-lg">Audit Logs</CardTitle>
+              </div>
+              <CardDescription>
+                Review platform-wide administrative actions and security events.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <EmptyState
+                icon={ClipboardList}
+                title="Platform Audit Logs"
+                description="Platform-wide audit logging coming soon. Currently, audit logs are available per-company in the Company Console."
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Security/RLS Tab */}
+        <TabsContent value="security" className="space-y-4">
+          <Card className="border-dashed">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Lock className="h-5 w-5 text-muted-foreground" />
+                <CardTitle className="text-lg">Security & RLS</CardTitle>
+              </div>
+              <CardDescription>
+                Review Row Level Security policies and access control configurations.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+          {showDevTools ? (
+            <RlsTestPanel />
+          ) : (
+            <Card>
+              <CardContent className="pt-6">
+                <EmptyState
+                  icon={Lock}
+                  title="Security Overview"
+                  description="Security and RLS testing tools are available in development mode."
+                />
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Dev Tools Tab - only in DEV mode */}
         {showDevTools && (
-          <>
-            <TabsContent value="db-check">
-              <DbCheckPanel />
-            </TabsContent>
-            <TabsContent value="bootstrap">
-              <BootstrapPanel />
-            </TabsContent>
-            <TabsContent value="dev-companies">
-              <DevCompaniesPanel />
-            </TabsContent>
-            <TabsContent value="rls-test">
-              <RlsTestPanel />
-            </TabsContent>
-            <TabsContent value="deferred">
-              <DeferredTasksPanel />
-            </TabsContent>
-          </>
+          <TabsContent value="dev-tools" className="space-y-4">
+            <Card className="border-dashed border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <Bug className="h-5 w-5 text-amber-600" />
+                  <CardTitle className="text-lg text-amber-700 dark:text-amber-500">Development Tools</CardTitle>
+                </div>
+                <CardDescription>
+                  Utilities for testing, debugging, and system diagnostics. Only available in development mode.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <div className="grid gap-4">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Database className="h-5 w-5" />
+                    <CardTitle className="text-base">Database Check</CardTitle>
+                  </div>
+                  <CardDescription>Verify database schema and connectivity.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DbCheckPanel />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Rocket className="h-5 w-5" />
+                    <CardTitle className="text-base">Bootstrap</CardTitle>
+                  </div>
+                  <CardDescription>Initialize platform data and first-time setup.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <BootstrapPanel />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5" />
+                    <CardTitle className="text-base">Test Companies</CardTitle>
+                  </div>
+                  <CardDescription>Create and manage test company data.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DevCompaniesPanel />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <ListTodo className="h-5 w-5" />
+                    <CardTitle className="text-base">Deferred Tasks</CardTitle>
+                  </div>
+                  <CardDescription>View and manage background processing tasks.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DeferredTasksPanel />
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
         )}
       </Tabs>
     </div>
