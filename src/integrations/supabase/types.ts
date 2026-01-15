@@ -987,6 +987,7 @@ export type Database = {
           folder_id: string | null
           id: string
           is_pinned: boolean
+          status: string
           tags: Json
           title: string
           updated_at: string
@@ -1001,6 +1002,7 @@ export type Database = {
           folder_id?: string | null
           id?: string
           is_pinned?: boolean
+          status?: string
           tags?: Json
           title: string
           updated_at?: string
@@ -1015,6 +1017,7 @@ export type Database = {
           folder_id?: string | null
           id?: string
           is_pinned?: boolean
+          status?: string
           tags?: Json
           title?: string
           updated_at?: string

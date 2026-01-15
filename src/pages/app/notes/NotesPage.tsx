@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { MessageSquare, MoreHorizontal, Pencil, Trash2, Pin, Lock, Users, Plus } from "lucide-react";
+import { MessageSquare, MoreHorizontal, Pencil, Trash2, Pin, Lock, Users, Plus, Archive, ArchiveRestore } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
@@ -16,6 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -32,6 +33,7 @@ interface Note {
   access_level: string;
   is_pinned: boolean;
   color: string | null;
+  status: string;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -45,15 +47,17 @@ export default function NotesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"active" | "archived">("active");
 
   const { data: notes = [], isLoading } = useQuery({
-    queryKey: ["notes", activeCompanyId, selectedFolderId],
+    queryKey: ["notes", activeCompanyId, selectedFolderId, statusFilter],
     queryFn: async () => {
       if (!activeCompanyId) return [];
       let query = supabase
         .from("notes")
         .select("*")
         .eq("company_id", activeCompanyId)
+        .eq("status", statusFilter)
         .order("is_pinned", { ascending: false })
         .order("updated_at", { ascending: false });
 
@@ -92,6 +96,23 @@ export default function NotesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notes"] });
+    },
+  });
+
+  const archiveNote = useMutation({
+    mutationFn: async ({ noteId, archive }: { noteId: string; archive: boolean }) => {
+      const { error } = await supabase
+        .from("notes")
+        .update({ status: archive ? "archived" : "active" })
+        .eq("id", noteId);
+      if (error) throw error;
+    },
+    onSuccess: (_, { archive }) => {
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+      toast.success(archive ? "Note archived" : "Note restored");
+    },
+    onError: () => {
+      toast.error("Failed to update note");
     },
   });
 
@@ -150,6 +171,15 @@ export default function NotesPage() {
         onAction={handleCreate}
       />
 
+      <div className="flex items-center gap-4 mb-6">
+        <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as "active" | "archived")}>
+          <TabsList>
+            <TabsTrigger value="active">Active</TabsTrigger>
+            <TabsTrigger value="archived">Archived</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
       <div className="grid lg:grid-cols-[250px_1fr] gap-6">
         {/* Sidebar with folders */}
         <div className="hidden lg:block">
@@ -171,11 +201,13 @@ export default function NotesPage() {
         <div>
           {notes.length === 0 ? (
             <EmptyState
-              icon={MessageSquare}
-              title="No notes yet"
-              description="Create your first note to start capturing your ideas."
-              actionLabel="Create Note"
-              onAction={handleCreate}
+              icon={statusFilter === "archived" ? Archive : MessageSquare}
+              title={statusFilter === "archived" ? "No archived notes" : "No notes yet"}
+              description={statusFilter === "archived" 
+                ? "Notes you archive will appear here." 
+                : "Create your first note to start capturing your ideas."}
+              actionLabel={statusFilter === "active" ? "Create Note" : undefined}
+              onAction={statusFilter === "active" ? handleCreate : undefined}
             />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -228,15 +260,17 @@ export default function NotesPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  togglePin.mutate({ noteId: note.id, isPinned: note.is_pinned });
-                                }}
-                              >
-                                <Pin className="h-4 w-4 mr-2" />
-                                {note.is_pinned ? "Unpin" : "Pin"}
-                              </DropdownMenuItem>
+                              {note.status === "active" && (
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    togglePin.mutate({ noteId: note.id, isPinned: note.is_pinned });
+                                  }}
+                                >
+                                  <Pin className="h-4 w-4 mr-2" />
+                                  {note.is_pinned ? "Unpin" : "Pin"}
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -245,6 +279,24 @@ export default function NotesPage() {
                               >
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  archiveNote.mutate({ noteId: note.id, archive: note.status === "active" });
+                                }}
+                              >
+                                {note.status === "active" ? (
+                                  <>
+                                    <Archive className="h-4 w-4 mr-2" />
+                                    Archive
+                                  </>
+                                ) : (
+                                  <>
+                                    <ArchiveRestore className="h-4 w-4 mr-2" />
+                                    Restore
+                                  </>
+                                )}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={(e) => {
