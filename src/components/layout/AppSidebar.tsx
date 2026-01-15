@@ -20,6 +20,7 @@ import {
   Rocket,
   MapPin,
   ShieldCheck,
+  ListTodo,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Logo } from "@/components/Logo";
@@ -68,6 +69,7 @@ const companyAdminItems = [
   { title: "Employees", url: "/app/admin/employees", icon: Briefcase },
   { title: "Audit Log", url: "/app/admin/audit-log", icon: Shield },
   { title: "Permissions Check", url: "/app/admin/permissions-check", icon: ShieldCheck },
+  { title: "Deferred Tasks", url: "/app/admin/deferred", icon: ListTodo },
 ];
 
 const siteAdminItems = [

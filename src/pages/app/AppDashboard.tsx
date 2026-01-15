@@ -9,11 +9,15 @@ import {
   Globe, 
   Workflow, 
   BookOpen,
-  ArrowRight
+  ArrowRight,
+  AlertTriangle,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import { useMembership } from "@/lib/membership";
+import { getDeferredTasksCount } from "./admin/DeferredTasksPage";
 
 const modules = [
   { icon: LayoutDashboard, name: "Projects", href: "/app/projects", description: "Manage your projects" },
@@ -28,10 +32,47 @@ const modules = [
 
 export default function AppDashboard() {
   const { user } = useAuth();
+  const { isCompanyAdmin, isSiteAdmin, isSuperAdmin } = useMembership();
   const firstName = user?.user_metadata?.first_name || "User";
+  
+  const isAdmin = isCompanyAdmin || isSiteAdmin || isSuperAdmin;
+  const deferredCount = getDeferredTasksCount();
 
   return (
     <div className="p-6 lg:p-8">
+      {/* Admin Deferred Tasks Banner */}
+      {isAdmin && deferredCount > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <div className="flex items-center justify-between p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                  You have {deferredCount} deferred task{deferredCount > 1 ? "s" : ""}
+                </p>
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  Items requiring follow-up action
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50"
+            >
+              <Link to="/app/admin/deferred">View Tasks</Link>
+            </Button>
+          </div>
+        </motion.div>
+      )}
+
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
