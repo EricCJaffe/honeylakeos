@@ -50,7 +50,7 @@ import BootstrapPage from "@/pages/app/dev/BootstrapPage";
 import DevCompaniesPage from "@/pages/app/dev/DevCompaniesPage";
 import RlsTestPage from "@/pages/app/dev/RlsTestPage";
 import OnboardingPage from "@/pages/app/onboarding/OnboardingPage";
-import MyAccessPage from "@/pages/app/settings/MyAccessPage";
+import SettingsPage from "@/pages/app/settings/SettingsPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -118,8 +118,7 @@ function App() {
                     <Route path="forms" element={<ModuleGuard moduleKey="forms" moduleName="Forms"><ModulePage /></ModuleGuard>} />
                     <Route path="workflows" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><ModulePage /></ModuleGuard>} />
                     <Route path="lms" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><ModulePage /></ModuleGuard>} />
-                    <Route path="settings" element={<ModulePage />} />
-                    <Route path="settings/my-access" element={<MyAccessPage />} />
+                    <Route path="settings" element={<SettingsPage />} />
                     <Route path="admin/company" element={<CompanySettingsPage />} />
                     <Route path="admin/members" element={<MembersPage />} />
                     <Route path="admin/employees" element={<EmployeesPage />} />

@@ -15,7 +15,6 @@ import {
   Briefcase,
   UserCog,
   Shield,
-  KeyRound,
   Boxes,
   Rocket,
   MapPin,
@@ -268,22 +267,6 @@ export function AppSidebar() {
 
       <SidebarFooter className="p-2">
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={isActive("/app/settings/my-access")}
-              tooltip="My Access"
-            >
-              <NavLink
-                to="/app/settings/my-access"
-                className="flex items-center gap-3"
-                activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-              >
-                <KeyRound className="h-4 w-4" />
-                <span>My Access</span>
-              </NavLink>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild

@@ -890,36 +890,42 @@ export type Database = {
         Row: {
           active_company_id: string | null
           active_location_id: string | null
+          address: string | null
           avatar_url: string | null
           created_at: string
           email: string | null
           first_name: string | null
           full_name: string | null
           last_name: string | null
+          phone: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           active_company_id?: string | null
           active_location_id?: string | null
+          address?: string | null
           avatar_url?: string | null
           created_at?: string
           email?: string | null
           first_name?: string | null
           full_name?: string | null
           last_name?: string | null
+          phone?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           active_company_id?: string | null
           active_location_id?: string | null
+          address?: string | null
           avatar_url?: string | null
           created_at?: string
           email?: string | null
           first_name?: string | null
           full_name?: string | null
           last_name?: string | null
+          phone?: string | null
           updated_at?: string
           user_id?: string
         }
