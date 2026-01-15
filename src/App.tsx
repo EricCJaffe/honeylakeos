@@ -36,6 +36,7 @@ import CompanySettingsPage from "@/pages/app/admin/CompanySettingsPage";
 import MembersPage from "@/pages/app/admin/MembersPage";
 import EmployeesPage from "@/pages/app/admin/EmployeesPage";
 import AuditLogPage from "@/pages/app/admin/AuditLogPage";
+import PermissionsCheckPage from "@/pages/app/admin/PermissionsCheckPage";
 import InvitePage from "@/pages/app/InvitePage";
 import SitesPage from "@/pages/app/admin/SitesPage";
 import CompaniesPage from "@/pages/app/admin/CompaniesPage";
@@ -120,6 +121,7 @@ function App() {
                     <Route path="admin/members" element={<MembersPage />} />
                     <Route path="admin/employees" element={<EmployeesPage />} />
                     <Route path="admin/audit-log" element={<AuditLogPage />} />
+                    <Route path="admin/permissions-check" element={<PermissionsCheckPage />} />
                     <Route path="admin/sites" element={<SitesPage />} />
                     <Route path="admin/companies" element={<CompaniesPage />} />
                     <Route path="admin/users" element={<UsersPage />} />
