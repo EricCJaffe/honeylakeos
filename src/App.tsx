@@ -33,6 +33,7 @@ import DocumentsPage from "@/pages/app/documents/DocumentsPage";
 import DocumentDetailPage from "@/pages/app/documents/DocumentDetailPage";
 import FoldersPage from "@/pages/app/folders/FoldersPage";
 import CompanySettingsPage from "@/pages/app/admin/CompanySettingsPage";
+import CompanyConsolePage from "@/pages/app/admin/CompanyConsolePage";
 import MembersPage from "@/pages/app/admin/MembersPage";
 import EmployeesPage from "@/pages/app/admin/EmployeesPage";
 import AuditLogPage from "@/pages/app/admin/AuditLogPage";
@@ -120,6 +121,7 @@ function App() {
                     <Route path="workflows" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><ModulePage /></ModuleGuard>} />
                     <Route path="lms" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><ModulePage /></ModuleGuard>} />
                     <Route path="settings" element={<SettingsPage />} />
+                    <Route path="admin/company-console" element={<CompanyConsolePage />} />
                     <Route path="admin/company" element={<CompanySettingsPage />} />
                     <Route path="admin/members" element={<MembersPage />} />
                     <Route path="admin/employees" element={<EmployeesPage />} />
