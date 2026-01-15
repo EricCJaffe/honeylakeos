@@ -1,8 +1,11 @@
 import * as React from "react";
+import { useEffect, useRef } from "react";
 import { useMembership } from "@/lib/membership";
+import { useQueryClient } from "@tanstack/react-query";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Building2,
@@ -12,6 +15,8 @@ import {
   ShieldCheck,
   Users,
   MapPin,
+  Settings,
+  ClipboardList,
 } from "lucide-react";
 
 // Import embedded panel components
@@ -23,17 +28,64 @@ import GroupsPanel from "./company-console/GroupsPanel";
 import LocationsPanel from "./company-console/LocationsPanel";
 
 const adminSections = [
-  { id: "settings", label: "Settings", icon: Building2 },
-  { id: "members", label: "Members", icon: UserCog },
-  { id: "employees", label: "Employees", icon: Briefcase },
-  { id: "groups", label: "Groups", icon: Users },
-  { id: "locations", label: "Locations", icon: MapPin },
-  { id: "audit", label: "Audit Log", icon: Shield },
+  {
+    id: "company",
+    label: "Company",
+    icon: Building2,
+    description: "Manage company profile, branding, and general settings.",
+  },
+  {
+    id: "members",
+    label: "Members",
+    icon: UserCog,
+    description: "Manage user access, roles, and membership status for your organization.",
+  },
+  {
+    id: "employees",
+    label: "Employees",
+    icon: Briefcase,
+    description: "Manage employee records, send invitations, and track onboarding status.",
+  },
+  {
+    id: "groups",
+    label: "Groups",
+    icon: Users,
+    description: "Organize members into teams and departments for easier management.",
+  },
+  {
+    id: "locations",
+    label: "Locations",
+    icon: MapPin,
+    description: "Manage physical locations, offices, and assign location managers.",
+  },
+  {
+    id: "audit",
+    label: "Audit Logs",
+    icon: ClipboardList,
+    description: "Review administrative actions and track changes across your organization.",
+  },
 ];
 
 export default function CompanyConsolePage() {
   const { isCompanyAdmin, isSiteAdmin, isSuperAdmin, activeCompanyId, activeCompany } = useMembership();
+  const queryClient = useQueryClient();
+  const previousCompanyId = useRef<string | null>(null);
   const hasAccess = isCompanyAdmin || isSiteAdmin || isSuperAdmin;
+
+  // Invalidate company-scoped queries when active company changes
+  useEffect(() => {
+    if (previousCompanyId.current && previousCompanyId.current !== activeCompanyId) {
+      // Clear all company-scoped queries
+      queryClient.invalidateQueries({ queryKey: ["company-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["company-members"] });
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+      queryClient.invalidateQueries({ queryKey: ["groups"] });
+      queryClient.invalidateQueries({ queryKey: ["locations"] });
+      queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
+      queryClient.invalidateQueries({ queryKey: ["company"] });
+    }
+    previousCompanyId.current = activeCompanyId;
+  }, [activeCompanyId, queryClient]);
 
   if (!hasAccess) {
     return (
@@ -53,7 +105,7 @@ export default function CompanyConsolePage() {
         <EmptyState
           icon={Building2}
           title="No Company Selected"
-          description="Please select a company to access administration tools."
+          description="Please select a company from the company switcher to access administration tools."
         />
       </div>
     );
@@ -63,7 +115,7 @@ export default function CompanyConsolePage() {
     <div className="container py-6 max-w-7xl">
       <PageHeader
         title="Company Administration"
-        description={`Manage settings, members, and organization for ${activeCompany?.name || "your company"}.`}
+        description="Centralized management for your company settings, members, and organizational structure."
       />
 
       <div className="flex items-center gap-2 mb-6">
@@ -77,34 +129,40 @@ export default function CompanyConsolePage() {
         </Badge>
       </div>
 
-      <Tabs defaultValue="settings" className="space-y-6">
-        <TabsList className="flex-wrap h-auto gap-1 p-1">
+      <Tabs defaultValue="company" className="space-y-6">
+        <TabsList className="flex-wrap h-auto gap-1 p-1 bg-muted/50">
           {adminSections.map((section) => (
-            <TabsTrigger key={section.id} value={section.id} className="gap-2">
+            <TabsTrigger 
+              key={section.id} 
+              value={section.id} 
+              className="gap-2 data-[state=active]:bg-background"
+            >
               <section.icon className="h-4 w-4" />
               {section.label}
             </TabsTrigger>
           ))}
         </TabsList>
 
-        <TabsContent value="settings">
-          <CompanySettingsPanel />
-        </TabsContent>
-        <TabsContent value="members">
-          <MembersPanel />
-        </TabsContent>
-        <TabsContent value="employees">
-          <EmployeesPanel />
-        </TabsContent>
-        <TabsContent value="groups">
-          <GroupsPanel />
-        </TabsContent>
-        <TabsContent value="locations">
-          <LocationsPanel />
-        </TabsContent>
-        <TabsContent value="audit">
-          <AuditLogPanel />
-        </TabsContent>
+        {adminSections.map((section) => (
+          <TabsContent key={section.id} value={section.id} className="space-y-4">
+            <Card className="border-dashed">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <section.icon className="h-5 w-5 text-muted-foreground" />
+                  <CardTitle className="text-lg">{section.label}</CardTitle>
+                </div>
+                <CardDescription>{section.description}</CardDescription>
+              </CardHeader>
+            </Card>
+
+            {section.id === "company" && <CompanySettingsPanel />}
+            {section.id === "members" && <MembersPanel />}
+            {section.id === "employees" && <EmployeesPanel />}
+            {section.id === "groups" && <GroupsPanel />}
+            {section.id === "locations" && <LocationsPanel />}
+            {section.id === "audit" && <AuditLogPanel />}
+          </TabsContent>
+        ))}
       </Tabs>
     </div>
   );
