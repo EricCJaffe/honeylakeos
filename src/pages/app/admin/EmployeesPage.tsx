@@ -78,6 +78,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMembership } from "@/lib/membership";
 import { useAuth } from "@/lib/auth";
 import type { Tables } from "@/integrations/supabase/types";
+import { useAuditLog } from "@/hooks/useAuditLog";
 
 type Employee = Tables<"employees">;
 type EmployeeInvite = Tables<"employee_invites">;
@@ -135,6 +136,9 @@ export default function EmployeesPage() {
   const [linkEmail, setLinkEmail] = useState("");
 
   const hasAdminAccess = isCompanyAdmin || isSiteAdmin || isSuperAdmin;
+
+  // Audit logging
+  const { log: auditLog } = useAuditLog(activeCompanyId);
 
   // Get APP_URL from window location
   const appUrl = typeof window !== "undefined" ? window.location.origin : "";
@@ -225,20 +229,28 @@ export default function EmployeesPage() {
     mutationFn: async (data: EmployeeFormData) => {
       if (!activeCompanyId) throw new Error("No active company");
 
-      const { error } = await supabase.from("employees").insert({
+      const { data: insertedData, error } = await supabase.from("employees").insert({
         company_id: activeCompanyId,
         full_name: data.full_name,
         email: data.email.trim() || null,
         title: data.title.trim() || null,
         created_by: user?.id,
-      });
+      }).select("id").single();
 
       if (error) throw error;
+      return { id: insertedData.id, ...data };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast.success("Employee added successfully");
       closeFormDialog();
       queryClient.invalidateQueries({ queryKey: ["employees", activeCompanyId] });
+      
+      // Audit log
+      auditLog("employee.created", "employee", result.id, {
+        full_name: result.full_name,
+        email: result.email,
+        title: result.title,
+      });
     },
     onError: (error: any) => {
       if (error.code === "23505") {
@@ -264,11 +276,19 @@ export default function EmployeesPage() {
         .eq("id", id);
 
       if (error) throw error;
+      return { id, ...data };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast.success("Employee updated successfully");
       closeFormDialog();
       queryClient.invalidateQueries({ queryKey: ["employees", activeCompanyId] });
+      
+      // Audit log
+      auditLog("employee.updated", "employee", result.id, {
+        full_name: result.full_name,
+        email: result.email,
+        title: result.title,
+      });
     },
     onError: (error: any) => {
       if (error.code === "23505") {
@@ -283,20 +303,27 @@ export default function EmployeesPage() {
 
   // Archive employee mutation (soft delete)
   const archiveMutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (employee: Employee) => {
       const { error } = await supabase
         .from("employees")
         .update({ status: "archived" })
-        .eq("id", id);
+        .eq("id", employee.id);
 
       if (error) throw error;
+      return employee;
     },
-    onSuccess: () => {
+    onSuccess: (employee) => {
       toast.success("Employee archived successfully");
       setDeleteDialogOpen(false);
       setEmployeeToDelete(null);
       queryClient.invalidateQueries({ queryKey: ["employees", activeCompanyId] });
       queryClient.invalidateQueries({ queryKey: ["employees-archived", activeCompanyId] });
+      
+      // Audit log
+      auditLog("employee.archived", "employee", employee.id, {
+        full_name: employee.full_name,
+        email: employee.email,
+      });
     },
     onError: (error: any) => {
       if (error.code === "42501" || error.message?.includes("policy")) {
@@ -309,18 +336,25 @@ export default function EmployeesPage() {
 
   // Restore employee mutation
   const restoreMutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (employee: Employee) => {
       const { error } = await supabase
         .from("employees")
         .update({ status: "active" })
-        .eq("id", id);
+        .eq("id", employee.id);
 
       if (error) throw error;
+      return employee;
     },
-    onSuccess: () => {
+    onSuccess: (employee) => {
       toast.success("Employee restored successfully");
       queryClient.invalidateQueries({ queryKey: ["employees", activeCompanyId] });
       queryClient.invalidateQueries({ queryKey: ["employees-archived", activeCompanyId] });
+      
+      // Audit log
+      auditLog("employee.restored", "employee", employee.id, {
+        full_name: employee.full_name,
+        email: employee.email,
+      });
     },
     onError: (error: any) => {
       if (error.code === "42501" || error.message?.includes("policy")) {
@@ -333,17 +367,25 @@ export default function EmployeesPage() {
 
   // Update status mutation
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ employee, status }: { employee: Employee; status: string }) => {
       const { error } = await supabase
         .from("employees")
         .update({ status })
-        .eq("id", id);
+        .eq("id", employee.id);
 
       if (error) throw error;
+      return { employee, fromStatus: employee.status, toStatus: status };
     },
-    onSuccess: (_, { status }) => {
-      toast.success(`Employee ${status === "active" ? "activated" : "deactivated"} successfully`);
+    onSuccess: ({ employee, fromStatus, toStatus }) => {
+      toast.success(`Employee ${toStatus === "active" ? "activated" : "deactivated"} successfully`);
       queryClient.invalidateQueries({ queryKey: ["employees", activeCompanyId] });
+      
+      // Audit log
+      auditLog("employee.status_changed", "employee", employee.id, {
+        full_name: employee.full_name,
+        from_status: fromStatus,
+        to_status: toStatus,
+      });
     },
     onError: (error: any) => {
       if (error.code === "42501" || error.message?.includes("policy")) {
@@ -356,11 +398,11 @@ export default function EmployeesPage() {
 
   // Send invite mutation
   const sendInviteMutation = useMutation({
-    mutationFn: async ({ employeeId, role }: { employeeId: string; role: string }) => {
+    mutationFn: async ({ employee, role }: { employee: Employee; role: string }) => {
       // 1. Create invite via RPC
       const { data: inviteData, error: rpcError } = await supabase
         .rpc("create_employee_invite", {
-          p_employee_id: employeeId,
+          p_employee_id: employee.id,
           p_role: role,
         });
 
@@ -379,15 +421,15 @@ export default function EmployeesPage() {
 
       if (emailError) {
         console.error("Email error:", emailError);
-        return { invite, emailSent: false, error: emailError.message };
+        return { invite, employee, role, emailSent: false, error: emailError.message };
       }
 
       const result = data as { success: boolean; error?: string };
       if (!result.success) {
-        return { invite, emailSent: false, error: result.error };
+        return { invite, employee, role, emailSent: false, error: result.error };
       }
 
-      return { invite, emailSent: true };
+      return { invite, employee, role, emailSent: true };
     },
     onSuccess: (result) => {
       if (result.emailSent) {
@@ -399,6 +441,13 @@ export default function EmployeesPage() {
       setInviteEmployee(null);
       setInviteRole("user");
       refetchInvites();
+      
+      // Audit log for invite created
+      auditLog("employee.invite.created", "employee_invite", result.invite.invite_id, {
+        employee_id: result.employee.id,
+        email: result.invite.email,
+        role: result.role,
+      });
     },
     onError: (error: any) => {
       console.error("Invite error:", error);
@@ -416,11 +465,11 @@ export default function EmployeesPage() {
 
   // Resend invite mutation
   const resendInviteMutation = useMutation({
-    mutationFn: async (inviteId: string) => {
+    mutationFn: async (invite: InviteWithEmployee) => {
       const { data, error } = await supabase.functions.invoke(
         "send-employee-invite-email",
         {
-          body: { invite_id: inviteId },
+          body: { invite_id: invite.id },
         }
       );
 
@@ -431,11 +480,17 @@ export default function EmployeesPage() {
         throw new Error(result.error || "Failed to send email");
       }
 
-      return result;
+      return { result, invite };
     },
-    onSuccess: () => {
+    onSuccess: ({ invite }) => {
       toast.success("Invitation resent successfully!");
       refetchInvites();
+      
+      // Audit log
+      auditLog("employee.invite.resent", "employee_invite", invite.id, {
+        employee_id: invite.employee_id,
+        email: invite.email,
+      });
     },
     onError: (error: any) => {
       toast.error(`Failed to resend: ${error.message}`);
@@ -444,17 +499,24 @@ export default function EmployeesPage() {
 
   // Revoke invite mutation
   const revokeInviteMutation = useMutation({
-    mutationFn: async (inviteId: string) => {
+    mutationFn: async (invite: InviteWithEmployee) => {
       const { error } = await supabase
         .from("employee_invites")
         .update({ status: "revoked" })
-        .eq("id", inviteId);
+        .eq("id", invite.id);
 
       if (error) throw error;
+      return invite;
     },
-    onSuccess: () => {
+    onSuccess: (invite) => {
       toast.success("Invitation revoked");
       refetchInvites();
+      
+      // Audit log
+      auditLog("employee.invite.revoked", "employee_invite", invite.id, {
+        employee_id: invite.employee_id,
+        email: invite.email,
+      });
     },
     onError: (error: any) => {
       toast.error(`Failed to revoke: ${error.message}`);
@@ -566,17 +628,17 @@ export default function EmployeesPage() {
 
   const handleStatusToggle = (employee: Employee) => {
     const newStatus = employee.status === "active" ? "inactive" : "active";
-    updateStatusMutation.mutate({ id: employee.id, status: newStatus });
+    updateStatusMutation.mutate({ employee, status: newStatus });
   };
 
   const handleSendInvite = () => {
     if (!inviteEmployee) return;
-    sendInviteMutation.mutate({ employeeId: inviteEmployee.id, role: inviteRole });
+    sendInviteMutation.mutate({ employee: inviteEmployee, role: inviteRole });
   };
 
   const handleArchive = () => {
     if (!employeeToDelete) return;
-    archiveMutation.mutate(employeeToDelete.id);
+    archiveMutation.mutate(employeeToDelete);
   };
 
   const copyInviteLink = (token: string) => {
@@ -982,7 +1044,7 @@ export default function EmployeesPage() {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem
-                                    onClick={() => resendInviteMutation.mutate(invite.id)}
+                                    onClick={() => resendInviteMutation.mutate(invite)}
                                     disabled={resendInviteMutation.isPending}
                                   >
                                     <RotateCcw className="h-4 w-4 mr-2" />
@@ -994,7 +1056,7 @@ export default function EmployeesPage() {
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem
-                                    onClick={() => revokeInviteMutation.mutate(invite.id)}
+                                    onClick={() => revokeInviteMutation.mutate(invite)}
                                     className="text-destructive focus:text-destructive"
                                     disabled={revokeInviteMutation.isPending}
                                   >
@@ -1078,7 +1140,7 @@ export default function EmployeesPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => restoreMutation.mutate(employee.id)}
+                                onClick={() => restoreMutation.mutate(employee)}
                                 disabled={restoreMutation.isPending}
                               >
                                 <ArchiveRestore className="h-4 w-4 mr-2" />
@@ -1116,7 +1178,7 @@ export default function EmployeesPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => restoreMutation.mutate(employee.id)}
+                            onClick={() => restoreMutation.mutate(employee)}
                             disabled={restoreMutation.isPending}
                           >
                             <ArchiveRestore className="h-4 w-4 mr-2" />
