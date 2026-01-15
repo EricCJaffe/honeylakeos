@@ -1451,6 +1451,48 @@ export type Database = {
           },
         ]
       }
+      task_occurrence_completions: {
+        Row: {
+          company_id: string
+          completed_at: string
+          completed_by: string
+          id: string
+          occurrence_start_at: string
+          series_task_id: string
+        }
+        Insert: {
+          company_id: string
+          completed_at?: string
+          completed_by?: string
+          id?: string
+          occurrence_start_at: string
+          series_task_id: string
+        }
+        Update: {
+          company_id?: string
+          completed_at?: string
+          completed_by?: string
+          id?: string
+          occurrence_start_at?: string
+          series_task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_occurrence_completions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_occurrence_completions_series_task_id_fkey"
+            columns: ["series_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_recurrence_exceptions: {
         Row: {
           company_id: string
@@ -1785,6 +1827,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      complete_task_occurrence: {
+        Args: { p_occurrence_start_at: string; p_series_task_id: string }
+        Returns: Json
+      }
       create_employee_invite: {
         Args: { p_employee_id: string; p_role?: string }
         Returns: {
@@ -1849,15 +1895,37 @@ export type Database = {
           override_event_id: string
         }[]
       }
-      expand_task_series: {
-        Args: { p_range_end: string; p_range_start: string; p_task_id: string }
-        Returns: {
-          is_exception: boolean
-          is_override: boolean
-          occurrence_date: string
-          override_task_id: string
-        }[]
-      }
+      expand_task_series:
+        | {
+            Args: {
+              p_range_end: string
+              p_range_start: string
+              p_task_id: string
+            }
+            Returns: {
+              completed_at: string
+              completed_by: string
+              is_completed: boolean
+              is_exception: boolean
+              is_override: boolean
+              occurrence_date: string
+              occurrence_start_at: string
+              override_task_id: string
+            }[]
+          }
+        | {
+            Args: {
+              p_range_end: string
+              p_range_start: string
+              p_task_id: string
+            }
+            Returns: {
+              is_exception: boolean
+              is_override: boolean
+              occurrence_date: string
+              override_task_id: string
+            }[]
+          }
       get_acl_grantee_profile: {
         Args: {
           p_entity_id: string
@@ -1938,6 +2006,10 @@ export type Database = {
         Returns: string
       }
       storage_path_user_id: { Args: { object_name: string }; Returns: string }
+      uncomplete_task_occurrence: {
+        Args: { p_occurrence_start_at: string; p_series_task_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       company_status:

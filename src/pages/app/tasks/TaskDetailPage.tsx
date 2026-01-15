@@ -1,9 +1,8 @@
-import * as React from "react";
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CheckCircle2, Pencil, Trash2, Calendar, Flag, Clock, User } from "lucide-react";
+import { CheckCircle2, Pencil, Trash2, Calendar, Clock, User, Repeat } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
@@ -16,6 +15,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { TaskFormDialog } from "./TaskFormDialog";
 import { EntityLinksPanel } from "@/components/EntityLinksPanel";
+import { RecurringTaskOccurrences } from "@/components/tasks/RecurringTaskOccurrences";
 
 const priorityConfig = {
   low: { label: "Low", color: "bg-muted text-muted-foreground" },
@@ -38,6 +38,8 @@ export default function TaskDetailPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
+  const [editMode, setEditMode] = useState<"single" | "series">("series");
+  const [occurrenceToEdit, setOccurrenceToEdit] = useState<Date | null>(null);
 
   const { data: task, isLoading } = useQuery({
     queryKey: ["task", taskId],
@@ -158,12 +160,32 @@ export default function TaskDetailPage() {
         />
         <Badge className={priority.color}>{priority.label}</Badge>
         <Badge className={status.color}>{status.label}</Badge>
+        {task.is_recurring_template && (
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Repeat className="h-3 w-3" />
+            Recurring
+          </Badge>
+        )}
         {task.project && (
           <Badge variant="outline">
             {task.project.emoji} {task.project.name}
           </Badge>
         )}
       </div>
+
+      {/* Recurring Task Occurrences */}
+      {task.is_recurring_template && (
+        <div className="mb-6">
+          <RecurringTaskOccurrences 
+            task={task}
+            onEditOccurrence={(date) => {
+              setOccurrenceToEdit(date);
+              setEditMode("single");
+              setIsFormDialogOpen(true);
+            }}
+          />
+        </div>
+      )}
 
       {/* Links */}
       <div className="mb-6">
@@ -228,8 +250,15 @@ export default function TaskDetailPage() {
 
       <TaskFormDialog
         open={isFormDialogOpen}
-        onOpenChange={setIsFormDialogOpen}
+        onOpenChange={(open) => {
+          setIsFormDialogOpen(open);
+          if (!open) {
+            setEditMode("series");
+            setOccurrenceToEdit(null);
+          }
+        }}
         task={task}
+        editMode={editMode}
       />
     </div>
   );
