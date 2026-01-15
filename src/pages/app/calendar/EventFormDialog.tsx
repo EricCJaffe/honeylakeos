@@ -34,6 +34,8 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { TemplateSelector } from "@/components/templates/TemplateSelector";
+import { applyTemplateToForm } from "@/hooks/useTemplates";
 import {
   RecurrenceSelector,
   RecurrenceConfig,
@@ -248,6 +250,20 @@ export function EventFormDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Template Selector - only for new events */}
+            {!isEditing && (
+              <TemplateSelector
+                templateType="event"
+                hasExistingData={!!form.watch("title") || !!form.watch("description")}
+                onSelect={(template, overwrite) => {
+                  const payload = template.payload as Record<string, any>;
+                  const currentValues = form.getValues();
+                  const newValues = applyTemplateToForm(currentValues, payload, overwrite);
+                  form.reset(newValues);
+                }}
+              />
+            )}
+
             <FormField
               control={form.control}
               name="title"

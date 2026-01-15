@@ -34,6 +34,8 @@ import {
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import { usePhaseTemplates } from "@/hooks/useProjectPhases";
+import { TemplateSelector } from "@/components/templates/TemplateSelector";
+import { applyTemplateToForm, Template } from "@/hooks/useTemplates";
 
 const projectSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -188,6 +190,20 @@ export function ProjectFormDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Template Selector - only for new projects */}
+            {!isEditing && (
+              <TemplateSelector
+                templateType="project"
+                hasExistingData={!!form.watch("name") || !!form.watch("description")}
+                onSelect={(template, overwrite) => {
+                  const payload = template.payload as Record<string, any>;
+                  const currentValues = form.getValues();
+                  const newValues = applyTemplateToForm(currentValues, payload, overwrite);
+                  form.reset(newValues);
+                }}
+              />
+            )}
+
             <div className="flex gap-3">
               <FormField
                 control={form.control}

@@ -32,6 +32,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { TemplateSelector } from "@/components/templates/TemplateSelector";
+import { applyTemplateToForm, Template } from "@/hooks/useTemplates";
 
 const noteSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -167,6 +169,20 @@ export function NoteFormDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Template Selector - only for new notes */}
+            {!isEditing && (
+              <TemplateSelector
+                templateType="note"
+                hasExistingData={!!form.watch("title") || !!form.watch("content")}
+                onSelect={(template, overwrite) => {
+                  const payload = template.payload as Record<string, any>;
+                  const currentValues = form.getValues();
+                  const newValues = applyTemplateToForm(currentValues, payload, overwrite);
+                  form.reset(newValues);
+                }}
+              />
+            )}
+
             <FormField
               control={form.control}
               name="title"

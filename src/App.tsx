@@ -55,6 +55,7 @@ import DevCompaniesPage from "@/pages/app/dev/DevCompaniesPage";
 import RlsTestPage from "@/pages/app/dev/RlsTestPage";
 import OnboardingPage from "@/pages/app/onboarding/OnboardingPage";
 import SettingsPage from "@/pages/app/settings/SettingsPage";
+import TemplatesPage from "@/pages/app/admin/TemplatesPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -132,6 +133,7 @@ function App() {
                     <Route path="admin/audit-log" element={<AuditLogPage />} />
                     <Route path="admin/permissions-check" element={<PermissionsCheckPage />} />
                     <Route path="admin/deferred" element={<AdminDeferredTasksPage />} />
+                    <Route path="admin/templates" element={<TemplatesPage />} />
                     <Route path="admin/site-console" element={<SiteConsolePage />} />
                     <Route path="admin/sites" element={<SitesPage />} />
                     <Route path="admin/companies" element={<CompaniesPage />} />
