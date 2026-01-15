@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useMembership } from "@/lib/membership";
 import { useAuth } from "@/lib/auth";
+import { useFriendlyError } from "@/hooks/useFriendlyError";
 import {
   Dialog,
   DialogContent,
@@ -62,6 +63,7 @@ export function LocationMembersDialog({
   const { activeCompanyId } = useActiveCompany();
   const { isCompanyAdmin, isSiteAdmin, isSuperAdmin } = useMembership();
   const { user } = useAuth();
+  const { getToastMessage } = useFriendlyError();
   const queryClient = useQueryClient();
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [memberToRemove, setMemberToRemove] = useState<MemberWithProfile | null>(null);
@@ -160,12 +162,13 @@ export function LocationMembersDialog({
       toast.success("Member added");
       setSelectedUserId("");
     },
-    onError: (error: any) => {
-      if (error?.code === "42501" || error?.message?.includes("policy")) {
-        toast.error("You don't have permission to add members");
-      } else {
-        toast.error("Failed to add member");
-      }
+    onError: (error) => {
+      toast.error(getToastMessage(error, {
+        contextMessages: { 
+          "42501": "You don't have permission to add members.",
+          "23505": "This user is already a member of this location."
+        }
+      }));
     },
   });
 
@@ -185,12 +188,12 @@ export function LocationMembersDialog({
       toast.success("Member removed");
       setMemberToRemove(null);
     },
-    onError: (error: any) => {
-      if (error?.code === "42501" || error?.message?.includes("policy")) {
-        toast.error("Cannot remove the last manager from this location");
-      } else {
-        toast.error("Failed to remove member");
-      }
+    onError: (error) => {
+      toast.error(getToastMessage(error, {
+        contextMessages: { 
+          "42501": "Cannot remove the last manager from this location."
+        }
+      }));
       setMemberToRemove(null);
     },
   });
@@ -209,12 +212,12 @@ export function LocationMembersDialog({
       queryClient.invalidateQueries({ queryKey: ["location-members", location?.id] });
       toast.success("Role updated");
     },
-    onError: (error: any) => {
-      if (error?.code === "42501" || error?.message?.includes("policy")) {
-        toast.error("Cannot demote the last manager in this location");
-      } else {
-        toast.error("Failed to update role");
-      }
+    onError: (error) => {
+      toast.error(getToastMessage(error, {
+        contextMessages: { 
+          "42501": "Cannot demote the last manager in this location."
+        }
+      }));
     },
   });
 

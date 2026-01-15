@@ -6,6 +6,7 @@ import { MapPin, MoreHorizontal, Pencil, Trash2, UserPlus, Search, Archive, Rota
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
+import { useFriendlyError } from "@/hooks/useFriendlyError";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +34,7 @@ interface LocationWithMembers extends Location {
 export default function LocationsPage() {
   const { activeCompanyId, isCompanyAdmin, loading: membershipLoading } = useActiveCompany();
   const { user } = useAuth();
+  const { getToastMessage } = useFriendlyError();
   const queryClient = useQueryClient();
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
@@ -93,12 +95,10 @@ export default function LocationsPage() {
       queryClient.invalidateQueries({ queryKey: ["locations"] });
       toast.success("Location deleted");
     },
-    onError: (error: any) => {
-      if (error?.code === "42501") {
-        toast.error("You don't have permission to manage locations.");
-      } else {
-        toast.error("Failed to delete location");
-      }
+    onError: (error) => {
+      toast.error(getToastMessage(error, {
+        contextMessages: { "42501": "You don't have permission to delete locations." }
+      }));
     },
   });
 
@@ -114,12 +114,10 @@ export default function LocationsPage() {
       queryClient.invalidateQueries({ queryKey: ["locations"] });
       toast.success(status === "archived" ? "Location archived" : "Location restored");
     },
-    onError: (error: any) => {
-      if (error?.code === "42501") {
-        toast.error("You don't have permission to manage locations.");
-      } else {
-        toast.error("Failed to update location");
-      }
+    onError: (error) => {
+      toast.error(getToastMessage(error, {
+        contextMessages: { "42501": "You don't have permission to manage locations." }
+      }));
     },
   });
 

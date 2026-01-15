@@ -6,6 +6,7 @@ import { Users, MoreHorizontal, Pencil, Trash2, UserPlus, Search } from "lucide-
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
+import { useFriendlyError } from "@/hooks/useFriendlyError";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,7 @@ interface GroupWithMembers extends Group {
 export default function GroupsPage() {
   const { activeCompanyId, isCompanyAdmin, loading: membershipLoading } = useActiveCompany();
   const { user } = useAuth();
+  const { getToastMessage } = useFriendlyError();
   const queryClient = useQueryClient();
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
@@ -88,8 +90,10 @@ export default function GroupsPage() {
       queryClient.invalidateQueries({ queryKey: ["groups"] });
       toast.success("Group deleted");
     },
-    onError: () => {
-      toast.error("Failed to delete group");
+    onError: (error) => {
+      toast.error(getToastMessage(error, {
+        contextMessages: { "42501": "You don't have permission to delete groups." }
+      }));
     },
   });
 

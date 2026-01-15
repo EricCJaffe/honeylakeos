@@ -250,32 +250,43 @@ export default function MyAccessPage() {
               <Skeleton className="h-4 w-full" />
             </div>
           ) : (
-            <>
-              <KeyValueRow 
-                label="Is Company Admin" 
-                value={
+            <div className="space-y-4">
+              <div className="p-3 rounded-lg border bg-muted/30">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium">Company Admin</span>
                   <Badge variant={isCompanyAdmin ? "default" : "outline"}>
                     {isCompanyAdmin ? "Yes" : "No"}
                   </Badge>
-                } 
-              />
-              <KeyValueRow 
-                label="Is Site Admin" 
-                value={
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Can manage employees, groups, locations, and company settings. Full access to all company data.
+                </p>
+              </div>
+              
+              <div className="p-3 rounded-lg border bg-muted/30">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium">Site Admin</span>
                   <Badge variant={isSiteAdmin ? "default" : "outline"}>
                     {isSiteAdmin ? "Yes" : "No"}
                   </Badge>
-                } 
-              />
-              <KeyValueRow 
-                label="Is Super Admin" 
-                value={
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Can manage multiple companies within a site. Has company admin access to all companies in their site.
+                </p>
+              </div>
+              
+              <div className="p-3 rounded-lg border bg-muted/30">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium">Super Admin</span>
                   <Badge variant={isSuperAdmin ? "default" : "outline"}>
                     {isSuperAdmin ? "Yes" : "No"}
                   </Badge>
-                } 
-              />
-            </>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Platform-level administrator with full access to all sites, companies, and system settings.
+                </p>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
