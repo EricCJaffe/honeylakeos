@@ -1259,6 +1259,100 @@ export type Database = {
           },
         ]
       }
+      task_recurrence_exceptions: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          exception_date: string
+          id: string
+          task_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          exception_date: string
+          id?: string
+          task_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          exception_date?: string
+          id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_recurrence_exceptions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_recurrence_exceptions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_recurrence_overrides: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          occurrence_start_at: string
+          override_task_id: string
+          series_task_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          occurrence_start_at: string
+          override_task_id: string
+          series_task_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          occurrence_start_at?: string
+          override_task_id?: string
+          series_task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_recurrence_overrides_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_recurrence_overrides_override_task_id_fkey"
+            columns: ["override_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_recurrence_overrides_series_task_id_fkey"
+            columns: ["series_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assigned_by: string | null
@@ -1272,6 +1366,7 @@ export type Database = {
           due_date: string | null
           estimated_time: number | null
           id: string
+          is_recurrence_exception: boolean | null
           is_recurring_template: boolean
           is_virtual_instance: boolean
           last_generated_date: string | null
@@ -1282,9 +1377,13 @@ export type Database = {
           phase: string | null
           priority: string
           project_id: string | null
+          recurrence_count: number | null
+          recurrence_end_at: string | null
           recurrence_exceptions: Json
           recurrence_instance_date: string | null
           recurrence_rules: string | null
+          recurrence_start_at: string | null
+          recurrence_timezone: string | null
           status: string
           subtasks: Json
           tags: Json
@@ -1302,6 +1401,7 @@ export type Database = {
           due_date?: string | null
           estimated_time?: number | null
           id?: string
+          is_recurrence_exception?: boolean | null
           is_recurring_template?: boolean
           is_virtual_instance?: boolean
           last_generated_date?: string | null
@@ -1312,9 +1412,13 @@ export type Database = {
           phase?: string | null
           priority?: string
           project_id?: string | null
+          recurrence_count?: number | null
+          recurrence_end_at?: string | null
           recurrence_exceptions?: Json
           recurrence_instance_date?: string | null
           recurrence_rules?: string | null
+          recurrence_start_at?: string | null
+          recurrence_timezone?: string | null
           status?: string
           subtasks?: Json
           tags?: Json
@@ -1332,6 +1436,7 @@ export type Database = {
           due_date?: string | null
           estimated_time?: number | null
           id?: string
+          is_recurrence_exception?: boolean | null
           is_recurring_template?: boolean
           is_virtual_instance?: boolean
           last_generated_date?: string | null
@@ -1342,9 +1447,13 @@ export type Database = {
           phase?: string | null
           priority?: string
           project_id?: string | null
+          recurrence_count?: number | null
+          recurrence_end_at?: string | null
           recurrence_exceptions?: Json
           recurrence_instance_date?: string | null
           recurrence_rules?: string | null
+          recurrence_start_at?: string | null
+          recurrence_timezone?: string | null
           status?: string
           subtasks?: Json
           tags?: Json
@@ -1447,6 +1556,18 @@ export type Database = {
         }
         Returns: string
       }
+      create_task_occurrence_override: {
+        Args: {
+          p_description?: string
+          p_due_date?: string
+          p_occurrence_start_at: string
+          p_priority?: string
+          p_series_task_id: string
+          p_status?: string
+          p_title: string
+        }
+        Returns: string
+      }
       delete_entity_link: { Args: { p_link_id: string }; Returns: boolean }
       entity_acl_company_id: {
         Args: { p_entity_id: string; p_entity_type: string }
@@ -1455,6 +1576,15 @@ export type Database = {
       entity_acl_is_owner: {
         Args: { p_entity_id: string; p_entity_type: string }
         Returns: boolean
+      }
+      expand_task_series: {
+        Args: { p_range_end: string; p_range_start: string; p_task_id: string }
+        Returns: {
+          is_exception: boolean
+          is_override: boolean
+          occurrence_date: string
+          override_task_id: string
+        }[]
       }
       get_acl_grantee_profile: {
         Args: {
@@ -1523,6 +1653,10 @@ export type Database = {
         Returns: string
       }
       promote_self_to_super_admin: { Args: never; Returns: Json }
+      skip_task_occurrence: {
+        Args: { p_occurrence_date: string; p_task_id: string }
+        Returns: string
+      }
       storage_path_company_id: {
         Args: { object_name: string }
         Returns: string
