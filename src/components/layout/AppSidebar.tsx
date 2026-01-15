@@ -7,18 +7,10 @@ import {
   FileText,
   StickyNote,
   FolderOpen,
-  FormInput,
-  Workflow,
-  Users,
   Settings,
   Building2,
-  Briefcase,
-  UserCog,
-  Shield,
-  MapPin,
-  ShieldCheck,
-  ListTodo,
   Terminal,
+  Shield,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Logo } from "@/components/Logo";
@@ -49,22 +41,6 @@ const knowledgeNavItems = [
   { title: "Documents", url: "/app/documents", icon: FileText },
   { title: "Notes", url: "/app/notes", icon: StickyNote },
   { title: "Folders", url: "/app/folders", icon: FolderOpen },
-];
-
-const automationNavItems = [
-  { title: "Forms", url: "/app/forms", icon: FormInput },
-  { title: "Workflows", url: "/app/workflows", icon: Workflow },
-];
-
-const orgNavItems = [
-  { title: "Groups", url: "/app/org/groups", icon: Users },
-  { title: "Locations", url: "/app/org/locations", icon: MapPin },
-];
-
-const companyAdminItems = [
-  { title: "Company Console", url: "/app/admin/company-console", icon: Terminal },
-  { title: "Permissions Check", url: "/app/admin/permissions-check", icon: ShieldCheck },
-  { title: "Deferred Tasks", url: "/app/admin/deferred", icon: ListTodo },
 ];
 
 export function AppSidebar() {
@@ -145,67 +121,49 @@ export function AppSidebar() {
         {/* Knowledge Navigation */}
         {renderNavGroup("Knowledge", knowledgeNavItems)}
 
-        {/* Automation Navigation */}
-        {renderNavGroup("Automation", automationNavItems)}
-
-        {/* Organization Navigation */}
-        {renderNavGroup("Organization", orgNavItems)}
-
-        {/* Company Admin Navigation */}
+        {/* Administration - consolidated admin consoles */}
         {showCompanyAdmin && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground/70">
-              Admin
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {companyAdminItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive(item.url)}
-                      tooltip={item.title}
-                    >
-                      <NavLink
-                        to={item.url}
-                        className="flex items-center gap-3"
-                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                      >
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {/* Site Admin Console - single entry point for site/super admins */}
-        {showSiteAdmin && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-xs uppercase tracking-wider text-primary/80">
-              Site Administration
+              Administration
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    isActive={isActive("/app/admin/site-console")}
-                    tooltip="Site Admin Console"
+                    isActive={isActive("/app/admin/company-console")}
+                    tooltip="Company Console"
                   >
                     <NavLink
-                      to="/app/admin/site-console"
+                      to="/app/admin/company-console"
                       className="flex items-center gap-3"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                     >
-                      <Terminal className="h-4 w-4" />
-                      <span>Site Admin Console</span>
+                      <Building2 className="h-4 w-4" />
+                      <span>Company Console</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+
+                {showSiteAdmin && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive("/app/admin/site-console")}
+                      tooltip="Site Console"
+                    >
+                      <NavLink
+                        to="/app/admin/site-console"
+                        className="flex items-center gap-3"
+                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      >
+                        <Shield className="h-4 w-4" />
+                        <span>Site Console</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
