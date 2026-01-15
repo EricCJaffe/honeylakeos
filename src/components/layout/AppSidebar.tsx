@@ -62,10 +62,7 @@ const orgNavItems = [
 ];
 
 const companyAdminItems = [
-  { title: "Company Settings", url: "/app/admin/company", icon: Building2 },
-  { title: "Members", url: "/app/admin/members", icon: UserCog },
-  { title: "Employees", url: "/app/admin/employees", icon: Briefcase },
-  { title: "Audit Log", url: "/app/admin/audit-log", icon: Shield },
+  { title: "Company Console", url: "/app/admin/company-console", icon: Terminal },
   { title: "Permissions Check", url: "/app/admin/permissions-check", icon: ShieldCheck },
   { title: "Deferred Tasks", url: "/app/admin/deferred", icon: ListTodo },
 ];
