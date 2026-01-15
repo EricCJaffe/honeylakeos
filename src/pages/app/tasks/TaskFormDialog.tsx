@@ -46,6 +46,7 @@ import {
   configToRRule,
   rruleToConfig,
 } from "@/components/tasks/RecurrenceSelector";
+import { useProjectPhases } from "@/hooks/useProjectPhases";
 
 const taskSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -54,6 +55,7 @@ const taskSchema = z.object({
   priority: z.string().default("medium"),
   due_date: z.date().optional().nullable(),
   project_id: z.string().optional().nullable(),
+  phase_id: z.string().optional().nullable(),
 });
 
 type TaskFormValues = z.infer<typeof taskSchema>;
@@ -120,8 +122,16 @@ export function TaskFormDialog({
       priority: "medium",
       due_date: null,
       project_id: projectId || null,
+      phase_id: null,
     },
   });
+
+  // Get the selected project ID for phase lookup
+  const selectedProjectId = form.watch("project_id");
+  const effectiveProjectId = selectedProjectId || projectId;
+
+  // Fetch phases for selected project
+  const { data: phases = [] } = useProjectPhases(effectiveProjectId || undefined);
 
   React.useEffect(() => {
     if (task) {
@@ -132,6 +142,7 @@ export function TaskFormDialog({
         priority: task.priority,
         due_date: task.due_date ? new Date(task.due_date) : null,
         project_id: task.project_id || null,
+        phase_id: task.phase_id || null,
       });
       // Load recurrence config if exists
       if (task.recurrence_rules) {
@@ -147,6 +158,7 @@ export function TaskFormDialog({
         priority: "medium",
         due_date: null,
         project_id: projectId || null,
+        phase_id: null,
       });
       setRecurrenceConfig(null);
     }
@@ -166,6 +178,7 @@ export function TaskFormDialog({
         priority: values.priority,
         due_date: values.due_date ? format(values.due_date, "yyyy-MM-dd") : null,
         project_id: values.project_id || null,
+        phase_id: values.phase_id || null,
         recurrence_rules: rrule,
         recurrence_timezone: recurrenceConfig?.timezone || "America/New_York",
         is_recurring_template: isRecurring,
@@ -284,7 +297,11 @@ export function TaskFormDialog({
                   <FormItem>
                     <FormLabel>Project</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(val) => {
+                        field.onChange(val);
+                        // Reset phase when project changes
+                        form.setValue("phase_id", null);
+                      }}
                       value={field.value || undefined}
                     >
                       <FormControl>
@@ -296,6 +313,37 @@ export function TaskFormDialog({
                         {projects.map((project) => (
                           <SelectItem key={project.id} value={project.id}>
                             {project.emoji} {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Phase selector - show when project is selected */}
+            {effectiveProjectId && phases.length > 0 && (
+              <FormField
+                control={form.control}
+                name="phase_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phase</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || undefined}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select phase (optional)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {phases.filter(p => p.status === "active").map((phase) => (
+                          <SelectItem key={phase.id} value={phase.id}>
+                            {phase.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
