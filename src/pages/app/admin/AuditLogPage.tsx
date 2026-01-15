@@ -13,6 +13,7 @@ import {
   Briefcase,
   ChevronDown,
   RefreshCw,
+  Building2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
@@ -48,33 +49,63 @@ interface AuditLog {
 }
 
 const ACTION_LABELS: Record<string, string> = {
+  // Employee actions
   "employee.created": "Employee Created",
   "employee.updated": "Employee Updated",
   "employee.archived": "Employee Archived",
   "employee.restored": "Employee Restored",
   "employee.linked": "Employee Linked to User",
   "employee.deleted": "Employee Deleted",
+  "employee.status_changed": "Employee Status Changed",
+  // Employee invite actions (new dot notation)
+  "employee.invite.created": "Invite Created",
+  "employee.invite.resent": "Invite Resent",
+  "employee.invite.revoked": "Invite Revoked",
+  "employee.invite.accepted": "Invite Accepted",
+  // Legacy invite actions (backwards compatibility)
+  "invite.created": "Invitation Created",
+  "invite.sent": "Invitation Sent",
+  "invite.resent": "Invitation Resent",
+  "invite.accepted": "Invitation Accepted",
+  "invite.revoked": "Invitation Revoked",
+  // Group actions
+  "group.created": "Group Created",
+  "group.updated": "Group Updated",
+  "group.deleted": "Group Deleted",
+  // Group member actions
   "group_member.added": "Added to Group",
   "group_member.removed": "Removed from Group",
   "group_member.role_changed": "Group Role Changed",
+  // Location actions
+  "location.created": "Location Created",
+  "location.updated": "Location Updated",
+  "location.deleted": "Location Deleted",
+  "location.archived": "Location Archived",
+  "location.restored": "Location Restored",
+  // Location member actions
   "location_member.added": "Added to Location",
   "location_member.removed": "Removed from Location",
   "location_member.role_changed": "Location Role Changed",
+  // Membership actions
   "membership.created": "Membership Created",
   "membership.role_changed": "Role Changed",
   "membership.status_changed": "Membership Status Changed",
   "membership.deleted": "Membership Deleted",
-  "invite.sent": "Invitation Sent",
-  "invite.accepted": "Invitation Accepted",
-  "invite.revoked": "Invitation Revoked",
+  // Company actions
+  "company.created": "Company Created",
+  "company.updated": "Company Updated",
 };
 
 const ENTITY_ICONS: Record<string, React.ElementType> = {
   employee: Briefcase,
+  employee_invite: Mail,
+  group: Users,
   group_member: Users,
+  location: MapPin,
   location_member: MapPin,
   membership: Shield,
   invite: Mail,
+  company: Building2,
 };
 
 const ACTION_COLORS: Record<string, string> = {
@@ -359,6 +390,7 @@ function formatLogSummary(log: AuditLog): string {
   const meta = log.metadata as Record<string, unknown>;
 
   switch (log.action) {
+    // Employee actions
     case "employee.created":
       return `Created employee "${meta.full_name || "Unknown"}"`;
     case "employee.updated":
@@ -371,7 +403,39 @@ function formatLogSummary(log: AuditLog): string {
       return `Linked employee "${meta.full_name || "Unknown"}" to user account`;
     case "employee.deleted":
       return `Deleted employee "${meta.full_name || "Unknown"}"`;
+    case "employee.status_changed":
+      return `Changed employee "${meta.full_name || "Unknown"}" status from "${meta.from_status}" to "${meta.to_status}"`;
 
+    // Employee invite actions (new format)
+    case "employee.invite.created":
+      return `Created invitation for "${meta.email}" with role "${meta.role}"`;
+    case "employee.invite.resent":
+      return `Resent invitation to "${meta.email}"`;
+    case "employee.invite.revoked":
+      return `Revoked invitation for "${meta.email}"`;
+    case "employee.invite.accepted":
+      return `Invitation accepted by "${meta.email}"`;
+
+    // Legacy invite actions
+    case "invite.created":
+    case "invite.sent":
+      return `Sent invitation to "${meta.email}" with role "${meta.role}"`;
+    case "invite.resent":
+      return `Resent invitation to "${meta.email}"`;
+    case "invite.accepted":
+      return `Invitation accepted by "${meta.email}"`;
+    case "invite.revoked":
+      return `Revoked invitation for "${meta.email}"`;
+
+    // Group actions
+    case "group.created":
+      return `Created group "${meta.name || "Unknown"}"`;
+    case "group.updated":
+      return `Updated group "${meta.name || "Unknown"}"`;
+    case "group.deleted":
+      return `Deleted group "${meta.name || "Unknown"}"`;
+
+    // Group member actions
     case "group_member.added":
       return `Added user to group "${meta.group_name || "Unknown"}" as ${meta.role}`;
     case "group_member.removed":
@@ -379,6 +443,19 @@ function formatLogSummary(log: AuditLog): string {
     case "group_member.role_changed":
       return `Changed role in "${meta.group_name || "Unknown"}" from ${meta.from_role} to ${meta.to_role}`;
 
+    // Location actions
+    case "location.created":
+      return `Created location "${meta.name || "Unknown"}"`;
+    case "location.updated":
+      return `Updated location "${meta.name || "Unknown"}"`;
+    case "location.deleted":
+      return `Deleted location "${meta.name || "Unknown"}"`;
+    case "location.archived":
+      return `Archived location "${meta.name || "Unknown"}"`;
+    case "location.restored":
+      return `Restored location "${meta.name || "Unknown"}"`;
+
+    // Location member actions
     case "location_member.added":
       return `Added user to location "${meta.location_name || "Unknown"}" as ${meta.role}`;
     case "location_member.removed":
@@ -386,6 +463,7 @@ function formatLogSummary(log: AuditLog): string {
     case "location_member.role_changed":
       return `Changed role in "${meta.location_name || "Unknown"}" from ${meta.from_role} to ${meta.to_role}`;
 
+    // Membership actions
     case "membership.created":
       return `Created membership with role "${meta.role}"`;
     case "membership.role_changed":
@@ -395,12 +473,11 @@ function formatLogSummary(log: AuditLog): string {
     case "membership.deleted":
       return `Deleted membership with role "${meta.role}"`;
 
-    case "invite.sent":
-      return `Sent invitation to "${meta.email}" with role "${meta.role}"`;
-    case "invite.accepted":
-      return `Invitation accepted by "${meta.email}"`;
-    case "invite.revoked":
-      return `Revoked invitation for "${meta.email}"`;
+    // Company actions
+    case "company.created":
+      return `Created company "${meta.name || "Unknown"}"`;
+    case "company.updated":
+      return `Updated company "${meta.name || "Unknown"}"`;
 
     default:
       return log.action;
