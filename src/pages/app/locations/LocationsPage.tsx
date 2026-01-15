@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
 import { useFriendlyError } from "@/hooks/useFriendlyError";
+import { useAuditLog } from "@/hooks/useAuditLog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +36,7 @@ export default function LocationsPage() {
   const { activeCompanyId, isCompanyAdmin, loading: membershipLoading } = useActiveCompany();
   const { user } = useAuth();
   const { getToastMessage } = useFriendlyError();
+  const { log: auditLog } = useAuditLog(activeCompanyId);
   const queryClient = useQueryClient();
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
@@ -87,13 +89,17 @@ export default function LocationsPage() {
   const archivedLocations = filteredLocations.filter(l => l.status === "archived");
 
   const deleteLocation = useMutation({
-    mutationFn: async (locationId: string) => {
-      const { error } = await supabase.from("locations").delete().eq("id", locationId);
+    mutationFn: async (location: Location) => {
+      const { error } = await supabase.from("locations").delete().eq("id", location.id);
       if (error) throw error;
+      return location;
     },
-    onSuccess: () => {
+    onSuccess: (location) => {
       queryClient.invalidateQueries({ queryKey: ["locations"] });
       toast.success("Location deleted");
+      
+      // Audit log
+      auditLog("location.deleted", "location", location.id, { name: location.name });
     },
     onError: (error) => {
       toast.error(getToastMessage(error, {
@@ -103,16 +109,25 @@ export default function LocationsPage() {
   });
 
   const updateStatus = useMutation({
-    mutationFn: async ({ locationId, status }: { locationId: string; status: string }) => {
+    mutationFn: async ({ location, status }: { location: Location; status: string }) => {
       const { error } = await supabase
         .from("locations")
         .update({ status })
-        .eq("id", locationId);
+        .eq("id", location.id);
       if (error) throw error;
+      return { location, status };
     },
-    onSuccess: (_, { status }) => {
+    onSuccess: ({ location, status }) => {
       queryClient.invalidateQueries({ queryKey: ["locations"] });
       toast.success(status === "archived" ? "Location archived" : "Location restored");
+      
+      // Audit log
+      auditLog(
+        status === "archived" ? "location.archived" : "location.restored",
+        "location",
+        location.id,
+        { name: location.name }
+      );
     },
     onError: (error) => {
       toast.error(getToastMessage(error, {
@@ -270,13 +285,13 @@ export default function LocationsPage() {
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
-                                  onClick={() => updateStatus.mutate({ locationId: location.id, status: "archived" })}
+                                  onClick={() => updateStatus.mutate({ location, status: "archived" })}
                                 >
                                   <Archive className="h-4 w-4 mr-2" />
                                   Archive
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => deleteLocation.mutate(location.id)}
+                                  onClick={() => deleteLocation.mutate(location)}
                                   className="text-destructive"
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
@@ -337,13 +352,13 @@ export default function LocationsPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
-                                onClick={() => updateStatus.mutate({ locationId: location.id, status: "active" })}
+                                onClick={() => updateStatus.mutate({ location, status: "active" })}
                               >
                                 <RotateCcw className="h-4 w-4 mr-2" />
                                 Restore
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => deleteLocation.mutate(location.id)}
+                                onClick={() => deleteLocation.mutate(location)}
                                 className="text-destructive"
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />

@@ -7,6 +7,7 @@ import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useMembership } from "@/lib/membership";
 import { useAuth } from "@/lib/auth";
 import { useFriendlyError } from "@/hooks/useFriendlyError";
+import { useAuditLog } from "@/hooks/useAuditLog";
 import {
   Dialog,
   DialogContent,
@@ -64,6 +65,7 @@ export function GroupMembersDialog({
   const { isCompanyAdmin, isSiteAdmin, isSuperAdmin } = useMembership();
   const { user } = useAuth();
   const { getToastMessage } = useFriendlyError();
+  const { log: auditLog } = useAuditLog(activeCompanyId);
   const queryClient = useQueryClient();
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [memberToRemove, setMemberToRemove] = useState<MemberWithProfile | null>(null);
@@ -155,12 +157,20 @@ export function GroupMembersDialog({
         role: "member",
       });
       if (error) throw error;
+      return userId;
     },
-    onSuccess: () => {
+    onSuccess: (userId) => {
       queryClient.invalidateQueries({ queryKey: ["group-members", group?.id] });
       queryClient.invalidateQueries({ queryKey: ["groups"] });
       toast.success("Member added");
       setSelectedUserId("");
+      
+      // Audit log
+      auditLog("group_member.added", "group_member", group?.id, {
+        group_name: group?.name,
+        user_id: userId,
+        role: "member",
+      });
     },
     onError: (error) => {
       toast.error(getToastMessage(error, {
@@ -181,11 +191,19 @@ export function GroupMembersDialog({
         .eq("group_id", group.id)
         .eq("user_id", userId);
       if (error) throw error;
+      return userId;
     },
-    onSuccess: () => {
+    onSuccess: (userId) => {
       queryClient.invalidateQueries({ queryKey: ["group-members", group?.id] });
       queryClient.invalidateQueries({ queryKey: ["groups"] });
       toast.success("Member removed");
+      
+      // Audit log
+      auditLog("group_member.removed", "group_member", group?.id, {
+        group_name: group?.name,
+        user_id: userId,
+      });
+      
       setMemberToRemove(null);
     },
     onError: (error) => {
@@ -199,7 +217,7 @@ export function GroupMembersDialog({
   });
 
   const updateRole = useMutation({
-    mutationFn: async ({ userId, newRole }: { userId: string; newRole: string }) => {
+    mutationFn: async ({ userId, newRole, oldRole }: { userId: string; newRole: string; oldRole: string }) => {
       if (!group) throw new Error("No group");
       const { error } = await supabase
         .from("group_members")
@@ -207,10 +225,19 @@ export function GroupMembersDialog({
         .eq("group_id", group.id)
         .eq("user_id", userId);
       if (error) throw error;
+      return { userId, newRole, oldRole };
     },
-    onSuccess: () => {
+    onSuccess: ({ userId, newRole, oldRole }) => {
       queryClient.invalidateQueries({ queryKey: ["group-members", group?.id] });
       toast.success("Role updated");
+      
+      // Audit log
+      auditLog("group_member.role_changed", "group_member", group?.id, {
+        group_name: group?.name,
+        user_id: userId,
+        from_role: oldRole,
+        to_role: newRole,
+      });
     },
     onError: (error) => {
       toast.error(getToastMessage(error, {
@@ -220,7 +247,6 @@ export function GroupMembersDialog({
       }));
     },
   });
-
   // Check if this member is the last manager (for disabling controls)
   const isLastManager = (member: MemberWithProfile) => 
     member.role === "manager" && managerCount <= 1;
@@ -230,7 +256,7 @@ export function GroupMembersDialog({
       toast.error("Cannot demote the last manager");
       return;
     }
-    updateRole.mutate({ userId, newRole });
+    updateRole.mutate({ userId, newRole, oldRole: currentRole });
   };
 
   const handleAddMember = () => {

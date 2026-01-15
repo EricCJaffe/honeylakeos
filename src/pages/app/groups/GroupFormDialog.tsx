@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
+import { useAuditLog } from "@/hooks/useAuditLog";
 import {
   Dialog,
   DialogContent,
@@ -68,6 +69,7 @@ export function GroupFormDialog({
 }: GroupFormDialogProps) {
   const { activeCompanyId } = useActiveCompany();
   const { user } = useAuth();
+  const { log: auditLog } = useAuditLog(activeCompanyId);
   const queryClient = useQueryClient();
   const isEditing = !!group;
 
@@ -114,21 +116,32 @@ export function GroupFormDialog({
           })
           .eq("id", group.id);
         if (error) throw error;
+        return { id: group.id, name: values.name, isNew: false };
       } else {
-        const { error } = await supabase.from("groups").insert({
+        const { data, error } = await supabase.from("groups").insert({
           company_id: activeCompanyId,
           name: values.name,
           description: values.description || null,
           group_type: values.group_type,
           status: values.status,
           created_by: user.id,
-        });
+        }).select("id").single();
         if (error) throw error;
+        return { id: data.id, name: values.name, isNew: true };
       }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["groups"] });
       toast.success(isEditing ? "Group updated" : "Group created");
+      
+      // Audit log
+      auditLog(
+        result.isNew ? "group.created" : "group.updated",
+        "group",
+        result.id,
+        { name: result.name }
+      );
+      
       onOpenChange(false);
       form.reset();
     },

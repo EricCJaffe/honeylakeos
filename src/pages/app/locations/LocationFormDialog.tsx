@@ -5,6 +5,7 @@ import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
+import { useAuditLog } from "@/hooks/useAuditLog";
 import {
   Dialog,
   DialogContent,
@@ -72,6 +73,7 @@ export function LocationFormDialog({
   location,
 }: LocationFormDialogProps) {
   const { activeCompanyId } = useActiveCompany();
+  const { log: auditLog } = useAuditLog(activeCompanyId);
   const queryClient = useQueryClient();
   const isEditing = !!location;
 
@@ -144,17 +146,28 @@ export function LocationFormDialog({
           .update(payload)
           .eq("id", location.id);
         if (error) throw error;
+        return { id: location.id, name: values.name, isNew: false };
       } else {
-        const { error } = await supabase.from("locations").insert({
+        const { data, error } = await supabase.from("locations").insert({
           ...payload,
           company_id: activeCompanyId,
-        });
+        }).select("id").single();
         if (error) throw error;
+        return { id: data.id, name: values.name, isNew: true };
       }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["locations"] });
       toast.success(isEditing ? "Location updated" : "Location created");
+      
+      // Audit log
+      auditLog(
+        result.isNew ? "location.created" : "location.updated",
+        "location",
+        result.id,
+        { name: result.name }
+      );
+      
       onOpenChange(false);
       form.reset();
     },

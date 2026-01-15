@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
 import { useFriendlyError } from "@/hooks/useFriendlyError";
+import { useAuditLog } from "@/hooks/useAuditLog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,7 @@ export default function GroupsPage() {
   const { activeCompanyId, isCompanyAdmin, loading: membershipLoading } = useActiveCompany();
   const { user } = useAuth();
   const { getToastMessage } = useFriendlyError();
+  const { log: auditLog } = useAuditLog(activeCompanyId);
   const queryClient = useQueryClient();
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
@@ -82,13 +84,17 @@ export default function GroupsPage() {
   }, [groups, search]);
 
   const deleteGroup = useMutation({
-    mutationFn: async (groupId: string) => {
-      const { error } = await supabase.from("groups").delete().eq("id", groupId);
+    mutationFn: async (group: Group) => {
+      const { error } = await supabase.from("groups").delete().eq("id", group.id);
       if (error) throw error;
+      return group;
     },
-    onSuccess: () => {
+    onSuccess: (group) => {
       queryClient.invalidateQueries({ queryKey: ["groups"] });
       toast.success("Group deleted");
+      
+      // Audit log
+      auditLog("group.deleted", "group", group.id, { name: group.name });
     },
     onError: (error) => {
       toast.error(getToastMessage(error, {
@@ -227,7 +233,7 @@ export default function GroupsPage() {
                                 Edit
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => deleteGroup.mutate(group.id)}
+                                onClick={() => deleteGroup.mutate(group)}
                                 className="text-destructive"
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />

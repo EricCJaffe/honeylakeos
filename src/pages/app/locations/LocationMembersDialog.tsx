@@ -7,6 +7,7 @@ import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useMembership } from "@/lib/membership";
 import { useAuth } from "@/lib/auth";
 import { useFriendlyError } from "@/hooks/useFriendlyError";
+import { useAuditLog } from "@/hooks/useAuditLog";
 import {
   Dialog,
   DialogContent,
@@ -64,6 +65,7 @@ export function LocationMembersDialog({
   const { isCompanyAdmin, isSiteAdmin, isSuperAdmin } = useMembership();
   const { user } = useAuth();
   const { getToastMessage } = useFriendlyError();
+  const { log: auditLog } = useAuditLog(activeCompanyId);
   const queryClient = useQueryClient();
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [memberToRemove, setMemberToRemove] = useState<MemberWithProfile | null>(null);
@@ -155,12 +157,18 @@ export function LocationMembersDialog({
         role: "member",
       });
       if (error) throw error;
+      return userId;
     },
-    onSuccess: () => {
+    onSuccess: (userId) => {
       queryClient.invalidateQueries({ queryKey: ["location-members", location?.id] });
       queryClient.invalidateQueries({ queryKey: ["locations"] });
       toast.success("Member added");
       setSelectedUserId("");
+      auditLog("location_member.added", "location_member", location?.id, {
+        location_name: location?.name,
+        user_id: userId,
+        role: "member",
+      });
     },
     onError: (error) => {
       toast.error(getToastMessage(error, {
@@ -181,11 +189,16 @@ export function LocationMembersDialog({
         .eq("location_id", location.id)
         .eq("user_id", userId);
       if (error) throw error;
+      return userId;
     },
-    onSuccess: () => {
+    onSuccess: (userId) => {
       queryClient.invalidateQueries({ queryKey: ["location-members", location?.id] });
       queryClient.invalidateQueries({ queryKey: ["locations"] });
       toast.success("Member removed");
+      auditLog("location_member.removed", "location_member", location?.id, {
+        location_name: location?.name,
+        user_id: userId,
+      });
       setMemberToRemove(null);
     },
     onError: (error) => {
@@ -199,7 +212,7 @@ export function LocationMembersDialog({
   });
 
   const updateRole = useMutation({
-    mutationFn: async ({ userId, newRole }: { userId: string; newRole: string }) => {
+    mutationFn: async ({ userId, newRole, oldRole }: { userId: string; newRole: string; oldRole: string }) => {
       if (!location) throw new Error("No location");
       const { error } = await supabase
         .from("location_members")
@@ -207,10 +220,17 @@ export function LocationMembersDialog({
         .eq("location_id", location.id)
         .eq("user_id", userId);
       if (error) throw error;
+      return { userId, newRole, oldRole };
     },
-    onSuccess: () => {
+    onSuccess: ({ userId, newRole, oldRole }) => {
       queryClient.invalidateQueries({ queryKey: ["location-members", location?.id] });
       toast.success("Role updated");
+      auditLog("location_member.role_changed", "location_member", location?.id, {
+        location_name: location?.name,
+        user_id: userId,
+        from_role: oldRole,
+        to_role: newRole,
+      });
     },
     onError: (error) => {
       toast.error(getToastMessage(error, {
@@ -230,7 +250,7 @@ export function LocationMembersDialog({
       toast.error("Cannot demote the last manager");
       return;
     }
-    updateRole.mutate({ userId, newRole });
+    updateRole.mutate({ userId, newRole, oldRole: currentRole });
   };
 
   const handleAddMember = () => {
