@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { EventFormDialog } from "./EventFormDialog";
 import { EntityLinksPanel } from "@/components/EntityLinksPanel";
 import { RecurringEventOccurrences } from "@/components/calendar/RecurringEventOccurrences";
+import { EventAttendeesManager } from "@/components/calendar/EventAttendeesManager";
 
 export default function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -183,12 +184,6 @@ export default function EventDetailPage() {
                   <span>{event.location_text}</span>
                 </div>
               )}
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <span>
-                  {event.event_attendees?.length || 0} attendee(s)
-                </span>
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -209,6 +204,19 @@ export default function EventDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Attendees */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Attendees
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EventAttendeesManager eventId={event.id} canManage={canEdit || false} />
+        </CardContent>
+      </Card>
 
       <EventFormDialog
         open={isFormDialogOpen}
