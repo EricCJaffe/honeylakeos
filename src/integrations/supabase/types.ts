@@ -185,6 +185,74 @@ export type Database = {
           },
         ]
       }
+      crm_clients: {
+        Row: {
+          archived_at: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          lifecycle_status: string
+          notes: string | null
+          org_email: string | null
+          org_name: string | null
+          org_phone: string | null
+          org_website: string | null
+          person_email: string | null
+          person_full_name: string | null
+          person_phone: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          lifecycle_status?: string
+          notes?: string | null
+          org_email?: string | null
+          org_name?: string | null
+          org_phone?: string | null
+          org_website?: string | null
+          person_email?: string | null
+          person_full_name?: string | null
+          person_phone?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          lifecycle_status?: string
+          notes?: string | null
+          org_email?: string | null
+          org_name?: string | null
+          org_phone?: string | null
+          org_website?: string | null
+          person_email?: string | null
+          person_full_name?: string | null
+          person_phone?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_clients_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           access_level: string
