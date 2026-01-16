@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useState } from "react";
 import { addMonths, format } from "date-fns";
-import { Calendar, ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
+import { Calendar, ChevronDown, ChevronUp, AlertCircle, Loader2, SkipForward } from "lucide-react";
 import { RRule } from "rrule";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,18 @@ import {
   CollapsibleContent, 
   CollapsibleTrigger 
 } from "@/components/ui/collapsible";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useEventOccurrences } from "@/hooks/useEventRecurrence";
+import { useEventOccurrenceActions } from "@/hooks/useEventOccurrenceActions";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -71,6 +82,7 @@ export function RecurringEventOccurrences({
   onEditOccurrence,
 }: RecurringEventOccurrencesProps) {
   const [showSkipped, setShowSkipped] = useState(false);
+  const [skipConfirm, setSkipConfirm] = useState<Date | null>(null);
   const now = new Date();
   const rangeStart = now;
   const rangeEnd = addMonths(now, 3);
@@ -81,6 +93,8 @@ export function RecurringEventOccurrences({
     rangeEnd,
     event.is_recurring_template
   );
+
+  const { skipOccurrence } = useEventOccurrenceActions();
 
   // Fetch skipped occurrences (exceptions)
   const { data: exceptions = [], isLoading: loadingExceptions } = useQuery({
@@ -112,6 +126,20 @@ export function RecurringEventOccurrences({
     ? rruleToText(event.recurrence_rules) 
     : "Custom recurrence";
 
+  const handleSkipClick = (occDate: Date) => {
+    setSkipConfirm(occDate);
+  };
+
+  const handleConfirmSkip = async () => {
+    if (skipConfirm) {
+      await skipOccurrence.mutateAsync({
+        seriesEventId: event.id,
+        occurrenceDate: skipConfirm,
+      });
+    }
+    setSkipConfirm(null);
+  };
+
   return (
     <div className="space-y-4">
       {/* Recurrence Summary */}
@@ -142,7 +170,12 @@ export function RecurringEventOccurrences({
       {/* Upcoming Occurrences */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Upcoming Occurrences</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Upcoming Occurrences</CardTitle>
+            {upcomingOccurrences.length > 0 && (
+              <Badge variant="secondary">{upcomingOccurrences.length}</Badge>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {loadingOccurrences ? (
@@ -173,16 +206,33 @@ export function RecurringEventOccurrences({
                         <Badge variant="outline" className="text-xs">Modified</Badge>
                       )}
                     </div>
-                    {onEditOccurrence && (
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {onEditOccurrence && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEditOccurrence(occDate)}
+                        >
+                          Edit
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => onEditOccurrence(occDate)}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleSkipClick(occDate)}
+                        disabled={skipOccurrence.isPending}
                       >
-                        Edit
+                        {skipOccurrence.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <SkipForward className="h-3 w-3 mr-1" />
+                            Skip
+                          </>
+                        )}
                       </Button>
-                    )}
+                    </div>
                   </div>
                 );
               })}
@@ -200,7 +250,7 @@ export function RecurringEventOccurrences({
                 <button className="flex items-center justify-between w-full text-left">
                   <CardTitle className="text-base flex items-center gap-2">
                     <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                    Deleted Occurrences
+                    Skipped Occurrences
                     <Badge variant="secondary" className="ml-2">
                       {exceptions.length}
                     </Badge>
@@ -234,7 +284,7 @@ export function RecurringEventOccurrences({
                           <span className="text-sm text-muted-foreground line-through">
                             {format(excDate, "MMM d, yyyy")}
                           </span>
-                          <Badge variant="outline" className="text-xs">Deleted</Badge>
+                          <Badge variant="outline" className="text-xs">Skipped</Badge>
                         </div>
                       );
                     })}
@@ -245,6 +295,32 @@ export function RecurringEventOccurrences({
           </Collapsible>
         </Card>
       )}
+
+      {/* Skip Confirmation Dialog */}
+      <AlertDialog open={!!skipConfirm} onOpenChange={(open) => !open && setSkipConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Skip this occurrence?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will skip the event scheduled for{" "}
+              <strong>
+                {skipConfirm ? format(skipConfirm, "EEEE, MMMM d, yyyy") : ""}
+              </strong>. 
+              The rest of the series will continue as scheduled.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmSkip}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {skipOccurrence.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Skip Occurrence
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
