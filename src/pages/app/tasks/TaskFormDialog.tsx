@@ -49,6 +49,7 @@ import {
 import { useProjectPhases } from "@/hooks/useProjectPhases";
 import { TemplateSelector } from "@/components/templates/TemplateSelector";
 import { applyTemplateToForm, Template } from "@/hooks/useTemplates";
+import { LinkPicker } from "@/components/LinkPicker";
 
 const taskSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -327,27 +328,18 @@ export function TaskFormDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Project</FormLabel>
-                    <Select
-                      onValueChange={(val) => {
-                        field.onChange(val);
-                        // Reset phase when project changes
-                        form.setValue("phase_id", null);
-                      }}
-                      value={field.value || undefined}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select project (optional)" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {projects.map((project) => (
-                          <SelectItem key={project.id} value={project.id}>
-                            {project.emoji} {project.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <LinkPicker
+                        type="project"
+                        value={field.value}
+                        onChange={(val) => {
+                          field.onChange(val);
+                          // Reset phase when project changes
+                          form.setValue("phase_id", null);
+                        }}
+                        placeholder="Link to project (optional)"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
