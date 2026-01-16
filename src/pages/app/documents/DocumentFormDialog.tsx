@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { LinkPicker } from "@/components/LinkPicker";
 
 const documentSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -45,12 +46,14 @@ interface DocumentFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   document?: any;
+  projectId?: string | null;
 }
 
 export function DocumentFormDialog({
   open,
   onOpenChange,
   document,
+  projectId: initialProjectId,
 }: DocumentFormDialogProps) {
   const { activeCompanyId } = useActiveCompany();
   const queryClient = useQueryClient();
@@ -70,22 +73,6 @@ export function DocumentFormDialog({
     enabled: !!activeCompanyId && open,
   });
 
-  const { data: projects = [] } = useQuery({
-    queryKey: ["projects", activeCompanyId],
-    queryFn: async () => {
-      if (!activeCompanyId) return [];
-      const { data, error } = await supabase
-        .from("projects")
-        .select("id, name, emoji")
-        .eq("company_id", activeCompanyId)
-        .eq("is_template", false)
-        .order("name");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!activeCompanyId && open,
-  });
-
   const form = useForm<DocumentFormValues>({
     resolver: zodResolver(documentSchema),
     defaultValues: {
@@ -93,7 +80,7 @@ export function DocumentFormDialog({
       description: "",
       access_level: "company",
       folder_id: null,
-      project_id: null,
+      project_id: initialProjectId || null,
     },
   });
 
@@ -112,10 +99,10 @@ export function DocumentFormDialog({
         description: "",
         access_level: "company",
         folder_id: null,
-        project_id: null,
+        project_id: initialProjectId || null,
       });
     }
-  }, [document, form]);
+  }, [document, form, initialProjectId, open]);
 
   const mutation = useMutation({
     mutationFn: async (values: DocumentFormValues) => {
@@ -137,6 +124,7 @@ export function DocumentFormDialog({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["documents"] });
       queryClient.invalidateQueries({ queryKey: ["document"] });
+      queryClient.invalidateQueries({ queryKey: ["project-documents"] });
       toast.success("Document updated");
       onOpenChange(false);
     },
@@ -247,23 +235,14 @@ export function DocumentFormDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Project</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value || undefined}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="No project" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {projects.map((project) => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.emoji} {project.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <LinkPicker
+                      type="project"
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Link to project (optional)"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

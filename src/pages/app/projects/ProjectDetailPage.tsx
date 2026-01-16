@@ -1,26 +1,52 @@
 import * as React from "react";
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { FolderKanban, Users, CheckCircle2, Calendar, Layers, FileText, MessageSquare } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { 
+  FolderKanban, 
+  Users, 
+  CheckCircle2, 
+  Calendar, 
+  Layers, 
+  FileText, 
+  MessageSquare,
+  LayoutList,
+  LayoutGrid,
+  Plus,
+  Upload
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
+import { useCompanyModules } from "@/hooks/useCompanyModules";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { TaskFormDialog } from "../tasks/TaskFormDialog";
+import { NoteFormDialog } from "../notes/NoteFormDialog";
+import { EventFormDialog } from "../calendar/EventFormDialog";
 import { EntityLinksPanel } from "@/components/EntityLinksPanel";
 import { PhasesManager } from "@/components/projects/PhasesManager";
 import { PhaseGroupedTaskList } from "@/components/projects/PhaseGroupedTaskList";
+import { TaskBoardView } from "@/components/projects/TaskBoardView";
+import { QuickAddButtons } from "@/components/projects/QuickAddButtons";
 import { format } from "date-fns";
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const { activeCompanyId } = useActiveCompany();
+  const { isEnabled } = useCompanyModules();
+  const queryClient = useQueryClient();
+  
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
+  const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
+  const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
+  const [taskViewMode, setTaskViewMode] = useState<"list" | "board">("list");
+  const [editingTask, setEditingTask] = useState<any>(null);
 
   const { data: project, isLoading } = useQuery({
     queryKey: ["project", projectId],
@@ -83,7 +109,7 @@ export default function ProjectDetailPage() {
       if (error) throw error;
       return data;
     },
-    enabled: !!projectId,
+    enabled: !!projectId && isEnabled("notes"),
   });
 
   const { data: documents = [] } = useQuery({
@@ -99,24 +125,37 @@ export default function ProjectDetailPage() {
       if (error) throw error;
       return data;
     },
-    enabled: !!projectId,
+    enabled: !!projectId && isEnabled("documents"),
   });
 
   const { data: events = [] } = useQuery({
     queryKey: ["project-events", projectId],
     queryFn: async () => {
       if (!projectId) return [];
+      const now = new Date().toISOString();
       const { data, error } = await supabase
         .from("events")
         .select("id, title, start_at, end_at, all_day")
         .eq("project_id", projectId)
-        .order("start_at", { ascending: true });
+        .gte("start_at", now)
+        .order("start_at", { ascending: true })
+        .limit(10);
 
       if (error) throw error;
       return data;
     },
-    enabled: !!projectId,
+    enabled: !!projectId && isEnabled("calendar"),
   });
+
+  const handleEditTask = (task: any) => {
+    setEditingTask(task);
+    setIsTaskDialogOpen(true);
+  };
+
+  const handleCloseTaskDialog = (open: boolean) => {
+    setIsTaskDialogOpen(open);
+    if (!open) setEditingTask(null);
+  };
 
   if (isLoading) {
     return (
@@ -145,15 +184,26 @@ export default function ProjectDetailPage() {
   const totalTasks = tasks.length;
   const calculatedProgress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
+  // Calculate upcoming events count
+  const upcomingEventsCount = events.length;
+
   return (
     <div className="p-6">
       <PageHeader
         title={`${project.emoji} ${project.name}`}
         description={project.description || undefined}
         backHref="/app/projects"
-        actionLabel="Add Task"
-        onAction={() => setIsTaskDialogOpen(true)}
       />
+
+      {/* Quick Add Buttons */}
+      <div className="mb-6">
+        <QuickAddButtons
+          onAddTask={isEnabled("tasks") ? () => setIsTaskDialogOpen(true) : undefined}
+          onAddEvent={isEnabled("calendar") ? () => setIsEventDialogOpen(true) : undefined}
+          onAddNote={isEnabled("notes") ? () => setIsNoteDialogOpen(true) : undefined}
+          onUploadDocument={isEnabled("documents") ? () => window.location.href = "/app/documents" : undefined}
+        />
+      </div>
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-3 mb-6">
@@ -206,22 +256,66 @@ export default function ProjectDetailPage() {
       {/* Tabs */}
       <Tabs defaultValue="tasks" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="tasks">Tasks ({tasks.length})</TabsTrigger>
+          <TabsTrigger value="tasks">
+            Tasks ({tasks.length})
+          </TabsTrigger>
           <TabsTrigger value="phases">Phases</TabsTrigger>
-          <TabsTrigger value="notes">Notes ({notes.length})</TabsTrigger>
-          <TabsTrigger value="documents">Docs ({documents.length})</TabsTrigger>
-          <TabsTrigger value="events">Events ({events.length})</TabsTrigger>
+          {isEnabled("notes") && (
+            <TabsTrigger value="notes">Notes ({notes.length})</TabsTrigger>
+          )}
+          {isEnabled("documents") && (
+            <TabsTrigger value="documents">Docs ({documents.length})</TabsTrigger>
+          )}
+          {isEnabled("calendar") && (
+            <TabsTrigger value="events">
+              Events ({upcomingEventsCount > 0 ? `${upcomingEventsCount} upcoming` : "0"})
+            </TabsTrigger>
+          )}
           <TabsTrigger value="members">Members ({members.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tasks">
           <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Project Tasks</CardTitle>
+                <div className="flex items-center gap-2">
+                  <ToggleGroup
+                    type="single"
+                    value={taskViewMode}
+                    onValueChange={(value) => value && setTaskViewMode(value as "list" | "board")}
+                    size="sm"
+                  >
+                    <ToggleGroupItem value="list" aria-label="List view">
+                      <LayoutList className="h-4 w-4" />
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="board" aria-label="Board view">
+                      <LayoutGrid className="h-4 w-4" />
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                  <Button size="sm" onClick={() => setIsTaskDialogOpen(true)}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Task
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
             <CardContent className="p-0">
-              <PhaseGroupedTaskList
-                tasks={tasks}
-                projectId={projectId!}
-                onAddTask={() => setIsTaskDialogOpen(true)}
-              />
+              {taskViewMode === "list" ? (
+                <PhaseGroupedTaskList
+                  tasks={tasks}
+                  projectId={projectId!}
+                  onAddTask={() => setIsTaskDialogOpen(true)}
+                  onEditTask={handleEditTask}
+                />
+              ) : (
+                <TaskBoardView
+                  tasks={tasks}
+                  projectId={projectId!}
+                  onAddTask={() => setIsTaskDialogOpen(true)}
+                  onEditTask={handleEditTask}
+                />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -236,12 +330,23 @@ export default function ProjectDetailPage() {
 
         <TabsContent value="notes">
           <Card>
-            <CardContent className="py-6">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Project Notes</CardTitle>
+                <Button size="sm" onClick={() => setIsNoteDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Note
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="py-0 pb-6">
               {notes.length === 0 ? (
                 <EmptyState
                   icon={MessageSquare}
                   title="No notes yet"
-                  description="Notes linked to this project will appear here."
+                  description="Create a note to capture ideas, meeting notes, or project documentation."
+                  actionLabel="Create First Note"
+                  onAction={() => setIsNoteDialogOpen(true)}
                 />
               ) : (
                 <div className="space-y-2">
@@ -254,7 +359,7 @@ export default function ProjectDetailPage() {
                       <div className="flex items-center gap-3">
                         {note.color && (
                           <div
-                            className="w-3 h-3 rounded-full"
+                            className="w-3 h-3 rounded-full shrink-0"
                             style={{ backgroundColor: note.color }}
                           />
                         )}
@@ -278,12 +383,25 @@ export default function ProjectDetailPage() {
 
         <TabsContent value="documents">
           <Card>
-            <CardContent className="py-6">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Project Documents</CardTitle>
+                <Button size="sm" asChild>
+                  <Link to="/app/documents">
+                    <Upload className="h-4 w-4 mr-1" />
+                    Upload
+                  </Link>
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="py-0 pb-6">
               {documents.length === 0 ? (
                 <EmptyState
                   icon={FileText}
                   title="No documents yet"
-                  description="Documents linked to this project will appear here."
+                  description="Upload documents to share files with your team."
+                  actionLabel="Upload Document"
+                  onAction={() => window.location.href = "/app/documents"}
                 />
               ) : (
                 <div className="space-y-2">
@@ -310,12 +428,23 @@ export default function ProjectDetailPage() {
 
         <TabsContent value="events">
           <Card>
-            <CardContent className="py-6">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Upcoming Events</CardTitle>
+                <Button size="sm" onClick={() => setIsEventDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Event
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="py-0 pb-6">
               {events.length === 0 ? (
                 <EmptyState
                   icon={Calendar}
-                  title="No events yet"
-                  description="Events linked to this project will appear here."
+                  title="No upcoming events"
+                  description="Schedule events for meetings, milestones, or deadlines."
+                  actionLabel="Add Project Event"
+                  onAction={() => setIsEventDialogOpen(true)}
                 />
               ) : (
                 <div className="space-y-2">
@@ -369,10 +498,23 @@ export default function ProjectDetailPage() {
         </TabsContent>
       </Tabs>
 
+      {/* Dialogs */}
       <TaskFormDialog
         open={isTaskDialogOpen}
-        onOpenChange={setIsTaskDialogOpen}
+        onOpenChange={handleCloseTaskDialog}
         projectId={projectId}
+        task={editingTask}
+      />
+
+      <NoteFormDialog
+        open={isNoteDialogOpen}
+        onOpenChange={setIsNoteDialogOpen}
+      />
+
+      <EventFormDialog
+        open={isEventDialogOpen}
+        onOpenChange={setIsEventDialogOpen}
+        defaultDate={new Date()}
       />
     </div>
   );

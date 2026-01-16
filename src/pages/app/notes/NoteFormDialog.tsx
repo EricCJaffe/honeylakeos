@@ -33,7 +33,8 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { TemplateSelector } from "@/components/templates/TemplateSelector";
-import { applyTemplateToForm, Template } from "@/hooks/useTemplates";
+import { applyTemplateToForm } from "@/hooks/useTemplates";
+import { LinkPicker } from "@/components/LinkPicker";
 
 const noteSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -51,6 +52,7 @@ interface NoteFormDialogProps {
   onOpenChange: (open: boolean) => void;
   note?: any;
   folderId?: string | null;
+  projectId?: string | null;
 }
 
 const colors = [
@@ -68,6 +70,7 @@ export function NoteFormDialog({
   onOpenChange,
   note,
   folderId,
+  projectId: initialProjectId,
 }: NoteFormDialogProps) {
   const { activeCompanyId } = useActiveCompany();
   const { user } = useAuth();
@@ -89,22 +92,6 @@ export function NoteFormDialog({
     enabled: !!activeCompanyId && open,
   });
 
-  const { data: projects = [] } = useQuery({
-    queryKey: ["projects", activeCompanyId],
-    queryFn: async () => {
-      if (!activeCompanyId) return [];
-      const { data, error } = await supabase
-        .from("projects")
-        .select("id, name, emoji")
-        .eq("company_id", activeCompanyId)
-        .eq("is_template", false)
-        .order("name");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!activeCompanyId && open,
-  });
-
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(noteSchema),
     defaultValues: {
@@ -113,7 +100,7 @@ export function NoteFormDialog({
       access_level: "company",
       folder_id: folderId || null,
       color: null,
-      project_id: null,
+      project_id: initialProjectId || null,
     },
   });
 
@@ -134,10 +121,10 @@ export function NoteFormDialog({
         access_level: "company",
         folder_id: folderId || null,
         color: null,
-        project_id: null,
+        project_id: initialProjectId || null,
       });
     }
-  }, [note, folderId, form]);
+  }, [note, folderId, form, initialProjectId, open]);
 
   const mutation = useMutation({
     mutationFn: async (values: NoteFormValues) => {
@@ -169,6 +156,7 @@ export function NoteFormDialog({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notes"] });
+      queryClient.invalidateQueries({ queryKey: ["project-notes"] });
       toast.success(isEditing ? "Note updated" : "Note created");
       onOpenChange(false);
       form.reset();
@@ -190,7 +178,6 @@ export function NoteFormDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Template Selector - only for new notes */}
             {!isEditing && (
               <TemplateSelector
                 templateType="note"
@@ -225,11 +212,7 @@ export function NoteFormDialog({
                 <FormItem>
                   <FormLabel>Content</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Write your note..."
-                      rows={6}
-                      {...field}
-                    />
+                    <Textarea placeholder="Write your note..." rows={6} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -265,10 +248,7 @@ export function NoteFormDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Folder</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value || undefined}
-                    >
+                    <Select onValueChange={field.onChange} value={field.value || undefined}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="No folder" />
@@ -294,23 +274,14 @@ export function NoteFormDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Project</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value || undefined}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="No project" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {projects.map((project) => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.emoji} {project.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <LinkPicker
+                      type="project"
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Link to project (optional)"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -330,9 +301,7 @@ export function NoteFormDialog({
                         onClick={() => field.onChange(color.value)}
                         className={cn(
                           "w-8 h-8 rounded-full border-2 transition-all",
-                          field.value === color.value
-                            ? "border-foreground scale-110"
-                            : "border-transparent",
+                          field.value === color.value ? "border-foreground scale-110" : "border-transparent",
                           !color.value && "bg-muted"
                         )}
                         style={color.value ? { backgroundColor: color.value } : undefined}
@@ -346,19 +315,11 @@ export function NoteFormDialog({
             />
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending
-                  ? "Saving..."
-                  : isEditing
-                  ? "Save Changes"
-                  : "Create Note"}
+                {mutation.isPending ? "Saving..." : isEditing ? "Save Changes" : "Create Note"}
               </Button>
             </div>
           </form>
