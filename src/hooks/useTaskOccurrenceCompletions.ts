@@ -226,10 +226,61 @@ export function useTaskOccurrenceActions() {
     },
   });
 
+  const splitSeries = useMutation({
+    mutationFn: async ({ 
+      seriesTaskId, 
+      occurrenceStartAt,
+      newRRule,
+      payload,
+    }: { 
+      seriesTaskId: string; 
+      occurrenceStartAt: Date;
+      newRRule: string;
+      payload?: {
+        title?: string;
+        description?: string;
+        priority?: string;
+        status?: string;
+        due_date?: string;
+      };
+    }) => {
+      const { data, error } = await supabase.rpc("split_task_series_from_occurrence", {
+        p_series_task_id: seriesTaskId,
+        p_occurrence_start_at: occurrenceStartAt.toISOString(),
+        p_new_rrule: newRRule,
+        p_title: payload?.title || null,
+        p_description: payload?.description || null,
+        p_priority: payload?.priority || null,
+        p_status: payload?.status || null,
+        p_due_date: payload?.due_date || null,
+      });
+
+      if (error) throw error;
+      return { data, seriesTaskId, occurrenceStartAt };
+    },
+    onSuccess: ({ seriesTaskId }) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["recurring-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["task-occurrences"] });
+      queryClient.invalidateQueries({ queryKey: ["expanded-task-occurrences"] });
+      queryClient.invalidateQueries({ queryKey: ["all-task-occurrences"] });
+      
+      if (activeCompanyId) {
+        logAudit("task.series_split", "task", seriesTaskId, {});
+      }
+      
+      toast.success("Series updated from this occurrence");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to split series");
+    },
+  });
+
   return {
     completeOccurrence,
     uncompleteOccurrence,
     skipOccurrence,
     createOverride,
+    splitSeries,
   };
 }

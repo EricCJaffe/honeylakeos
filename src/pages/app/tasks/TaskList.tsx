@@ -2,7 +2,7 @@ import * as React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { CheckCircle2, Circle, MoreHorizontal, Pencil, Calendar, Repeat } from "lucide-react";
+import { CheckCircle2, Circle, MoreHorizontal, Pencil, Calendar, Repeat, Layers } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/EmptyState";
+import { rruleToConfig } from "@/components/tasks/RecurrenceSelector";
 
 interface TaskListProps {
   tasks: any[];
@@ -22,6 +23,8 @@ interface TaskListProps {
   onAddTask?: () => void;
   onEditTask?: (task: any) => void;
   showProject?: boolean;
+  showPhase?: boolean;
+  showRecurrence?: boolean;
 }
 
 export function TaskList({
@@ -30,6 +33,8 @@ export function TaskList({
   onAddTask,
   onEditTask,
   showProject = false,
+  showPhase = false,
+  showRecurrence = false,
 }: TaskListProps) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -47,6 +52,7 @@ export function TaskList({
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["project-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["recurring-tasks"] });
     },
     onError: () => {
       toast.error("Failed to update task");
@@ -65,6 +71,28 @@ export function TaskList({
         return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
       default:
         return "bg-muted text-muted-foreground";
+    }
+  };
+
+  const getRecurrenceLabel = (task: any) => {
+    if (!task.recurrence_rules) return null;
+    const config = rruleToConfig(task.recurrence_rules, task.recurrence_timezone);
+    if (!config || config.frequency === "none") return null;
+    
+    const freq = config.frequency;
+    const interval = config.interval;
+    
+    switch (freq) {
+      case "daily":
+        return interval === 1 ? "Daily" : `Every ${interval} days`;
+      case "weekly":
+        return interval === 1 ? "Weekly" : `Every ${interval} weeks`;
+      case "monthly":
+        return interval === 1 ? "Monthly" : `Every ${interval} months`;
+      case "yearly":
+        return interval === 1 ? "Yearly" : `Every ${interval} years`;
+      default:
+        return "Recurring";
     }
   };
 
@@ -108,9 +136,12 @@ export function TaskList({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  toggleStatus.mutate({ taskId: task.id, currentStatus: task.status });
+                  if (!task.is_recurring_template) {
+                    toggleStatus.mutate({ taskId: task.id, currentStatus: task.status });
+                  }
                 }}
                 className="shrink-0 text-muted-foreground hover:text-primary transition-colors"
+                disabled={task.is_recurring_template}
               >
                 {task.status === "done" ? (
                   <CheckCircle2 className="h-5 w-5 text-primary" />
@@ -133,17 +164,29 @@ export function TaskList({
                     <Repeat className="h-3.5 w-3.5 text-muted-foreground" />
                   )}
                 </div>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
                   {showProject && task.project && (
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       {task.project.emoji} {task.project.name}
                     </span>
                   )}
-                  {task.due_date && (
+                  {showPhase && task.phase && (
+                    <Badge variant="outline" className="text-xs py-0 h-5">
+                      <Layers className="h-3 w-3 mr-1" />
+                      {task.phase.name}
+                    </Badge>
+                  )}
+                  {task.due_date && !task.is_recurring_template && (
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
                       {format(new Date(task.due_date), "MMM d")}
                     </span>
+                  )}
+                  {showRecurrence && task.is_recurring_template && (
+                    <Badge variant="secondary" className="text-xs py-0 h-5">
+                      <Repeat className="h-3 w-3 mr-1" />
+                      {getRecurrenceLabel(task)}
+                    </Badge>
                   )}
                 </div>
               </div>
