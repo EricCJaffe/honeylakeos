@@ -966,6 +966,241 @@ export type Database = {
           },
         ]
       }
+      form_fields: {
+        Row: {
+          created_at: string
+          field_type: string
+          form_id: string
+          helper_text: string | null
+          id: string
+          is_required: boolean | null
+          label: string
+          maps_to: string | null
+          options: Json | null
+          placeholder: string | null
+          sort_order: number
+          updated_at: string
+          validation_rules: Json | null
+        }
+        Insert: {
+          created_at?: string
+          field_type: string
+          form_id: string
+          helper_text?: string | null
+          id?: string
+          is_required?: boolean | null
+          label: string
+          maps_to?: string | null
+          options?: Json | null
+          placeholder?: string | null
+          sort_order?: number
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Update: {
+          created_at?: string
+          field_type?: string
+          form_id?: string
+          helper_text?: string | null
+          id?: string
+          is_required?: boolean | null
+          label?: string
+          maps_to?: string | null
+          options?: Json | null
+          placeholder?: string | null
+          sort_order?: number
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_fields_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_submission_values: {
+        Row: {
+          created_at: string
+          field_id: string
+          id: string
+          submission_id: string
+          value: string | null
+        }
+        Insert: {
+          created_at?: string
+          field_id: string
+          id?: string
+          submission_id: string
+          value?: string | null
+        }
+        Update: {
+          created_at?: string
+          field_id?: string
+          id?: string
+          submission_id?: string
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_submission_values_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "form_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_submission_values_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "form_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_submissions: {
+        Row: {
+          company_id: string
+          created_crm_client_id: string | null
+          created_external_contact_id: string | null
+          created_task_id: string | null
+          form_id: string
+          id: string
+          metadata: Json | null
+          submitted_at: string
+          submitted_by: string | null
+          submitter_email: string | null
+          submitter_name: string | null
+          submitter_phone: string | null
+        }
+        Insert: {
+          company_id: string
+          created_crm_client_id?: string | null
+          created_external_contact_id?: string | null
+          created_task_id?: string | null
+          form_id: string
+          id?: string
+          metadata?: Json | null
+          submitted_at?: string
+          submitted_by?: string | null
+          submitter_email?: string | null
+          submitter_name?: string | null
+          submitter_phone?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_crm_client_id?: string | null
+          created_external_contact_id?: string | null
+          created_task_id?: string | null
+          form_id?: string
+          id?: string
+          metadata?: Json | null
+          submitted_at?: string
+          submitted_by?: string | null
+          submitter_email?: string | null
+          submitter_name?: string | null
+          submitter_phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_submissions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_submissions_created_crm_client_id_fkey"
+            columns: ["created_crm_client_id"]
+            isOneToOne: false
+            referencedRelation: "crm_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_submissions_created_external_contact_id_fkey"
+            columns: ["created_external_contact_id"]
+            isOneToOne: false
+            referencedRelation: "external_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_submissions_created_task_id_fkey"
+            columns: ["created_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_submissions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forms: {
+        Row: {
+          action_create_contact: boolean | null
+          action_create_crm: boolean | null
+          action_create_task: boolean | null
+          action_crm_lifecycle_status: string | null
+          action_task_title_template: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          settings: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          action_create_contact?: boolean | null
+          action_create_crm?: boolean | null
+          action_create_task?: boolean | null
+          action_crm_lifecycle_status?: string | null
+          action_task_title_template?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          settings?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          action_create_contact?: boolean | null
+          action_create_crm?: boolean | null
+          action_create_task?: boolean | null
+          action_crm_lifecycle_status?: string | null
+          action_task_title_template?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          settings?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forms_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_members: {
         Row: {
           created_at: string
