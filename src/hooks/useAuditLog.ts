@@ -128,7 +128,9 @@ export type AuditAction =
   | "lms.enrollment_updated"
   | "lms.coach_assigned"
   | "lms.coach_removed"
-  | "lms.coach_role_updated";
+  | "lms.coach_role_updated"
+  // Capability settings actions
+  | "capability.settings_updated";
 
 export type EntityType =
   | "employee"

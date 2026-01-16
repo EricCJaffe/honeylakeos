@@ -1,5 +1,6 @@
 import { useMembership } from "@/lib/membership";
 import { useModuleAccess, ModuleKey } from "./useModuleAccess";
+import { useCapabilitySettings, CapabilityFlag, DEFAULT_CAPABILITY_SETTINGS } from "./useCapabilitySettings";
 
 /**
  * Permission capabilities for module operations.
@@ -50,19 +51,26 @@ export class PermissionError extends Error {
 }
 
 /**
+ * Mapping from module key to capability flags
+ */
+const MODULE_CAPABILITY_MAP: Record<string, { manage: CapabilityFlag; publish?: CapabilityFlag }> = {
+  crm: { manage: "crm_member_manage_enabled" },
+  coaches: { manage: "coaches_member_manage_enabled" },
+  forms: { manage: "forms_member_manage_enabled", publish: "forms_member_publish_enabled" },
+  lms: { manage: "lms_member_manage_enabled", publish: "lms_member_publish_enabled" },
+};
+
+/**
  * Centralized hook for checking module permissions and capabilities.
  * 
  * This hook provides capability flags for each module that can be used to:
  * 1. Gate UI elements (hide/disable buttons)
  * 2. Validate backend operations (throw PermissionError if not allowed)
  * 
- * Current behavior (Phase 2 - permissive defaults):
- * - All company members have full access to all enabled modules
- * - Publish/Admin capabilities are currently open but gated for future restriction
- * 
- * Future behavior (Phase 3+):
- * - Capability flags can be driven by company settings or role configuration
- * - No code changes required in consuming components
+ * Capabilities are determined by:
+ * - Admin status (admins always have all capabilities)
+ * - Company capability settings (configurable by company admins)
+ * - Module enablement status
  * 
  * @param moduleKey - The module to check permissions for
  */
@@ -81,45 +89,48 @@ export function useModulePermissions(moduleKey: ModuleKey): ModulePermissionsRes
     loading: moduleLoading,
   } = useModuleAccess(moduleKey);
 
-  const loading = membershipLoading || moduleLoading;
+  const { settings, isLoading: settingsLoading } = useCapabilitySettings();
+
+  const loading = membershipLoading || moduleLoading || settingsLoading;
 
   // Check if user is any kind of admin
   const isAdmin = isCompanyAdmin || isSiteAdmin || isSuperAdmin;
 
-  // Check if user has module_admin role
-  const isModuleAdmin = activeMembership?.role === "module_admin";
-
   // Check if user is a regular member with access
   const isMember = !!activeMembership;
+
+  // Get capability flags for this module
+  const moduleCapabilities = MODULE_CAPABILITY_MAP[moduleKey];
 
   // ============================================================================
   // Capability Calculation
   // ============================================================================
-  // Phase 2: All capabilities are permissive by default for company members
-  // This allows the system to function as before while preparing for future
-  // role-based restrictions.
   
   // Base capabilities - all members can read if module is enabled
   const canRead = hasAccess && isMember;
 
-  // Create/Edit capabilities - currently open to all members
-  // Future: can be restricted via company settings
-  const canCreate = hasAccess && isMember;
-  const canEdit = hasAccess && isMember;
+  // Manage capabilities (create/edit/archive/delete)
+  // Admins always have access; members check capability flag
+  const memberCanManage = moduleCapabilities?.manage
+    ? settings[moduleCapabilities.manage]
+    : true; // Default permissive for modules without explicit capability
 
-  // Archive/Delete capabilities - currently open to all members
-  // Future: can be restricted to admins/specific roles
-  const canArchive = hasAccess && isMember;
-  const canDelete = hasAccess && isMember;
+  const canCreate = hasAccess && (isAdmin || (isMember && memberCanManage));
+  const canEdit = hasAccess && (isAdmin || (isMember && memberCanManage));
+  const canArchive = hasAccess && (isAdmin || (isMember && memberCanManage));
+  const canDelete = hasAccess && (isAdmin || (isMember && memberCanManage));
 
   // Publish capability - for Forms and LMS
-  // Currently open but flagged for future admin-only restriction
-  // This is the first capability likely to be restricted
-  const canPublish = hasAccess && (isAdmin || isModuleAdmin || isMember);
+  // Admins always have access; members check publish capability flag
+  const memberCanPublish = moduleCapabilities?.publish
+    ? settings[moduleCapabilities.publish]
+    : memberCanManage; // Fall back to manage capability if no publish flag
+
+  const canPublish = hasAccess && (isAdmin || (isMember && memberCanPublish));
 
   // Admin capability - for settings and templates
-  // This remains open but is prepared for future restriction
-  const canAdmin = hasAccess && (isAdmin || isModuleAdmin || isMember);
+  // This is always admin-only
+  const canAdmin = hasAccess && isAdmin;
 
   /**
    * Assert that a capability is available, throw PermissionError if not.
@@ -177,22 +188,28 @@ export function useExternalContactsPermissions() {
     isSiteAdmin, 
     isSuperAdmin,
     activeMembership,
-    loading 
+    loading: membershipLoading 
   } = useMembership();
 
+  const { settings, isLoading: settingsLoading } = useCapabilitySettings();
+
+  const loading = membershipLoading || settingsLoading;
+
   const isAdmin = isCompanyAdmin || isSiteAdmin || isSuperAdmin;
-  const isModuleAdmin = activeMembership?.role === "module_admin";
   const isMember = !!activeMembership;
   const hasAccess = isMember;
 
-  // External contacts is a core system - always available to members
+  // Check capability flag
+  const memberCanManage = settings.contacts_member_manage_enabled;
+
+  // External contacts is a core system - always available to members for reading
   const canRead = hasAccess;
-  const canCreate = hasAccess;
-  const canEdit = hasAccess;
-  const canArchive = hasAccess;
-  const canDelete = hasAccess;
+  const canCreate = hasAccess && (isAdmin || memberCanManage);
+  const canEdit = hasAccess && (isAdmin || memberCanManage);
+  const canArchive = hasAccess && (isAdmin || memberCanManage);
+  const canDelete = hasAccess && (isAdmin || memberCanManage);
   const canPublish = hasAccess; // Not applicable
-  const canAdmin = hasAccess && (isAdmin || isModuleAdmin);
+  const canAdmin = hasAccess && isAdmin;
 
   const assertCapability = (capability: keyof ModuleCapabilities, action?: string) => {
     const capabilities: ModuleCapabilities = {

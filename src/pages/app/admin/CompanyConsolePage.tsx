@@ -16,6 +16,7 @@ import {
   ClipboardList,
   Languages,
   Boxes,
+  Shield,
 } from "lucide-react";
 
 // Import embedded panel components
@@ -28,6 +29,7 @@ import LocationsPanel from "./company-console/LocationsPanel";
 import CompanyModulesPanel from "./company-console/ModulesPanel";
 import ModuleChecklistPanel from "./company-console/ModuleChecklistPanel";
 import TerminologyPanel from "./company-console/TerminologyPanel";
+import { CapabilitySettingsPanel } from "./company-console/CapabilitySettingsPanel";
 
 const adminSections = [
   {
@@ -67,6 +69,12 @@ const adminSections = [
     description: "Enable or disable feature modules for your company.",
   },
   {
+    id: "capabilities",
+    label: "Capabilities",
+    icon: Shield,
+    description: "Control what actions regular members can perform across modules.",
+  },
+  {
     id: "terminology",
     label: "Terminology",
     icon: Languages,
@@ -94,6 +102,7 @@ export default function CompanyConsolePage() {
       queryClient.invalidateQueries({ queryKey: ["company-members"] });
       queryClient.invalidateQueries({ queryKey: ["company-modules"] });
       queryClient.invalidateQueries({ queryKey: ["company-module"] });
+      queryClient.invalidateQueries({ queryKey: ["capability-settings"] });
       queryClient.invalidateQueries({ queryKey: ["employees"] });
       queryClient.invalidateQueries({ queryKey: ["groups"] });
       queryClient.invalidateQueries({ queryKey: ["locations"] });
@@ -182,6 +191,7 @@ export default function CompanyConsolePage() {
                 <ModuleChecklistPanel />
               </>
             )}
+            {section.id === "capabilities" && <CapabilitySettingsPanel />}
             {section.id === "terminology" && <TerminologyPanel />}
             {section.id === "audit" && <AuditLogPanel />}
           </TabsContent>
