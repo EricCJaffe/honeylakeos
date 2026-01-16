@@ -59,7 +59,13 @@ export type AuditAction =
   | "task.occurrence_completed"
   | "task.occurrence_uncompleted"
   | "task.occurrence_skipped"
-  | "task.occurrence_overridden_created";
+  | "task.occurrence_overridden_created"
+  // Event actions
+  | "event.series_created"
+  | "event.series_updated"
+  | "event.occurrence_skipped"
+  | "event.occurrence_overridden"
+  | "event.series_split";
 
 export type EntityType =
   | "employee"
@@ -73,7 +79,8 @@ export type EntityType =
   | "company"
   | "company_module"
   | "template"
-  | "task";
+  | "task"
+  | "event";
 
 interface LogAuditEventParams {
   companyId: string;

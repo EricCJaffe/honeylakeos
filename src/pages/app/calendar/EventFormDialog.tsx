@@ -61,7 +61,7 @@ interface EventFormDialogProps {
   onOpenChange: (open: boolean) => void;
   event?: any;
   defaultDate?: Date | null;
-  editMode?: "single" | "series";
+  editMode?: "single" | "future" | "series";
   occurrenceDate?: Date;
 }
 
@@ -197,6 +197,21 @@ export function EventFormDialog({
             p_color: values.color || null,
           });
           if (error) throw error;
+        } else if (editMode === "future" && event.is_recurring_template && occurrenceDate) {
+          // Split the series - edit this and future occurrences
+          const { error } = await supabase.rpc("update_event_series_from_occurrence", {
+            p_series_event_id: event.id,
+            p_occurrence_start_at: occurrenceDate.toISOString(),
+            p_new_rrule: rrule || event.recurrence_rules,
+            p_title: values.title,
+            p_description: values.description || null,
+            p_start_at: startAt.toISOString(),
+            p_end_at: endAt?.toISOString() || null,
+            p_all_day: values.all_day,
+            p_location_text: values.location_text || null,
+            p_color: values.color || null,
+          });
+          if (error) throw error;
         } else {
           // Update the entire series or regular event
           const { error } = await supabase
@@ -244,6 +259,8 @@ export function EventFormDialog({
             {isEditing 
               ? editMode === "single" 
                 ? "Edit This Event" 
+                : editMode === "future"
+                ? "Edit This & Future Events"
                 : "Edit Event" 
               : "New Event"}
           </DialogTitle>

@@ -1,9 +1,8 @@
-import * as React from "react";
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Calendar, Pencil, Trash2, Clock, MapPin, Users } from "lucide-react";
+import { Calendar, Pencil, Trash2, Clock, MapPin, Users, Repeat } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
@@ -15,6 +14,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { EventFormDialog } from "./EventFormDialog";
 import { EntityLinksPanel } from "@/components/EntityLinksPanel";
+import { RecurringEventOccurrences } from "@/components/calendar/RecurringEventOccurrences";
 
 export default function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -23,6 +23,8 @@ export default function EventDetailPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
+  const [editMode, setEditMode] = useState<"single" | "series">("series");
+  const [occurrenceToEdit, setOccurrenceToEdit] = useState<Date | undefined>();
 
   const { data: event, isLoading } = useQuery({
     queryKey: ["event", eventId],
@@ -116,6 +118,12 @@ export default function EventDetailPage() {
         {event.all_day && (
           <Badge variant="secondary">All Day</Badge>
         )}
+        {event.is_recurring_template && (
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Repeat className="h-3 w-3" />
+            Recurring
+          </Badge>
+        )}
         {event.project && (
           <Badge variant="outline">
             {event.project.emoji} {event.project.name}
@@ -128,6 +136,20 @@ export default function EventDetailPage() {
           />
         )}
       </div>
+
+      {/* Recurring Event Occurrences */}
+      {event.is_recurring_template && (
+        <div className="mb-6">
+          <RecurringEventOccurrences 
+            event={event}
+            onEditOccurrence={(date) => {
+              setOccurrenceToEdit(date);
+              setEditMode("single");
+              setIsFormDialogOpen(true);
+            }}
+          />
+        </div>
+      )}
 
       {/* Links */}
       <div className="mb-6">
@@ -190,8 +212,16 @@ export default function EventDetailPage() {
 
       <EventFormDialog
         open={isFormDialogOpen}
-        onOpenChange={setIsFormDialogOpen}
+        onOpenChange={(open) => {
+          setIsFormDialogOpen(open);
+          if (!open) {
+            setEditMode("series");
+            setOccurrenceToEdit(undefined);
+          }
+        }}
         event={event}
+        editMode={editMode}
+        occurrenceDate={occurrenceToEdit}
       />
     </div>
   );
