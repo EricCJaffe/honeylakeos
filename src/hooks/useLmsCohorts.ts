@@ -4,6 +4,7 @@ import { useActiveCompany } from "./useActiveCompany";
 import { useAuditLog } from "./useAuditLog";
 import { useCompanyModules } from "./useCompanyModules";
 import { toast } from "sonner";
+import type { Json } from "@/integrations/supabase/types";
 
 export type CohortStatus = "planned" | "active" | "completed" | "archived";
 
@@ -17,14 +18,11 @@ export interface LmsCohort {
   end_date: string | null;
   status: CohortStatus;
   linked_project_id: string | null;
-  settings: Record<string, unknown>;
+  settings: Json;
   created_by: string | null;
   created_at: string;
   updated_at: string;
-  lms_courses?: {
-    id: string;
-    title: string;
-  };
+  lms_courses?: { id: string; title: string };
 }
 
 export interface CreateCohortInput {
@@ -43,7 +41,6 @@ export interface UpdateCohortInput {
   end_date?: string | null;
   status?: CohortStatus;
   linked_project_id?: string | null;
-  settings?: Record<string, unknown>;
 }
 
 export interface CohortFilters {
@@ -68,17 +65,9 @@ export function useLmsCohorts(filters: CohortFilters = {}) {
         .eq("company_id", activeCompanyId)
         .order("created_at", { ascending: false });
 
-      if (filters.courseId) {
-        query = query.eq("course_id", filters.courseId);
-      }
-
-      if (filters.status && filters.status !== "all") {
-        query = query.eq("status", filters.status);
-      }
-
-      if (filters.search) {
-        query = query.or(`name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
-      }
+      if (filters.courseId) query = query.eq("course_id", filters.courseId);
+      if (filters.status && filters.status !== "all") query = query.eq("status", filters.status);
+      if (filters.search) query = query.or(`name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
 
       const { data, error } = await query;
       if (error) throw error;
@@ -115,12 +104,11 @@ export function useLmsCohort(cohortId: string | undefined) {
 export function useLmsCohortMutations() {
   const queryClient = useQueryClient();
   const { activeCompanyId } = useActiveCompany();
-  const { logEvent } = useAuditLog();
+  const { log } = useAuditLog();
 
   const createCohort = useMutation({
     mutationFn: async (input: CreateCohortInput) => {
       if (!activeCompanyId) throw new Error("No active company");
-
       const { data: userData } = await supabase.auth.getUser();
 
       const { data, error } = await supabase
@@ -143,12 +131,7 @@ export function useLmsCohortMutations() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["cohorts"] });
-      logEvent({
-        action: "lms.cohort_created",
-        entityType: "lms_cohort",
-        entityId: data.id,
-        metadata: { name: data.name, courseId: data.course_id },
-      });
+      log("lms.cohort_created", "lms_cohort", data.id, { name: data.name, courseId: data.course_id });
       toast.success("Cohort created successfully");
     },
     onError: (error) => {
@@ -160,10 +143,7 @@ export function useLmsCohortMutations() {
     mutationFn: async ({ id, ...input }: UpdateCohortInput & { id: string }) => {
       const { data, error } = await supabase
         .from("lms_cohorts")
-        .update({
-          ...input,
-          updated_at: new Date().toISOString(),
-        })
+        .update({ ...input, updated_at: new Date().toISOString() })
         .eq("id", id)
         .select()
         .single();
@@ -174,12 +154,7 @@ export function useLmsCohortMutations() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["cohorts"] });
       queryClient.invalidateQueries({ queryKey: ["cohort", data.id] });
-      logEvent({
-        action: "lms.cohort_updated",
-        entityType: "lms_cohort",
-        entityId: data.id,
-        metadata: { name: data.name },
-      });
+      log("lms.cohort_updated", "lms_cohort", data.id, { name: data.name });
       toast.success("Cohort updated successfully");
     },
     onError: (error) => {
@@ -202,12 +177,7 @@ export function useLmsCohortMutations() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["cohorts"] });
       queryClient.invalidateQueries({ queryKey: ["cohort", data.id] });
-      logEvent({
-        action: "lms.cohort_status_changed",
-        entityType: "lms_cohort",
-        entityId: data.id,
-        metadata: { name: data.name, status: data.status },
-      });
+      log("lms.cohort_status_changed", "lms_cohort", data.id, { name: data.name, status: data.status });
       toast.success(`Cohort status updated to ${data.status}`);
     },
     onError: (error) => {
@@ -217,22 +187,13 @@ export function useLmsCohortMutations() {
 
   const deleteCohort = useMutation({
     mutationFn: async (cohortId: string) => {
-      const { error } = await supabase
-        .from("lms_cohorts")
-        .delete()
-        .eq("id", cohortId);
-
+      const { error } = await supabase.from("lms_cohorts").delete().eq("id", cohortId);
       if (error) throw error;
       return cohortId;
     },
     onSuccess: (cohortId) => {
       queryClient.invalidateQueries({ queryKey: ["cohorts"] });
-      logEvent({
-        action: "lms.cohort_deleted",
-        entityType: "lms_cohort",
-        entityId: cohortId,
-        metadata: {},
-      });
+      log("lms.cohort_deleted", "lms_cohort", cohortId, {});
       toast.success("Cohort deleted successfully");
     },
     onError: (error) => {
@@ -240,40 +201,25 @@ export function useLmsCohortMutations() {
     },
   });
 
-  return {
-    createCohort,
-    updateCohort,
-    updateCohortStatus,
-    deleteCohort,
-  };
+  return { createCohort, updateCohort, updateCohortStatus, deleteCohort };
 }
 
 export function getCohortStatusLabel(status: CohortStatus): string {
   switch (status) {
-    case "planned":
-      return "Planned";
-    case "active":
-      return "Active";
-    case "completed":
-      return "Completed";
-    case "archived":
-      return "Archived";
-    default:
-      return status;
+    case "planned": return "Planned";
+    case "active": return "Active";
+    case "completed": return "Completed";
+    case "archived": return "Archived";
+    default: return status;
   }
 }
 
 export function getCohortStatusColor(status: CohortStatus): string {
   switch (status) {
-    case "planned":
-      return "bg-muted text-muted-foreground";
-    case "active":
-      return "bg-primary/10 text-primary";
-    case "completed":
-      return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
-    case "archived":
-      return "bg-destructive/10 text-destructive";
-    default:
-      return "bg-muted";
+    case "planned": return "bg-muted text-muted-foreground";
+    case "active": return "bg-primary/10 text-primary";
+    case "completed": return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
+    case "archived": return "bg-destructive/10 text-destructive";
+    default: return "bg-muted";
   }
 }
