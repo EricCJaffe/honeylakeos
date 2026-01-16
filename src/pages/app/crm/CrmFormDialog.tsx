@@ -20,7 +20,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextField } from "@/components/ui/rich-text-field";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -363,18 +363,16 @@ export function CrmFormDialog({ open, onOpenChange, client }: CrmFormDialogProps
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes</FormLabel>
                   <FormControl>
-                    <Textarea
+                    <RichTextField
+                      label="Notes"
+                      value={field.value}
+                      onChange={field.onChange}
                       placeholder="Additional notes..."
-                      className="min-h-[100px]"
-                      {...field}
-                      value={field.value || ""}
+                      minHeight="100px"
+                      helperText={`Internal notes about this ${clientTerm.toLowerCase()}`}
                     />
                   </FormControl>
-                  <FormDescription>
-                    Internal notes about this {clientTerm.toLowerCase()}
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
