@@ -17,17 +17,9 @@ export interface LmsCohortCoach {
   coach_profiles?: {
     id: string;
     profile_type: string;
-    external_contacts: {
-      id: string;
-      full_name: string;
-      email: string | null;
-    };
+    external_contacts: { id: string; full_name: string; email: string | null };
   } | null;
-  external_contacts?: {
-    id: string;
-    full_name: string;
-    email: string | null;
-  } | null;
+  external_contacts?: { id: string; full_name: string; email: string | null } | null;
 }
 
 export interface AssignCoachInput {
@@ -49,11 +41,7 @@ export function useLmsCohortCoaches(cohortId: string | undefined) {
 
       const { data, error } = await supabase
         .from("lms_cohort_coaches")
-        .select(`
-          *,
-          coach_profiles(id, profile_type, external_contacts(id, full_name, email)),
-          external_contacts(id, full_name, email)
-        `)
+        .select(`*, coach_profiles(id, profile_type, external_contacts(id, full_name, email)), external_contacts(id, full_name, email)`)
         .eq("cohort_id", cohortId)
         .eq("company_id", activeCompanyId)
         .order("created_at", { ascending: true });
@@ -68,7 +56,7 @@ export function useLmsCohortCoaches(cohortId: string | undefined) {
 export function useLmsCohortCoachMutations() {
   const queryClient = useQueryClient();
   const { activeCompanyId } = useActiveCompany();
-  const { logEvent } = useAuditLog();
+  const { log } = useAuditLog();
 
   const assignCoach = useMutation({
     mutationFn: async (input: AssignCoachInput) => {
@@ -89,11 +77,7 @@ export function useLmsCohortCoachMutations() {
           role: input.role || "instructor",
           created_by: userData.user?.id || null,
         })
-        .select(`
-          *,
-          coach_profiles(id, profile_type, external_contacts(id, full_name, email)),
-          external_contacts(id, full_name, email)
-        `)
+        .select(`*, coach_profiles(id, profile_type, external_contacts(id, full_name, email)), external_contacts(id, full_name, email)`)
         .single();
 
       if (error) throw error;
@@ -101,20 +85,11 @@ export function useLmsCohortCoachMutations() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["cohort-coaches"] });
-      
-      const coachName = data.coach_profiles?.external_contacts?.full_name 
-        || data.external_contacts?.full_name 
-        || "Coach";
-
-      logEvent({
-        action: "lms.coach_assigned",
-        entityType: "lms_cohort",
-        entityId: data.cohort_id,
-        metadata: {
-          coachId: data.coach_profile_id || data.external_contact_id,
-          coachName,
-          role: data.role,
-        },
+      const coachName = data.coach_profiles?.external_contacts?.full_name || data.external_contacts?.full_name || "Coach";
+      log("lms.coach_assigned", "lms_cohort", data.cohort_id, {
+        coachId: data.coach_profile_id || data.external_contact_id,
+        coachName,
+        role: data.role,
       });
       toast.success(`${coachName} assigned to cohort`);
     },
@@ -129,24 +104,13 @@ export function useLmsCohortCoachMutations() {
 
   const updateCoachRole = useMutation({
     mutationFn: async ({ id, role }: { id: string; role: string }) => {
-      const { data, error } = await supabase
-        .from("lms_cohort_coaches")
-        .update({ role })
-        .eq("id", id)
-        .select()
-        .single();
-
+      const { data, error } = await supabase.from("lms_cohort_coaches").update({ role }).eq("id", id).select().single();
       if (error) throw error;
       return data as LmsCohortCoach;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["cohort-coaches"] });
-      logEvent({
-        action: "lms.coach_role_updated",
-        entityType: "lms_cohort",
-        entityId: data.cohort_id,
-        metadata: { role: data.role },
-      });
+      log("lms.coach_role_updated", "lms_cohort", data.cohort_id, { role: data.role });
       toast.success("Coach role updated");
     },
     onError: (error) => {
@@ -156,29 +120,14 @@ export function useLmsCohortCoachMutations() {
 
   const removeCoach = useMutation({
     mutationFn: async (assignmentId: string) => {
-      // First get the assignment to log properly
-      const { data: assignment } = await supabase
-        .from("lms_cohort_coaches")
-        .select("cohort_id")
-        .eq("id", assignmentId)
-        .single();
-
-      const { error } = await supabase
-        .from("lms_cohort_coaches")
-        .delete()
-        .eq("id", assignmentId);
-
+      const { data: assignment } = await supabase.from("lms_cohort_coaches").select("cohort_id").eq("id", assignmentId).single();
+      const { error } = await supabase.from("lms_cohort_coaches").delete().eq("id", assignmentId);
       if (error) throw error;
       return { assignmentId, cohortId: assignment?.cohort_id };
     },
     onSuccess: ({ cohortId }) => {
       queryClient.invalidateQueries({ queryKey: ["cohort-coaches"] });
-      logEvent({
-        action: "lms.coach_removed",
-        entityType: "lms_cohort",
-        entityId: cohortId || "",
-        metadata: {},
-      });
+      log("lms.coach_removed", "lms_cohort", cohortId || "", {});
       toast.success("Coach removed from cohort");
     },
     onError: (error) => {
@@ -186,25 +135,13 @@ export function useLmsCohortCoachMutations() {
     },
   });
 
-  return {
-    assignCoach,
-    updateCoachRole,
-    removeCoach,
-  };
+  return { assignCoach, updateCoachRole, removeCoach };
 }
 
 export function getCoachDisplayName(coach: LmsCohortCoach): string {
-  return (
-    coach.coach_profiles?.external_contacts?.full_name ||
-    coach.external_contacts?.full_name ||
-    "Unknown"
-  );
+  return coach.coach_profiles?.external_contacts?.full_name || coach.external_contacts?.full_name || "Unknown";
 }
 
 export function getCoachEmail(coach: LmsCohortCoach): string | null {
-  return (
-    coach.coach_profiles?.external_contacts?.email ||
-    coach.external_contacts?.email ||
-    null
-  );
+  return coach.coach_profiles?.external_contacts?.email || coach.external_contacts?.email || null;
 }

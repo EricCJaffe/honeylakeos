@@ -29,10 +29,7 @@ export interface LmsEnrollment {
     id: string;
     name: string;
     course_id: string;
-    lms_courses?: {
-      id: string;
-      title: string;
-    };
+    lms_courses?: { id: string; title: string };
   };
 }
 
@@ -67,26 +64,16 @@ export function useLmsEnrollments(filters: EnrollmentFilters = {}) {
 
       let query = supabase
         .from("lms_enrollments")
-        .select(`
-          *,
-          external_contacts(id, full_name, email, phone, organization_name),
-          lms_cohorts(id, name, course_id, lms_courses(id, title))
-        `)
+        .select(`*, external_contacts(id, full_name, email, phone, organization_name), lms_cohorts(id, name, course_id, lms_courses(id, title))`)
         .eq("company_id", activeCompanyId)
         .order("enrolled_at", { ascending: false });
 
-      if (filters.cohortId) {
-        query = query.eq("cohort_id", filters.cohortId);
-      }
-
-      if (filters.status && filters.status !== "all") {
-        query = query.eq("status", filters.status);
-      }
+      if (filters.cohortId) query = query.eq("cohort_id", filters.cohortId);
+      if (filters.status && filters.status !== "all") query = query.eq("status", filters.status);
 
       const { data, error } = await query;
       if (error) throw error;
 
-      // Apply search filter client-side for nested data
       let results = data as LmsEnrollment[];
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
@@ -97,7 +84,6 @@ export function useLmsEnrollments(filters: EnrollmentFilters = {}) {
             e.external_contacts?.organization_name?.toLowerCase().includes(searchLower)
         );
       }
-
       return results;
     },
     enabled: !!activeCompanyId && lmsEnabled,
@@ -116,10 +102,7 @@ export function useLmsEnrollmentsByCohort(cohortId: string | undefined) {
 
       const { data, error } = await supabase
         .from("lms_enrollments")
-        .select(`
-          *,
-          external_contacts(id, full_name, email, phone, organization_name)
-        `)
+        .select(`*, external_contacts(id, full_name, email, phone, organization_name)`)
         .eq("cohort_id", cohortId)
         .eq("company_id", activeCompanyId)
         .order("enrolled_at", { ascending: false });
@@ -134,12 +117,11 @@ export function useLmsEnrollmentsByCohort(cohortId: string | undefined) {
 export function useLmsEnrollmentMutations() {
   const queryClient = useQueryClient();
   const { activeCompanyId } = useActiveCompany();
-  const { logEvent } = useAuditLog();
+  const { log } = useAuditLog();
 
   const enrollParticipant = useMutation({
     mutationFn: async (input: CreateEnrollmentInput) => {
       if (!activeCompanyId) throw new Error("No active company");
-
       const { data: userData } = await supabase.auth.getUser();
 
       const { data, error } = await supabase
@@ -152,10 +134,7 @@ export function useLmsEnrollmentMutations() {
           notes: input.notes || null,
           created_by: userData.user?.id || null,
         })
-        .select(`
-          *,
-          external_contacts(id, full_name, email)
-        `)
+        .select(`*, external_contacts(id, full_name, email)`)
         .single();
 
       if (error) throw error;
@@ -163,15 +142,10 @@ export function useLmsEnrollmentMutations() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["enrollments"] });
-      logEvent({
-        action: "lms.participant_enrolled",
-        entityType: "lms_enrollment",
-        entityId: data.id,
-        metadata: {
-          cohortId: data.cohort_id,
-          contactId: data.external_contact_id,
-          contactName: data.external_contacts?.full_name,
-        },
+      log("lms.participant_enrolled", "lms_enrollment", data.id, {
+        cohortId: data.cohort_id,
+        contactId: data.external_contact_id,
+        contactName: data.external_contacts?.full_name,
       });
       toast.success("Participant enrolled successfully");
     },
@@ -187,8 +161,6 @@ export function useLmsEnrollmentMutations() {
   const updateEnrollment = useMutation({
     mutationFn: async ({ id, ...input }: UpdateEnrollmentInput & { id: string }) => {
       const updateData: Record<string, unknown> = { ...input };
-
-      // Auto-set completed_at when status changes to completed
       if (input.status === "completed" && !input.completed_at) {
         updateData.completed_at = new Date().toISOString();
       }
@@ -197,10 +169,7 @@ export function useLmsEnrollmentMutations() {
         .from("lms_enrollments")
         .update(updateData)
         .eq("id", id)
-        .select(`
-          *,
-          external_contacts(id, full_name, email)
-        `)
+        .select(`*, external_contacts(id, full_name, email)`)
         .single();
 
       if (error) throw error;
@@ -208,14 +177,9 @@ export function useLmsEnrollmentMutations() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["enrollments"] });
-      logEvent({
-        action: "lms.enrollment_updated",
-        entityType: "lms_enrollment",
-        entityId: data.id,
-        metadata: {
-          status: data.status,
-          contactName: data.external_contacts?.full_name,
-        },
+      log("lms.enrollment_updated", "lms_enrollment", data.id, {
+        status: data.status,
+        contactName: data.external_contacts?.full_name,
       });
       toast.success("Enrollment updated successfully");
     },
@@ -226,22 +190,13 @@ export function useLmsEnrollmentMutations() {
 
   const unenrollParticipant = useMutation({
     mutationFn: async (enrollmentId: string) => {
-      const { error } = await supabase
-        .from("lms_enrollments")
-        .delete()
-        .eq("id", enrollmentId);
-
+      const { error } = await supabase.from("lms_enrollments").delete().eq("id", enrollmentId);
       if (error) throw error;
       return enrollmentId;
     },
     onSuccess: (enrollmentId) => {
       queryClient.invalidateQueries({ queryKey: ["enrollments"] });
-      logEvent({
-        action: "lms.participant_unenrolled",
-        entityType: "lms_enrollment",
-        entityId: enrollmentId,
-        metadata: {},
-      });
+      log("lms.participant_unenrolled", "lms_enrollment", enrollmentId, {});
       toast.success("Participant removed from cohort");
     },
     onError: (error) => {
@@ -249,39 +204,25 @@ export function useLmsEnrollmentMutations() {
     },
   });
 
-  return {
-    enrollParticipant,
-    updateEnrollment,
-    unenrollParticipant,
-  };
+  return { enrollParticipant, updateEnrollment, unenrollParticipant };
 }
 
 export function getEnrollmentStatusLabel(status: EnrollmentStatus): string {
   switch (status) {
-    case "enrolled":
-      return "Enrolled";
-    case "completed":
-      return "Completed";
-    case "dropped":
-      return "Dropped";
-    case "waitlisted":
-      return "Waitlisted";
-    default:
-      return status;
+    case "enrolled": return "Enrolled";
+    case "completed": return "Completed";
+    case "dropped": return "Dropped";
+    case "waitlisted": return "Waitlisted";
+    default: return status;
   }
 }
 
 export function getEnrollmentStatusColor(status: EnrollmentStatus): string {
   switch (status) {
-    case "enrolled":
-      return "bg-primary/10 text-primary";
-    case "completed":
-      return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
-    case "dropped":
-      return "bg-destructive/10 text-destructive";
-    case "waitlisted":
-      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
-    default:
-      return "bg-muted";
+    case "enrolled": return "bg-primary/10 text-primary";
+    case "completed": return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
+    case "dropped": return "bg-destructive/10 text-destructive";
+    case "waitlisted": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
+    default: return "bg-muted";
   }
 }

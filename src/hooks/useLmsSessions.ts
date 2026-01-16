@@ -22,14 +22,8 @@ export interface LmsSession {
   created_by: string | null;
   created_at: string;
   updated_at: string;
-  lms_courses?: {
-    id: string;
-    title: string;
-  };
-  lms_cohorts?: {
-    id: string;
-    name: string;
-  } | null;
+  lms_courses?: { id: string; title: string };
+  lms_cohorts?: { id: string; name: string } | null;
 }
 
 export interface CreateSessionInput {
@@ -79,17 +73,9 @@ export function useLmsSessions(filters: SessionFilters = {}) {
         .order("sort_order", { ascending: true })
         .order("start_at", { ascending: true, nullsFirst: false });
 
-      if (filters.courseId) {
-        query = query.eq("course_id", filters.courseId);
-      }
-
-      if (filters.cohortId) {
-        query = query.eq("cohort_id", filters.cohortId);
-      }
-
-      if (filters.search) {
-        query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
-      }
+      if (filters.courseId) query = query.eq("course_id", filters.courseId);
+      if (filters.cohortId) query = query.eq("cohort_id", filters.cohortId);
+      if (filters.search) query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
 
       const { data, error } = await query;
       if (error) throw error;
@@ -126,16 +112,14 @@ export function useLmsSession(sessionId: string | undefined) {
 export function useLmsSessionMutations() {
   const queryClient = useQueryClient();
   const { activeCompanyId } = useActiveCompany();
-  const { logEvent } = useAuditLog();
+  const { log } = useAuditLog();
   const { isEnabled } = useCompanyModules();
 
   const createSession = useMutation({
     mutationFn: async (input: CreateSessionInput) => {
       if (!activeCompanyId) throw new Error("No active company");
-
       const { data: userData } = await supabase.auth.getUser();
 
-      // Create the session
       const { data: session, error } = await supabase
         .from("lms_sessions")
         .insert({
@@ -175,20 +159,9 @@ export function useLmsSessionMutations() {
           .single();
 
         if (!eventError && event) {
-          // Link the event to the session
-          await supabase
-            .from("lms_sessions")
-            .update({ linked_event_id: event.id })
-            .eq("id", session.id);
-
+          await supabase.from("lms_sessions").update({ linked_event_id: event.id }).eq("id", session.id);
           session.linked_event_id = event.id;
-
-          logEvent({
-            action: "lms.session_calendar_linked",
-            entityType: "lms_session",
-            entityId: session.id,
-            metadata: { eventId: event.id },
-          });
+          log("lms.session_calendar_linked", "lms_session", session.id, { eventId: event.id });
         }
       }
 
@@ -197,12 +170,7 @@ export function useLmsSessionMutations() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["lms-sessions"] });
       queryClient.invalidateQueries({ queryKey: ["events"] });
-      logEvent({
-        action: "lms.session_created",
-        entityType: "lms_session",
-        entityId: data.id,
-        metadata: { title: data.title, cohortId: data.cohort_id },
-      });
+      log("lms.session_created", "lms_session", data.id, { title: data.title, cohortId: data.cohort_id });
       toast.success("Session created successfully");
     },
     onError: (error) => {
@@ -214,10 +182,7 @@ export function useLmsSessionMutations() {
     mutationFn: async ({ id, ...input }: UpdateSessionInput & { id: string }) => {
       const { data, error } = await supabase
         .from("lms_sessions")
-        .update({
-          ...input,
-          updated_at: new Date().toISOString(),
-        })
+        .update({ ...input, updated_at: new Date().toISOString() })
         .eq("id", id)
         .select()
         .single();
@@ -228,12 +193,7 @@ export function useLmsSessionMutations() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["lms-sessions"] });
       queryClient.invalidateQueries({ queryKey: ["lms-session", data.id] });
-      logEvent({
-        action: "lms.session_updated",
-        entityType: "lms_session",
-        entityId: data.id,
-        metadata: { title: data.title },
-      });
+      log("lms.session_updated", "lms_session", data.id, { title: data.title });
       toast.success("Session updated successfully");
     },
     onError: (error) => {
@@ -243,22 +203,13 @@ export function useLmsSessionMutations() {
 
   const deleteSession = useMutation({
     mutationFn: async (sessionId: string) => {
-      const { error } = await supabase
-        .from("lms_sessions")
-        .delete()
-        .eq("id", sessionId);
-
+      const { error } = await supabase.from("lms_sessions").delete().eq("id", sessionId);
       if (error) throw error;
       return sessionId;
     },
     onSuccess: (sessionId) => {
       queryClient.invalidateQueries({ queryKey: ["lms-sessions"] });
-      logEvent({
-        action: "lms.session_deleted",
-        entityType: "lms_session",
-        entityId: sessionId,
-        metadata: {},
-      });
+      log("lms.session_deleted", "lms_session", sessionId, {});
       toast.success("Session deleted successfully");
     },
     onError: (error) => {
@@ -266,9 +217,5 @@ export function useLmsSessionMutations() {
     },
   });
 
-  return {
-    createSession,
-    updateSession,
-    deleteSession,
-  };
+  return { createSession, updateSession, deleteSession };
 }

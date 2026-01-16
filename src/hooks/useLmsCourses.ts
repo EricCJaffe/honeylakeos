@@ -4,6 +4,7 @@ import { useActiveCompany } from "./useActiveCompany";
 import { useAuditLog } from "./useAuditLog";
 import { useCompanyModules } from "./useCompanyModules";
 import { toast } from "sonner";
+import type { Json } from "@/integrations/supabase/types";
 
 export type CourseStatus = "draft" | "published" | "archived";
 
@@ -14,7 +15,7 @@ export interface LmsCourse {
   description: string | null;
   status: CourseStatus;
   default_duration_minutes: number | null;
-  settings: Record<string, unknown>;
+  settings: Json;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -32,7 +33,6 @@ export interface UpdateCourseInput {
   description?: string;
   status?: CourseStatus;
   default_duration_minutes?: number;
-  settings?: Record<string, unknown>;
 }
 
 export interface CourseFilters {
@@ -99,7 +99,7 @@ export function useLmsCourse(courseId: string | undefined) {
 export function useLmsCourseMutations() {
   const queryClient = useQueryClient();
   const { activeCompanyId } = useActiveCompany();
-  const { logEvent } = useAuditLog();
+  const { log } = useAuditLog();
 
   const createCourse = useMutation({
     mutationFn: async (input: CreateCourseInput) => {
@@ -125,12 +125,7 @@ export function useLmsCourseMutations() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["courses"] });
-      logEvent({
-        action: "lms.course_created",
-        entityType: "lms_course",
-        entityId: data.id,
-        metadata: { title: data.title },
-      });
+      log("lms.course_created", "lms_course", data.id, { title: data.title });
       toast.success("Course created successfully");
     },
     onError: (error) => {
@@ -156,12 +151,7 @@ export function useLmsCourseMutations() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["courses"] });
       queryClient.invalidateQueries({ queryKey: ["course", data.id] });
-      logEvent({
-        action: "lms.course_updated",
-        entityType: "lms_course",
-        entityId: data.id,
-        metadata: { title: data.title },
-      });
+      log("lms.course_updated", "lms_course", data.id, { title: data.title });
       toast.success("Course updated successfully");
     },
     onError: (error) => {
@@ -184,12 +174,7 @@ export function useLmsCourseMutations() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["courses"] });
       queryClient.invalidateQueries({ queryKey: ["course", data.id] });
-      logEvent({
-        action: "lms.course_published",
-        entityType: "lms_course",
-        entityId: data.id,
-        metadata: { title: data.title },
-      });
+      log("lms.course_published", "lms_course", data.id, { title: data.title });
       toast.success("Course published successfully");
     },
     onError: (error) => {
@@ -212,12 +197,7 @@ export function useLmsCourseMutations() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["courses"] });
       queryClient.invalidateQueries({ queryKey: ["course", data.id] });
-      logEvent({
-        action: "lms.course_archived",
-        entityType: "lms_course",
-        entityId: data.id,
-        metadata: { title: data.title },
-      });
+      log("lms.course_archived", "lms_course", data.id, { title: data.title });
       toast.success("Course archived successfully");
     },
     onError: (error) => {
@@ -227,22 +207,13 @@ export function useLmsCourseMutations() {
 
   const deleteCourse = useMutation({
     mutationFn: async (courseId: string) => {
-      const { error } = await supabase
-        .from("lms_courses")
-        .delete()
-        .eq("id", courseId);
-
+      const { error } = await supabase.from("lms_courses").delete().eq("id", courseId);
       if (error) throw error;
       return courseId;
     },
     onSuccess: (courseId) => {
       queryClient.invalidateQueries({ queryKey: ["courses"] });
-      logEvent({
-        action: "lms.course_deleted",
-        entityType: "lms_course",
-        entityId: courseId,
-        metadata: {},
-      });
+      log("lms.course_deleted", "lms_course", courseId, {});
       toast.success("Course deleted successfully");
     },
     onError: (error) => {
@@ -250,37 +221,23 @@ export function useLmsCourseMutations() {
     },
   });
 
-  return {
-    createCourse,
-    updateCourse,
-    publishCourse,
-    archiveCourse,
-    deleteCourse,
-  };
+  return { createCourse, updateCourse, publishCourse, archiveCourse, deleteCourse };
 }
 
 export function getStatusLabel(status: CourseStatus): string {
   switch (status) {
-    case "draft":
-      return "Draft";
-    case "published":
-      return "Published";
-    case "archived":
-      return "Archived";
-    default:
-      return status;
+    case "draft": return "Draft";
+    case "published": return "Published";
+    case "archived": return "Archived";
+    default: return status;
   }
 }
 
 export function getStatusColor(status: CourseStatus): string {
   switch (status) {
-    case "draft":
-      return "bg-muted text-muted-foreground";
-    case "published":
-      return "bg-primary/10 text-primary";
-    case "archived":
-      return "bg-destructive/10 text-destructive";
-    default:
-      return "bg-muted";
+    case "draft": return "bg-muted text-muted-foreground";
+    case "published": return "bg-primary/10 text-primary";
+    case "archived": return "bg-destructive/10 text-destructive";
+    default: return "bg-muted";
   }
 }
