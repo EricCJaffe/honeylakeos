@@ -1975,8 +1975,16 @@ export type Database = {
         Args: { p_group_id: string; p_user_id: string }
         Returns: boolean
       }
+      is_link_allowed: {
+        Args: { p_company_id: string; p_from_type: string; p_to_type: string }
+        Returns: boolean
+      }
       is_location_manager: {
         Args: { p_location_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      is_module_enabled: {
+        Args: { p_company_id: string; p_module_key: string }
         Returns: boolean
       }
       is_site_admin: { Args: { p_site_id: string }; Returns: boolean }
@@ -1993,6 +2001,10 @@ export type Database = {
         Returns: string
       }
       promote_self_to_super_admin: { Args: never; Returns: Json }
+      require_module_enabled: {
+        Args: { p_company_id: string; p_module_key: string }
+        Returns: undefined
+      }
       skip_event_occurrence: {
         Args: { p_event_id: string; p_occurrence_date: string }
         Returns: string
