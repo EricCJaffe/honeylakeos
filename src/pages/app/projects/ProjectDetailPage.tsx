@@ -1,13 +1,11 @@
-import * as React from "react";
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { 
   FolderKanban, 
   Users, 
   CheckCircle2, 
   Calendar, 
-  Layers, 
   FileText, 
   MessageSquare,
   LayoutList,
@@ -16,7 +14,6 @@ import {
   Upload
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useCompanyModules } from "@/hooks/useCompanyModules";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,9 +35,7 @@ import { format } from "date-fns";
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>();
-  const { activeCompanyId } = useActiveCompany();
   const { isEnabled } = useCompanyModules();
-  const queryClient = useQueryClient();
   
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
@@ -509,12 +504,14 @@ export default function ProjectDetailPage() {
       <NoteFormDialog
         open={isNoteDialogOpen}
         onOpenChange={setIsNoteDialogOpen}
+        projectId={projectId}
       />
 
       <EventFormDialog
         open={isEventDialogOpen}
         onOpenChange={setIsEventDialogOpen}
         defaultDate={new Date()}
+        projectId={projectId}
       />
     </div>
   );

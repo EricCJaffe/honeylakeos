@@ -84,6 +84,7 @@ interface EventFormDialogProps {
   editMode?: "single" | "future" | "series";
   occurrenceDate?: Date;
   templateToApply?: Template | null;
+  projectId?: string | null;
 }
 
 const colors = [
@@ -103,6 +104,7 @@ export function EventFormDialog({
   editMode = "series",
   occurrenceDate,
   templateToApply,
+  projectId,
 }: EventFormDialogProps) {
   const { activeCompanyId } = useActiveCompany();
   const { user } = useAuth();
@@ -182,12 +184,12 @@ export function EventFormDialog({
         all_day: false,
         location_text: "",
         color: "#2563eb",
-        project_id: null,
+        project_id: projectId || null,
       });
       setRecurrenceConfig(null);
       setSelectedAttendees([]);
     }
-  }, [event, defaultDate, form, templateToApply]);
+  }, [event, defaultDate, form, templateToApply, projectId]);
 
   const mutation = useMutation({
     mutationFn: async (values: EventFormValues) => {
