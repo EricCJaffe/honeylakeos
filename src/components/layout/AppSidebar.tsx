@@ -9,13 +9,17 @@ import {
   FolderOpen,
   Settings,
   Building2,
-  Terminal,
   Shield,
+  Globe,
+  Workflow,
+  BookOpen,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Logo } from "@/components/Logo";
 import { useMembership } from "@/lib/membership";
+import { useCompanyModules } from "@/hooks/useCompanyModules";
 import { Badge } from "@/components/ui/badge";
+import { ModuleKey } from "@/hooks/useModuleAccess";
 import {
   Sidebar,
   SidebarContent,
@@ -30,23 +34,37 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const coreNavItems = [
+interface NavItem {
+  title: string;
+  url: string;
+  icon: React.ComponentType<{ className?: string }>;
+  moduleKey?: ModuleKey;
+}
+
+const coreNavItems: NavItem[] = [
   { title: "Dashboard", url: "/app", icon: LayoutDashboard },
-  { title: "Projects", url: "/app/projects", icon: FolderKanban },
-  { title: "Tasks", url: "/app/tasks", icon: CheckCircle2 },
-  { title: "Calendar", url: "/app/calendar", icon: Calendar },
+  { title: "Projects", url: "/app/projects", icon: FolderKanban, moduleKey: "projects" },
+  { title: "Tasks", url: "/app/tasks", icon: CheckCircle2, moduleKey: "tasks" },
+  { title: "Calendar", url: "/app/calendar", icon: Calendar, moduleKey: "calendar" },
 ];
 
-const knowledgeNavItems = [
-  { title: "Documents", url: "/app/documents", icon: FileText },
-  { title: "Notes", url: "/app/notes", icon: StickyNote },
-  { title: "Folders", url: "/app/folders", icon: FolderOpen },
+const knowledgeNavItems: NavItem[] = [
+  { title: "Documents", url: "/app/documents", icon: FileText, moduleKey: "documents" },
+  { title: "Notes", url: "/app/notes", icon: StickyNote, moduleKey: "notes" },
+  { title: "Folders", url: "/app/folders", icon: FolderOpen, moduleKey: "folders" },
+];
+
+const premiumNavItems: NavItem[] = [
+  { title: "Forms", url: "/app/forms", icon: Globe, moduleKey: "forms" },
+  { title: "Workflows", url: "/app/workflows", icon: Workflow, moduleKey: "workflows" },
+  { title: "LMS", url: "/app/lms", icon: BookOpen, moduleKey: "lms" },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
   const { state } = useSidebar();
   const { isCompanyAdmin, isSiteAdmin, isSuperAdmin, activeCompany } = useMembership();
+  const { isEnabled, loading: modulesLoading } = useCompanyModules();
   const collapsed = state === "collapsed";
 
   const showCompanyAdmin = isCompanyAdmin || isSiteAdmin || isSuperAdmin;
@@ -59,39 +77,53 @@ export function AppSidebar() {
     return location.pathname.startsWith(path);
   };
 
+  // Filter nav items based on module enablement
+  const filterByModuleAccess = (items: NavItem[]): NavItem[] => {
+    if (modulesLoading) return items; // Show all while loading
+    return items.filter(item => !item.moduleKey || isEnabled(item.moduleKey));
+  };
+
+  const visibleCoreItems = filterByModuleAccess(coreNavItems);
+  const visibleKnowledgeItems = filterByModuleAccess(knowledgeNavItems);
+  const visiblePremiumItems = filterByModuleAccess(premiumNavItems);
+
   const renderNavGroup = (
     label: string,
-    items: typeof coreNavItems
-  ) => (
-    <SidebarGroup>
-      <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground/70">
-        {label}
-      </SidebarGroupLabel>
-      <SidebarGroupContent>
-        <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton
-                asChild
-                isActive={isActive(item.url)}
-                tooltip={item.title}
-              >
-                <NavLink
-                  to={item.url}
-                  end={item.url === "/app"}
-                  className="flex items-center gap-3"
-                  activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+    items: NavItem[]
+  ) => {
+    if (items.length === 0) return null;
+    
+    return (
+      <SidebarGroup>
+        <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground/70">
+          {label}
+        </SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            {items.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive(item.url)}
+                  tooltip={item.title}
                 >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.title}</span>
-                </NavLink>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
-  );
+                  <NavLink
+                    to={item.url}
+                    end={item.url === "/app"}
+                    className="flex items-center gap-3"
+                    activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.title}</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    );
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -116,10 +148,13 @@ export function AppSidebar() {
 
       <SidebarContent className="px-2">
         {/* Core Navigation */}
-        {renderNavGroup("Core", coreNavItems)}
+        {renderNavGroup("Core", visibleCoreItems)}
 
         {/* Knowledge Navigation */}
-        {renderNavGroup("Knowledge", knowledgeNavItems)}
+        {renderNavGroup("Knowledge", visibleKnowledgeItems)}
+
+        {/* Premium Modules - only show if any are enabled */}
+        {renderNavGroup("Premium", visiblePremiumItems)}
 
         {/* Administration - consolidated admin consoles */}
         {showCompanyAdmin && (

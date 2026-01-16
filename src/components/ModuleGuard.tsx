@@ -1,7 +1,9 @@
 import * as React from "react";
-import { useModuleAccess, ModuleKey, CORE_MODULES, useCoreModuleAccess } from "@/hooks/useModuleAccess";
+import { useCompanyModules } from "@/hooks/useCompanyModules";
+import { ModuleKey, CORE_MODULES } from "@/hooks/useModuleAccess";
 import { NoModuleAccessPage } from "@/components/NoModuleAccessPage";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMembership } from "@/lib/membership";
 
 interface ModuleGuardProps {
   moduleKey: ModuleKey;
@@ -20,14 +22,18 @@ interface ModuleGuardProps {
  */
 export function ModuleGuard({ moduleKey, moduleName, children }: ModuleGuardProps) {
   const isCoreModule = CORE_MODULES.includes(moduleKey);
-  
-  // Use different access check for core vs premium modules
-  const coreAccess = useCoreModuleAccess();
-  const premiumAccess = useModuleAccess(moduleKey);
-  
-  const { hasAccess, loading, noAccessReason } = isCoreModule 
-    ? { ...coreAccess, noAccessReason: null as "not_enabled" | "no_permission" | null }
-    : premiumAccess;
+  const { isEnabled, loading: modulesLoading } = useCompanyModules();
+  const { activeCompanyId, activeMembership, loading: membershipLoading } = useMembership();
+
+  const loading = modulesLoading || membershipLoading;
+
+  // For core modules, only need company membership
+  // For premium modules, need both membership and module enabled
+  const hasAccess = React.useMemo(() => {
+    if (!activeCompanyId || !activeMembership) return false;
+    if (isCoreModule) return true;
+    return isEnabled(moduleKey);
+  }, [activeCompanyId, activeMembership, isCoreModule, isEnabled, moduleKey]);
 
   if (loading) {
     return (
@@ -41,10 +47,14 @@ export function ModuleGuard({ moduleKey, moduleName, children }: ModuleGuardProp
   }
 
   if (!hasAccess) {
+    const noAccessReason = !activeCompanyId || !activeMembership 
+      ? "no_permission" 
+      : "not_enabled";
+    
     return (
       <NoModuleAccessPage 
         moduleName={moduleName} 
-        reason={noAccessReason || "not_enabled"} 
+        reason={noAccessReason} 
       />
     );
   }

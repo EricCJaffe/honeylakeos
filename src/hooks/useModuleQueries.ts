@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import { useCoreModuleAccess, ModuleKey, CORE_MODULES, useModuleAccess } from "./useModuleAccess";
+import { ModuleKey } from "./useModuleAccess";
+import { useCompanyModules } from "./useCompanyModules";
 
 /**
  * Module-specific query keys that should be invalidated when a module is toggled
@@ -139,19 +140,10 @@ export function useModuleQueryInvalidation() {
  * Returns enabled state and loading - use enabled to conditionally run queries
  */
 export function useModuleEnabled(moduleKey: ModuleKey) {
-  const isCoreModule = CORE_MODULES.includes(moduleKey);
-  const coreAccess = useCoreModuleAccess();
-  const premiumAccess = useModuleAccess(moduleKey);
-
-  if (isCoreModule) {
-    return {
-      isEnabled: coreAccess.hasAccess,
-      loading: coreAccess.loading,
-    };
-  }
+  const { isEnabled, loading } = useCompanyModules();
 
   return {
-    isEnabled: premiumAccess.isModuleEnabled && premiumAccess.hasAccess,
-    loading: premiumAccess.loading,
+    isEnabled: isEnabled(moduleKey),
+    loading,
   };
 }
