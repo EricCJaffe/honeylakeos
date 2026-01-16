@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Folder, ChevronRight, ChevronDown, Plus, MoreHorizontal, Pencil, Trash2, FolderOpen, Lock, Users } from "lucide-react";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
-import { useFolders, useFolderMutations, Folder as FolderType, FolderScope } from "@/hooks/useFolders";
+import { useFolders, useFolderMutations, Folder as FolderType, FolderScope, flattenFolderTree } from "@/hooks/useFolders";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,6 +52,8 @@ export default function FoldersPage({ onSelectFolder, selectedFolderId, showHead
 
   const companyFolders = folderTree?.companyFolders ?? [];
   const personalFolders = folderTree?.personalFolders ?? [];
+  const allFolders = [...companyFolders, ...personalFolders];
+  const flatFolders = flattenFolderTree(allFolders);
 
   const resetForm = () => {
     setNewFolderName("");
@@ -149,7 +151,7 @@ export default function FoldersPage({ onSelectFolder, selectedFolderId, showHead
             <Folder className="h-4 w-4 text-muted-foreground" />
           )}
           <span className="flex-1 text-sm truncate">{folder.name}</span>
-          {folder.access_level === "personal" && (
+          {folder.scope === "personal" && (
             <span className="text-xs text-muted-foreground">Private</span>
           )}
           {canEdit(folder) && (
@@ -170,7 +172,7 @@ export default function FoldersPage({ onSelectFolder, selectedFolderId, showHead
                   Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => deleteFolder.mutate(folder.id)}
+                  onClick={() => remove.mutate(folder.id)}
                   className="text-destructive"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
@@ -206,7 +208,7 @@ export default function FoldersPage({ onSelectFolder, selectedFolderId, showHead
           title="Folders"
           description="Organize your notes and documents"
           actionLabel="New Folder"
-          onAction={handleCreate}
+          onAction={() => handleCreate("personal")}
         />
       )}
 
@@ -224,10 +226,32 @@ export default function FoldersPage({ onSelectFolder, selectedFolderId, showHead
             <span className="text-sm font-medium">All Files</span>
           </div>
 
-          {folders.length === 0 && !showHeader ? (
+          {allFolders.length === 0 && !showHeader ? (
             <p className="text-sm text-muted-foreground px-3 py-2">No folders yet</p>
           ) : (
-            folderTree.map((folder) => renderFolder(folder))
+            <>
+              {/* Company Folders Section */}
+              {companyFolders.length > 0 && (
+                <div className="mt-2">
+                  <div className="flex items-center gap-2 px-3 py-1 text-xs font-medium text-muted-foreground uppercase">
+                    <Users className="h-3 w-3" />
+                    Company Folders
+                  </div>
+                  {companyFolders.map((folder) => renderFolder(folder))}
+                </div>
+              )}
+              
+              {/* Personal Folders Section */}
+              {personalFolders.length > 0 && (
+                <div className="mt-2">
+                  <div className="flex items-center gap-2 px-3 py-1 text-xs font-medium text-muted-foreground uppercase">
+                    <Lock className="h-3 w-3" />
+                    My Folders
+                  </div>
+                  {personalFolders.map((folder) => renderFolder(folder))}
+                </div>
+              )}
+            </>
           )}
 
           {!showHeader && (
@@ -235,7 +259,7 @@ export default function FoldersPage({ onSelectFolder, selectedFolderId, showHead
               variant="ghost"
               size="sm"
               className="w-full mt-2 justify-start"
-              onClick={handleCreate}
+              onClick={() => handleCreate("personal")}
             >
               <Plus className="h-4 w-4 mr-2" />
               New Folder
@@ -266,35 +290,39 @@ export default function FoldersPage({ onSelectFolder, selectedFolderId, showHead
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="root">Root</SelectItem>
-                  {folders
-                    .filter((f) => f.id !== editingFolder?.id)
-                    .map((folder) => (
+                  {flatFolders
+                    .filter(({ folder }) => folder.id !== editingFolder?.id)
+                    .map(({ folder, depth }) => (
                       <SelectItem key={folder.id} value={folder.id}>
-                        {folder.name}
+                        {"  ".repeat(depth)}{folder.name}
                       </SelectItem>
                     ))}
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>Access Level</Label>
-              <Select value={newFolderAccess} onValueChange={setNewFolderAccess}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="company">Company (Everyone)</SelectItem>
-                  <SelectItem value="personal">Personal (Only me)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {!editingFolder && (
+              <div>
+                <Label>Type</Label>
+                <Select value={newFolderScope} onValueChange={(v) => setNewFolderScope(v as FolderScope)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {canManageCompanyFolders && (
+                      <SelectItem value="company">Company (Everyone)</SelectItem>
+                    )}
+                    <SelectItem value="personal">Personal (Only me)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="flex justify-end gap-2 pt-4">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancel
               </Button>
               <Button
-                onClick={() => (editingFolder ? updateFolder.mutate() : createFolder.mutate())}
-                disabled={!newFolderName || createFolder.isPending || updateFolder.isPending}
+                onClick={handleSave}
+                disabled={!newFolderName || create.isPending || update.isPending}
               >
                 {editingFolder ? "Save" : "Create"}
               </Button>
