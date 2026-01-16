@@ -968,33 +968,96 @@ export type Database = {
           },
         ]
       }
-      folders: {
+      folder_acl: {
         Row: {
           access_level: string
           company_id: string
           created_at: string
           created_by: string | null
+          folder_id: string
           id: string
-          name: string
-          parent_folder_id: string | null
+          principal_id: string | null
+          principal_type: string
+          updated_at: string
         }
         Insert: {
           access_level?: string
           company_id: string
           created_at?: string
           created_by?: string | null
+          folder_id: string
           id?: string
-          name: string
-          parent_folder_id?: string | null
+          principal_id?: string | null
+          principal_type: string
+          updated_at?: string
         }
         Update: {
           access_level?: string
           company_id?: string
           created_at?: string
           created_by?: string | null
+          folder_id?: string
+          id?: string
+          principal_id?: string | null
+          principal_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "folder_acl_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "folder_acl_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      folders: {
+        Row: {
+          access_level: string
+          archived_at: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          owner_user_id: string | null
+          parent_folder_id: string | null
+          scope: string
+          sort_order: number
+        }
+        Insert: {
+          access_level?: string
+          archived_at?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          owner_user_id?: string | null
+          parent_folder_id?: string | null
+          scope?: string
+          sort_order?: number
+        }
+        Update: {
+          access_level?: string
+          archived_at?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
           id?: string
           name?: string
+          owner_user_id?: string | null
           parent_folder_id?: string | null
+          scope?: string
+          sort_order?: number
         }
         Relationships: [
           {
@@ -3009,6 +3072,11 @@ export type Database = {
         Args: { p_entity_id: string; p_entity_type: string }
         Returns: string
       }
+      get_folder_access_level: {
+        Args: { p_folder_id: string; p_user_id: string }
+        Returns: string
+      }
+      get_folder_depth: { Args: { p_folder_id: string }; Returns: number }
       get_table_columns: {
         Args: never
         Returns: {

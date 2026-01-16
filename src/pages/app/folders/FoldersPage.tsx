@@ -1,11 +1,10 @@
 import * as React from "react";
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Folder, ChevronRight, ChevronDown, Plus, MoreHorizontal, Pencil, Trash2, FolderOpen } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Folder, ChevronRight, ChevronDown, Plus, MoreHorizontal, Pencil, Trash2, FolderOpen, Lock, Users } from "lucide-react";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
+import { useFolders, useFolderMutations, Folder as FolderType, FolderScope } from "@/hooks/useFolders";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,19 +28,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
 import { PageHeader } from "@/components/PageHeader";
-import { EmptyState } from "@/components/EmptyState";
 import { cn } from "@/lib/utils";
-
-interface FolderType {
-  id: string;
-  name: string;
-  parent_folder_id: string | null;
-  access_level: string;
-  created_by: string | null;
-  children?: FolderType[];
-}
 
 interface FoldersPageProps {
   onSelectFolder?: (folderId: string | null) => void;
@@ -50,123 +38,60 @@ interface FoldersPageProps {
 }
 
 export default function FoldersPage({ onSelectFolder, selectedFolderId, showHeader = true }: FoldersPageProps) {
-  const { activeCompanyId, isCompanyAdmin, loading: membershipLoading } = useActiveCompany();
+  const { isCompanyAdmin, loading: membershipLoading } = useActiveCompany();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
+  const { data: folderTree, isLoading } = useFolders();
+  const { create, update, remove, isCompanyAdmin: canManageCompanyFolders } = useFolderMutations();
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingFolder, setEditingFolder] = useState<FolderType | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [newFolderName, setNewFolderName] = useState("");
+  const [newFolderScope, setNewFolderScope] = useState<FolderScope>("personal");
   const [newFolderParent, setNewFolderParent] = useState<string>("root");
-  const [newFolderAccess, setNewFolderAccess] = useState<string>("company");
 
-  const { data: folders = [], isLoading } = useQuery({
-    queryKey: ["folders", activeCompanyId],
-    queryFn: async () => {
-      if (!activeCompanyId) return [];
-      const { data, error } = await supabase
-        .from("folders")
-        .select("*")
-        .eq("company_id", activeCompanyId)
-        .order("name");
-
-      if (error) throw error;
-      return data as FolderType[];
-    },
-    enabled: !!activeCompanyId,
-  });
-
-  // Build tree structure
-  const buildTree = (items: FolderType[], parentId: string | null = null): FolderType[] => {
-    return items
-      .filter((item) => item.parent_folder_id === parentId)
-      .map((item) => ({
-        ...item,
-        children: buildTree(items, item.id),
-      }));
-  };
-
-  const folderTree = buildTree(folders);
-
-  const createFolder = useMutation({
-    mutationFn: async () => {
-      if (!activeCompanyId || !user) throw new Error("Missing context");
-      const { error } = await supabase.from("folders").insert({
-        company_id: activeCompanyId,
-        name: newFolderName,
-        parent_folder_id: newFolderParent === "root" ? null : newFolderParent,
-        access_level: newFolderAccess,
-        created_by: user.id,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["folders"] });
-      toast.success(editingFolder ? "Folder updated" : "Folder created");
-      setIsDialogOpen(false);
-      resetForm();
-    },
-    onError: () => {
-      toast.error("Failed to save folder");
-    },
-  });
-
-  const updateFolder = useMutation({
-    mutationFn: async () => {
-      if (!editingFolder) throw new Error("No folder");
-      const { error } = await supabase
-        .from("folders")
-        .update({
-          name: newFolderName,
-          parent_folder_id: newFolderParent === "root" ? null : newFolderParent,
-          access_level: newFolderAccess,
-        })
-        .eq("id", editingFolder.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["folders"] });
-      toast.success("Folder updated");
-      setIsDialogOpen(false);
-      resetForm();
-    },
-    onError: () => {
-      toast.error("Failed to update folder");
-    },
-  });
-
-  const deleteFolder = useMutation({
-    mutationFn: async (folderId: string) => {
-      const { error } = await supabase.from("folders").delete().eq("id", folderId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["folders"] });
-      toast.success("Folder deleted");
-    },
-    onError: () => {
-      toast.error("Failed to delete folder");
-    },
-  });
+  const companyFolders = folderTree?.companyFolders ?? [];
+  const personalFolders = folderTree?.personalFolders ?? [];
 
   const resetForm = () => {
     setNewFolderName("");
+    setNewFolderScope("personal");
     setNewFolderParent("root");
-    setNewFolderAccess("company");
     setEditingFolder(null);
   };
 
-  const handleCreate = () => {
+  const handleCreate = (scope: FolderScope = "personal") => {
     resetForm();
+    setNewFolderScope(scope);
     setIsDialogOpen(true);
   };
 
   const handleEdit = (folder: FolderType) => {
     setEditingFolder(folder);
     setNewFolderName(folder.name);
+    setNewFolderScope(folder.scope);
     setNewFolderParent(folder.parent_folder_id || "root");
-    setNewFolderAccess(folder.access_level);
     setIsDialogOpen(true);
+  };
+
+  const handleSave = () => {
+    if (!newFolderName.trim()) return;
+    
+    if (editingFolder) {
+      update.mutate({
+        id: editingFolder.id,
+        name: newFolderName,
+        parent_folder_id: newFolderParent === "root" ? null : newFolderParent,
+      });
+    } else {
+      create.mutate({
+        name: newFolderName,
+        scope: newFolderScope,
+        parent_folder_id: newFolderParent === "root" ? null : newFolderParent,
+      });
+    }
+    setIsDialogOpen(false);
+    resetForm();
   };
 
   const toggleExpand = (folderId: string) => {
@@ -182,6 +107,7 @@ export default function FoldersPage({ onSelectFolder, selectedFolderId, showHead
   };
 
   const canEdit = (folder: FolderType) => {
+    if (folder.scope === "personal") return folder.owner_user_id === user?.id;
     return isCompanyAdmin || folder.created_by === user?.id;
   };
 

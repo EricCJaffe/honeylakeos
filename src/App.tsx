@@ -33,7 +33,7 @@ import NotesPage from "@/pages/app/notes/NotesPage";
 import NoteDetailPage from "@/pages/app/notes/NoteDetailPage";
 import DocumentsPage from "@/pages/app/documents/DocumentsPage";
 import DocumentDetailPage from "@/pages/app/documents/DocumentDetailPage";
-import FoldersPage from "@/pages/app/folders/FoldersPage";
+// FoldersPage is now embedded inside Documents/Notes - no standalone route
 import CompanySettingsPage from "@/pages/app/admin/CompanySettingsPage";
 import CompanyConsolePage from "@/pages/app/admin/CompanyConsolePage";
 import MembersPage from "@/pages/app/admin/MembersPage";
@@ -121,7 +121,6 @@ function App() {
                     <Route path="notes/:noteId" element={<ModuleGuard moduleKey="notes" moduleName="Notes"><NoteDetailPage /></ModuleGuard>} />
                     <Route path="documents" element={<ModuleGuard moduleKey="documents" moduleName="Documents"><DocumentsPage /></ModuleGuard>} />
                     <Route path="documents/:documentId" element={<ModuleGuard moduleKey="documents" moduleName="Documents"><DocumentDetailPage /></ModuleGuard>} />
-                    <Route path="folders" element={<ModuleGuard moduleKey="folders" moduleName="Folders"><FoldersPage /></ModuleGuard>} />
                     <Route path="forms" element={<ModuleGuard moduleKey="forms" moduleName="Forms"><ModulePage /></ModuleGuard>} />
                     <Route path="workflows" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><ModulePage /></ModuleGuard>} />
                     <Route path="lms" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><ModulePage /></ModuleGuard>} />
