@@ -142,75 +142,85 @@ function CoachDetailContent() {
         <div className="lg:col-span-2 space-y-6">
           {/* Contact Information */}
           <Card>
-            <CardHeader>
-              <CardTitle>Contact Information</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                Contact Information
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               {contact?.email && (
-                <div className="flex items-center gap-3">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <a href={`mailto:${contact.email}`} className="text-primary hover:underline">
+                <div className="flex items-start gap-3">
+                  <div className="text-sm text-muted-foreground w-20">Email</div>
+                  <a href={`mailto:${contact.email}`} className="text-sm text-primary hover:underline">
                     {contact.email}
                   </a>
                 </div>
               )}
               {contact?.phone && (
-                <div className="flex items-center gap-3">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <a href={`tel:${contact.phone}`} className="text-primary hover:underline">
+                <div className="flex items-start gap-3">
+                  <div className="text-sm text-muted-foreground w-20">Phone</div>
+                  <a href={`tel:${contact.phone}`} className="text-sm text-primary hover:underline">
                     {contact.phone}
                   </a>
                 </div>
               )}
               {contact?.organization_name && (
-                <div className="flex items-center gap-3">
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                  <span>{contact.organization_name}</span>
+                <div className="flex items-start gap-3">
+                  <div className="text-sm text-muted-foreground w-20">Org</div>
+                  <span className="text-sm">{contact.organization_name}</span>
                 </div>
               )}
               {contact?.website && (
-                <div className="flex items-center gap-3">
-                  <Globe className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-start gap-3">
+                  <div className="text-sm text-muted-foreground w-20">Website</div>
                   <a 
                     href={contact.website.startsWith("http") ? contact.website : `https://${contact.website}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-primary hover:underline"
+                    className="text-sm text-primary hover:underline"
                   >
                     {contact.website}
                   </a>
                 </div>
               )}
               {!contact?.email && !contact?.phone && !contact?.organization_name && !contact?.website && (
-                <p className="text-muted-foreground text-sm">No contact information available.</p>
+                <p className="text-muted-foreground text-sm italic">No contact information available.</p>
               )}
             </CardContent>
           </Card>
 
           {/* Profile Details */}
           <Card>
-            <CardHeader>
-              <CardTitle>Profile Details</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                Profile Details
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="text-sm text-muted-foreground w-20">Type</div>
+                <Badge variant="outline">{getProfileTypeLabel(profile.profile_type as CoachProfileType)}</Badge>
+              </div>
               {specialties.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Specialties</h4>
-                  <div className="flex flex-wrap gap-2">
+                <div className="flex items-start gap-3">
+                  <div className="text-sm text-muted-foreground w-20">Specialties</div>
+                  <div className="flex flex-wrap gap-1.5">
                     {specialties.map((specialty, idx) => (
-                      <Badge key={idx} variant="secondary">{specialty}</Badge>
+                      <Badge key={idx} variant="secondary" className="text-xs">{specialty}</Badge>
                     ))}
                   </div>
                 </div>
               )}
               {profile.bio && (
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Bio/Notes</h4>
+                <div className="pt-2 border-t">
+                  <h4 className="text-sm font-medium mb-2">Bio / Notes</h4>
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">{profile.bio}</p>
                 </div>
               )}
               {!specialties.length && !profile.bio && (
-                <p className="text-muted-foreground text-sm">No additional profile details.</p>
+                <p className="text-muted-foreground text-sm italic">No additional profile details.</p>
               )}
             </CardContent>
           </Card>

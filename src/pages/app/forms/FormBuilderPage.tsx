@@ -83,34 +83,41 @@ function FieldCard({
   onDelete: () => void;
 }) {
   return (
-    <Card className="group">
+    <Card className="group border-l-4 border-l-primary/20 hover:border-l-primary transition-colors">
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
-          <div className="cursor-grab text-muted-foreground">
+          <div 
+            className="cursor-grab text-muted-foreground hover:text-foreground transition-colors p-1 rounded hover:bg-muted"
+            title="Drag to reorder"
+          >
             <GripVertical className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="font-medium truncate">{field.label}</span>
-              {field.is_required && (
-                <Badge variant="secondary" className="text-xs">Required</Badge>
+              {field.is_required ? (
+                <Badge variant="default" className="text-xs">Required</Badge>
+              ) : (
+                <Badge variant="outline" className="text-xs text-muted-foreground">Optional</Badge>
               )}
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-              <span>{getFieldTypeLabel(field.field_type as FieldType)}</span>
+              <Badge variant="secondary" className="text-xs font-normal">
+                {getFieldTypeLabel(field.field_type as FieldType)}
+              </Badge>
               {field.maps_to && (
                 <>
-                  <span>•</span>
-                  <span>Maps to: {getFieldMappingLabel(field.maps_to as FieldMapping)}</span>
+                  <span>→</span>
+                  <span className="italic">{getFieldMappingLabel(field.maps_to as FieldMapping)}</span>
                 </>
               )}
             </div>
           </div>
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button variant="ghost" size="sm" onClick={onEdit}>
+            <Button variant="outline" size="sm" onClick={onEdit}>
               Edit
             </Button>
-            <Button variant="ghost" size="sm" onClick={onDelete} className="text-destructive">
+            <Button variant="ghost" size="icon" onClick={onDelete} className="h-8 w-8 text-destructive hover:text-destructive">
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
