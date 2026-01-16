@@ -130,7 +130,16 @@ export type AuditAction =
   | "lms.coach_removed"
   | "lms.coach_role_updated"
   // Capability settings actions
-  | "capability.settings_updated";
+  | "capability.settings_updated"
+  // Folder actions
+  | "folder.created"
+  | "folder.updated"
+  | "folder.archived"
+  | "folder.deleted"
+  | "folder.moved"
+  | "folder.acl_added"
+  | "folder.acl_updated"
+  | "folder.acl_removed";
 
 export type EntityType =
   | "employee"
@@ -158,7 +167,9 @@ export type EntityType =
   | "lms_course"
   | "lms_cohort"
   | "lms_session"
-  | "lms_enrollment";
+  | "lms_enrollment"
+  | "folder"
+  | "folder_acl";
 
 interface LogAuditEventParams {
   companyId: string;

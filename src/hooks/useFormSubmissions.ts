@@ -62,7 +62,7 @@ export function useFormSubmissions(formId: string | undefined) {
     queryKey: QUERY_KEYS.byForm(formId ?? ""),
     queryFn: async () => {
       if (!formId || !activeCompanyId || !hasAccess) {
-        return { submissions: [], meta: { truncated: false, limit: 0 } };
+        return [];
       }
 
       const { data, error } = await supabase
@@ -81,13 +81,7 @@ export function useFormSubmissions(formId: string | undefined) {
 
       if (error) throw error;
       
-      const submissions = data as FormSubmission[];
-      const meta: SubmissionListMeta = {
-        truncated: submissions.length >= LIST_LIMITS.FORM_SUBMISSIONS,
-        limit: LIST_LIMITS.FORM_SUBMISSIONS,
-      };
-      
-      return { submissions, meta };
+      return data as FormSubmission[];
     },
     enabled: !!formId && !!activeCompanyId && !moduleLoading && hasAccess,
   });

@@ -69,7 +69,7 @@ export function useExternalContacts(filters: ExternalContactFilters = {}) {
   return useQuery({
     queryKey: QUERY_KEYS.list(activeCompanyId ?? "", filters),
     queryFn: async () => {
-      if (!activeCompanyId) return { contacts: [], meta: { truncated: false, limit: 0 } };
+      if (!activeCompanyId) return [];
 
       let query = supabase
         .from("external_contacts")
@@ -112,18 +112,9 @@ export function useExternalContacts(filters: ExternalContactFilters = {}) {
         });
       }
 
-      const meta: ContactListMeta = {
-        truncated: (data ?? []).length >= LIST_LIMITS.EXTERNAL_CONTACTS,
-        limit: LIST_LIMITS.EXTERNAL_CONTACTS,
-      };
-
-      return { contacts, meta };
+      return contacts;
     },
     enabled: !!activeCompanyId,
-    select: (result) => ({
-      data: result.contacts,
-      meta: result.meta,
-    }),
   });
 }
 

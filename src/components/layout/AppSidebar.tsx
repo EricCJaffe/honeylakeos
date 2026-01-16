@@ -6,7 +6,6 @@ import {
   Calendar,
   FileText,
   StickyNote,
-  FolderOpen,
   Settings,
   Building2,
   Shield,
@@ -51,7 +50,6 @@ const coreNavItems: NavItem[] = [
 const knowledgeNavItems: NavItem[] = [
   { title: "Documents", url: "/app/documents", icon: FileText, moduleKey: "documents" },
   { title: "Notes", url: "/app/notes", icon: StickyNote, moduleKey: "notes" },
-  { title: "Folders", url: "/app/folders", icon: FolderOpen, moduleKey: "folders" },
 ];
 
 const premiumNavItems: NavItem[] = [

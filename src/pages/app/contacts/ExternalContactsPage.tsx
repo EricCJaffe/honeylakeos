@@ -169,11 +169,10 @@ export default function ExternalContactsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [contactToDelete, setContactToDelete] = useState<ExternalContact | null>(null);
 
-  const { data: contactsResult, isLoading } = useExternalContacts({
+  const { data: contacts = [], isLoading } = useExternalContacts({
     search,
     showArchived,
   });
-  const contacts = contactsResult?.data ?? [];
   const { archive, unarchive, remove } = useExternalContactMutations();
 
   const handleEdit = (contact: ExternalContact) => {
