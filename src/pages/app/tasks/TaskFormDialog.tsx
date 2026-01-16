@@ -68,6 +68,7 @@ interface TaskFormDialogProps {
   task?: any;
   projectId?: string;
   editMode?: "single" | "series"; // For recurring tasks
+  templateToApply?: Template | null; // Template to apply on open
 }
 
 const statuses = [
@@ -89,6 +90,7 @@ export function TaskFormDialog({
   task,
   projectId,
   editMode = "series",
+  templateToApply,
 }: TaskFormDialogProps) {
   const { activeCompanyId } = useActiveCompany();
   const { user } = useAuth();
@@ -152,6 +154,19 @@ export function TaskFormDialog({
       } else {
         setRecurrenceConfig(null);
       }
+    } else if (templateToApply) {
+      // Apply template when creating new task from template
+      const payload = templateToApply.payload as Record<string, any>;
+      form.reset({
+        title: payload.title || "",
+        description: payload.description || "",
+        status: payload.status || "to_do",
+        priority: payload.priority || "medium",
+        due_date: null,
+        project_id: projectId || null,
+        phase_id: null,
+      });
+      setRecurrenceConfig(null);
     } else {
       form.reset({
         title: "",
@@ -164,7 +179,7 @@ export function TaskFormDialog({
       });
       setRecurrenceConfig(null);
     }
-  }, [task, projectId, form]);
+  }, [task, projectId, form, templateToApply]);
 
   const mutation = useMutation({
     mutationFn: async (values: TaskFormValues) => {

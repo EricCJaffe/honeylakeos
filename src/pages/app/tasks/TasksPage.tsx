@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, Repeat, Filter } from "lucide-react";
+import { CheckCircle2, Repeat, Filter, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
@@ -19,6 +19,9 @@ import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { TaskList } from "./TaskList";
 import { TaskFormDialog } from "./TaskFormDialog";
+import { TaskTemplateList } from "@/components/tasks/TaskTemplateList";
+import { TemplateFormDialog } from "@/components/templates/TemplateFormDialog";
+import { Template, applyTemplateToForm } from "@/hooks/useTemplates";
 
 export default function TasksPage() {
   const { activeCompanyId, loading: membershipLoading } = useActiveCompany();
@@ -26,6 +29,9 @@ export default function TasksPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(null);
   const [projectFilter, setProjectFilter] = useState<string>("all");
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+  const [templateToApply, setTemplateToApply] = useState<Template | null>(null);
 
   const { data: projects = [] } = useQuery({
     queryKey: ["projects", activeCompanyId],
@@ -101,8 +107,33 @@ export default function TasksPage() {
     enabled: !!activeCompanyId,
   });
 
-  const handleCreate = () => { setEditingTask(null); setIsDialogOpen(true); };
-  const handleEdit = (task: any) => { setEditingTask(task); setIsDialogOpen(true); };
+  const handleCreate = () => {
+    setEditingTask(null);
+    setTemplateToApply(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleEdit = (task: any) => {
+    setEditingTask(task);
+    setTemplateToApply(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleCreateFromTemplate = (template: Template) => {
+    setEditingTask(null);
+    setTemplateToApply(template);
+    setIsDialogOpen(true);
+  };
+
+  const handleCreateTemplate = () => {
+    setEditingTemplate(null);
+    setTemplateDialogOpen(true);
+  };
+
+  const handleEditTemplate = (template: Template) => {
+    setEditingTemplate(template);
+    setTemplateDialogOpen(true);
+  };
 
   if (membershipLoading || loadingAll) {
     return <div className="p-6"><div className="animate-pulse space-y-4"><div className="h-8 bg-muted rounded w-48" /><div className="h-64 bg-muted rounded-lg" /></div></div>;
@@ -131,12 +162,35 @@ export default function TasksPage() {
           <TabsTrigger value="my">My Tasks ({myTasks.length})</TabsTrigger>
           <TabsTrigger value="all">All Tasks ({allTasks.length})</TabsTrigger>
           <TabsTrigger value="recurring" className="gap-1"><Repeat className="h-3.5 w-3.5" />Recurring ({recurringTasks.length})</TabsTrigger>
+          <TabsTrigger value="templates" className="gap-1"><FileText className="h-3.5 w-3.5" />Templates</TabsTrigger>
         </TabsList>
         <TabsContent value="my"><Card><CardContent className="p-0">{myTasks.length === 0 ? <div className="py-12"><EmptyState icon={CheckCircle2} title="No tasks assigned" description="Tasks assigned to you will appear here." /></div> : <TaskList tasks={myTasks} onEditTask={handleEdit} showProject showPhase />}</CardContent></Card></TabsContent>
         <TabsContent value="all"><Card><CardContent className="p-0">{allTasks.length === 0 ? <div className="py-12"><EmptyState icon={CheckCircle2} title="No tasks yet" description="Create your first task." actionLabel="Create Task" onAction={handleCreate} /></div> : <TaskList tasks={allTasks} onEditTask={handleEdit} showProject showPhase />}</CardContent></Card></TabsContent>
         <TabsContent value="recurring"><Card><CardContent className="p-0">{recurringTasks.length === 0 ? <div className="py-12"><EmptyState icon={Repeat} title="No recurring tasks" description="Create a recurring task." actionLabel="Create Recurring Task" onAction={handleCreate} /></div> : <TaskList tasks={recurringTasks} onEditTask={handleEdit} showProject showPhase showRecurrence />}</CardContent></Card></TabsContent>
+        <TabsContent value="templates">
+          <Card>
+            <CardContent className="p-0">
+              <TaskTemplateList
+                onCreateFromTemplate={handleCreateFromTemplate}
+                onEditTemplate={handleEditTemplate}
+                onCreateTemplate={handleCreateTemplate}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
-      <TaskFormDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} task={editingTask} />
+      <TaskFormDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        task={editingTask}
+        templateToApply={templateToApply}
+      />
+      <TemplateFormDialog
+        open={templateDialogOpen}
+        onOpenChange={setTemplateDialogOpen}
+        template={editingTemplate}
+        defaultType="task"
+      />
     </div>
   );
 }
