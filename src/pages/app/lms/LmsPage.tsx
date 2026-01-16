@@ -65,7 +65,6 @@ export default function LmsPage() {
       <PageHeader 
         title="Learning Management" 
         description="Create and manage learning content for your organization"
-        icon={Library}
       />
 
       {/* Quick Links Grid */}

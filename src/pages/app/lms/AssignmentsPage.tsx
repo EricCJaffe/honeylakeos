@@ -10,7 +10,6 @@ export default function AssignmentsPage() {
       <PageHeader 
         title="Assignments" 
         description="Assign learning content to users, groups, and departments"
-        icon={ClipboardList}
       />
 
       <Card className="border-border border-dashed">
