@@ -170,7 +170,7 @@ export function TaskFormDialog({
     mutationFn: async (values: TaskFormValues) => {
       if (!activeCompanyId || !user) throw new Error("Missing context");
 
-      const rrule = configToRRule(recurrenceConfig);
+      const rrule = configToRRule(recurrenceConfig, values.due_date || undefined);
       const isRecurring = !!rrule;
 
       const taskData = {
