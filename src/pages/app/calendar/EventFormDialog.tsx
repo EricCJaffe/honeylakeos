@@ -161,7 +161,7 @@ export function EventFormDialog({
         }
       }
 
-      const rrule = configToRRule(recurrenceConfig);
+      const rrule = configToRRule(recurrenceConfig, startAt);
       const isRecurring = !!rrule;
 
       const eventData = {

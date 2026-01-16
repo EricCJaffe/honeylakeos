@@ -1,10 +1,8 @@
-import * as React from "react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Repeat, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -359,8 +357,24 @@ function getNthWeekday(date: Date): string {
   return ordinals[weekNum - 1] || "last";
 }
 
+function getNthPosition(date: Date): number {
+  const day = date.getDate();
+  const weekNum = Math.ceil(day / 7);
+  // Check if it's the last occurrence of this weekday in the month
+  const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  if (day + 7 > daysInMonth) {
+    return -1; // Last occurrence
+  }
+  return weekNum;
+}
+
+function getDayAbbrev(date: Date): string {
+  const days = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+  return days[date.getDay()];
+}
+
 // Helper to convert config to RRULE string
-export function configToRRule(config: RecurrenceConfig | null): string | null {
+export function configToRRule(config: RecurrenceConfig | null, startDate?: Date): string | null {
   if (!config || config.frequency === "none") return null;
 
   const parts: string[] = [];
@@ -386,11 +400,16 @@ export function configToRRule(config: RecurrenceConfig | null): string | null {
   }
 
   // Monthly by day or weekday
-  if (config.frequency === "monthly") {
-    if (config.monthlyType === "day" && config.monthDay) {
-      parts.push(`BYMONTHDAY=${config.monthDay}`);
+  if (config.frequency === "monthly" && startDate) {
+    if (config.monthlyType === "day") {
+      const dayOfMonth = startDate.getDate();
+      parts.push(`BYMONTHDAY=${dayOfMonth}`);
+    } else if (config.monthlyType === "weekday") {
+      // Generate BYDAY with position, e.g., "2TU" for 2nd Tuesday
+      const position = getNthPosition(startDate);
+      const dayAbbrev = getDayAbbrev(startDate);
+      parts.push(`BYDAY=${position}${dayAbbrev}`);
     }
-    // For weekday, we'd need more complex BYDAY like "2MO" for second Monday
   }
 
   // End condition
@@ -428,10 +447,23 @@ export function rruleToConfig(rrule: string | null, timezone?: string): Recurren
     config.interval = parseInt(intervalMatch[1]);
   }
 
-  // Parse BYDAY
-  const bydayMatch = rrule.match(/BYDAY=([A-Z,]+)/);
+  // Parse BYDAY - handle both simple (MO,TU) and positional (2TU, -1FR)
+  const bydayMatch = rrule.match(/BYDAY=([^;]+)/);
   if (bydayMatch) {
-    config.weekdays = bydayMatch[1].split(",");
+    const bydayValue = bydayMatch[1];
+    // Check if it has positional prefix (number before weekday)
+    if (/^-?\d+[A-Z]{2}$/.test(bydayValue)) {
+      // Monthly nth weekday format like "2TU" or "-1FR"
+      config.monthlyType = "weekday";
+      // Extract just the weekday part
+      const dayOnly = bydayValue.match(/([A-Z]{2})$/);
+      if (dayOnly) {
+        config.weekdays = [dayOnly[1]];
+      }
+    } else {
+      // Simple weekday list like "MO,TU,WE"
+      config.weekdays = bydayValue.split(",").map(d => d.replace(/^-?\d+/, ''));
+    }
   }
 
   // Parse BYMONTHDAY
