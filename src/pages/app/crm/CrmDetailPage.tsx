@@ -127,7 +127,6 @@ function CrmDetailContent() {
           actionLabel="Go Back"
           onAction={() => navigate("/app/crm")}
         />
-        />
       </div>
     );
   }
