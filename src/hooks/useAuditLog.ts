@@ -82,7 +82,15 @@ export type AuditAction =
   | "crm.client_updated"
   | "crm.client_archived"
   | "crm.client_unarchived"
-  | "crm.client_deleted";
+  | "crm.client_deleted"
+  | "crm.client_contact_linked"
+  | "crm.client_contact_unlinked"
+  // External contact actions
+  | "external_contact.created"
+  | "external_contact.updated"
+  | "external_contact.archived"
+  | "external_contact.unarchived"
+  | "external_contact.deleted";
 
 export type EntityType =
   | "employee"
@@ -103,7 +111,8 @@ export type EntityType =
   | "note"
   | "document"
   | "terminology"
-  | "crm_client";
+  | "crm_client"
+  | "external_contact";
 
 interface LogAuditEventParams {
   companyId: string;

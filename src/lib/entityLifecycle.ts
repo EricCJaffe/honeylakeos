@@ -22,7 +22,8 @@ export type LifecycleEntityType =
   | "employee"
   | "location"
   | "group"
-  | "crm_client";
+  | "crm_client"
+  | "external_contact";
 
 /**
  * Lifecycle status values
@@ -171,6 +172,15 @@ export const ENTITY_LIFECYCLE_CONFIG: Record<LifecycleEntityType, EntityLifecycl
     orphanCheckEntities: [],
     cascadeNotes: "Archiving preserves links. Deleting removes links only.",
   },
+  external_contact: {
+    supportsArchive: true,
+    supportsHardDelete: true,
+    statusColumn: "status",
+    removeLinksOnDelete: true,
+    preserveLinksOnArchive: true,
+    orphanCheckEntities: [],
+    cascadeNotes: "Archiving preserves links. Deleting removes links and CRM associations.",
+  },
 };
 
 // ============================================================================
@@ -286,6 +296,7 @@ export function entityTypeToTable(entityType: LifecycleEntityType): string {
     location: "locations",
     group: "groups",
     crm_client: "crm_clients",
+    external_contact: "external_contacts",
   };
   return tableMap[entityType];
 }
