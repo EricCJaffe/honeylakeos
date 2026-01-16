@@ -1,35 +1,55 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "./useActiveCompany";
+import { useCompanyModules } from "./useCompanyModules";
+import { RECURRENCE_LIMITS, getTaskExpansionRange } from "@/lib/readModels";
 
 export interface TaskOccurrence {
   occurrence_date: string;
+  occurrence_start_at?: string;
   is_exception: boolean;
   override_task_id: string | null;
   is_override: boolean;
+  is_completed?: boolean;
+  completed_at?: string;
+  completed_by?: string;
 }
 
+/**
+ * Expand task occurrences with module safety and default limits.
+ */
 export function useTaskOccurrences(
   taskId: string | undefined,
-  rangeStart: Date,
-  rangeEnd: Date,
+  rangeStart?: Date,
+  rangeEnd?: Date,
   enabled: boolean = true
 ) {
+  const { isEntityModuleEnabled, loading: modulesLoading } = useCompanyModules();
+  const isModuleEnabled = isEntityModuleEnabled("task");
+  
+  // Use default range if not provided
+  const defaultRange = getTaskExpansionRange();
+  const start = rangeStart ?? defaultRange.start;
+  const end = rangeEnd ?? defaultRange.end;
+
   return useQuery({
-    queryKey: ["task-occurrences", taskId, rangeStart.toISOString(), rangeEnd.toISOString()],
+    queryKey: ["task-occurrences", taskId, start.toISOString(), end.toISOString()],
     queryFn: async (): Promise<TaskOccurrence[]> => {
       if (!taskId) return [];
 
       const { data, error } = await supabase.rpc("expand_task_series", {
         p_task_id: taskId,
-        p_range_start: rangeStart.toISOString(),
-        p_range_end: rangeEnd.toISOString(),
+        p_range_start: start.toISOString(),
+        p_range_end: end.toISOString(),
       });
 
       if (error) throw error;
-      return (data || []) as TaskOccurrence[];
+      
+      // Apply occurrence limit
+      const occurrences = (data || []) as TaskOccurrence[];
+      return occurrences.slice(0, RECURRENCE_LIMITS.TASK_OCCURRENCES);
     },
-    enabled: enabled && !!taskId,
+    enabled: enabled && !!taskId && isModuleEnabled && !modulesLoading,
   });
 }
 
