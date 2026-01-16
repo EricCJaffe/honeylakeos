@@ -1387,7 +1387,63 @@ export type Database = {
           },
         ]
       }
-      lms_cohort_coaches: {
+      lms_assignments: {
+        Row: {
+          archived_at: string | null
+          assignable_id: string
+          assignable_type: string
+          assigned_at: string
+          assigned_by: string | null
+          company_id: string
+          created_at: string
+          due_at: string | null
+          id: string
+          is_required: boolean
+          notes: string | null
+          target_id: string | null
+          target_type: string
+        }
+        Insert: {
+          archived_at?: string | null
+          assignable_id: string
+          assignable_type: string
+          assigned_at?: string
+          assigned_by?: string | null
+          company_id: string
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          is_required?: boolean
+          notes?: string | null
+          target_id?: string | null
+          target_type: string
+        }
+        Update: {
+          archived_at?: string | null
+          assignable_id?: string
+          assignable_type?: string
+          assigned_at?: string
+          assigned_by?: string | null
+          company_id?: string
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          is_required?: boolean
+          notes?: string | null
+          target_id?: string | null
+          target_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lms_assignments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lms_cohort_coaches_deprecated: {
         Row: {
           coach_profile_id: string | null
           cohort_id: string
@@ -1430,7 +1486,7 @@ export type Database = {
             foreignKeyName: "lms_cohort_coaches_cohort_id_fkey"
             columns: ["cohort_id"]
             isOneToOne: false
-            referencedRelation: "lms_cohorts"
+            referencedRelation: "lms_cohorts_deprecated"
             referencedColumns: ["id"]
           },
           {
@@ -1449,7 +1505,7 @@ export type Database = {
           },
         ]
       }
-      lms_cohorts: {
+      lms_cohorts_deprecated: {
         Row: {
           company_id: string
           course_id: string
@@ -1507,7 +1563,7 @@ export type Database = {
             foreignKeyName: "lms_cohorts_course_id_fkey"
             columns: ["course_id"]
             isOneToOne: false
-            referencedRelation: "lms_courses"
+            referencedRelation: "lms_courses_deprecated"
             referencedColumns: ["id"]
           },
           {
@@ -1519,7 +1575,102 @@ export type Database = {
           },
         ]
       }
+      lms_course_lessons: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          lesson_id: string
+          sort_order: number
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          lesson_id: string
+          sort_order?: number
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lms_course_lessons_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "lms_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lms_course_lessons_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lms_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lms_courses: {
+        Row: {
+          archived_at: string | null
+          company_id: string
+          cover_image_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          estimated_hours: number | null
+          id: string
+          status: string
+          syllabus_asset_path: string | null
+          title: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          archived_at?: string | null
+          company_id: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_hours?: number | null
+          id?: string
+          status?: string
+          syllabus_asset_path?: string | null
+          title: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          archived_at?: string | null
+          company_id?: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_hours?: number | null
+          id?: string
+          status?: string
+          syllabus_asset_path?: string | null
+          title?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lms_courses_company_id_fkey1"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lms_courses_deprecated: {
         Row: {
           company_id: string
           created_at: string
@@ -1566,7 +1717,7 @@ export type Database = {
           },
         ]
       }
-      lms_enrollments: {
+      lms_enrollments_deprecated: {
         Row: {
           cohort_id: string
           company_id: string
@@ -1608,7 +1759,7 @@ export type Database = {
             foreignKeyName: "lms_enrollments_cohort_id_fkey"
             columns: ["cohort_id"]
             isOneToOne: false
-            referencedRelation: "lms_cohorts"
+            referencedRelation: "lms_cohorts_deprecated"
             referencedColumns: ["id"]
           },
           {
@@ -1627,7 +1778,366 @@ export type Database = {
           },
         ]
       }
-      lms_session_attendance: {
+      lms_learning_paths: {
+        Row: {
+          archived_at: string | null
+          company_id: string
+          cover_image_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          estimated_hours: number | null
+          id: string
+          status: string
+          title: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          archived_at?: string | null
+          company_id: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_hours?: number | null
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          archived_at?: string | null
+          company_id?: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_hours?: number | null
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lms_learning_paths_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lms_lessons: {
+        Row: {
+          archived_at: string | null
+          company_id: string
+          content_type: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          estimated_minutes: number | null
+          external_url: string | null
+          file_asset_path: string | null
+          id: string
+          rich_text_body: string | null
+          status: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          visibility: string
+          youtube_url: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          company_id: string
+          content_type?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_minutes?: number | null
+          external_url?: string | null
+          file_asset_path?: string | null
+          id?: string
+          rich_text_body?: string | null
+          status?: string
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          visibility?: string
+          youtube_url?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          company_id?: string
+          content_type?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_minutes?: number | null
+          external_url?: string | null
+          file_asset_path?: string | null
+          id?: string
+          rich_text_body?: string | null
+          status?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          visibility?: string
+          youtube_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lms_lessons_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lms_path_courses: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          path_id: string
+          sort_order: number
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          path_id: string
+          sort_order?: number
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          path_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lms_path_courses_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "lms_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lms_path_courses_path_id_fkey"
+            columns: ["path_id"]
+            isOneToOne: false
+            referencedRelation: "lms_learning_paths"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lms_progress: {
+        Row: {
+          company_id: string
+          completed_at: string | null
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          last_viewed_at: string | null
+          progress_percent: number | null
+          started_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          completed_at?: string | null
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          last_viewed_at?: string | null
+          progress_percent?: number | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          completed_at?: string | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          last_viewed_at?: string | null
+          progress_percent?: number | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lms_progress_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lms_quiz_attempts: {
+        Row: {
+          answers: Json
+          company_id: string
+          id: string
+          passed: boolean | null
+          quiz_id: string
+          score_percent: number | null
+          started_at: string
+          submitted_at: string | null
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          company_id: string
+          id?: string
+          passed?: boolean | null
+          quiz_id: string
+          score_percent?: number | null
+          started_at?: string
+          submitted_at?: string | null
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          company_id?: string
+          id?: string
+          passed?: boolean | null
+          quiz_id?: string
+          score_percent?: number | null
+          started_at?: string
+          submitted_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lms_quiz_attempts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lms_quiz_attempts_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "lms_quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lms_quiz_questions: {
+        Row: {
+          correct_answer: Json
+          created_at: string
+          explanation: string | null
+          id: string
+          options: Json
+          question_text: string
+          question_type: string
+          quiz_id: string
+          sort_order: number
+        }
+        Insert: {
+          correct_answer: Json
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          options?: Json
+          question_text: string
+          question_type: string
+          quiz_id: string
+          sort_order?: number
+        }
+        Update: {
+          correct_answer?: Json
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          options?: Json
+          question_text?: string
+          question_type?: string
+          quiz_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lms_quiz_questions_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "lms_quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lms_quizzes: {
+        Row: {
+          allow_retries: boolean
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          lesson_id: string
+          passing_score_percent: number | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          allow_retries?: boolean
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lesson_id: string
+          passing_score_percent?: number | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          allow_retries?: boolean
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lesson_id?: string
+          passing_score_percent?: number | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lms_quizzes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lms_quizzes_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: true
+            referencedRelation: "lms_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lms_session_attendance_deprecated: {
         Row: {
           company_id: string
           external_contact_id: string
@@ -1677,12 +2187,12 @@ export type Database = {
             foreignKeyName: "lms_session_attendance_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
-            referencedRelation: "lms_sessions"
+            referencedRelation: "lms_sessions_deprecated"
             referencedColumns: ["id"]
           },
         ]
       }
-      lms_sessions: {
+      lms_sessions_deprecated: {
         Row: {
           all_day: boolean
           cohort_id: string | null
@@ -1742,7 +2252,7 @@ export type Database = {
             foreignKeyName: "lms_sessions_cohort_id_fkey"
             columns: ["cohort_id"]
             isOneToOne: false
-            referencedRelation: "lms_cohorts"
+            referencedRelation: "lms_cohorts_deprecated"
             referencedColumns: ["id"]
           },
           {
@@ -1756,7 +2266,7 @@ export type Database = {
             foreignKeyName: "lms_sessions_course_id_fkey"
             columns: ["course_id"]
             isOneToOne: false
-            referencedRelation: "lms_courses"
+            referencedRelation: "lms_courses_deprecated"
             referencedColumns: ["id"]
           },
           {

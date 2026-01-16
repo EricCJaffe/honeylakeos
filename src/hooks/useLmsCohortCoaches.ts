@@ -1,9 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useActiveCompany } from "./useActiveCompany";
-import { useAuditLog } from "./useAuditLog";
-import { useCompanyModules } from "./useCompanyModules";
-import { toast } from "sonner";
+/**
+ * @deprecated LMS v1 cohort coaches have been replaced by the new LMS v2 system.
+ * This file is kept for reference but the underlying tables have been renamed to *_deprecated.
+ */
+
+import { useQuery } from "@tanstack/react-query";
 
 export interface LmsCohortCoach {
   id: string;
@@ -14,12 +14,6 @@ export interface LmsCohortCoach {
   role: string;
   created_by: string | null;
   created_at: string;
-  coach_profiles?: {
-    id: string;
-    profile_type: string;
-    external_contacts: { id: string; full_name: string; email: string | null };
-  } | null;
-  external_contacts?: { id: string; full_name: string; email: string | null } | null;
 }
 
 export interface AssignCoachInput {
@@ -29,119 +23,32 @@ export interface AssignCoachInput {
   role?: string;
 }
 
-export function useLmsCohortCoaches(cohortId: string | undefined) {
-  const { activeCompanyId } = useActiveCompany();
-  const { isEnabled } = useCompanyModules();
-  const lmsEnabled = isEnabled("lms");
-
+/**
+ * @deprecated LMS v1 cohort coaches are no longer available
+ */
+export function useLmsCohortCoaches(_cohortId: string | undefined) {
   return useQuery({
-    queryKey: ["cohort-coaches", cohortId],
-    queryFn: async () => {
-      if (!cohortId || !activeCompanyId || !lmsEnabled) return [];
-
-      const { data, error } = await supabase
-        .from("lms_cohort_coaches")
-        .select(`*, coach_profiles(id, profile_type, external_contacts(id, full_name, email)), external_contacts(id, full_name, email)`)
-        .eq("cohort_id", cohortId)
-        .eq("company_id", activeCompanyId)
-        .order("created_at", { ascending: true });
-
-      if (error) throw error;
-      return data as LmsCohortCoach[];
-    },
-    enabled: !!cohortId && !!activeCompanyId && lmsEnabled,
+    queryKey: ["cohort-coaches-deprecated"],
+    queryFn: async () => [] as LmsCohortCoach[],
+    enabled: false,
   });
 }
 
+/**
+ * @deprecated LMS v1 cohort coach mutations are no longer available
+ */
 export function useLmsCohortCoachMutations() {
-  const queryClient = useQueryClient();
-  const { activeCompanyId } = useActiveCompany();
-  const { log } = useAuditLog();
-
-  const assignCoach = useMutation({
-    mutationFn: async (input: AssignCoachInput) => {
-      if (!activeCompanyId) throw new Error("No active company");
-      if (!input.coach_profile_id && !input.external_contact_id) {
-        throw new Error("Either coach profile or external contact is required");
-      }
-
-      const { data: userData } = await supabase.auth.getUser();
-
-      const { data, error } = await supabase
-        .from("lms_cohort_coaches")
-        .insert({
-          company_id: activeCompanyId,
-          cohort_id: input.cohort_id,
-          coach_profile_id: input.coach_profile_id || null,
-          external_contact_id: input.external_contact_id || null,
-          role: input.role || "instructor",
-          created_by: userData.user?.id || null,
-        })
-        .select(`*, coach_profiles(id, profile_type, external_contacts(id, full_name, email)), external_contacts(id, full_name, email)`)
-        .single();
-
-      if (error) throw error;
-      return data as LmsCohortCoach;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["cohort-coaches"] });
-      const coachName = data.coach_profiles?.external_contacts?.full_name || data.external_contacts?.full_name || "Coach";
-      log("lms.coach_assigned", "lms_cohort", data.cohort_id, {
-        coachId: data.coach_profile_id || data.external_contact_id,
-        coachName,
-        role: data.role,
-      });
-      toast.success(`${coachName} assigned to cohort`);
-    },
-    onError: (error) => {
-      if (error.message.includes("duplicate")) {
-        toast.error("This coach is already assigned to this cohort");
-      } else {
-        toast.error(`Failed to assign coach: ${error.message}`);
-      }
-    },
-  });
-
-  const updateCoachRole = useMutation({
-    mutationFn: async ({ id, role }: { id: string; role: string }) => {
-      const { data, error } = await supabase.from("lms_cohort_coaches").update({ role }).eq("id", id).select().single();
-      if (error) throw error;
-      return data as LmsCohortCoach;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["cohort-coaches"] });
-      log("lms.coach_role_updated", "lms_cohort", data.cohort_id, { role: data.role });
-      toast.success("Coach role updated");
-    },
-    onError: (error) => {
-      toast.error(`Failed to update coach role: ${error.message}`);
-    },
-  });
-
-  const removeCoach = useMutation({
-    mutationFn: async (assignmentId: string) => {
-      const { data: assignment } = await supabase.from("lms_cohort_coaches").select("cohort_id").eq("id", assignmentId).single();
-      const { error } = await supabase.from("lms_cohort_coaches").delete().eq("id", assignmentId);
-      if (error) throw error;
-      return { assignmentId, cohortId: assignment?.cohort_id };
-    },
-    onSuccess: ({ cohortId }) => {
-      queryClient.invalidateQueries({ queryKey: ["cohort-coaches"] });
-      log("lms.coach_removed", "lms_cohort", cohortId || "", {});
-      toast.success("Coach removed from cohort");
-    },
-    onError: (error) => {
-      toast.error(`Failed to remove coach: ${error.message}`);
-    },
-  });
-
-  return { assignCoach, updateCoachRole, removeCoach };
+  return {
+    assignCoach: { mutate: () => {}, mutateAsync: async () => ({} as LmsCohortCoach), isPending: false },
+    updateCoachRole: { mutate: () => {}, mutateAsync: async () => ({} as LmsCohortCoach), isPending: false },
+    removeCoach: { mutate: () => {}, mutateAsync: async () => ({ assignmentId: "", cohortId: "" }), isPending: false },
+  };
 }
 
-export function getCoachDisplayName(coach: LmsCohortCoach): string {
-  return coach.coach_profiles?.external_contacts?.full_name || coach.external_contacts?.full_name || "Unknown";
+export function getCoachDisplayName(_coach: LmsCohortCoach): string {
+  return "Unknown";
 }
 
-export function getCoachEmail(coach: LmsCohortCoach): string | null {
-  return coach.coach_profiles?.external_contacts?.email || coach.external_contacts?.email || null;
+export function getCoachEmail(_coach: LmsCohortCoach): string | null {
+  return null;
 }

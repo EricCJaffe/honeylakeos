@@ -3,41 +3,51 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "./useActiveCompany";
 import { useAuditLog } from "./useAuditLog";
 import { useCompanyModules } from "./useCompanyModules";
-import { useLmsPermissions, PermissionError } from "./useModulePermissions";
+import { useLmsPermissions } from "./useModulePermissions";
 import { toast } from "sonner";
-import type { Json } from "@/integrations/supabase/types";
 
 export type CourseStatus = "draft" | "published" | "archived";
+export type Visibility = "company_private" | "company_public";
 
 export interface LmsCourse {
   id: string;
   company_id: string;
   title: string;
   description: string | null;
+  cover_image_url: string | null;
+  syllabus_asset_path: string | null;
+  visibility: Visibility;
   status: CourseStatus;
-  default_duration_minutes: number | null;
-  settings: Json;
+  estimated_hours: number | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  archived_at: string | null;
 }
 
 export interface CreateCourseInput {
   title: string;
   description?: string;
+  cover_image_url?: string;
+  syllabus_asset_path?: string;
+  visibility?: Visibility;
   status?: CourseStatus;
-  default_duration_minutes?: number;
+  estimated_hours?: number;
 }
 
 export interface UpdateCourseInput {
   title?: string;
   description?: string;
+  cover_image_url?: string | null;
+  syllabus_asset_path?: string | null;
+  visibility?: Visibility;
   status?: CourseStatus;
-  default_duration_minutes?: number;
+  estimated_hours?: number | null;
 }
 
 export interface CourseFilters {
   status?: CourseStatus | "all";
+  visibility?: Visibility | "all";
   search?: string;
 }
 
@@ -47,7 +57,7 @@ export function useLmsCourses(filters: CourseFilters = {}) {
   const lmsEnabled = isEnabled("lms");
 
   return useQuery({
-    queryKey: ["courses", activeCompanyId, filters],
+    queryKey: ["lms-courses", activeCompanyId, filters],
     queryFn: async () => {
       if (!activeCompanyId || !lmsEnabled) return [];
 
@@ -55,10 +65,15 @@ export function useLmsCourses(filters: CourseFilters = {}) {
         .from("lms_courses")
         .select("*")
         .eq("company_id", activeCompanyId)
+        .is("archived_at", null)
         .order("created_at", { ascending: false });
 
       if (filters.status && filters.status !== "all") {
         query = query.eq("status", filters.status);
+      }
+
+      if (filters.visibility && filters.visibility !== "all") {
+        query = query.eq("visibility", filters.visibility);
       }
 
       if (filters.search) {
@@ -79,7 +94,7 @@ export function useLmsCourse(courseId: string | undefined) {
   const lmsEnabled = isEnabled("lms");
 
   return useQuery({
-    queryKey: ["course", courseId],
+    queryKey: ["lms-course", courseId],
     queryFn: async () => {
       if (!courseId || !activeCompanyId || !lmsEnabled) return null;
 
@@ -106,8 +121,6 @@ export function useLmsCourseMutations() {
   const createCourse = useMutation({
     mutationFn: async (input: CreateCourseInput) => {
       if (!activeCompanyId) throw new Error("No active company");
-      
-      // Permission check
       permissions.assertCapability("canCreate", "create course");
 
       const { data: userData } = await supabase.auth.getUser();
@@ -118,8 +131,11 @@ export function useLmsCourseMutations() {
           company_id: activeCompanyId,
           title: input.title,
           description: input.description || null,
+          cover_image_url: input.cover_image_url || null,
+          syllabus_asset_path: input.syllabus_asset_path || null,
+          visibility: input.visibility || "company_private",
           status: input.status || "draft",
-          default_duration_minutes: input.default_duration_minutes || null,
+          estimated_hours: input.estimated_hours || null,
           created_by: userData.user?.id || null,
         })
         .select()
@@ -129,7 +145,7 @@ export function useLmsCourseMutations() {
       return data as LmsCourse;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["courses"] });
+      queryClient.invalidateQueries({ queryKey: ["lms-courses"] });
       log("lms.course_created", "lms_course", data.id, { title: data.title });
       toast.success("Course created successfully");
     },
@@ -140,13 +156,12 @@ export function useLmsCourseMutations() {
 
   const updateCourse = useMutation({
     mutationFn: async ({ id, ...input }: UpdateCourseInput & { id: string }) => {
-      // Permission check - use canPublish for status changes to published
       if (input.status === "published") {
         permissions.assertCapability("canPublish", "publish course");
       } else {
         permissions.assertCapability("canEdit", "update course");
       }
-      
+
       const { data, error } = await supabase
         .from("lms_courses")
         .update({
@@ -161,8 +176,8 @@ export function useLmsCourseMutations() {
       return data as LmsCourse;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["courses"] });
-      queryClient.invalidateQueries({ queryKey: ["course", data.id] });
+      queryClient.invalidateQueries({ queryKey: ["lms-courses"] });
+      queryClient.invalidateQueries({ queryKey: ["lms-course", data.id] });
       log("lms.course_updated", "lms_course", data.id, { title: data.title });
       toast.success("Course updated successfully");
     },
@@ -173,6 +188,8 @@ export function useLmsCourseMutations() {
 
   const publishCourse = useMutation({
     mutationFn: async (courseId: string) => {
+      permissions.assertCapability("canPublish", "publish course");
+
       const { data, error } = await supabase
         .from("lms_courses")
         .update({ status: "published", updated_at: new Date().toISOString() })
@@ -184,8 +201,8 @@ export function useLmsCourseMutations() {
       return data as LmsCourse;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["courses"] });
-      queryClient.invalidateQueries({ queryKey: ["course", data.id] });
+      queryClient.invalidateQueries({ queryKey: ["lms-courses"] });
+      queryClient.invalidateQueries({ queryKey: ["lms-course", data.id] });
       log("lms.course_published", "lms_course", data.id, { title: data.title });
       toast.success("Course published successfully");
     },
@@ -198,7 +215,11 @@ export function useLmsCourseMutations() {
     mutationFn: async (courseId: string) => {
       const { data, error } = await supabase
         .from("lms_courses")
-        .update({ status: "archived", updated_at: new Date().toISOString() })
+        .update({ 
+          status: "archived", 
+          archived_at: new Date().toISOString(),
+          updated_at: new Date().toISOString() 
+        })
         .eq("id", courseId)
         .select()
         .single();
@@ -207,8 +228,8 @@ export function useLmsCourseMutations() {
       return data as LmsCourse;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["courses"] });
-      queryClient.invalidateQueries({ queryKey: ["course", data.id] });
+      queryClient.invalidateQueries({ queryKey: ["lms-courses"] });
+      queryClient.invalidateQueries({ queryKey: ["lms-course", data.id] });
       log("lms.course_archived", "lms_course", data.id, { title: data.title });
       toast.success("Course archived successfully");
     },
@@ -224,7 +245,7 @@ export function useLmsCourseMutations() {
       return courseId;
     },
     onSuccess: (courseId) => {
-      queryClient.invalidateQueries({ queryKey: ["courses"] });
+      queryClient.invalidateQueries({ queryKey: ["lms-courses"] });
       log("lms.course_deleted", "lms_course", courseId, {});
       toast.success("Course deleted successfully");
     },
