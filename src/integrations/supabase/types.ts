@@ -191,6 +191,7 @@ export type Database = {
           company_id: string
           created_at: string
           created_by: string | null
+          external_contact_id: string | null
           id: string
           is_active: boolean
           lifecycle_status: string
@@ -210,6 +211,7 @@ export type Database = {
           company_id: string
           created_at?: string
           created_by?: string | null
+          external_contact_id?: string | null
           id?: string
           is_active?: boolean
           lifecycle_status?: string
@@ -229,6 +231,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           created_by?: string | null
+          external_contact_id?: string | null
           id?: string
           is_active?: boolean
           lifecycle_status?: string
@@ -249,6 +252,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_clients_external_contact_id_fkey"
+            columns: ["external_contact_id"]
+            isOneToOne: false
+            referencedRelation: "external_contacts"
             referencedColumns: ["id"]
           },
         ]
@@ -794,6 +804,65 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_contacts: {
+        Row: {
+          archived_at: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          email: string | null
+          full_name: string
+          id: string
+          notes: string | null
+          organization_name: string | null
+          phone: string | null
+          tags: Json
+          title: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          notes?: string | null
+          organization_name?: string | null
+          phone?: string | null
+          tags?: Json
+          title?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          notes?: string | null
+          organization_name?: string | null
+          phone?: string | null
+          tags?: Json
+          title?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
