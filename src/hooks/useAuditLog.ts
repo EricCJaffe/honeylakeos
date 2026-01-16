@@ -108,7 +108,27 @@ export type AuditAction =
   | "form.field_removed"
   | "form.fields_reordered"
   | "form.submission_received"
-  | "form.submission_deleted";
+  | "form.submission_deleted"
+  // LMS actions
+  | "lms.course_created"
+  | "lms.course_updated"
+  | "lms.course_published"
+  | "lms.course_archived"
+  | "lms.course_deleted"
+  | "lms.cohort_created"
+  | "lms.cohort_updated"
+  | "lms.cohort_status_changed"
+  | "lms.cohort_deleted"
+  | "lms.session_created"
+  | "lms.session_updated"
+  | "lms.session_deleted"
+  | "lms.session_calendar_linked"
+  | "lms.participant_enrolled"
+  | "lms.participant_unenrolled"
+  | "lms.enrollment_updated"
+  | "lms.coach_assigned"
+  | "lms.coach_removed"
+  | "lms.coach_role_updated";
 
 export type EntityType =
   | "employee"
@@ -132,7 +152,11 @@ export type EntityType =
   | "crm_client"
   | "external_contact"
   | "coach_profile"
-  | "form";
+  | "form"
+  | "lms_course"
+  | "lms_cohort"
+  | "lms_session"
+  | "lms_enrollment";
 
 interface LogAuditEventParams {
   companyId: string;

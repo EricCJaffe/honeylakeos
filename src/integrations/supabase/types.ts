@@ -1277,6 +1277,387 @@ export type Database = {
           },
         ]
       }
+      lms_cohort_coaches: {
+        Row: {
+          coach_profile_id: string | null
+          cohort_id: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          external_contact_id: string | null
+          id: string
+          role: string
+        }
+        Insert: {
+          coach_profile_id?: string | null
+          cohort_id: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          external_contact_id?: string | null
+          id?: string
+          role?: string
+        }
+        Update: {
+          coach_profile_id?: string | null
+          cohort_id?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          external_contact_id?: string | null
+          id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lms_cohort_coaches_coach_profile_id_fkey"
+            columns: ["coach_profile_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lms_cohort_coaches_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "lms_cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lms_cohort_coaches_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lms_cohort_coaches_external_contact_id_fkey"
+            columns: ["external_contact_id"]
+            isOneToOne: false
+            referencedRelation: "external_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lms_cohorts: {
+        Row: {
+          company_id: string
+          course_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          linked_project_id: string | null
+          name: string
+          settings: Json
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          course_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          linked_project_id?: string | null
+          name: string
+          settings?: Json
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          course_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          linked_project_id?: string | null
+          name?: string
+          settings?: Json
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lms_cohorts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lms_cohorts_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "lms_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lms_cohorts_linked_project_id_fkey"
+            columns: ["linked_project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lms_courses: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          default_duration_minutes: number | null
+          description: string | null
+          id: string
+          settings: Json
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          default_duration_minutes?: number | null
+          description?: string | null
+          id?: string
+          settings?: Json
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          default_duration_minutes?: number | null
+          description?: string | null
+          id?: string
+          settings?: Json
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lms_courses_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lms_enrollments: {
+        Row: {
+          cohort_id: string
+          company_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          enrolled_at: string
+          external_contact_id: string
+          id: string
+          notes: string | null
+          status: string
+        }
+        Insert: {
+          cohort_id: string
+          company_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          enrolled_at?: string
+          external_contact_id: string
+          id?: string
+          notes?: string | null
+          status?: string
+        }
+        Update: {
+          cohort_id?: string
+          company_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          enrolled_at?: string
+          external_contact_id?: string
+          id?: string
+          notes?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lms_enrollments_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "lms_cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lms_enrollments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lms_enrollments_external_contact_id_fkey"
+            columns: ["external_contact_id"]
+            isOneToOne: false
+            referencedRelation: "external_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lms_session_attendance: {
+        Row: {
+          company_id: string
+          external_contact_id: string
+          id: string
+          marked_at: string
+          marked_by: string | null
+          notes: string | null
+          session_id: string
+          status: string
+        }
+        Insert: {
+          company_id: string
+          external_contact_id: string
+          id?: string
+          marked_at?: string
+          marked_by?: string | null
+          notes?: string | null
+          session_id: string
+          status?: string
+        }
+        Update: {
+          company_id?: string
+          external_contact_id?: string
+          id?: string
+          marked_at?: string
+          marked_by?: string | null
+          notes?: string | null
+          session_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lms_session_attendance_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lms_session_attendance_external_contact_id_fkey"
+            columns: ["external_contact_id"]
+            isOneToOne: false
+            referencedRelation: "external_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lms_session_attendance_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "lms_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lms_sessions: {
+        Row: {
+          all_day: boolean
+          cohort_id: string | null
+          company_id: string
+          course_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_at: string | null
+          id: string
+          linked_event_id: string | null
+          location_text: string | null
+          meeting_url: string | null
+          sort_order: number
+          start_at: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          all_day?: boolean
+          cohort_id?: string | null
+          company_id: string
+          course_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_at?: string | null
+          id?: string
+          linked_event_id?: string | null
+          location_text?: string | null
+          meeting_url?: string | null
+          sort_order?: number
+          start_at?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          all_day?: boolean
+          cohort_id?: string | null
+          company_id?: string
+          course_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_at?: string | null
+          id?: string
+          linked_event_id?: string | null
+          location_text?: string | null
+          meeting_url?: string | null
+          sort_order?: number
+          start_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lms_sessions_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "lms_cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lms_sessions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lms_sessions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "lms_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lms_sessions_linked_event_id_fkey"
+            columns: ["linked_event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       location_members: {
         Row: {
           created_at: string
