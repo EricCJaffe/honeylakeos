@@ -56,6 +56,11 @@ import RlsTestPage from "@/pages/app/dev/RlsTestPage";
 import OnboardingPage from "@/pages/app/onboarding/OnboardingPage";
 import SettingsPage from "@/pages/app/settings/SettingsPage";
 import TemplatesPage from "@/pages/app/admin/TemplatesPage";
+import LmsPage from "@/pages/app/lms/LmsPage";
+import LmsPathsPage from "@/pages/app/lms/PathsPage";
+import LmsCoursesPage from "@/pages/app/lms/CoursesPage";
+import LmsLessonsPage from "@/pages/app/lms/LessonsPage";
+import LmsAssignmentsPage from "@/pages/app/lms/AssignmentsPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -123,7 +128,11 @@ function App() {
                     <Route path="documents/:documentId" element={<ModuleGuard moduleKey="documents" moduleName="Documents"><DocumentDetailPage /></ModuleGuard>} />
                     <Route path="forms" element={<ModuleGuard moduleKey="forms" moduleName="Forms"><ModulePage /></ModuleGuard>} />
                     <Route path="workflows" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><ModulePage /></ModuleGuard>} />
-                    <Route path="lms" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><ModulePage /></ModuleGuard>} />
+                    <Route path="lms" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsPage /></ModuleGuard>} />
+                    <Route path="lms/paths" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsPathsPage /></ModuleGuard>} />
+                    <Route path="lms/courses" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsCoursesPage /></ModuleGuard>} />
+                    <Route path="lms/lessons" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsLessonsPage /></ModuleGuard>} />
+                    <Route path="lms/assignments" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsAssignmentsPage /></ModuleGuard>} />
                     <Route path="settings" element={<SettingsPage />} />
                     <Route path="admin/company-console" element={<CompanyConsolePage />} />
                     <Route path="admin/company" element={<CompanySettingsPage />} />

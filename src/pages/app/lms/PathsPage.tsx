@@ -74,16 +74,14 @@ export default function PathsPage() {
       <PageHeader 
         title="Learning Paths" 
         description="Create structured sequences of courses"
-        icon={GraduationCap}
-        actions={
-          permissions.canCreate && (
-            <Button onClick={handleOpenNew}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Learning Path
-            </Button>
-          )
-        }
-      />
+      >
+        {permissions.canCreate && (
+          <Button onClick={handleOpenNew}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Learning Path
+          </Button>
+        )}
+      </PageHeader>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -130,14 +128,8 @@ export default function PathsPage() {
           icon={GraduationCap}
           title="No learning paths yet"
           description="Create your first learning path to organize courses into structured sequences."
-          action={
-            permissions.canCreate && (
-              <Button onClick={handleOpenNew}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Learning Path
-              </Button>
-            )
-          }
+          actionLabel={permissions.canCreate ? "Create Learning Path" : undefined}
+          onAction={permissions.canCreate ? handleOpenNew : undefined}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

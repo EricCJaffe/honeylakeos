@@ -74,16 +74,14 @@ export default function CoursesPage() {
       <PageHeader 
         title="Courses" 
         description="Create and manage courses with lessons"
-        icon={BookOpen}
-        actions={
-          permissions.canCreate && (
-            <Button onClick={handleOpenNew}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Course
-            </Button>
-          )
-        }
-      />
+      >
+        {permissions.canCreate && (
+          <Button onClick={handleOpenNew}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Course
+          </Button>
+        )}
+      </PageHeader>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -130,14 +128,8 @@ export default function CoursesPage() {
           icon={BookOpen}
           title="No courses yet"
           description="Create your first course to start building your learning content."
-          action={
-            permissions.canCreate && (
-              <Button onClick={handleOpenNew}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Course
-              </Button>
-            )
-          }
+          actionLabel={permissions.canCreate ? "Create Course" : undefined}
+          onAction={permissions.canCreate ? handleOpenNew : undefined}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
