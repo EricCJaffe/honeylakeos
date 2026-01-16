@@ -6,7 +6,7 @@ import { ModuleGuard } from "@/components/ModuleGuard";
 import { EntityLinksPanel } from "@/components/EntityLinksPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -170,18 +170,37 @@ function CrmDetailContent() {
         </div>
       </PageHeader>
 
-      {/* Status Badges */}
-      <div className="flex items-center gap-2 mb-6">
-        <Badge
-          variant={client.lifecycle_status === "client" ? "default" : "secondary"}
-        >
-          {client.lifecycle_status === "client" ? clientTerm : "Prospect"}
-        </Badge>
-        <Badge variant="outline" className="capitalize">
-          {client.type}
-        </Badge>
-        {isArchived && <Badge variant="destructive">Archived</Badge>}
-      </div>
+      {/* Status Section */}
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Status:</span>
+              <Badge
+                variant={client.lifecycle_status === "client" ? "default" : "secondary"}
+              >
+                {client.lifecycle_status === "client" ? clientTerm : "Prospect"}
+              </Badge>
+            </div>
+            <Separator orientation="vertical" className="h-5" />
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Type:</span>
+              <Badge variant="outline" className="capitalize">
+                {client.type === "b2c" ? "Individual" : client.type === "b2b" ? "Business" : "Mixed"}
+              </Badge>
+            </div>
+            {isArchived && (
+              <>
+                <Separator orientation="vertical" className="h-5" />
+                <Badge variant="destructive" className="gap-1">
+                  <Archive className="h-3 w-3" />
+                  Archived
+                </Badge>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Person Info */}
@@ -235,18 +254,9 @@ function CrmDetailContent() {
         )}
 
         {/* Linked Items */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-base">Linked Items</CardTitle>
-            <CardDescription>
-              Projects, tasks, events, notes, and documents related to this{" "}
-              {clientTerm.toLowerCase()}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <EntityLinksPanel entityType="task" entityId={client.id} />
-          </CardContent>
-        </Card>
+        <div className="md:col-span-2">
+          <EntityLinksPanel entityType="crm_client" entityId={client.id} />
+        </div>
 
         {/* Metadata */}
         <Card className="md:col-span-2">

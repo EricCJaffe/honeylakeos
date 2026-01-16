@@ -178,21 +178,20 @@ function LinkedEntityItem({
 
   // Graceful degradation: show disabled state if module is disabled
   if (!modulesLoading && !isTargetModuleEnabled) {
+    const moduleKey = ENTITY_TO_MODULE_MAP[targetType];
+    const moduleLabel = moduleKey ? moduleKey.charAt(0).toUpperCase() + moduleKey.slice(1) : getEntityLabel(targetType);
     return (
       <div className="flex items-center justify-between gap-2 p-2 rounded-md border border-dashed bg-muted/30 opacity-60">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <Lock className="h-4 w-4 text-muted-foreground" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-muted-foreground">
-              {getEntityLabel(targetType)} module disabled
+              Linked {getEntityLabel(targetType)}
             </p>
             <p className="text-xs text-muted-foreground/70">
-              Enable the module to view this link
+              This item is unavailable because the {moduleLabel} module is disabled
             </p>
           </div>
-          <Badge variant="outline" className="bg-muted text-muted-foreground">
-            Disabled
-          </Badge>
         </div>
         <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => onDelete(link.id)}>
           <X className="h-4 w-4" />
@@ -407,6 +406,79 @@ function AddLinkDialog({
   );
 }
 
+// Group links by entity type for cleaner display
+function GroupedLinks({
+  links,
+  entityId,
+  entityType,
+  onDeleteLink,
+}: {
+  links: EntityLink[];
+  entityId: string;
+  entityType: EntityType;
+  onDeleteLink: (linkId: string) => void;
+}) {
+  const { getSingular } = useCompanyTerminology();
+  
+  // Group links by target type
+  const groupedLinks = links.reduce((acc, link) => {
+    const isSource = link.from_id === entityId && link.from_type === entityType;
+    const targetType = isSource ? link.to_type : link.from_type;
+    if (!acc[targetType]) {
+      acc[targetType] = [];
+    }
+    acc[targetType].push(link);
+    return acc;
+  }, {} as Record<string, EntityLink[]>);
+
+  const getGroupLabel = (type: string): string => {
+    if (type === "crm_client") return getSingular("crm_client") + "s";
+    const config = ENTITY_TYPES.find((t) => t.value === type);
+    return config ? config.label + "s" : type;
+  };
+
+  const getGroupIcon = (type: string): string => {
+    return ENTITY_TYPES.find((t) => t.value === type)?.icon || "🔗";
+  };
+
+  // Define order for groups
+  const groupOrder: EntityType[] = [
+    "project", "task", "event", "note", "document", 
+    "crm_client", "external_contact", "coach_profile"
+  ];
+
+  const sortedGroups = Object.keys(groupedLinks).sort((a, b) => {
+    const aIndex = groupOrder.indexOf(a as EntityType);
+    const bIndex = groupOrder.indexOf(b as EntityType);
+    return (aIndex === -1 ? 99 : aIndex) - (bIndex === -1 ? 99 : bIndex);
+  });
+
+  return (
+    <div className="space-y-4">
+      {sortedGroups.map((type) => (
+        <div key={type}>
+          <div className="flex items-center gap-2 mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <span>{getGroupIcon(type)}</span>
+            <span>{getGroupLabel(type)}</span>
+            <span className="text-muted-foreground/60">({groupedLinks[type].length})</span>
+          </div>
+          <div className="space-y-1.5 pl-5">
+            {groupedLinks[type].map((link) => (
+              <LinkedEntityItem
+                key={link.id}
+                link={link}
+                currentEntityId={entityId}
+                currentEntityType={entityType}
+                onDelete={onDeleteLink}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function EntityLinksPanel({ entityType, entityId, title = "Links" }: EntityLinksPanelProps) {
   const { links, isLoading, createLink, deleteLink, isModuleEnabled } = useEntityLinks(entityType, entityId);
   const { isEntityModuleEnabled, loading: modulesLoading, getEnabledModuleKeys } = useCompanyModules();
@@ -464,17 +536,12 @@ export function EntityLinksPanel({ entityType, entityId, title = "Links" }: Enti
             <p className="text-xs mt-1">Link this {getEntityLabel(entityType).toLowerCase()} to other items</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {links.map((link) => (
-              <LinkedEntityItem
-                key={link.id}
-                link={link}
-                currentEntityId={entityId}
-                currentEntityType={entityType}
-                onDelete={handleDeleteLink}
-              />
-            ))}
-          </div>
+          <GroupedLinks 
+            links={links} 
+            entityId={entityId} 
+            entityType={entityType} 
+            onDeleteLink={handleDeleteLink} 
+          />
         )}
       </CardContent>
     </Card>

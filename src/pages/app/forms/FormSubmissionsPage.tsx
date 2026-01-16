@@ -245,64 +245,99 @@ function FormSubmissionsContent() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Submitted</TableHead>
-                <TableHead>Name</TableHead>
+                <TableHead className="w-[120px]">Date</TableHead>
+                <TableHead>Identifier</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Records Created</TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
+                <TableHead>Created Records</TableHead>
+                <TableHead className="w-[140px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {submissions.map((submission) => (
-                <TableRow key={submission.id}>
-                  <TableCell className="text-sm">
-                    {format(new Date(submission.submitted_at), "MMM d, yyyy h:mm a")}
-                  </TableCell>
-                  <TableCell>{submission.submitter_name || "—"}</TableCell>
-                  <TableCell>{submission.submitter_email || "—"}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      {submission.created_external_contact_id && (
-                        <Badge variant="outline" className="text-xs">Contact</Badge>
+              {submissions.map((submission) => {
+                const hasCreatedRecords = submission.created_external_contact_id || 
+                  submission.created_crm_client_id || 
+                  submission.created_task_id;
+                const identifier = submission.submitter_name || submission.submitter_email || "Anonymous";
+                
+                return (
+                  <TableRow key={submission.id} className="hover:bg-muted/50">
+                    <TableCell>
+                      <div className="space-y-0.5">
+                        <div className="text-sm font-medium">
+                          {format(new Date(submission.submitted_at), "MMM d, yyyy")}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {format(new Date(submission.submitted_at), "h:mm a")}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium">{identifier}</span>
+                    </TableCell>
+                    <TableCell>
+                      {submission.submitter_email ? (
+                        <a 
+                          href={`mailto:${submission.submitter_email}`} 
+                          className="text-sm text-primary hover:underline"
+                        >
+                          {submission.submitter_email}
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
                       )}
-                      {submission.created_crm_client_id && (
-                        <Badge variant="outline" className="text-xs">CRM</Badge>
-                      )}
-                      {submission.created_task_id && (
-                        <Badge variant="outline" className="text-xs">Task</Badge>
-                      )}
-                      {!submission.created_external_contact_id &&
-                        !submission.created_crm_client_id &&
-                        !submission.created_task_id && (
-                          <span className="text-muted-foreground text-xs">None</span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1.5">
+                        {submission.created_external_contact_id && (
+                          <Badge variant="default" className="text-xs gap-1">
+                            <User className="h-3 w-3" />
+                            Contact
+                          </Badge>
                         )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => setSelectedSubmission(submission)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive"
-                        onClick={() => {
-                          setSubmissionToDelete(submission);
-                          setDeleteDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                        {submission.created_crm_client_id && (
+                          <Badge variant="default" className="text-xs gap-1">
+                            <Building2 className="h-3 w-3" />
+                            CRM
+                          </Badge>
+                        )}
+                        {submission.created_task_id && (
+                          <Badge variant="default" className="text-xs gap-1">
+                            <CheckSquare className="h-3 w-3" />
+                            Task
+                          </Badge>
+                        )}
+                        {!hasCreatedRecords && (
+                          <span className="text-muted-foreground text-xs italic">No records created</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 gap-1"
+                          onClick={() => setSelectedSubmission(submission)}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          View
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => {
+                            setSubmissionToDelete(submission);
+                            setDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </Card>
