@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "./useActiveCompany";
+import { useCompanyModules } from "./useCompanyModules";
+import { RECURRENCE_LIMITS, getCalendarExpansionRange } from "@/lib/readModels";
 
 export interface EventOccurrence {
   occurrence_date: string;
@@ -9,27 +11,38 @@ export interface EventOccurrence {
   is_override: boolean;
 }
 
+/**
+ * Expand event occurrences with module safety and default limits.
+ */
 export function useEventOccurrences(
   eventId: string | undefined,
-  rangeStart: Date,
-  rangeEnd: Date,
+  rangeStart?: Date,
+  rangeEnd?: Date,
   enabled: boolean = true
 ) {
+  const { isEntityModuleEnabled, loading: modulesLoading } = useCompanyModules();
+  const isModuleEnabled = isEntityModuleEnabled("event");
+  
+  // Use default calendar range if not provided
+  const defaultRange = getCalendarExpansionRange(new Date(), RECURRENCE_LIMITS.CALENDAR_DAYS);
+  const start = rangeStart ?? defaultRange.start;
+  const end = rangeEnd ?? defaultRange.end;
+
   return useQuery({
-    queryKey: ["event-occurrences", eventId, rangeStart.toISOString(), rangeEnd.toISOString()],
+    queryKey: ["event-occurrences", eventId, start.toISOString(), end.toISOString()],
     queryFn: async (): Promise<EventOccurrence[]> => {
       if (!eventId) return [];
 
       const { data, error } = await supabase.rpc("expand_event_series", {
         p_event_id: eventId,
-        p_range_start: rangeStart.toISOString(),
-        p_range_end: rangeEnd.toISOString(),
+        p_range_start: start.toISOString(),
+        p_range_end: end.toISOString(),
       });
 
       if (error) throw error;
       return (data || []) as EventOccurrence[];
     },
-    enabled: enabled && !!eventId,
+    enabled: enabled && !!eventId && isModuleEnabled && !modulesLoading,
   });
 }
 
