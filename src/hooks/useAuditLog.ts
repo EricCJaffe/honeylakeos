@@ -73,7 +73,10 @@ export type AuditAction =
   | "event.series_split"
   // Link actions
   | "link.created"
-  | "link.deleted";
+  | "link.deleted"
+  // Terminology actions
+  | "terminology.updated"
+  | "terminology.reset";
 
 export type EntityType =
   | "employee"
@@ -92,7 +95,8 @@ export type EntityType =
   | "entity_link"
   | "project"
   | "note"
-  | "document";
+  | "document"
+  | "terminology";
 
 interface LogAuditEventParams {
   companyId: string;
