@@ -23,7 +23,8 @@ export type LifecycleEntityType =
   | "location"
   | "group"
   | "crm_client"
-  | "external_contact";
+  | "external_contact"
+  | "coach_profile";
 
 /**
  * Lifecycle status values
@@ -181,6 +182,15 @@ export const ENTITY_LIFECYCLE_CONFIG: Record<LifecycleEntityType, EntityLifecycl
     orphanCheckEntities: [],
     cascadeNotes: "Archiving preserves links. Deleting removes links and CRM associations.",
   },
+  coach_profile: {
+    supportsArchive: true,
+    supportsHardDelete: true,
+    statusColumn: "status",
+    removeLinksOnDelete: true,
+    preserveLinksOnArchive: true,
+    orphanCheckEntities: [],
+    cascadeNotes: "Archiving preserves links. Deleting removes profile only, external contact preserved.",
+  },
 };
 
 // ============================================================================
@@ -297,6 +307,7 @@ export function entityTypeToTable(entityType: LifecycleEntityType): string {
     group: "groups",
     crm_client: "crm_clients",
     external_contact: "external_contacts",
+    coach_profile: "coach_profiles",
   };
   return tableMap[entityType];
 }

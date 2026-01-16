@@ -5,7 +5,7 @@ import { useCompanyModules, ENTITY_TO_MODULE_MAP } from "./useCompanyModules";
 import { useAuditLog } from "./useAuditLog";
 import { toast } from "sonner";
 
-export type EntityType = "task" | "project" | "note" | "document" | "event" | "crm_client" | "external_contact";
+export type EntityType = "task" | "project" | "note" | "document" | "event" | "crm_client" | "external_contact" | "coach_profile";
 export type LinkType = "related" | "blocks" | "depends_on" | "reference";
 
 export interface EntityLink {
