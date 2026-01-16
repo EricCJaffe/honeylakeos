@@ -2,7 +2,7 @@ import * as React from "react";
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { FolderKanban, Users, CheckCircle2, Calendar, Layers } from "lucide-react";
+import { FolderKanban, Users, CheckCircle2, Calendar, Layers, FileText, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { TaskFormDialog } from "../tasks/TaskFormDialog";
 import { EntityLinksPanel } from "@/components/EntityLinksPanel";
 import { PhasesManager } from "@/components/projects/PhasesManager";
 import { PhaseGroupedTaskList } from "@/components/projects/PhaseGroupedTaskList";
+import { format } from "date-fns";
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -61,6 +62,55 @@ export default function ProjectDetailPage() {
         .from("project_members")
         .select("*")
         .eq("project_id", projectId);
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!projectId,
+  });
+
+  const { data: notes = [] } = useQuery({
+    queryKey: ["project-notes", projectId],
+    queryFn: async () => {
+      if (!projectId) return [];
+      const { data, error } = await supabase
+        .from("notes")
+        .select("id, title, created_at, is_pinned, color")
+        .eq("project_id", projectId)
+        .order("is_pinned", { ascending: false })
+        .order("updated_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!projectId,
+  });
+
+  const { data: documents = [] } = useQuery({
+    queryKey: ["project-documents", projectId],
+    queryFn: async () => {
+      if (!projectId) return [];
+      const { data, error } = await supabase
+        .from("documents")
+        .select("id, name, mime_type, created_at")
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!projectId,
+  });
+
+  const { data: events = [] } = useQuery({
+    queryKey: ["project-events", projectId],
+    queryFn: async () => {
+      if (!projectId) return [];
+      const { data, error } = await supabase
+        .from("events")
+        .select("id, title, start_at, end_at, all_day")
+        .eq("project_id", projectId)
+        .order("start_at", { ascending: true });
 
       if (error) throw error;
       return data;
@@ -156,9 +206,12 @@ export default function ProjectDetailPage() {
       {/* Tabs */}
       <Tabs defaultValue="tasks" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="tasks">Tasks ({tasks.length})</TabsTrigger>
           <TabsTrigger value="phases">Phases</TabsTrigger>
-          <TabsTrigger value="members">Members</TabsTrigger>
+          <TabsTrigger value="notes">Notes ({notes.length})</TabsTrigger>
+          <TabsTrigger value="documents">Docs ({documents.length})</TabsTrigger>
+          <TabsTrigger value="events">Events ({events.length})</TabsTrigger>
+          <TabsTrigger value="members">Members ({members.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tasks">
@@ -177,6 +230,114 @@ export default function ProjectDetailPage() {
           <Card>
             <CardContent className="py-6">
               <PhasesManager projectId={projectId!} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="notes">
+          <Card>
+            <CardContent className="py-6">
+              {notes.length === 0 ? (
+                <EmptyState
+                  icon={MessageSquare}
+                  title="No notes yet"
+                  description="Notes linked to this project will appear here."
+                />
+              ) : (
+                <div className="space-y-2">
+                  {notes.map((note: any) => (
+                    <Link
+                      key={note.id}
+                      to={`/app/notes/${note.id}`}
+                      className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        {note.color && (
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: note.color }}
+                          />
+                        )}
+                        <div>
+                          <span className="text-sm font-medium">{note.title}</span>
+                          {note.is_pinned && (
+                            <Badge variant="secondary" className="ml-2 text-xs">Pinned</Badge>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(note.created_at), "MMM d, yyyy")}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="documents">
+          <Card>
+            <CardContent className="py-6">
+              {documents.length === 0 ? (
+                <EmptyState
+                  icon={FileText}
+                  title="No documents yet"
+                  description="Documents linked to this project will appear here."
+                />
+              ) : (
+                <div className="space-y-2">
+                  {documents.map((doc: any) => (
+                    <Link
+                      key={doc.id}
+                      to={`/app/documents/${doc.id}`}
+                      className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{doc.name}</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(doc.created_at), "MMM d, yyyy")}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="events">
+          <Card>
+            <CardContent className="py-6">
+              {events.length === 0 ? (
+                <EmptyState
+                  icon={Calendar}
+                  title="No events yet"
+                  description="Events linked to this project will appear here."
+                />
+              ) : (
+                <div className="space-y-2">
+                  {events.map((event: any) => (
+                    <Link
+                      key={event.id}
+                      to={`/app/calendar/${event.id}`}
+                      className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{event.title}</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {event.all_day
+                          ? format(new Date(event.start_at), "MMM d, yyyy")
+                          : format(new Date(event.start_at), "MMM d, h:mm a")}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
