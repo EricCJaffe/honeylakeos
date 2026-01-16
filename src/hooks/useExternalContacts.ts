@@ -3,6 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "./useActiveCompany";
 import { logAuditEvent, AuditAction, EntityType } from "./useAuditLog";
 import { useExternalContactsPermissions, PermissionError } from "./useModulePermissions";
+import { parseFriendlyError } from "./useFriendlyError";
+import { LIST_LIMITS } from "@/lib/readModels";
+import { toast } from "sonner";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 // ============================================================================
@@ -35,6 +38,11 @@ export interface UpdateExternalContactInput extends Partial<CreateExternalContac
   id: string;
 }
 
+export interface ContactListMeta {
+  truncated: boolean;
+  limit: number;
+}
+
 // ============================================================================
 // Query Keys
 // ============================================================================
@@ -61,13 +69,14 @@ export function useExternalContacts(filters: ExternalContactFilters = {}) {
   return useQuery({
     queryKey: QUERY_KEYS.list(activeCompanyId ?? "", filters),
     queryFn: async () => {
-      if (!activeCompanyId) return [];
+      if (!activeCompanyId) return { contacts: [], meta: { truncated: false, limit: 0 } };
 
       let query = supabase
         .from("external_contacts")
         .select("*")
         .eq("company_id", activeCompanyId)
-        .order("full_name", { ascending: true });
+        .order("full_name", { ascending: true })
+        .limit(LIST_LIMITS.EXTERNAL_CONTACTS);
 
       // Apply archived filter
       if (!filters.showArchived) {
@@ -88,10 +97,12 @@ export function useExternalContacts(filters: ExternalContactFilters = {}) {
       
       if (error) throw error;
 
+      let contacts = data ?? [];
+
       // Apply search filter client-side for flexibility
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
-        return (data ?? []).filter((contact) => {
+        contacts = contacts.filter((contact) => {
           return (
             contact.full_name.toLowerCase().includes(searchLower) ||
             contact.email?.toLowerCase().includes(searchLower) ||
@@ -101,9 +112,18 @@ export function useExternalContacts(filters: ExternalContactFilters = {}) {
         });
       }
 
-      return data ?? [];
+      const meta: ContactListMeta = {
+        truncated: (data ?? []).length >= LIST_LIMITS.EXTERNAL_CONTACTS,
+        limit: LIST_LIMITS.EXTERNAL_CONTACTS,
+      };
+
+      return { contacts, meta };
     },
     enabled: !!activeCompanyId,
+    select: (result) => ({
+      data: result.contacts,
+      meta: result.meta,
+    }),
   });
 }
 

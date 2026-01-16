@@ -38,6 +38,35 @@ export const RELATION_LIMITS = {
 } as const;
 
 /**
+ * Default pagination limits for list views
+ * Used to prevent unbounded queries on main list pages
+ */
+export const LIST_LIMITS = {
+  /** Default page size for most lists */
+  DEFAULT_PAGE_SIZE: 50,
+  /** CRM clients list */
+  CRM_CLIENTS: 50,
+  /** External contacts list */
+  EXTERNAL_CONTACTS: 50,
+  /** Forms list */
+  FORMS: 50,
+  /** Form submissions list */
+  FORM_SUBMISSIONS: 100,
+  /** Coaches list */
+  COACHES: 50,
+  /** LMS courses list */
+  LMS_COURSES: 50,
+  /** LMS cohorts list */
+  LMS_COHORTS: 50,
+  /** LMS sessions list */
+  LMS_SESSIONS: 100,
+  /** LMS enrollments list */
+  LMS_ENROLLMENTS: 100,
+  /** Maximum items to ever load in a single query */
+  MAX_QUERY_LIMIT: 500,
+} as const;
+
+/**
  * Entity types supported by the read model system
  */
 export type ReadModelEntityType = "task" | "project" | "note" | "document" | "event";

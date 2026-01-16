@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "./useActiveCompany";
 import { useAuditLog } from "./useAuditLog";
 import { useModuleAccess } from "./useModuleAccess";
+import { parseFriendlyError } from "./useFriendlyError";
+import { LIST_LIMITS } from "@/lib/readModels";
 import { toast } from "sonner";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 import type { Form, FormField } from "./useForms";
@@ -29,6 +31,13 @@ export interface WorkflowResult {
   created_external_contact_id?: string;
   created_crm_client_id?: string;
   created_task_id?: string;
+  /** List of secondary actions that failed */
+  failedActions?: string[];
+}
+
+export interface SubmissionListMeta {
+  truncated: boolean;
+  limit: number;
 }
 
 // ============================================================================
@@ -52,7 +61,9 @@ export function useFormSubmissions(formId: string | undefined) {
   return useQuery({
     queryKey: QUERY_KEYS.byForm(formId ?? ""),
     queryFn: async () => {
-      if (!formId || !activeCompanyId || !hasAccess) return [];
+      if (!formId || !activeCompanyId || !hasAccess) {
+        return { submissions: [], meta: { truncated: false, limit: 0 } };
+      }
 
       const { data, error } = await supabase
         .from("form_submissions")
@@ -65,10 +76,18 @@ export function useFormSubmissions(formId: string | undefined) {
         `)
         .eq("form_id", formId)
         .eq("company_id", activeCompanyId)
-        .order("submitted_at", { ascending: false });
+        .order("submitted_at", { ascending: false })
+        .limit(LIST_LIMITS.FORM_SUBMISSIONS);
 
       if (error) throw error;
-      return data as FormSubmission[];
+      
+      const submissions = data as FormSubmission[];
+      const meta: SubmissionListMeta = {
+        truncated: submissions.length >= LIST_LIMITS.FORM_SUBMISSIONS,
+        limit: LIST_LIMITS.FORM_SUBMISSIONS,
+      };
+      
+      return { submissions, meta };
     },
     enabled: !!formId && !!activeCompanyId && !moduleLoading && hasAccess,
   });
@@ -180,8 +199,10 @@ export function useSubmitForm() {
         if (valuesError) throw valuesError;
       }
 
-      // Execute workflow actions
-      const workflowResult: WorkflowResult = {};
+      // Execute workflow actions with best-effort handling
+      const workflowResult: WorkflowResult = {
+        failedActions: [],
+      };
 
       // 1. Create/update external contact
       if (form.action_create_contact && submitterName) {
@@ -243,6 +264,7 @@ export function useSubmitForm() {
           }
         } catch (e) {
           console.error("Failed to create/update contact:", e);
+          workflowResult.failedActions!.push("Contact");
         }
       }
 
@@ -278,6 +300,7 @@ export function useSubmitForm() {
           }
         } catch (e) {
           console.error("Failed to create CRM record:", e);
+          workflowResult.failedActions!.push("CRM Record");
         }
       }
 
@@ -312,6 +335,7 @@ export function useSubmitForm() {
           }
         } catch (e) {
           console.error("Failed to create task:", e);
+          workflowResult.failedActions!.push("Task");
         }
       }
 
@@ -324,11 +348,19 @@ export function useSubmitForm() {
         created_contact: !!data.created_external_contact_id,
         created_crm: !!data.created_crm_client_id,
         created_task: !!data.created_task_id,
+        failed_actions: data.failedActions,
       });
-      toast.success("Form submitted successfully");
+      
+      // Show appropriate toast based on partial success
+      if (data.failedActions && data.failedActions.length > 0) {
+        toast.warning(`Form submitted, but some actions failed: ${data.failedActions.join(", ")}`);
+      } else {
+        toast.success("Form submitted successfully");
+      }
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to submit form");
+      const parsed = parseFriendlyError(error);
+      toast.error(parsed.message);
     },
   });
 }
@@ -361,7 +393,8 @@ export function useDeleteSubmission() {
       toast.success("Submission deleted");
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to delete submission");
+      const parsed = parseFriendlyError(error);
+      toast.error(parsed.message);
     },
   });
 }

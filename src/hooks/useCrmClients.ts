@@ -4,7 +4,10 @@ import { useActiveCompany } from "./useActiveCompany";
 import { useAuditLog } from "./useAuditLog";
 import { useModuleAccess } from "./useModuleAccess";
 import { useCrmPermissions, PermissionError, getPermissionDeniedMessage } from "./useModulePermissions";
+import { parseFriendlyError } from "./useFriendlyError";
+import { LIST_LIMITS } from "@/lib/readModels";
 import { toast } from "sonner";
+
 export type CrmClientType = "b2c" | "b2b" | "mixed";
 export type CrmLifecycleStatus = "prospect" | "client";
 
@@ -53,6 +56,11 @@ export interface UpdateCrmClientInput extends Partial<CreateCrmClientInput> {
   is_active?: boolean;
 }
 
+export interface CrmListMeta {
+  truncated: boolean;
+  limit: number;
+}
+
 export function useCrmClients(filters: CrmClientFilters = {}) {
   const { activeCompanyId } = useActiveCompany();
   const { isModuleEnabled } = useModuleAccess("crm");
@@ -61,21 +69,22 @@ export function useCrmClients(filters: CrmClientFilters = {}) {
   const { log } = useAuditLog();
   const crmEnabled = isModuleEnabled;
 
-  // Fetch CRM clients
+  // Fetch CRM clients with limit
   const {
-    data: clients = [],
+    data: queryResult,
     isLoading,
     error,
   } = useQuery({
     queryKey: ["crm-clients", activeCompanyId, filters],
     queryFn: async () => {
-      if (!activeCompanyId || !crmEnabled) return [];
+      if (!activeCompanyId || !crmEnabled) return { clients: [], meta: { truncated: false, limit: 0 } };
 
       let query = supabase
         .from("crm_clients")
         .select("*")
         .eq("company_id", activeCompanyId)
-        .order("updated_at", { ascending: false });
+        .order("updated_at", { ascending: false })
+        .limit(LIST_LIMITS.CRM_CLIENTS);
 
       // Filter by lifecycle status
       if (filters.lifecycleStatus && filters.lifecycleStatus !== "all") {
@@ -104,10 +113,20 @@ export function useCrmClients(filters: CrmClientFilters = {}) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as CrmClient[];
+      
+      const clients = data as CrmClient[];
+      const meta: CrmListMeta = {
+        truncated: clients.length >= LIST_LIMITS.CRM_CLIENTS,
+        limit: LIST_LIMITS.CRM_CLIENTS,
+      };
+      
+      return { clients, meta };
     },
     enabled: !!activeCompanyId && crmEnabled,
   });
+
+  const clients = queryResult?.clients ?? [];
+  const listMeta = queryResult?.meta ?? { truncated: false, limit: 0 };
 
   // Create CRM client
   const createClient = useMutation({
@@ -145,7 +164,10 @@ export function useCrmClients(filters: CrmClientFilters = {}) {
     },
     onError: (error) => {
       console.error("Failed to create CRM client:", error);
-      toast.error("Failed to create record");
+      const parsed = parseFriendlyError(error, {
+        contextMessages: { "23505": "A similar record already exists." },
+      });
+      toast.error(parsed.message);
     },
   });
 
@@ -180,7 +202,8 @@ export function useCrmClients(filters: CrmClientFilters = {}) {
     },
     onError: (error) => {
       console.error("Failed to update CRM client:", error);
-      toast.error("Failed to update record");
+      const parsed = parseFriendlyError(error);
+      toast.error(parsed.message);
     },
   });
 
@@ -212,7 +235,8 @@ export function useCrmClients(filters: CrmClientFilters = {}) {
     },
     onError: (error) => {
       console.error("Failed to archive CRM client:", error);
-      toast.error("Failed to archive record");
+      const parsed = parseFriendlyError(error);
+      toast.error(parsed.message);
     },
   });
 
@@ -244,7 +268,8 @@ export function useCrmClients(filters: CrmClientFilters = {}) {
     },
     onError: (error) => {
       console.error("Failed to restore CRM client:", error);
-      toast.error("Failed to restore record");
+      const parsed = parseFriendlyError(error);
+      toast.error(parsed.message);
     },
   });
 
@@ -277,7 +302,8 @@ export function useCrmClients(filters: CrmClientFilters = {}) {
     },
     onError: (error) => {
       console.error("Failed to delete CRM client:", error);
-      toast.error("Failed to delete record");
+      const parsed = parseFriendlyError(error);
+      toast.error(parsed.message);
     },
   });
 
@@ -285,6 +311,7 @@ export function useCrmClients(filters: CrmClientFilters = {}) {
     clients,
     isLoading,
     error,
+    listMeta,
     crmEnabled,
     permissions,
     createClient,
