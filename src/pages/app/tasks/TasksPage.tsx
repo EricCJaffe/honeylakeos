@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, Repeat, Filter, FileText } from "lucide-react";
+import { CheckCircle2, Repeat, Filter, FileText, Layers } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
@@ -21,7 +21,7 @@ import { TaskList } from "./TaskList";
 import { TaskFormDialog } from "./TaskFormDialog";
 import { TaskTemplateList } from "@/components/tasks/TaskTemplateList";
 import { TemplateFormDialog } from "@/components/templates/TemplateFormDialog";
-import { Template, applyTemplateToForm } from "@/hooks/useTemplates";
+import { Template } from "@/hooks/useTemplates";
 
 export default function TasksPage() {
   const { activeCompanyId, loading: membershipLoading } = useActiveCompany();
@@ -29,6 +29,7 @@ export default function TasksPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(null);
   const [projectFilter, setProjectFilter] = useState<string>("all");
+  const [phaseFilter, setPhaseFilter] = useState<string>("all");
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [templateToApply, setTemplateToApply] = useState<Template | null>(null);
@@ -49,8 +50,30 @@ export default function TasksPage() {
     enabled: !!activeCompanyId,
   });
 
+  // Fetch phases for selected project
+  const { data: phases = [] } = useQuery({
+    queryKey: ["project-phases", projectFilter],
+    queryFn: async () => {
+      if (!projectFilter || projectFilter === "all") return [];
+      const { data, error } = await supabase
+        .from("project_phases")
+        .select("id, name")
+        .eq("project_id", projectFilter)
+        .eq("status", "active")
+        .order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+    enabled: projectFilter !== "all",
+  });
+
+  // Reset phase filter when project changes
+  React.useEffect(() => {
+    setPhaseFilter("all");
+  }, [projectFilter]);
+
   const { data: allTasks = [], isLoading: loadingAll } = useQuery({
-    queryKey: ["tasks", activeCompanyId, projectFilter],
+    queryKey: ["tasks", activeCompanyId, projectFilter, phaseFilter],
     queryFn: async () => {
       if (!activeCompanyId) return [];
       let query = supabase
@@ -61,6 +84,7 @@ export default function TasksPage() {
         .is("parent_recurring_task_id", null)
         .order("order_index", { ascending: true });
       if (projectFilter !== "all") query = query.eq("project_id", projectFilter);
+      if (phaseFilter !== "all") query = query.eq("phase_id", phaseFilter);
       const { data, error } = await query;
       if (error) throw error;
       return data;
@@ -69,7 +93,7 @@ export default function TasksPage() {
   });
 
   const { data: myTasks = [] } = useQuery({
-    queryKey: ["my-tasks", activeCompanyId, user?.id, projectFilter],
+    queryKey: ["my-tasks", activeCompanyId, user?.id, projectFilter, phaseFilter],
     queryFn: async () => {
       if (!activeCompanyId || !user) return [];
       const { data: assignments } = await supabase.from("task_assignees").select("task_id").eq("user_id", user.id);
@@ -82,6 +106,7 @@ export default function TasksPage() {
         .eq("company_id", activeCompanyId)
         .order("due_date", { ascending: true, nullsFirst: false });
       if (projectFilter !== "all") query = query.eq("project_id", projectFilter);
+      if (phaseFilter !== "all") query = query.eq("phase_id", phaseFilter);
       const { data, error } = await query;
       if (error) throw error;
       return data;
@@ -90,7 +115,7 @@ export default function TasksPage() {
   });
 
   const { data: recurringTasks = [] } = useQuery({
-    queryKey: ["recurring-tasks", activeCompanyId, projectFilter],
+    queryKey: ["recurring-tasks", activeCompanyId, projectFilter, phaseFilter],
     queryFn: async () => {
       if (!activeCompanyId) return [];
       let query = supabase
@@ -100,6 +125,7 @@ export default function TasksPage() {
         .eq("is_recurring_template", true)
         .order("created_at", { ascending: false });
       if (projectFilter !== "all") query = query.eq("project_id", projectFilter);
+      if (phaseFilter !== "all") query = query.eq("phase_id", phaseFilter);
       const { data, error } = await query;
       if (error) throw error;
       return data;
@@ -146,7 +172,7 @@ export default function TasksPage() {
   return (
     <div className="p-6">
       <PageHeader title="Tasks" description="Manage your tasks and assignments" actionLabel="New Task" onAction={handleCreate} />
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
         <Filter className="h-4 w-4 text-muted-foreground" />
         <Select value={projectFilter} onValueChange={setProjectFilter}>
           <SelectTrigger className="w-[200px]"><SelectValue placeholder="Filter by project" /></SelectTrigger>
@@ -155,7 +181,30 @@ export default function TasksPage() {
             {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.emoji} {p.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        {projectFilter !== "all" && <Badge variant="secondary" className="cursor-pointer" onClick={() => setProjectFilter("all")}>Clear</Badge>}
+        {projectFilter !== "all" && phases.length > 0 && (
+          <Select value={phaseFilter} onValueChange={setPhaseFilter}>
+            <SelectTrigger className="w-[180px]">
+              <Layers className="h-4 w-4 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="All phases" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Phases</SelectItem>
+              {phases.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+        {(projectFilter !== "all" || phaseFilter !== "all") && (
+          <Badge 
+            variant="secondary" 
+            className="cursor-pointer" 
+            onClick={() => {
+              setProjectFilter("all");
+              setPhaseFilter("all");
+            }}
+          >
+            Clear filters
+          </Badge>
+        )}
       </div>
       <Tabs defaultValue="my" className="space-y-4">
         <TabsList>
