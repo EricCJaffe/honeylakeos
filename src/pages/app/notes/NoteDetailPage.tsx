@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState } from "react";
+import { useState, Suspense, lazy } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -10,13 +10,16 @@ import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { NoteFormDialog } from "./NoteFormDialog";
 import { ShareDialog } from "@/components/ShareDialog";
 import { EntityLinksPanel } from "@/components/EntityLinksPanel";
+
+// Lazy load rich text components
+const RichTextEditor = lazy(() => import("@/components/ui/rich-text-editor").then(m => ({ default: m.RichTextEditor })));
+const RichTextDisplay = lazy(() => import("@/components/ui/rich-text-editor").then(m => ({ default: m.RichTextDisplay })));
 
 export default function NoteDetailPage() {
   const { noteId } = useParams<{ noteId: string }>();
@@ -176,12 +179,15 @@ export default function NoteDetailPage() {
         <CardContent className="p-6">
           {isEditing ? (
             <div className="space-y-4">
-              <Textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                className="min-h-[300px] resize-none"
-                placeholder="Write your note..."
-              />
+              <Suspense fallback={<div className="h-[300px] animate-pulse bg-muted rounded" />}>
+                <RichTextEditor
+                  value={content}
+                  onChange={setContent}
+                  placeholder="Write your note..."
+                  minHeight="300px"
+                  showFormatToggle={true}
+                />
+              </Suspense>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setIsEditing(false)}>
                   Cancel
@@ -193,16 +199,18 @@ export default function NoteDetailPage() {
             </div>
           ) : (
             <div
-              className="prose prose-sm dark:prose-invert max-w-none cursor-text min-h-[300px]"
+              className="min-h-[300px] cursor-text"
               onClick={() => canEdit && setIsEditing(true)}
             >
-              {note.content ? (
-                <pre className="whitespace-pre-wrap font-sans">{note.content}</pre>
-              ) : (
-                <p className="text-muted-foreground italic">
-                  {canEdit ? "Click to add content..." : "No content"}
-                </p>
-              )}
+              <Suspense fallback={<div className="h-[300px] animate-pulse bg-muted rounded" />}>
+                {note.content ? (
+                  <RichTextDisplay content={note.content} />
+                ) : (
+                  <p className="text-muted-foreground italic">
+                    {canEdit ? "Click to add content..." : "No content"}
+                  </p>
+                )}
+              </Suspense>
             </div>
           )}
         </CardContent>

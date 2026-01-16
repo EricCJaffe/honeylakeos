@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextField } from "@/components/ui/rich-text-field";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCoachProfiles, CoachProfile, CoachProfileType } from "@/hooks/useCoachProfiles";
@@ -361,12 +361,13 @@ export function CoachFormDialog({ open, onOpenChange, profile }: CoachFormDialog
               name="bio"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Bio/Notes</FormLabel>
                   <FormControl>
-                    <Textarea
+                    <RichTextField
+                      label="Bio/Notes"
+                      value={field.value}
+                      onChange={field.onChange}
                       placeholder="Brief description or notes about this person..."
-                      className="min-h-[100px]"
-                      {...field}
+                      minHeight="100px"
                     />
                   </FormControl>
                   <FormMessage />

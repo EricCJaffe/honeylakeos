@@ -21,7 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextField } from "@/components/ui/rich-text-field";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -210,9 +210,14 @@ export function NoteFormDialog({
               name="content"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Content</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Write your note..." rows={6} {...field} />
+                    <RichTextField
+                      label="Content"
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Write your note..."
+                      minHeight="180px"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

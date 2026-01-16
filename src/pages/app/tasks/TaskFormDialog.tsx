@@ -23,7 +23,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextField } from "@/components/ui/rich-text-field";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -308,12 +308,13 @@ export function TaskFormDialog({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea
+                    <RichTextField
+                      label="Description"
+                      value={field.value}
+                      onChange={field.onChange}
                       placeholder="Add more details..."
-                      rows={3}
-                      {...field}
+                      minHeight="100px"
                     />
                   </FormControl>
                   <FormMessage />

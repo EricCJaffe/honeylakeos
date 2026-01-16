@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Suspense, lazy } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -18,6 +18,9 @@ import { EntityLinksPanel } from "@/components/EntityLinksPanel";
 import { RecurringTaskOccurrences } from "@/components/tasks/RecurringTaskOccurrences";
 import { useTaskOccurrenceActions } from "@/hooks/useTaskOccurrenceCompletions";
 import { configToRRule, rruleToConfig } from "@/components/tasks/RecurrenceSelector";
+
+// Lazy load rich text display
+const RichTextDisplay = lazy(() => import("@/components/ui/rich-text-editor").then(m => ({ default: m.RichTextDisplay })));
 
 const priorityConfig = {
   low: { label: "Low", color: "bg-muted text-muted-foreground" },
@@ -236,9 +239,9 @@ export default function TaskDetailPage() {
             {task.description && (
               <div>
                 <h4 className="text-sm font-medium mb-1">Description</h4>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {task.description}
-                </p>
+                <Suspense fallback={<div className="h-10 animate-pulse bg-muted rounded" />}>
+                  <RichTextDisplay content={task.description} className="text-sm" />
+                </Suspense>
               </div>
             )}
 
