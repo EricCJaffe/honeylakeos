@@ -41,7 +41,7 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<any>(null);
-  const [editMode, setEditMode] = useState<"single" | "series">("series");
+  const [editMode, setEditMode] = useState<"single" | "future" | "series">("series");
   const [occurrenceDate, setOccurrenceDate] = useState<Date | undefined>();
 
   // Calculate range based on view mode
@@ -177,6 +177,13 @@ export default function CalendarPage() {
     setEditingEvent(event.event || event);
     setEditMode("series");
     setOccurrenceDate(undefined);
+    setIsDialogOpen(true);
+  };
+
+  const handleEditFuture = (event: any) => {
+    setEditingEvent(event.event || event);
+    setEditMode("future");
+    setOccurrenceDate(event.occurrenceDate);
     setIsDialogOpen(true);
   };
 

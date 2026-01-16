@@ -2010,6 +2010,21 @@ export type Database = {
         Args: { p_occurrence_start_at: string; p_series_task_id: string }
         Returns: Json
       }
+      update_event_series_from_occurrence: {
+        Args: {
+          p_all_day?: boolean
+          p_color?: string
+          p_description?: string
+          p_end_at?: string
+          p_location_text?: string
+          p_new_rrule: string
+          p_occurrence_start_at: string
+          p_series_event_id: string
+          p_start_at?: string
+          p_title?: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       company_status:
