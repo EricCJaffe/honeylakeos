@@ -147,6 +147,44 @@ export type Database = {
           },
         ]
       }
+      company_terminology: {
+        Row: {
+          company_id: string
+          id: string
+          plural_label: string
+          singular_label: string
+          term_key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          company_id: string
+          id?: string
+          plural_label: string
+          singular_label: string
+          term_key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          company_id?: string
+          id?: string
+          plural_label?: string
+          singular_label?: string
+          term_key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_terminology_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           access_level: string

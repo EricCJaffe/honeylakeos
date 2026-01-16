@@ -14,6 +14,7 @@ import {
   Users,
   MapPin,
   ClipboardList,
+  Languages,
   Boxes,
 } from "lucide-react";
 
@@ -26,6 +27,7 @@ import GroupsPanel from "./company-console/GroupsPanel";
 import LocationsPanel from "./company-console/LocationsPanel";
 import CompanyModulesPanel from "./company-console/ModulesPanel";
 import ModuleChecklistPanel from "./company-console/ModuleChecklistPanel";
+import TerminologyPanel from "./company-console/TerminologyPanel";
 
 const adminSections = [
   {
@@ -63,6 +65,12 @@ const adminSections = [
     label: "Modules",
     icon: Boxes,
     description: "Enable or disable feature modules for your company.",
+  },
+  {
+    id: "terminology",
+    label: "Terminology",
+    icon: Languages,
+    description: "Customize labels for core concepts like clients, companies, and more.",
   },
   {
     id: "audit",
@@ -174,6 +182,7 @@ export default function CompanyConsolePage() {
                 <ModuleChecklistPanel />
               </>
             )}
+            {section.id === "terminology" && <TerminologyPanel />}
             {section.id === "audit" && <AuditLogPanel />}
           </TabsContent>
         ))}
