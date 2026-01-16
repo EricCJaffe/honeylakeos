@@ -2,7 +2,7 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +27,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -35,7 +42,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { TemplateSelector } from "@/components/templates/TemplateSelector";
-import { applyTemplateToForm } from "@/hooks/useTemplates";
+import { applyTemplateToForm, Template } from "@/hooks/useTemplates";
 import {
   RecurrenceSelector,
   RecurrenceConfig,
@@ -52,6 +59,7 @@ const eventSchema = z.object({
   all_day: z.boolean().default(false),
   location_text: z.string().optional(),
   color: z.string().optional(),
+  project_id: z.string().optional().nullable(),
 });
 
 type EventFormValues = z.infer<typeof eventSchema>;
@@ -63,6 +71,7 @@ interface EventFormDialogProps {
   defaultDate?: Date | null;
   editMode?: "single" | "future" | "series";
   occurrenceDate?: Date;
+  templateToApply?: Template | null;
 }
 
 const colors = [
@@ -81,6 +90,7 @@ export function EventFormDialog({
   defaultDate,
   editMode = "series",
   occurrenceDate,
+  templateToApply,
 }: EventFormDialogProps) {
   const { activeCompanyId } = useActiveCompany();
   const { user } = useAuth();
@@ -89,6 +99,23 @@ export function EventFormDialog({
 
   // Recurrence state
   const [recurrenceConfig, setRecurrenceConfig] = React.useState<RecurrenceConfig | null>(null);
+
+  // Fetch projects for dropdown
+  const { data: projects = [] } = useQuery({
+    queryKey: ["projects", activeCompanyId],
+    queryFn: async () => {
+      if (!activeCompanyId) return [];
+      const { data, error } = await supabase
+        .from("projects")
+        .select("id, name, emoji")
+        .eq("company_id", activeCompanyId)
+        .eq("is_template", false)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!activeCompanyId && open,
+  });
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
@@ -101,6 +128,7 @@ export function EventFormDialog({
       all_day: false,
       location_text: "",
       color: "#2563eb",
+      project_id: null,
     },
   });
 
@@ -116,6 +144,7 @@ export function EventFormDialog({
         all_day: event.all_day,
         location_text: event.location_text || "",
         color: event.color || "#2563eb",
+        project_id: event.project_id || null,
       });
       // Load recurrence config
       if (event.recurrence_rules) {
@@ -123,6 +152,21 @@ export function EventFormDialog({
       } else {
         setRecurrenceConfig(null);
       }
+    } else if (templateToApply) {
+      // Apply template when creating new event from template
+      const payload = templateToApply.payload as Record<string, any>;
+      form.reset({
+        title: payload.title || "",
+        description: payload.description || "",
+        start_date: defaultDate || new Date(),
+        start_time: "09:00",
+        end_time: "10:00",
+        all_day: payload.all_day || false,
+        location_text: payload.location_text || "",
+        color: payload.color || "#2563eb",
+        project_id: null,
+      });
+      setRecurrenceConfig(null);
     } else {
       form.reset({
         title: "",
@@ -133,10 +177,11 @@ export function EventFormDialog({
         all_day: false,
         location_text: "",
         color: "#2563eb",
+        project_id: null,
       });
       setRecurrenceConfig(null);
     }
-  }, [event, defaultDate, form]);
+  }, [event, defaultDate, form, templateToApply]);
 
   const mutation = useMutation({
     mutationFn: async (values: EventFormValues) => {
@@ -172,6 +217,7 @@ export function EventFormDialog({
         all_day: values.all_day,
         location_text: values.location_text || null,
         color: values.color || null,
+        project_id: values.project_id || null,
         recurrence_rules: rrule,
         timezone: recurrenceConfig?.timezone || "America/New_York",
         is_recurring_template: isRecurring,
@@ -404,6 +450,37 @@ export function EventFormDialog({
                   startDate={startDate}
                 />
               </div>
+            )}
+
+            {/* Project selector */}
+            {projects.length > 0 && (
+              <FormField
+                control={form.control}
+                name="project_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || undefined}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select project (optional)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {projects.map((project) => (
+                          <SelectItem key={project.id} value={project.id}>
+                            {project.emoji} {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
 
             <FormField
