@@ -60,6 +60,7 @@ const MODULE_QUERY_KEYS: Record<ModuleKey, string[][]> = {
   forms: [
     ["forms"],
     ["form"],
+    ["form-fields"],
     ["form-submissions"],
   ],
   workflows: [
@@ -69,8 +70,14 @@ const MODULE_QUERY_KEYS: Record<ModuleKey, string[][]> = {
   ],
   lms: [
     ["courses"],
-    ["lessons"],
+    ["course"],
+    ["cohorts"],
+    ["cohort"],
+    ["lms-sessions"],
+    ["lms-session"],
     ["enrollments"],
+    ["enrollment"],
+    ["cohort-coaches"],
   ],
   crm: [
     ["crm-clients"],
@@ -79,12 +86,6 @@ const MODULE_QUERY_KEYS: Record<ModuleKey, string[][]> = {
   coaches: [
     ["coach-profiles"],
     ["coach-profile"],
-  ],
-  forms: [
-    ["forms"],
-    ["form"],
-    ["form-fields"],
-    ["form-submissions"],
   ],
 };
 

@@ -17,7 +17,6 @@ export type ModuleKey =
   | "folders"
   | "groups"
   | "locations"
-  | "forms"
   | "workflows"
   | "lms"
   | "crm";
