@@ -26,11 +26,13 @@ interface RecurringTaskOccurrencesProps {
     recurrence_rules?: string;
   };
   onEditOccurrence?: (occurrenceDate: Date) => void;
+  onEditFuture?: (occurrenceDate: Date) => void;
 }
 
 export function RecurringTaskOccurrences({ 
   task,
   onEditOccurrence,
+  onEditFuture,
 }: RecurringTaskOccurrencesProps) {
   const [showHistory, setShowHistory] = useState(false);
   const now = new Date();
@@ -140,6 +142,15 @@ export function RecurringTaskOccurrences({
                           onClick={() => onEditOccurrence(occDate)}
                         >
                           Edit
+                        </Button>
+                      )}
+                      {onEditFuture && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEditFuture(occDate)}
+                        >
+                          Edit Future
                         </Button>
                       )}
                       <Button

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CheckCircle2, Pencil, Trash2, Calendar, Clock, User, Repeat } from "lucide-react";
+import { CheckCircle2, Pencil, Trash2, Calendar, Clock, User, Repeat, Layers } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
@@ -16,6 +16,8 @@ import { EmptyState } from "@/components/EmptyState";
 import { TaskFormDialog } from "./TaskFormDialog";
 import { EntityLinksPanel } from "@/components/EntityLinksPanel";
 import { RecurringTaskOccurrences } from "@/components/tasks/RecurringTaskOccurrences";
+import { useTaskOccurrenceActions } from "@/hooks/useTaskOccurrenceCompletions";
+import { configToRRule, rruleToConfig } from "@/components/tasks/RecurrenceSelector";
 
 const priorityConfig = {
   low: { label: "Low", color: "bg-muted text-muted-foreground" },
@@ -40,6 +42,7 @@ export default function TaskDetailPage() {
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState<"single" | "series">("series");
   const [occurrenceToEdit, setOccurrenceToEdit] = useState<Date | null>(null);
+  const { splitSeries } = useTaskOccurrenceActions();
 
   const { data: task, isLoading } = useQuery({
     queryKey: ["task", taskId],
@@ -50,6 +53,7 @@ export default function TaskDetailPage() {
         .select(`
           *,
           project:projects(id, name, emoji),
+          phase:project_phases(id, name),
           task_assignees(user_id)
         `)
         .eq("id", taskId)
@@ -96,6 +100,25 @@ export default function TaskDetailPage() {
     },
   });
 
+  // Handle "edit this and future" for recurring tasks
+  const handleEditFuture = async (occurrenceDate: Date) => {
+    if (!task?.recurrence_rules) return;
+    
+    // Get current config
+    const config = rruleToConfig(task.recurrence_rules, task.recurrence_timezone);
+    if (!config) return;
+
+    // Create new RRULE starting from the occurrence date
+    const newRRule = configToRRule(config, occurrenceDate);
+    if (!newRRule) return;
+
+    await splitSeries.mutateAsync({
+      seriesTaskId: task.id,
+      occurrenceStartAt: occurrenceDate,
+      newRRule,
+    });
+  };
+
   const canEdit = task && (isCompanyAdmin || task.created_by === user?.id);
 
   if (isLoading) {
@@ -135,7 +158,10 @@ export default function TaskDetailPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setIsFormDialogOpen(true)}
+              onClick={() => {
+                setEditMode("series");
+                setIsFormDialogOpen(true);
+              }}
             >
               <Pencil className="h-4 w-4 mr-1" />
               Edit
@@ -152,11 +178,12 @@ export default function TaskDetailPage() {
         )}
       </PageHeader>
 
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-6 flex-wrap">
         <Checkbox
           checked={task.status === "done"}
           onCheckedChange={() => toggleStatus.mutate()}
           className="h-5 w-5"
+          disabled={task.is_recurring_template}
         />
         <Badge className={priority.color}>{priority.label}</Badge>
         <Badge className={status.color}>{status.label}</Badge>
@@ -171,6 +198,12 @@ export default function TaskDetailPage() {
             {task.project.emoji} {task.project.name}
           </Badge>
         )}
+        {task.phase && (
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <Layers className="h-3 w-3" />
+            {task.phase.name}
+          </Badge>
+        )}
       </div>
 
       {/* Recurring Task Occurrences */}
@@ -183,6 +216,7 @@ export default function TaskDetailPage() {
               setEditMode("single");
               setIsFormDialogOpen(true);
             }}
+            onEditFuture={handleEditFuture}
           />
         </div>
       )}
