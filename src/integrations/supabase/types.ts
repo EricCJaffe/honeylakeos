@@ -1265,6 +1265,129 @@ export type Database = {
           },
         ]
       }
+      project_template_phases: {
+        Row: {
+          color: string | null
+          description: string | null
+          id: string
+          name: string
+          sort_order: number
+          template_id: string
+        }
+        Insert: {
+          color?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          template_id: string
+        }
+        Update: {
+          color?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_template_phases_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "project_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_template_tasks: {
+        Row: {
+          default_phase_name: string | null
+          description: string | null
+          id: string
+          is_milestone: boolean
+          priority: string | null
+          relative_due_days: number | null
+          sort_order: number
+          template_id: string
+          title: string
+        }
+        Insert: {
+          default_phase_name?: string | null
+          description?: string | null
+          id?: string
+          is_milestone?: boolean
+          priority?: string | null
+          relative_due_days?: number | null
+          sort_order?: number
+          template_id: string
+          title: string
+        }
+        Update: {
+          default_phase_name?: string | null
+          description?: string | null
+          id?: string
+          is_milestone?: boolean
+          priority?: string | null
+          relative_due_days?: number | null
+          sort_order?: number
+          template_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_template_tasks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "project_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_templates: {
+        Row: {
+          color: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          emoji: string
+          id: string
+          name: string
+          status: string
+        }
+        Insert: {
+          color?: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          emoji?: string
+          id?: string
+          name: string
+          status?: string
+        }
+        Update: {
+          color?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          emoji?: string
+          id?: string
+          name?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           color: string
@@ -1864,6 +1987,15 @@ export type Database = {
           p_title: string
         }
         Returns: string
+      }
+      create_project_from_template: {
+        Args: {
+          p_company_id: string
+          p_name: string
+          p_start_date?: string
+          p_template_id: string
+        }
+        Returns: Json
       }
       create_task_occurrence_override: {
         Args: {
