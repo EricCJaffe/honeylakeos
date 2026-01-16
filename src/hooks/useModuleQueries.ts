@@ -80,6 +80,12 @@ const MODULE_QUERY_KEYS: Record<ModuleKey, string[][]> = {
     ["coach-profiles"],
     ["coach-profile"],
   ],
+  forms: [
+    ["forms"],
+    ["form"],
+    ["form-fields"],
+    ["form-submissions"],
+  ],
 };
 
 /**

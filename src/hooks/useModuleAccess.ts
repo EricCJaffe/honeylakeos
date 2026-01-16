@@ -8,6 +8,7 @@ import { useMembership } from "@/lib/membership";
  */
 export type ModuleKey =
   | "coaches"
+  | "forms"
   | "projects"
   | "tasks"
   | "calendar"

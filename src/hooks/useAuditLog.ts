@@ -96,7 +96,19 @@ export type AuditAction =
   | "coach_profile.updated"
   | "coach_profile.archived"
   | "coach_profile.unarchived"
-  | "coach_profile.deleted";
+  | "coach_profile.deleted"
+  // Form actions
+  | "form.created"
+  | "form.updated"
+  | "form.published"
+  | "form.archived"
+  | "form.deleted"
+  | "form.field_added"
+  | "form.field_updated"
+  | "form.field_removed"
+  | "form.fields_reordered"
+  | "form.submission_received"
+  | "form.submission_deleted";
 
 export type EntityType =
   | "employee"
@@ -119,7 +131,8 @@ export type EntityType =
   | "terminology"
   | "crm_client"
   | "external_contact"
-  | "coach_profile";
+  | "coach_profile"
+  | "form";
 
 interface LogAuditEventParams {
   companyId: string;
