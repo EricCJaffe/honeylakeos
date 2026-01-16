@@ -1,10 +1,10 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useActiveCompany } from "./useActiveCompany";
-import { useAuditLog } from "./useAuditLog";
-import { useCompanyModules } from "./useCompanyModules";
-import { toast } from "sonner";
-import type { Json } from "@/integrations/supabase/types";
+/**
+ * @deprecated LMS v1 cohorts have been replaced by Learning Paths and Courses in LMS v2.
+ * This file is kept for reference but the underlying tables have been renamed to *_deprecated.
+ * Use useLmsLearningPaths and useLmsCourses for the new self-paced learning system.
+ */
+
+import { useQuery } from "@tanstack/react-query";
 
 export type CohortStatus = "planned" | "active" | "completed" | "archived";
 
@@ -18,29 +18,10 @@ export interface LmsCohort {
   end_date: string | null;
   status: CohortStatus;
   linked_project_id: string | null;
-  settings: Json;
+  settings: unknown;
   created_by: string | null;
   created_at: string;
   updated_at: string;
-  lms_courses?: { id: string; title: string };
-}
-
-export interface CreateCohortInput {
-  course_id: string;
-  name: string;
-  description?: string;
-  start_date?: string;
-  end_date?: string;
-  status?: CohortStatus;
-}
-
-export interface UpdateCohortInput {
-  name?: string;
-  description?: string;
-  start_date?: string | null;
-  end_date?: string | null;
-  status?: CohortStatus;
-  linked_project_id?: string | null;
 }
 
 export interface CohortFilters {
@@ -49,159 +30,38 @@ export interface CohortFilters {
   search?: string;
 }
 
-export function useLmsCohorts(filters: CohortFilters = {}) {
-  const { activeCompanyId } = useActiveCompany();
-  const { isEnabled } = useCompanyModules();
-  const lmsEnabled = isEnabled("lms");
-
+/**
+ * @deprecated Use useLmsLearningPaths instead
+ */
+export function useLmsCohorts(_filters: CohortFilters = {}) {
   return useQuery({
-    queryKey: ["cohorts", activeCompanyId, filters],
-    queryFn: async () => {
-      if (!activeCompanyId || !lmsEnabled) return [];
-
-      let query = supabase
-        .from("lms_cohorts")
-        .select("*, lms_courses(id, title)")
-        .eq("company_id", activeCompanyId)
-        .order("created_at", { ascending: false });
-
-      if (filters.courseId) query = query.eq("course_id", filters.courseId);
-      if (filters.status && filters.status !== "all") query = query.eq("status", filters.status);
-      if (filters.search) query = query.or(`name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as LmsCohort[];
-    },
-    enabled: !!activeCompanyId && lmsEnabled,
+    queryKey: ["cohorts-deprecated"],
+    queryFn: async () => [] as LmsCohort[],
+    enabled: false, // Disabled - deprecated table
   });
 }
 
-export function useLmsCohort(cohortId: string | undefined) {
-  const { activeCompanyId } = useActiveCompany();
-  const { isEnabled } = useCompanyModules();
-  const lmsEnabled = isEnabled("lms");
-
+/**
+ * @deprecated Use useLmsLearningPath instead
+ */
+export function useLmsCohort(_cohortId: string | undefined) {
   return useQuery({
-    queryKey: ["cohort", cohortId],
-    queryFn: async () => {
-      if (!cohortId || !activeCompanyId || !lmsEnabled) return null;
-
-      const { data, error } = await supabase
-        .from("lms_cohorts")
-        .select("*, lms_courses(id, title)")
-        .eq("id", cohortId)
-        .eq("company_id", activeCompanyId)
-        .maybeSingle();
-
-      if (error) throw error;
-      return data as LmsCohort | null;
-    },
-    enabled: !!cohortId && !!activeCompanyId && lmsEnabled,
+    queryKey: ["cohort-deprecated"],
+    queryFn: async () => null as LmsCohort | null,
+    enabled: false, // Disabled - deprecated table
   });
 }
 
+/**
+ * @deprecated LMS v1 cohorts are no longer available
+ */
 export function useLmsCohortMutations() {
-  const queryClient = useQueryClient();
-  const { activeCompanyId } = useActiveCompany();
-  const { log } = useAuditLog();
-
-  const createCohort = useMutation({
-    mutationFn: async (input: CreateCohortInput) => {
-      if (!activeCompanyId) throw new Error("No active company");
-      const { data: userData } = await supabase.auth.getUser();
-
-      const { data, error } = await supabase
-        .from("lms_cohorts")
-        .insert({
-          company_id: activeCompanyId,
-          course_id: input.course_id,
-          name: input.name,
-          description: input.description || null,
-          start_date: input.start_date || null,
-          end_date: input.end_date || null,
-          status: input.status || "planned",
-          created_by: userData.user?.id || null,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as LmsCohort;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["cohorts"] });
-      log("lms.cohort_created", "lms_cohort", data.id, { name: data.name, courseId: data.course_id });
-      toast.success("Cohort created successfully");
-    },
-    onError: (error) => {
-      toast.error(`Failed to create cohort: ${error.message}`);
-    },
-  });
-
-  const updateCohort = useMutation({
-    mutationFn: async ({ id, ...input }: UpdateCohortInput & { id: string }) => {
-      const { data, error } = await supabase
-        .from("lms_cohorts")
-        .update({ ...input, updated_at: new Date().toISOString() })
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as LmsCohort;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["cohorts"] });
-      queryClient.invalidateQueries({ queryKey: ["cohort", data.id] });
-      log("lms.cohort_updated", "lms_cohort", data.id, { name: data.name });
-      toast.success("Cohort updated successfully");
-    },
-    onError: (error) => {
-      toast.error(`Failed to update cohort: ${error.message}`);
-    },
-  });
-
-  const updateCohortStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: CohortStatus }) => {
-      const { data, error } = await supabase
-        .from("lms_cohorts")
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as LmsCohort;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["cohorts"] });
-      queryClient.invalidateQueries({ queryKey: ["cohort", data.id] });
-      log("lms.cohort_status_changed", "lms_cohort", data.id, { name: data.name, status: data.status });
-      toast.success(`Cohort status updated to ${data.status}`);
-    },
-    onError: (error) => {
-      toast.error(`Failed to update cohort status: ${error.message}`);
-    },
-  });
-
-  const deleteCohort = useMutation({
-    mutationFn: async (cohortId: string) => {
-      const { error } = await supabase.from("lms_cohorts").delete().eq("id", cohortId);
-      if (error) throw error;
-      return cohortId;
-    },
-    onSuccess: (cohortId) => {
-      queryClient.invalidateQueries({ queryKey: ["cohorts"] });
-      log("lms.cohort_deleted", "lms_cohort", cohortId, {});
-      toast.success("Cohort deleted successfully");
-    },
-    onError: (error) => {
-      toast.error(`Failed to delete cohort: ${error.message}`);
-    },
-  });
-
-  return { createCohort, updateCohort, updateCohortStatus, deleteCohort };
+  return {
+    createCohort: { mutate: () => {}, mutateAsync: async () => ({} as LmsCohort), isPending: false },
+    updateCohort: { mutate: () => {}, mutateAsync: async () => ({} as LmsCohort), isPending: false },
+    updateCohortStatus: { mutate: () => {}, mutateAsync: async () => ({} as LmsCohort), isPending: false },
+    deleteCohort: { mutate: () => {}, mutateAsync: async () => "", isPending: false },
+  };
 }
 
 export function getCohortStatusLabel(status: CohortStatus): string {
