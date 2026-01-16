@@ -1,21 +1,29 @@
 import * as React from "react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { MessageSquare, MoreHorizontal, Pencil, Trash2, Pin, Lock, Users, Plus, Archive, ArchiveRestore } from "lucide-react";
+import { MessageSquare, MoreHorizontal, Pencil, Trash2, Pin, Lock, Users, Plus, Archive, ArchiveRestore, Filter, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/PageHeader";
@@ -30,6 +38,7 @@ interface Note {
   title: string;
   content: string | null;
   folder_id: string | null;
+  project_id: string | null;
   access_level: string;
   is_pinned: boolean;
   color: string | null;
@@ -48,9 +57,27 @@ export default function NotesPage() {
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"active" | "archived">("active");
+  const [projectFilter, setProjectFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const { data: projects = [] } = useQuery({
+    queryKey: ["projects", activeCompanyId],
+    queryFn: async () => {
+      if (!activeCompanyId) return [];
+      const { data, error } = await supabase
+        .from("projects")
+        .select("id, name, emoji")
+        .eq("company_id", activeCompanyId)
+        .eq("is_template", false)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!activeCompanyId,
+  });
 
   const { data: notes = [], isLoading } = useQuery({
-    queryKey: ["notes", activeCompanyId, selectedFolderId, statusFilter],
+    queryKey: ["notes", activeCompanyId, selectedFolderId, statusFilter, projectFilter],
     queryFn: async () => {
       if (!activeCompanyId) return [];
       let query = supabase
@@ -64,6 +91,9 @@ export default function NotesPage() {
       if (selectedFolderId) {
         query = query.eq("folder_id", selectedFolderId);
       }
+      if (projectFilter !== "all") {
+        query = query.eq("project_id", projectFilter);
+      }
 
       const { data, error } = await query;
       if (error) throw error;
@@ -71,6 +101,17 @@ export default function NotesPage() {
     },
     enabled: !!activeCompanyId,
   });
+
+  // Client-side search filtering
+  const filteredNotes = useMemo(() => {
+    if (!searchQuery) return notes;
+    const query = searchQuery.toLowerCase();
+    return notes.filter(
+      (note) =>
+        note.title.toLowerCase().includes(query) ||
+        note.content?.toLowerCase().includes(query)
+    );
+  }, [notes, searchQuery]);
 
   const deleteNote = useMutation({
     mutationFn: async (noteId: string) => {
@@ -171,13 +212,47 @@ export default function NotesPage() {
         onAction={handleCreate}
       />
 
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex flex-wrap items-center gap-4 mb-6">
         <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as "active" | "archived")}>
           <TabsList>
             <TabsTrigger value="active">Active</TabsTrigger>
             <TabsTrigger value="archived">Archived</TabsTrigger>
           </TabsList>
         </Tabs>
+
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <Select value={projectFilter} onValueChange={setProjectFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by project" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Projects</SelectItem>
+              {projects.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.emoji} {p.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {projectFilter !== "all" && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setProjectFilter("all")}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+
+        <Input
+          placeholder="Search notes..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-[200px]"
+        />
       </div>
 
       <div className="grid lg:grid-cols-[250px_1fr] gap-6">
@@ -199,19 +274,21 @@ export default function NotesPage() {
 
         {/* Notes grid */}
         <div>
-          {notes.length === 0 ? (
+          {filteredNotes.length === 0 ? (
             <EmptyState
               icon={statusFilter === "archived" ? Archive : MessageSquare}
-              title={statusFilter === "archived" ? "No archived notes" : "No notes yet"}
-              description={statusFilter === "archived" 
-                ? "Notes you archive will appear here." 
-                : "Create your first note to start capturing your ideas."}
-              actionLabel={statusFilter === "active" ? "Create Note" : undefined}
-              onAction={statusFilter === "active" ? handleCreate : undefined}
+              title={searchQuery ? "No matching notes" : statusFilter === "archived" ? "No archived notes" : "No notes yet"}
+              description={searchQuery 
+                ? "Try adjusting your search or filters." 
+                : statusFilter === "archived" 
+                  ? "Notes you archive will appear here." 
+                  : "Create your first note to start capturing your ideas."}
+              actionLabel={!searchQuery && statusFilter === "active" ? "Create Note" : undefined}
+              onAction={!searchQuery && statusFilter === "active" ? handleCreate : undefined}
             />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {notes.map((note, index) => (
+              {filteredNotes.map((note, index) => (
                 <motion.div
                   key={note.id}
                   initial={{ opacity: 0, y: 12 }}

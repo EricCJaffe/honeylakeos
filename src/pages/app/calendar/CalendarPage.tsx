@@ -18,12 +18,20 @@ import {
   addDays,
   isWithinInterval
 } from "date-fns";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, MoreHorizontal, Repeat, FileText } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, MoreHorizontal, Repeat, FileText, Filter, X, FolderKanban } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useRecurringEvents } from "@/hooks/useEventRecurrence";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -51,6 +59,24 @@ export default function CalendarPage() {
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [templateToApply, setTemplateToApply] = useState<Template | null>(null);
+  const [projectFilter, setProjectFilter] = useState<string>("all");
+
+  // Fetch projects for filter
+  const { data: projects = [] } = useQuery({
+    queryKey: ["projects", activeCompanyId],
+    queryFn: async () => {
+      if (!activeCompanyId) return [];
+      const { data, error } = await supabase
+        .from("projects")
+        .select("id, name, emoji")
+        .eq("company_id", activeCompanyId)
+        .eq("is_template", false)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!activeCompanyId,
+  });
 
   // Calculate range based on view mode
   const { rangeStart, rangeEnd } = useMemo(() => {
@@ -110,6 +136,7 @@ export default function CalendarPage() {
       seriesEventId?: string;
       occurrenceDate?: Date;
       event?: any;
+      project_id?: string | null;
     }> = [];
 
     // Add regular events
@@ -134,6 +161,7 @@ export default function CalendarPage() {
           seriesEventId: occ.event.id,
           occurrenceDate: new Date(occ.occurrence_date),
           event: occ.event,
+          project_id: occ.event.project_id,
         });
       }
     });
@@ -144,12 +172,18 @@ export default function CalendarPage() {
     return events;
   }, [regularEvents, recurringOccurrences]);
 
+  // Filter events by project
+  const filteredEvents = useMemo(() => {
+    if (projectFilter === "all") return allEvents;
+    return allEvents.filter((event) => event.project_id === projectFilter);
+  }, [allEvents, projectFilter]);
+
   const isLoading = membershipLoading || loadingRegular || loadingRecurring;
 
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   const getEventsForDay = (date: Date) => {
-    return allEvents.filter((event) => isSameDay(new Date(event.start_at), date));
+    return filteredEvents.filter((event) => isSameDay(new Date(event.start_at), date));
   };
 
   const handleCreate = () => {
@@ -434,8 +468,8 @@ export default function CalendarPage() {
 
   const renderAgendaView = () => {
     // Group events by date
-    const eventsByDate: Record<string, typeof allEvents> = {};
-    allEvents.forEach((event) => {
+    const eventsByDate: Record<string, typeof filteredEvents> = {};
+    filteredEvents.forEach((event) => {
       const dateKey = format(new Date(event.start_at), "yyyy-MM-dd");
       if (!eventsByDate[dateKey]) {
         eventsByDate[dateKey] = [];
@@ -580,13 +614,43 @@ export default function CalendarPage() {
                   </Button>
                 </div>
 
-                <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
-                  <TabsList>
-                    <TabsTrigger value="month">Month</TabsTrigger>
-                    <TabsTrigger value="week">Week</TabsTrigger>
-                    <TabsTrigger value="agenda">Agenda</TabsTrigger>
-                  </TabsList>
-                </Tabs>
+                <div className="flex items-center gap-3">
+                  {/* Project Filter */}
+                  <div className="flex items-center gap-2">
+                    <FolderKanban className="h-4 w-4 text-muted-foreground" />
+                    <Select value={projectFilter} onValueChange={setProjectFilter}>
+                      <SelectTrigger className="w-[160px]">
+                        <SelectValue placeholder="All projects" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Projects</SelectItem>
+                        {projects.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.emoji} {p.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {projectFilter !== "all" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setProjectFilter("all")}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+
+                  <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
+                    <TabsList>
+                      <TabsTrigger value="month">Month</TabsTrigger>
+                      <TabsTrigger value="week">Week</TabsTrigger>
+                      <TabsTrigger value="agenda">Agenda</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
               </div>
 
               {/* Calendar Views */}

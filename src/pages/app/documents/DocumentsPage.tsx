@@ -3,7 +3,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { FileText, MoreHorizontal, Pencil, Trash2, Download, Upload, Lock, Users, Link2 } from "lucide-react";
+import { FileText, MoreHorizontal, Pencil, Trash2, Download, Upload, Lock, Users, Link2, Filter, X, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
@@ -17,6 +17,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -47,9 +54,27 @@ export default function DocumentsPage() {
   const [editingDocument, setEditingDocument] = useState<Document | null>(null);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [projectFilter, setProjectFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const { data: projects = [] } = useQuery({
+    queryKey: ["projects", activeCompanyId],
+    queryFn: async () => {
+      if (!activeCompanyId) return [];
+      const { data, error } = await supabase
+        .from("projects")
+        .select("id, name, emoji")
+        .eq("company_id", activeCompanyId)
+        .eq("is_template", false)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!activeCompanyId,
+  });
 
   const { data: documents = [], isLoading } = useQuery({
-    queryKey: ["documents", activeCompanyId, selectedFolderId],
+    queryKey: ["documents", activeCompanyId, selectedFolderId, projectFilter],
     queryFn: async () => {
       if (!activeCompanyId) return [];
       let query = supabase
@@ -61,6 +86,9 @@ export default function DocumentsPage() {
       if (selectedFolderId) {
         query = query.eq("folder_id", selectedFolderId);
       }
+      if (projectFilter !== "all") {
+        query = query.eq("project_id", projectFilter);
+      }
 
       const { data, error } = await query;
       if (error) throw error;
@@ -68,6 +96,17 @@ export default function DocumentsPage() {
     },
     enabled: !!activeCompanyId,
   });
+
+  // Client-side search filtering
+  const filteredDocuments = React.useMemo(() => {
+    if (!searchQuery) return documents;
+    const query = searchQuery.toLowerCase();
+    return documents.filter(
+      (doc) =>
+        doc.name.toLowerCase().includes(query) ||
+        doc.description?.toLowerCase().includes(query)
+    );
+  }, [documents, searchQuery]);
 
   const uploadDocument = useMutation({
     mutationFn: async (file: File) => {
@@ -224,6 +263,46 @@ export default function DocumentsPage() {
         </Button>
       </PageHeader>
 
+      {/* Filter toolbar */}
+      <div className="flex flex-wrap items-center gap-4 mb-6">
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <Select value={projectFilter} onValueChange={setProjectFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by project" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Projects</SelectItem>
+              {projects.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.emoji} {p.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {projectFilter !== "all" && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setProjectFilter("all")}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search documents..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-[200px] pl-8"
+          />
+        </div>
+      </div>
+
       <div className="grid lg:grid-cols-[250px_1fr] gap-6">
         {/* Sidebar with folders */}
         <div className="hidden lg:block">
@@ -243,17 +322,19 @@ export default function DocumentsPage() {
 
         {/* Documents list */}
         <div>
-          {documents.length === 0 ? (
+          {filteredDocuments.length === 0 ? (
             <EmptyState
               icon={FileText}
-              title="No documents yet"
-              description="Upload your first document to get started."
-              actionLabel="Upload Document"
-              onAction={() => fileInputRef.current?.click()}
+              title={searchQuery || projectFilter !== "all" ? "No matching documents" : "No documents yet"}
+              description={searchQuery || projectFilter !== "all" 
+                ? "Try adjusting your search or filters."
+                : "Upload your first document to get started."}
+              actionLabel={!searchQuery && projectFilter === "all" ? "Upload Document" : undefined}
+              onAction={!searchQuery && projectFilter === "all" ? () => fileInputRef.current?.click() : undefined}
             />
           ) : (
             <div className="space-y-2">
-              {documents.map((doc, index) => {
+              {filteredDocuments.map((doc, index) => {
                 const FileIcon = getFileIcon(doc.mime_type);
                 return (
                   <motion.div
