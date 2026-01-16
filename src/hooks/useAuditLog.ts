@@ -76,7 +76,13 @@ export type AuditAction =
   | "link.deleted"
   // Terminology actions
   | "terminology.updated"
-  | "terminology.reset";
+  | "terminology.reset"
+  // CRM actions
+  | "crm.client_created"
+  | "crm.client_updated"
+  | "crm.client_archived"
+  | "crm.client_unarchived"
+  | "crm.client_deleted";
 
 export type EntityType =
   | "employee"
@@ -96,7 +102,8 @@ export type EntityType =
   | "project"
   | "note"
   | "document"
-  | "terminology";
+  | "terminology"
+  | "crm_client";
 
 interface LogAuditEventParams {
   companyId: string;
