@@ -3,8 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "./useActiveCompany";
 import { useAuditLog } from "./useAuditLog";
 import { useModuleAccess } from "./useModuleAccess";
+import { useCrmPermissions, PermissionError, getPermissionDeniedMessage } from "./useModulePermissions";
 import { toast } from "sonner";
-
 export type CrmClientType = "b2c" | "b2b" | "mixed";
 export type CrmLifecycleStatus = "prospect" | "client";
 
@@ -56,9 +56,9 @@ export interface UpdateCrmClientInput extends Partial<CreateCrmClientInput> {
 export function useCrmClients(filters: CrmClientFilters = {}) {
   const { activeCompanyId } = useActiveCompany();
   const { isModuleEnabled } = useModuleAccess("crm");
+  const permissions = useCrmPermissions();
   const queryClient = useQueryClient();
   const { log } = useAuditLog();
-
   const crmEnabled = isModuleEnabled;
 
   // Fetch CRM clients
@@ -114,6 +114,9 @@ export function useCrmClients(filters: CrmClientFilters = {}) {
     mutationFn: async (input: CreateCrmClientInput) => {
       if (!activeCompanyId) throw new Error("No active company");
       if (!crmEnabled) throw new Error("CRM module is disabled");
+      
+      // Permission check
+      permissions.assertCapability("canCreate", "create CRM record");
 
       const { data: user } = await supabase.auth.getUser();
 
@@ -150,6 +153,9 @@ export function useCrmClients(filters: CrmClientFilters = {}) {
   const updateClient = useMutation({
     mutationFn: async ({ id, ...input }: UpdateCrmClientInput) => {
       if (!crmEnabled) throw new Error("CRM module is disabled");
+      
+      // Permission check
+      permissions.assertCapability("canEdit", "update CRM record");
 
       const { data, error } = await supabase
         .from("crm_clients")
@@ -182,6 +188,9 @@ export function useCrmClients(filters: CrmClientFilters = {}) {
   const archiveClient = useMutation({
     mutationFn: async (id: string) => {
       if (!crmEnabled) throw new Error("CRM module is disabled");
+      
+      // Permission check
+      permissions.assertCapability("canArchive", "archive CRM record");
 
       const { data, error } = await supabase
         .from("crm_clients")
@@ -211,6 +220,9 @@ export function useCrmClients(filters: CrmClientFilters = {}) {
   const unarchiveClient = useMutation({
     mutationFn: async (id: string) => {
       if (!crmEnabled) throw new Error("CRM module is disabled");
+      
+      // Permission check
+      permissions.assertCapability("canArchive", "restore CRM record");
 
       const { data, error } = await supabase
         .from("crm_clients")
@@ -240,6 +252,9 @@ export function useCrmClients(filters: CrmClientFilters = {}) {
   const deleteClient = useMutation({
     mutationFn: async (id: string) => {
       if (!crmEnabled) throw new Error("CRM module is disabled");
+      
+      // Permission check
+      permissions.assertCapability("canDelete", "delete CRM record");
 
       // First delete any entity links
       await supabase
@@ -271,6 +286,7 @@ export function useCrmClients(filters: CrmClientFilters = {}) {
     isLoading,
     error,
     crmEnabled,
+    permissions,
     createClient,
     updateClient,
     archiveClient,

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "./useActiveCompany";
 import { logAuditEvent, AuditAction, EntityType } from "./useAuditLog";
+import { useExternalContactsPermissions, PermissionError } from "./useModulePermissions";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 // ============================================================================
@@ -134,6 +135,7 @@ export function useExternalContact(contactId: string | undefined) {
 export function useExternalContactMutations() {
   const queryClient = useQueryClient();
   const { activeCompanyId } = useActiveCompany();
+  const permissions = useExternalContactsPermissions();
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: QUERY_KEYS.all });
@@ -143,6 +145,9 @@ export function useExternalContactMutations() {
   const create = useMutation({
     mutationFn: async (input: CreateExternalContactInput) => {
       if (!activeCompanyId) throw new Error("No active company");
+      
+      // Permission check
+      permissions.assertCapability("canCreate", "create external contact");
 
       const { data: user } = await supabase.auth.getUser();
 
@@ -188,6 +193,9 @@ export function useExternalContactMutations() {
   const update = useMutation({
     mutationFn: async (input: UpdateExternalContactInput) => {
       if (!activeCompanyId) throw new Error("No active company");
+      
+      // Permission check
+      permissions.assertCapability("canEdit", "update external contact");
 
       const { id, ...updateData } = input;
 

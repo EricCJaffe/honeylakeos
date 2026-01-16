@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "./useActiveCompany";
 import { useAuditLog } from "./useAuditLog";
 import { useCompanyModules } from "./useCompanyModules";
+import { useLmsPermissions, PermissionError } from "./useModulePermissions";
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -100,10 +101,14 @@ export function useLmsCourseMutations() {
   const queryClient = useQueryClient();
   const { activeCompanyId } = useActiveCompany();
   const { log } = useAuditLog();
+  const permissions = useLmsPermissions();
 
   const createCourse = useMutation({
     mutationFn: async (input: CreateCourseInput) => {
       if (!activeCompanyId) throw new Error("No active company");
+      
+      // Permission check
+      permissions.assertCapability("canCreate", "create course");
 
       const { data: userData } = await supabase.auth.getUser();
 
@@ -135,6 +140,13 @@ export function useLmsCourseMutations() {
 
   const updateCourse = useMutation({
     mutationFn: async ({ id, ...input }: UpdateCourseInput & { id: string }) => {
+      // Permission check - use canPublish for status changes to published
+      if (input.status === "published") {
+        permissions.assertCapability("canPublish", "publish course");
+      } else {
+        permissions.assertCapability("canEdit", "update course");
+      }
+      
       const { data, error } = await supabase
         .from("lms_courses")
         .update({

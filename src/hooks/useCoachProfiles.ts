@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { useModuleAccess } from "@/hooks/useModuleAccess";
+import { useCoachesPermissions, PermissionError } from "@/hooks/useModulePermissions";
 import { toast } from "sonner";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
@@ -34,6 +35,7 @@ export interface UpdateCoachProfileInput {
 export function useCoachProfiles(filters: CoachProfileFilters = {}) {
   const { activeCompanyId } = useActiveCompany();
   const { hasAccess, loading: moduleLoading } = useModuleAccess("coaches");
+  const permissions = useCoachesPermissions();
   const { log: logAudit } = useAuditLog();
   const queryClient = useQueryClient();
 
@@ -91,6 +93,9 @@ export function useCoachProfiles(filters: CoachProfileFilters = {}) {
     mutationFn: async (input: CreateCoachProfileInput) => {
       if (!activeCompanyId) throw new Error("No active company");
       if (!hasAccess) throw new Error("Module not enabled");
+      
+      // Permission check
+      permissions.assertCapability("canCreate", "create coach profile");
 
       const { data: userData } = await supabase.auth.getUser();
 
@@ -128,6 +133,9 @@ export function useCoachProfiles(filters: CoachProfileFilters = {}) {
   const updateMutation = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateCoachProfileInput }) => {
       if (!hasAccess) throw new Error("Module not enabled");
+      
+      // Permission check
+      permissions.assertCapability("canEdit", "update coach profile");
 
       const updateData: TablesUpdate<"coach_profiles"> = {};
       if (input.profile_type !== undefined) updateData.profile_type = input.profile_type;
@@ -158,6 +166,9 @@ export function useCoachProfiles(filters: CoachProfileFilters = {}) {
   const archiveMutation = useMutation({
     mutationFn: async (id: string) => {
       if (!hasAccess) throw new Error("Module not enabled");
+      
+      // Permission check
+      permissions.assertCapability("canArchive", "archive coach profile");
 
       const { data, error } = await supabase
         .from("coach_profiles")
@@ -183,6 +194,9 @@ export function useCoachProfiles(filters: CoachProfileFilters = {}) {
   const unarchiveMutation = useMutation({
     mutationFn: async (id: string) => {
       if (!hasAccess) throw new Error("Module not enabled");
+      
+      // Permission check
+      permissions.assertCapability("canArchive", "restore coach profile");
 
       const { data, error } = await supabase
         .from("coach_profiles")
@@ -208,6 +222,9 @@ export function useCoachProfiles(filters: CoachProfileFilters = {}) {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       if (!hasAccess) throw new Error("Module not enabled");
+      
+      // Permission check
+      permissions.assertCapability("canDelete", "delete coach profile");
 
       const { error } = await supabase
         .from("coach_profiles")
@@ -232,6 +249,7 @@ export function useCoachProfiles(filters: CoachProfileFilters = {}) {
     isLoading: query.isLoading || moduleLoading,
     error: query.error,
     hasAccess,
+    permissions,
     createProfile: createMutation.mutateAsync,
     updateProfile: updateMutation.mutateAsync,
     archiveProfile: archiveMutation.mutateAsync,
