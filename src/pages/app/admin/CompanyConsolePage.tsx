@@ -25,6 +25,7 @@ import AuditLogPanel from "./company-console/AuditLogPanel";
 import GroupsPanel from "./company-console/GroupsPanel";
 import LocationsPanel from "./company-console/LocationsPanel";
 import CompanyModulesPanel from "./company-console/ModulesPanel";
+import ModuleChecklistPanel from "./company-console/ModuleChecklistPanel";
 
 const adminSections = [
   {
@@ -167,7 +168,12 @@ export default function CompanyConsolePage() {
             {section.id === "employees" && <EmployeesPanel />}
             {section.id === "groups" && <GroupsPanel />}
             {section.id === "locations" && <LocationsPanel />}
-            {section.id === "modules" && <CompanyModulesPanel />}
+            {section.id === "modules" && (
+              <>
+                <CompanyModulesPanel />
+                <ModuleChecklistPanel />
+              </>
+            )}
             {section.id === "audit" && <AuditLogPanel />}
           </TabsContent>
         ))}

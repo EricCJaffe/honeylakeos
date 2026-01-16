@@ -60,6 +60,7 @@ import {
   configToRRule,
   rruleToConfig,
 } from "@/components/tasks/RecurrenceSelector";
+import { LinkPicker } from "@/components/LinkPicker";
 
 const eventSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -114,23 +115,6 @@ export function EventFormDialog({
   // Attendees state
   const [selectedAttendees, setSelectedAttendees] = React.useState<string[]>([]);
   const [isAttendeesOpen, setIsAttendeesOpen] = React.useState(false);
-
-  // Fetch projects for dropdown
-  const { data: projects = [] } = useQuery({
-    queryKey: ["projects", activeCompanyId],
-    queryFn: async () => {
-      if (!activeCompanyId) return [];
-      const { data, error } = await supabase
-        .from("projects")
-        .select("id, name, emoji")
-        .eq("company_id", activeCompanyId)
-        .eq("is_template", false)
-        .order("name");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!activeCompanyId && open,
-  });
 
   // Fetch company members for attendees
   const { data: members = [] } = useCompanyMembers();
@@ -490,35 +474,24 @@ export function EventFormDialog({
             )}
 
             {/* Project selector */}
-            {projects.length > 0 && (
-              <FormField
-                control={form.control}
-                name="project_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Project</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value || undefined}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select project (optional)" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {projects.map((project) => (
-                          <SelectItem key={project.id} value={project.id}>
-                            {project.emoji} {project.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+            <FormField
+              control={form.control}
+              name="project_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Project</FormLabel>
+                  <FormControl>
+                    <LinkPicker
+                      type="project"
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Link to project (optional)"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
