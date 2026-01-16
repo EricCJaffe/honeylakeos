@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "./useActiveCompany";
 import { useAuditLog } from "./useAuditLog";
 import { useModuleAccess } from "./useModuleAccess";
+import { useFormsPermissions, PermissionError } from "./useModulePermissions";
 import { toast } from "sonner";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
@@ -83,6 +84,7 @@ const QUERY_KEYS = {
 export function useForms(filters: FormFilters = {}) {
   const { activeCompanyId } = useActiveCompany();
   const { hasAccess, loading: moduleLoading } = useModuleAccess("forms");
+  const permissions = useFormsPermissions();
   const { log: logAudit } = useAuditLog();
   const queryClient = useQueryClient();
 
@@ -123,7 +125,9 @@ export function useForms(filters: FormFilters = {}) {
   const createMutation = useMutation({
     mutationFn: async (input: CreateFormInput) => {
       if (!activeCompanyId || !hasAccess) throw new Error("No access");
-
+      
+      // Permission check
+      permissions.assertCapability("canCreate", "create form");
       const { data: user } = await supabase.auth.getUser();
 
       const insertData: TablesInsert<"forms"> = {
@@ -156,6 +160,13 @@ export function useForms(filters: FormFilters = {}) {
   const updateMutation = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateFormInput }) => {
       if (!hasAccess) throw new Error("Module not enabled");
+      
+      // Permission check - use canPublish for status changes to published
+      if (input.status === "published") {
+        permissions.assertCapability("canPublish", "publish form");
+      } else {
+        permissions.assertCapability("canEdit", "update form");
+      }
 
       const updateData: TablesUpdate<"forms"> = {};
       if (input.name !== undefined) updateData.name = input.name.trim();
@@ -195,6 +206,9 @@ export function useForms(filters: FormFilters = {}) {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       if (!hasAccess) throw new Error("Module not enabled");
+      
+      // Permission check
+      permissions.assertCapability("canDelete", "delete form");
 
       const { error } = await supabase.from("forms").delete().eq("id", id);
       if (error) throw error;
@@ -215,6 +229,7 @@ export function useForms(filters: FormFilters = {}) {
     isLoading: query.isLoading || moduleLoading,
     error: query.error,
     hasAccess,
+    permissions,
     createForm: createMutation.mutateAsync,
     updateForm: updateMutation.mutateAsync,
     deleteForm: deleteMutation.mutateAsync,
