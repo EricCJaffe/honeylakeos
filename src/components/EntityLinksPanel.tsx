@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { Link2, Plus, X, Search, ArrowRight, Loader2 } from "lucide-react";
+import { Link2, Plus, X, Search, ArrowRight, Loader2, Lock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
+import { useCompanyModules, ENTITY_TO_MODULE_MAP } from "@/hooks/useCompanyModules";
 import {
   useEntityLinks,
-  useEntitySearch,
+  useModuleAwareEntitySearch,
   EntityType,
   LinkType,
   EntityLink,
@@ -29,6 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const ENTITY_TYPES: { value: EntityType; label: string; icon: string }[] = [
   { value: "task", label: "Task", icon: "✓" },
@@ -66,8 +68,12 @@ function LinkedEntityItem({
   const targetType = isSource ? link.to_type : link.from_type;
   const targetId = isSource ? link.to_id : link.from_id;
   const { activeCompanyId } = useActiveCompany();
+  const { isEntityModuleEnabled, loading: modulesLoading } = useCompanyModules();
 
-  const { data: entityData } = useQuery({
+  // Check if the target module is enabled
+  const isTargetModuleEnabled = isEntityModuleEnabled(targetType);
+
+  const { data: entityData, error: entityError } = useQuery({
     queryKey: ["entity-details", targetType, targetId],
     queryFn: async () => {
       let query;
@@ -97,11 +103,42 @@ function LinkedEntityItem({
         name: data.title || data.name,
       };
     },
-    enabled: !!targetId && !!activeCompanyId,
+    // Only fetch if module is enabled (graceful degradation)
+    enabled: !!targetId && !!activeCompanyId && isTargetModuleEnabled && !modulesLoading,
   });
 
   const entityConfig = ENTITY_TYPES.find((t) => t.value === targetType);
   const linkConfig = LINK_TYPES.find((t) => t.value === link.link_type);
+
+  // Graceful degradation: show disabled state if module is disabled
+  if (!modulesLoading && !isTargetModuleEnabled) {
+    return (
+      <div className="flex items-center justify-between gap-2 p-2 rounded-md border border-dashed bg-muted/30 opacity-60">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <Lock className="h-4 w-4 text-muted-foreground" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-muted-foreground">
+              {entityConfig?.label} module disabled
+            </p>
+            <p className="text-xs text-muted-foreground/70">
+              Enable the {entityConfig?.label} module to view this link
+            </p>
+          </div>
+          <Badge variant="outline" className="bg-muted text-muted-foreground">
+            Disabled
+          </Badge>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          onClick={() => onDelete(link.id)}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-between gap-2 p-2 rounded-md border bg-card hover:bg-accent/50 transition-colors">
@@ -109,7 +146,7 @@ function LinkedEntityItem({
         <span className="text-lg">{entityConfig?.icon}</span>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium truncate">
-            {entityData?.name || "Loading..."}
+            {entityData?.name || (entityError ? "Unable to load" : "Loading...")}
           </p>
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <span className="capitalize">{targetType}</span>
@@ -146,13 +183,20 @@ function AddLinkDialog({
   entityId: string;
   onAdd: (toType: EntityType, toId: string, linkType: LinkType) => void;
 }) {
+  const { isEntityModuleEnabled, loading: modulesLoading } = useCompanyModules();
   const [open, setOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<EntityType>("task");
   const [selectedLinkType, setSelectedLinkType] = useState<LinkType>("related");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const { data: searchResults = [], isLoading } = useEntitySearch(selectedType, searchQuery);
+  // Filter entity types to only show enabled modules
+  const availableEntityTypes = ENTITY_TYPES.filter((t) => {
+    if (modulesLoading) return true; // Show all while loading
+    return isEntityModuleEnabled(t.value);
+  });
+
+  const { data: searchResults = [], isLoading } = useModuleAwareEntitySearch(selectedType, searchQuery);
 
   const handleAdd = () => {
     if (selectedId) {
@@ -162,6 +206,13 @@ function AddLinkDialog({
       setSelectedId(null);
     }
   };
+
+  // Set default selected type to first available when list changes
+  useEffect(() => {
+    if (availableEntityTypes.length > 0 && !availableEntityTypes.find(t => t.value === selectedType)) {
+      setSelectedType(availableEntityTypes[0].value);
+    }
+  }, [availableEntityTypes, selectedType]);
 
   useEffect(() => {
     if (!open) {
@@ -198,14 +249,16 @@ function AddLinkDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {ENTITY_TYPES.filter((t) => t.value !== entityType || entityId !== selectedId).map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      <span className="flex items-center gap-2">
-                        <span>{type.icon}</span>
-                        {type.label}
-                      </span>
-                    </SelectItem>
-                  ))}
+                  {availableEntityTypes
+                    .filter((t) => t.value !== entityType || entityId !== selectedId)
+                    .map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        <span className="flex items-center gap-2">
+                          <span>{type.icon}</span>
+                          {type.label}
+                        </span>
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
