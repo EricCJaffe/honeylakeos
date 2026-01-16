@@ -153,6 +153,53 @@ export type Database = {
           },
         ]
       }
+      company_capability_settings: {
+        Row: {
+          coaches_member_manage_enabled: boolean
+          company_id: string
+          contacts_member_manage_enabled: boolean
+          crm_member_manage_enabled: boolean
+          forms_member_manage_enabled: boolean
+          forms_member_publish_enabled: boolean
+          lms_member_manage_enabled: boolean
+          lms_member_publish_enabled: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          coaches_member_manage_enabled?: boolean
+          company_id: string
+          contacts_member_manage_enabled?: boolean
+          crm_member_manage_enabled?: boolean
+          forms_member_manage_enabled?: boolean
+          forms_member_publish_enabled?: boolean
+          lms_member_manage_enabled?: boolean
+          lms_member_publish_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          coaches_member_manage_enabled?: boolean
+          company_id?: string
+          contacts_member_manage_enabled?: boolean
+          crm_member_manage_enabled?: boolean
+          forms_member_manage_enabled?: boolean
+          forms_member_publish_enabled?: boolean
+          lms_member_manage_enabled?: boolean
+          lms_member_publish_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_capability_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_modules: {
         Row: {
           company_id: string
