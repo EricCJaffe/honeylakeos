@@ -4,10 +4,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, UserPlus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
+import { useCompanyMembers } from "@/hooks/useEventAttendees";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Select,
   SelectContent,
@@ -38,6 +41,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -99,6 +110,10 @@ export function EventFormDialog({
 
   // Recurrence state
   const [recurrenceConfig, setRecurrenceConfig] = React.useState<RecurrenceConfig | null>(null);
+  
+  // Attendees state
+  const [selectedAttendees, setSelectedAttendees] = React.useState<string[]>([]);
+  const [isAttendeesOpen, setIsAttendeesOpen] = React.useState(false);
 
   // Fetch projects for dropdown
   const { data: projects = [] } = useQuery({
@@ -116,6 +131,9 @@ export function EventFormDialog({
     },
     enabled: !!activeCompanyId && open,
   });
+
+  // Fetch company members for attendees
+  const { data: members = [] } = useCompanyMembers();
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
@@ -152,6 +170,8 @@ export function EventFormDialog({
       } else {
         setRecurrenceConfig(null);
       }
+      // Load existing attendees
+      setSelectedAttendees([]);
     } else if (templateToApply) {
       // Apply template when creating new event from template
       const payload = templateToApply.payload as Record<string, any>;
@@ -167,6 +187,7 @@ export function EventFormDialog({
         project_id: null,
       });
       setRecurrenceConfig(null);
+      setSelectedAttendees([]);
     } else {
       form.reset({
         title: "",
@@ -180,6 +201,7 @@ export function EventFormDialog({
         project_id: null,
       });
       setRecurrenceConfig(null);
+      setSelectedAttendees([]);
     }
   }, [event, defaultDate, form, templateToApply]);
 
@@ -267,12 +289,25 @@ export function EventFormDialog({
           if (error) throw error;
         }
       } else {
-        const { error } = await supabase.from("events").insert({
+        // Create new event
+        const { data: newEvent, error } = await supabase.from("events").insert({
           ...eventData,
           company_id: activeCompanyId,
           created_by: user.id,
-        });
+        }).select("id").single();
         if (error) throw error;
+
+        // Add attendees if any selected
+        if (selectedAttendees.length > 0 && newEvent) {
+          const attendeeInserts = selectedAttendees.map((userId) => ({
+            event_id: newEvent.id,
+            user_id: userId,
+            role: "required" as const,
+            response_status: "needs_action" as const,
+          }));
+          
+          await supabase.from("event_attendees").insert(attendeeInserts);
+        }
       }
     },
     onSuccess: () => {
@@ -280,10 +315,12 @@ export function EventFormDialog({
       queryClient.invalidateQueries({ queryKey: ["recurring-events"] });
       queryClient.invalidateQueries({ queryKey: ["event-occurrences"] });
       queryClient.invalidateQueries({ queryKey: ["all-event-occurrences"] });
+      queryClient.invalidateQueries({ queryKey: ["event-attendees"] });
       toast.success(isEditing ? "Event updated" : "Event created");
       onOpenChange(false);
       form.reset();
       setRecurrenceConfig(null);
+      setSelectedAttendees([]);
     },
     onError: (error) => {
       toast.error(error.message || "Something went wrong");
@@ -496,6 +533,86 @@ export function EventFormDialog({
                 </FormItem>
               )}
             />
+
+            {/* Attendees selector - only for new events */}
+            {!isEditing && members.length > 0 && (
+              <div className="space-y-2">
+                <FormLabel>Invite Attendees</FormLabel>
+                <div className="flex flex-wrap gap-2">
+                  {selectedAttendees.map((userId) => {
+                    const member = members.find((m: any) => m.user_id === userId);
+                    if (!member) return null;
+                    return (
+                      <Badge key={userId} variant="secondary" className="flex items-center gap-1 py-1">
+                        <Avatar className="h-4 w-4">
+                          <AvatarFallback className="text-[10px]">
+                            {(member.full_name || member.email || "?")[0].toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-xs">{member.full_name || member.email}</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedAttendees((prev) => prev.filter((id) => id !== userId))}
+                          className="ml-1 rounded-full hover:bg-muted p-0.5"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    );
+                  })}
+                  <Popover open={isAttendeesOpen} onOpenChange={setIsAttendeesOpen}>
+                    <PopoverTrigger asChild>
+                      <Button type="button" variant="outline" size="sm" className="h-7">
+                        <UserPlus className="h-3.5 w-3.5 mr-1" />
+                        Add
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search members..." />
+                        <CommandList>
+                          <CommandEmpty>No members found.</CommandEmpty>
+                          <CommandGroup>
+                            {members
+                              .filter((m: any) => 
+                                !selectedAttendees.includes(m.user_id) && 
+                                m.user_id !== user?.id
+                              )
+                              .map((member: any) => (
+                                <CommandItem
+                                  key={member.user_id}
+                                  value={member.full_name || member.email}
+                                  onSelect={() => {
+                                    setSelectedAttendees((prev) => [...prev, member.user_id]);
+                                    setIsAttendeesOpen(false);
+                                  }}
+                                >
+                                  <Avatar className="h-6 w-6 mr-2">
+                                    <AvatarFallback className="text-xs">
+                                      {(member.full_name || member.email || "?")[0].toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-medium truncate">
+                                      {member.full_name || "Unknown"}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground truncate">
+                                      {member.email}
+                                    </div>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  You can manage attendees after creating the event
+                </p>
+              </div>
+            )}
 
             <FormField
               control={form.control}
