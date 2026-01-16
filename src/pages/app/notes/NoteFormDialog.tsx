@@ -41,6 +41,7 @@ const noteSchema = z.object({
   access_level: z.string().default("company"),
   folder_id: z.string().optional().nullable(),
   color: z.string().optional().nullable(),
+  project_id: z.string().optional().nullable(),
 });
 
 type NoteFormValues = z.infer<typeof noteSchema>;
@@ -88,6 +89,22 @@ export function NoteFormDialog({
     enabled: !!activeCompanyId && open,
   });
 
+  const { data: projects = [] } = useQuery({
+    queryKey: ["projects", activeCompanyId],
+    queryFn: async () => {
+      if (!activeCompanyId) return [];
+      const { data, error } = await supabase
+        .from("projects")
+        .select("id, name, emoji")
+        .eq("company_id", activeCompanyId)
+        .eq("is_template", false)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!activeCompanyId && open,
+  });
+
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(noteSchema),
     defaultValues: {
@@ -96,6 +113,7 @@ export function NoteFormDialog({
       access_level: "company",
       folder_id: folderId || null,
       color: null,
+      project_id: null,
     },
   });
 
@@ -107,6 +125,7 @@ export function NoteFormDialog({
         access_level: note.access_level,
         folder_id: note.folder_id || null,
         color: note.color || null,
+        project_id: note.project_id || null,
       });
     } else {
       form.reset({
@@ -115,6 +134,7 @@ export function NoteFormDialog({
         access_level: "company",
         folder_id: folderId || null,
         color: null,
+        project_id: null,
       });
     }
   }, [note, folderId, form]);
@@ -129,6 +149,7 @@ export function NoteFormDialog({
         access_level: values.access_level,
         folder_id: values.folder_id || null,
         color: values.color || null,
+        project_id: values.project_id || null,
       };
 
       if (isEditing && note) {
@@ -266,6 +287,34 @@ export function NoteFormDialog({
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="project_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Project</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || undefined}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="No project" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {projects.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.emoji} {project.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

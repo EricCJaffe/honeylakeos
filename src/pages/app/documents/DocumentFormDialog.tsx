@@ -36,6 +36,7 @@ const documentSchema = z.object({
   description: z.string().optional(),
   access_level: z.string().default("company"),
   folder_id: z.string().optional().nullable(),
+  project_id: z.string().optional().nullable(),
 });
 
 type DocumentFormValues = z.infer<typeof documentSchema>;
@@ -69,6 +70,22 @@ export function DocumentFormDialog({
     enabled: !!activeCompanyId && open,
   });
 
+  const { data: projects = [] } = useQuery({
+    queryKey: ["projects", activeCompanyId],
+    queryFn: async () => {
+      if (!activeCompanyId) return [];
+      const { data, error } = await supabase
+        .from("projects")
+        .select("id, name, emoji")
+        .eq("company_id", activeCompanyId)
+        .eq("is_template", false)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!activeCompanyId && open,
+  });
+
   const form = useForm<DocumentFormValues>({
     resolver: zodResolver(documentSchema),
     defaultValues: {
@@ -76,6 +93,7 @@ export function DocumentFormDialog({
       description: "",
       access_level: "company",
       folder_id: null,
+      project_id: null,
     },
   });
 
@@ -86,6 +104,7 @@ export function DocumentFormDialog({
         description: document.description || "",
         access_level: document.access_level,
         folder_id: document.folder_id || null,
+        project_id: document.project_id || null,
       });
     } else {
       form.reset({
@@ -93,6 +112,7 @@ export function DocumentFormDialog({
         description: "",
         access_level: "company",
         folder_id: null,
+        project_id: null,
       });
     }
   }, [document, form]);
@@ -108,6 +128,7 @@ export function DocumentFormDialog({
           description: values.description || null,
           access_level: values.access_level,
           folder_id: values.folder_id || null,
+          project_id: values.project_id || null,
         })
         .eq("id", document.id);
 
@@ -219,6 +240,34 @@ export function DocumentFormDialog({
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="project_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Project</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || undefined}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="No project" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {projects.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.emoji} {project.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="flex justify-end gap-2 pt-4">
               <Button

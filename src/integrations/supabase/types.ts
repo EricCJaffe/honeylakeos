@@ -160,6 +160,7 @@ export type Database = {
           id: string
           mime_type: string | null
           name: string
+          project_id: string | null
           tags: Json
           updated_at: string
         }
@@ -175,6 +176,7 @@ export type Database = {
           id?: string
           mime_type?: string | null
           name: string
+          project_id?: string | null
           tags?: Json
           updated_at?: string
         }
@@ -190,6 +192,7 @@ export type Database = {
           id?: string
           mime_type?: string | null
           name?: string
+          project_id?: string | null
           tags?: Json
           updated_at?: string
         }
@@ -206,6 +209,13 @@ export type Database = {
             columns: ["folder_id"]
             isOneToOne: false
             referencedRelation: "folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -987,6 +997,7 @@ export type Database = {
           folder_id: string | null
           id: string
           is_pinned: boolean
+          project_id: string | null
           status: string
           tags: Json
           title: string
@@ -1002,6 +1013,7 @@ export type Database = {
           folder_id?: string | null
           id?: string
           is_pinned?: boolean
+          project_id?: string | null
           status?: string
           tags?: Json
           title: string
@@ -1017,6 +1029,7 @@ export type Database = {
           folder_id?: string | null
           id?: string
           is_pinned?: boolean
+          project_id?: string | null
           status?: string
           tags?: Json
           title?: string
@@ -1035,6 +1048,13 @@ export type Database = {
             columns: ["folder_id"]
             isOneToOne: false
             referencedRelation: "folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
