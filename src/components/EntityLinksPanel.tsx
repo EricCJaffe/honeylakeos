@@ -340,7 +340,8 @@ function AddLinkDialog({
 }
 
 export function EntityLinksPanel({ entityType, entityId, title = "Links" }: EntityLinksPanelProps) {
-  const { links, isLoading, createLink, deleteLink } = useEntityLinks(entityType, entityId);
+  const { links, isLoading, createLink, deleteLink, isModuleEnabled } = useEntityLinks(entityType, entityId);
+  const { isEntityModuleEnabled, loading: modulesLoading, getEnabledModuleKeys } = useCompanyModules();
 
   const handleAddLink = (toType: EntityType, toId: string, linkType: LinkType) => {
     createLink.mutate({ toType, toId, linkType });
@@ -350,6 +351,16 @@ export function EntityLinksPanel({ entityType, entityId, title = "Links" }: Enti
     deleteLink.mutate(linkId);
   };
 
+  // Check if there are any other modules enabled to link to
+  const enabledModuleKeys = getEnabledModuleKeys();
+  const hasLinkableModules = ENTITY_TYPES.some(t => {
+    const moduleKey = ENTITY_TO_MODULE_MAP[t.value];
+    return moduleKey && enabledModuleKeys.includes(moduleKey);
+  });
+
+  // Hide add button if source module is disabled or no linkable modules
+  const canAddLinks = isModuleEnabled && hasLinkableModules && !modulesLoading;
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -358,11 +369,19 @@ export function EntityLinksPanel({ entityType, entityId, title = "Links" }: Enti
             <Link2 className="h-4 w-4" />
             {title}
           </CardTitle>
-          <AddLinkDialog entityType={entityType} entityId={entityId} onAdd={handleAddLink} />
+          {canAddLinks && (
+            <AddLinkDialog entityType={entityType} entityId={entityId} onAdd={handleAddLink} />
+          )}
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
+        {!isModuleEnabled && !modulesLoading ? (
+          <div className="text-center py-6 text-sm text-muted-foreground">
+            <Lock className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p>Module disabled</p>
+            <p className="text-xs mt-1">Enable the {entityType} module to manage links</p>
+          </div>
+        ) : isLoading ? (
           <div className="flex items-center justify-center py-6">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "./useActiveCompany";
 import { useCompanyModules, ENTITY_TO_MODULE_MAP } from "./useCompanyModules";
+import { useAuditLog } from "./useAuditLog";
 import { toast } from "sonner";
 
 export type EntityType = "task" | "project" | "note" | "document" | "event";
@@ -32,6 +33,7 @@ export function useEntityLinks(entityType: EntityType, entityId: string | undefi
   const { activeCompanyId } = useActiveCompany();
   const { isEntityModuleEnabled, loading: modulesLoading } = useCompanyModules();
   const queryClient = useQueryClient();
+  const { log: logAudit } = useAuditLog();
 
   // Check if source entity's module is enabled
   const isSourceModuleEnabled = isEntityModuleEnabled(entityType);
@@ -79,6 +81,11 @@ export function useEntityLinks(entityType: EntityType, entityId: string | undefi
     }) => {
       if (!entityId || !activeCompanyId) throw new Error("Missing entity or company");
 
+      // Pre-check that source module is enabled
+      if (!isSourceModuleEnabled) {
+        throw new Error(`The ${entityType} module is currently disabled`);
+      }
+
       // Pre-check that target module is enabled (UI should prevent this, but double-check)
       if (!isEntityModuleEnabled(toType)) {
         throw new Error(`The ${toType} module is currently disabled`);
@@ -94,11 +101,20 @@ export function useEntityLinks(entityType: EntityType, entityId: string | undefi
       });
 
       if (error) throw error;
-      return data;
+      return { linkId: data, toType, toId, linkType };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["entity-links"] });
       toast.success("Link created");
+      
+      // Audit log the link creation
+      logAudit("link.created", "entity_link", result.linkId as string, {
+        from_type: entityType,
+        from_id: entityId,
+        to_type: result.toType,
+        to_id: result.toId,
+        link_type: result.linkType,
+      });
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to create link");
@@ -107,16 +123,30 @@ export function useEntityLinks(entityType: EntityType, entityId: string | undefi
 
   const deleteLink = useMutation({
     mutationFn: async (linkId: string) => {
+      // Find the link details before deletion for audit logging
+      const link = links.find(l => l.id === linkId);
+      
       const { data, error } = await supabase.rpc("delete_entity_link", {
         p_link_id: linkId,
       });
 
       if (error) throw error;
-      return data;
+      return { linkId, link };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["entity-links"] });
       toast.success("Link removed");
+      
+      // Audit log the link deletion
+      if (result.link) {
+        logAudit("link.deleted", "entity_link", result.linkId, {
+          from_type: result.link.from_type,
+          from_id: result.link.from_id,
+          to_type: result.link.to_type,
+          to_id: result.link.to_id,
+          link_type: result.link.link_type,
+        });
+      }
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to remove link");
