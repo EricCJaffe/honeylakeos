@@ -18,31 +18,39 @@ import {
   addDays,
   isWithinInterval
 } from "date-fns";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, MoreHorizontal, Repeat } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, MoreHorizontal, Repeat, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useRecurringEvents } from "@/hooks/useEventRecurrence";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { EventFormDialog } from "./EventFormDialog";
 import { EventOccurrenceActions } from "@/components/calendar/EventOccurrenceActions";
+import { EventTemplateList } from "@/components/calendar/EventTemplateList";
+import { TemplateFormDialog } from "@/components/templates/TemplateFormDialog";
+import { Template } from "@/hooks/useTemplates";
 import { cn } from "@/lib/utils";
 
 type ViewMode = "month" | "week" | "agenda";
+type PageTab = "calendar" | "templates";
 
 export default function CalendarPage() {
   const { activeCompanyId, loading: membershipLoading } = useActiveCompany();
   const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("month");
+  const [pageTab, setPageTab] = useState<PageTab>("calendar");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [editMode, setEditMode] = useState<"single" | "future" | "series">("series");
   const [occurrenceDate, setOccurrenceDate] = useState<Date | undefined>();
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+  const [templateToApply, setTemplateToApply] = useState<Template | null>(null);
 
   // Calculate range based on view mode
   const { rangeStart, rangeEnd } = useMemo(() => {
@@ -148,6 +156,7 @@ export default function CalendarPage() {
     setEditingEvent(null);
     setEditMode("series");
     setOccurrenceDate(undefined);
+    setTemplateToApply(null);
     setIsDialogOpen(true);
   };
 
@@ -156,7 +165,26 @@ export default function CalendarPage() {
     setEditingEvent(null);
     setEditMode("series");
     setOccurrenceDate(undefined);
+    setTemplateToApply(null);
     setIsDialogOpen(true);
+  };
+
+  const handleCreateFromTemplate = (template: Template) => {
+    setEditingEvent(null);
+    setEditMode("series");
+    setOccurrenceDate(undefined);
+    setTemplateToApply(template);
+    setIsDialogOpen(true);
+  };
+
+  const handleCreateTemplate = () => {
+    setEditingTemplate(null);
+    setTemplateDialogOpen(true);
+  };
+
+  const handleEditTemplate = (template: Template) => {
+    setEditingTemplate(template);
+    setTemplateDialogOpen(true);
   };
 
   const handleEventClick = (event: any, e: React.MouseEvent) => {
@@ -515,45 +543,72 @@ export default function CalendarPage() {
         onAction={handleCreate}
       />
 
-      <Card>
-        <CardContent className="p-4">
-          {/* View Mode Tabs & Navigation */}
-          <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={navigatePrevious}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <h2 className="text-lg font-semibold min-w-[200px] text-center">
-                {getHeaderTitle()}
-              </h2>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={navigateNext}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+      <Tabs value={pageTab} onValueChange={(v) => setPageTab(v as PageTab)} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="calendar" className="gap-1">
+            <CalendarIcon className="h-3.5 w-3.5" />
+            Calendar
+          </TabsTrigger>
+          <TabsTrigger value="templates" className="gap-1">
+            <FileText className="h-3.5 w-3.5" />
+            Templates
+          </TabsTrigger>
+        </TabsList>
 
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
-              <TabsList>
-                <TabsTrigger value="month">Month</TabsTrigger>
-                <TabsTrigger value="week">Week</TabsTrigger>
-                <TabsTrigger value="agenda">Agenda</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
+        <TabsContent value="calendar">
+          <Card>
+            <CardContent className="p-4">
+              {/* View Mode Tabs & Navigation */}
+              <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={navigatePrevious}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <h2 className="text-lg font-semibold min-w-[200px] text-center">
+                    {getHeaderTitle()}
+                  </h2>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={navigateNext}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
 
-          {/* Calendar Views */}
-          {viewMode === "month" && renderMonthView()}
-          {viewMode === "week" && renderWeekView()}
-          {viewMode === "agenda" && renderAgendaView()}
-        </CardContent>
-      </Card>
+                <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
+                  <TabsList>
+                    <TabsTrigger value="month">Month</TabsTrigger>
+                    <TabsTrigger value="week">Week</TabsTrigger>
+                    <TabsTrigger value="agenda">Agenda</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+
+              {/* Calendar Views */}
+              {viewMode === "month" && renderMonthView()}
+              {viewMode === "week" && renderWeekView()}
+              {viewMode === "agenda" && renderAgendaView()}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="templates">
+          <Card>
+            <CardContent className="p-0">
+              <EventTemplateList
+                onCreateFromTemplate={handleCreateFromTemplate}
+                onEditTemplate={handleEditTemplate}
+                onCreateTemplate={handleCreateTemplate}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <EventFormDialog
         open={isDialogOpen}
@@ -562,6 +617,14 @@ export default function CalendarPage() {
         defaultDate={selectedDate}
         editMode={editMode}
         occurrenceDate={occurrenceDate}
+        templateToApply={templateToApply}
+      />
+
+      <TemplateFormDialog
+        open={templateDialogOpen}
+        onOpenChange={setTemplateDialogOpen}
+        template={editingTemplate}
+        defaultType="event"
       />
     </div>
   );
