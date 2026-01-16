@@ -46,6 +46,9 @@ export const ENTITY_TO_MODULE_MAP: Record<string, ModuleKey> = {
   // External contacts are a shared system resource, not module-gated
   // They map to CRM for linking purposes but are always accessible
   external_contact: "crm",
+  // Coach profiles use the coaches module
+  coach_profile: "coaches",
+  coaches: "coaches",
 };
 
 interface UseCompanyModulesResult {

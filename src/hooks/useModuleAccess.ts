@@ -6,7 +6,8 @@ import { useMembership } from "@/lib/membership";
  * Module slugs that map to routes and database module records.
  * These should match the `slug` field in the `modules` table.
  */
-export type ModuleKey = 
+export type ModuleKey =
+  | "coaches"
   | "projects"
   | "tasks"
   | "calendar"

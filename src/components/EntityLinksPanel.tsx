@@ -40,6 +40,7 @@ const ENTITY_TYPES: { value: EntityType; label: string; icon: string }[] = [
   { value: "event", label: "Event", icon: "📅" },
   { value: "crm_client", label: "Client", icon: "🤝" },
   { value: "external_contact", label: "Contact", icon: "👤" },
+  { value: "coach_profile", label: "Coach/Partner", icon: "🎓" },
 ];
 
 const LINK_TYPES: { value: LinkType; label: string; color: string }[] = [

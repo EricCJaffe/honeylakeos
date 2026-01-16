@@ -76,6 +76,10 @@ const MODULE_QUERY_KEYS: Record<ModuleKey, string[][]> = {
     ["crm-clients"],
     ["crm-client"],
   ],
+  coaches: [
+    ["coach-profiles"],
+    ["coach-profile"],
+  ],
 };
 
 /**

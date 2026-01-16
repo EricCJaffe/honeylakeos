@@ -55,6 +55,60 @@ export type Database = {
           },
         ]
       }
+      coach_profiles: {
+        Row: {
+          archived_at: string | null
+          bio: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          external_contact_id: string
+          id: string
+          profile_type: string
+          specialties: Json | null
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          bio?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          external_contact_id: string
+          id?: string
+          profile_type?: string
+          specialties?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          bio?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          external_contact_id?: string
+          id?: string
+          profile_type?: string
+          specialties?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_profiles_external_contact_id_fkey"
+            columns: ["external_contact_id"]
+            isOneToOne: false
+            referencedRelation: "external_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           created_at: string
