@@ -1,8 +1,6 @@
 import * as React from "react";
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Edit, Repeat, X, Check } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Edit, Repeat, X, Check, FastForward } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +18,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { toast } from "sonner";
 import { useTaskOccurrenceActions } from "@/hooks/useTaskOccurrenceCompletions";
 
 interface TaskOccurrenceActionsProps {
@@ -29,6 +26,7 @@ interface TaskOccurrenceActionsProps {
   isCompleted?: boolean;
   onEditOccurrence: () => void;
   onEditSeries: () => void;
+  onEditFuture?: () => void;
   children: React.ReactNode;
 }
 
@@ -38,9 +36,11 @@ export function TaskOccurrenceActions({
   isCompleted = false,
   onEditOccurrence,
   onEditSeries,
+  onEditFuture,
   children,
 }: TaskOccurrenceActionsProps) {
   const [showSkipConfirm, setShowSkipConfirm] = useState(false);
+  const [showEditChoice, setShowEditChoice] = useState(false);
   const { skipOccurrence, completeOccurrence, uncompleteOccurrence } = useTaskOccurrenceActions();
 
   const handleComplete = async () => {
@@ -65,6 +65,11 @@ export function TaskOccurrenceActions({
     setShowSkipConfirm(false);
   };
 
+  const handleEditClick = () => {
+    // Show the edit choice modal instead of direct edit
+    setShowEditChoice(true);
+  };
+
   return (
     <>
       <DropdownMenu>
@@ -75,13 +80,9 @@ export function TaskOccurrenceActions({
             {isCompleted ? "Mark incomplete" : "Mark complete"}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={onEditOccurrence}>
+          <DropdownMenuItem onClick={handleEditClick}>
             <Edit className="h-4 w-4 mr-2" />
-            Edit this occurrence
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={onEditSeries}>
-            <Repeat className="h-4 w-4 mr-2" />
-            Edit entire series
+            Edit...
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -94,6 +95,71 @@ export function TaskOccurrenceActions({
         </DropdownMenuContent>
       </DropdownMenu>
 
+      {/* Edit Choice Modal */}
+      <AlertDialog open={showEditChoice} onOpenChange={setShowEditChoice}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Edit recurring task</AlertDialogTitle>
+            <AlertDialogDescription>
+              This is a recurring task. How would you like to edit it?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex flex-col gap-2 py-4">
+            <button
+              onClick={() => {
+                setShowEditChoice(false);
+                onEditOccurrence();
+              }}
+              className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors text-left"
+            >
+              <Edit className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="font-medium">This occurrence only</p>
+                <p className="text-sm text-muted-foreground">
+                  Only {occurrenceDate.toLocaleDateString()} will be changed
+                </p>
+              </div>
+            </button>
+            {onEditFuture && (
+              <button
+                onClick={() => {
+                  setShowEditChoice(false);
+                  onEditFuture();
+                }}
+                className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors text-left"
+              >
+                <FastForward className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">This and future occurrences</p>
+                  <p className="text-sm text-muted-foreground">
+                    Changes apply from {occurrenceDate.toLocaleDateString()} onwards
+                  </p>
+                </div>
+              </button>
+            )}
+            <button
+              onClick={() => {
+                setShowEditChoice(false);
+                onEditSeries();
+              }}
+              className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors text-left"
+            >
+              <Repeat className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="font-medium">All occurrences</p>
+                <p className="text-sm text-muted-foreground">
+                  Changes apply to the entire series
+                </p>
+              </div>
+            </button>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Skip Confirmation */}
       <AlertDialog open={showSkipConfirm} onOpenChange={setShowSkipConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>

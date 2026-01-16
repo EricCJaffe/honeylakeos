@@ -2001,6 +2001,19 @@ export type Database = {
         Args: { p_occurrence_date: string; p_task_id: string }
         Returns: string
       }
+      split_task_series_from_occurrence: {
+        Args: {
+          p_description?: string
+          p_due_date?: string
+          p_new_rrule: string
+          p_occurrence_start_at: string
+          p_priority?: string
+          p_series_task_id: string
+          p_status?: string
+          p_title?: string
+        }
+        Returns: Json
+      }
       storage_path_company_id: {
         Args: { object_name: string }
         Returns: string
