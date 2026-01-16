@@ -16,9 +16,8 @@ import {
   addWeeks,
   subWeeks,
   addDays,
-  isWithinInterval
 } from "date-fns";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, MoreHorizontal, Repeat, FileText, Filter, X, FolderKanban } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, MoreHorizontal, Repeat, FileText, X, FolderKanban, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useRecurringEvents } from "@/hooks/useEventRecurrence";
@@ -106,7 +105,11 @@ export default function CalendarPage() {
       if (!activeCompanyId) return [];
       const { data, error } = await supabase
         .from("events")
-        .select("*")
+        .select(`
+          *,
+          project:projects(id, name, emoji),
+          event_attendees(user_id)
+        `)
         .eq("company_id", activeCompanyId)
         .eq("is_recurring_template", false)
         .eq("is_recurrence_exception", false)
@@ -137,6 +140,8 @@ export default function CalendarPage() {
       occurrenceDate?: Date;
       event?: any;
       project_id?: string | null;
+      project?: { id: string; name: string; emoji: string } | null;
+      attendeeCount?: number;
     }> = [];
 
     // Add regular events
@@ -144,6 +149,7 @@ export default function CalendarPage() {
       events.push({
         ...event,
         isRecurring: false,
+        attendeeCount: event.event_attendees?.length || 0,
       });
     });
 
@@ -162,6 +168,8 @@ export default function CalendarPage() {
           occurrenceDate: new Date(occ.occurrence_date),
           event: occ.event,
           project_id: occ.event.project_id,
+          project: occ.event.project || null,
+          attendeeCount: 0, // Recurring events don't have attendees fetched here
         });
       }
     });
@@ -346,6 +354,7 @@ export default function CalendarPage() {
                         occurrenceDate={event.occurrenceDate!}
                         onEditOccurrence={() => handleEditOccurrence(event)}
                         onEditSeries={() => handleEditSeries(event)}
+                        onEditFuture={() => handleEditFuture(event)}
                       >
                         <div
                           className={cn(
@@ -427,6 +436,7 @@ export default function CalendarPage() {
                         occurrenceDate={event.occurrenceDate!}
                         onEditOccurrence={() => handleEditOccurrence(event)}
                         onEditSeries={() => handleEditSeries(event)}
+                        onEditFuture={() => handleEditFuture(event)}
                       >
                         <div
                           className="text-xs p-1.5 rounded cursor-pointer flex items-center gap-1"
@@ -521,18 +531,32 @@ export default function CalendarPage() {
                       style={{ backgroundColor: event.color || "#2563eb" }}
                     />
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium truncate">{event.title}</span>
                         {event.isRecurring && (
                           <Repeat className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         )}
+                        {event.project && (
+                          <Badge variant="outline" className="text-xs shrink-0">
+                            {event.project.emoji} {event.project.name}
+                          </Badge>
+                        )}
+                        {event.attendeeCount && event.attendeeCount > 0 && (
+                          <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                            <Users className="h-3 w-3" />
+                            {event.attendeeCount}
+                          </span>
+                        )}
                       </div>
-                      {!event.all_day && (
-                        <div className="text-sm text-muted-foreground">
-                          {format(new Date(event.start_at), "h:mm a")}
-                          {event.end_at && ` - ${format(new Date(event.end_at), "h:mm a")}`}
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        {!event.all_day && (
+                          <>
+                            {format(new Date(event.start_at), "h:mm a")}
+                            {event.end_at && ` - ${format(new Date(event.end_at), "h:mm a")}`}
+                          </>
+                        )}
+                        {event.all_day && <span className="text-xs">All day</span>}
+                      </div>
                     </div>
                     {event.isRecurring && (
                       <EventOccurrenceActions
@@ -540,6 +564,7 @@ export default function CalendarPage() {
                         occurrenceDate={event.occurrenceDate!}
                         onEditOccurrence={() => handleEditOccurrence(event)}
                         onEditSeries={() => handleEditSeries(event)}
+                        onEditFuture={() => handleEditFuture(event)}
                       >
                         <Button variant="ghost" size="icon" className="h-8 w-8">
                           <MoreHorizontal className="h-4 w-4" />
