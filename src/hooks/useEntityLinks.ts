@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "./useActiveCompany";
+import { useCompanyModules, ENTITY_TO_MODULE_MAP } from "./useCompanyModules";
 import { toast } from "sonner";
 
 export type EntityType = "task" | "project" | "note" | "document" | "event";
@@ -29,7 +30,11 @@ export interface LinkedEntity {
 
 export function useEntityLinks(entityType: EntityType, entityId: string | undefined) {
   const { activeCompanyId } = useActiveCompany();
+  const { isEntityModuleEnabled, loading: modulesLoading } = useCompanyModules();
   const queryClient = useQueryClient();
+
+  // Check if source entity's module is enabled
+  const isSourceModuleEnabled = isEntityModuleEnabled(entityType);
 
   const { data: links = [], isLoading } = useQuery({
     queryKey: ["entity-links", entityType, entityId, activeCompanyId],
@@ -58,7 +63,8 @@ export function useEntityLinks(entityType: EntityType, entityId: string | undefi
 
       return [...(fromLinks || []), ...(toLinks || [])] as EntityLink[];
     },
-    enabled: !!entityId && !!activeCompanyId,
+    // Only fetch if source module is enabled
+    enabled: !!entityId && !!activeCompanyId && isSourceModuleEnabled && !modulesLoading,
   });
 
   const createLink = useMutation({
@@ -72,6 +78,11 @@ export function useEntityLinks(entityType: EntityType, entityId: string | undefi
       linkType?: LinkType;
     }) => {
       if (!entityId || !activeCompanyId) throw new Error("Missing entity or company");
+
+      // Pre-check that target module is enabled (UI should prevent this, but double-check)
+      if (!isEntityModuleEnabled(toType)) {
+        throw new Error(`The ${toType} module is currently disabled`);
+      }
 
       const { data, error } = await supabase.rpc("create_entity_link", {
         p_company_id: activeCompanyId,
@@ -117,9 +128,13 @@ export function useEntityLinks(entityType: EntityType, entityId: string | undefi
     isLoading,
     createLink,
     deleteLink,
+    isModuleEnabled: isSourceModuleEnabled,
   };
 }
 
+/**
+ * Standard entity search (backward compatible)
+ */
 export function useEntitySearch(entityType: EntityType, searchQuery: string) {
   const { activeCompanyId } = useActiveCompany();
 
@@ -183,5 +198,79 @@ export function useEntitySearch(entityType: EntityType, searchQuery: string) {
       }));
     },
     enabled: !!activeCompanyId && searchQuery.length >= 2,
+  });
+}
+
+/**
+ * Module-aware entity search that only searches if the module is enabled.
+ * Returns empty results for disabled modules without throwing errors.
+ */
+export function useModuleAwareEntitySearch(entityType: EntityType, searchQuery: string) {
+  const { activeCompanyId } = useActiveCompany();
+  const { isEntityModuleEnabled, loading: modulesLoading } = useCompanyModules();
+
+  const isModuleEnabled = isEntityModuleEnabled(entityType);
+
+  return useQuery({
+    queryKey: ["entity-search", entityType, searchQuery, activeCompanyId, "module-aware"],
+    queryFn: async () => {
+      if (!activeCompanyId || !searchQuery || searchQuery.length < 2) return [];
+
+      let query;
+      switch (entityType) {
+        case "task":
+          query = supabase
+            .from("tasks")
+            .select("id, title")
+            .eq("company_id", activeCompanyId)
+            .ilike("title", `%${searchQuery}%`)
+            .limit(10);
+          break;
+        case "project":
+          query = supabase
+            .from("projects")
+            .select("id, name")
+            .eq("company_id", activeCompanyId)
+            .ilike("name", `%${searchQuery}%`)
+            .limit(10);
+          break;
+        case "note":
+          query = supabase
+            .from("notes")
+            .select("id, title")
+            .eq("company_id", activeCompanyId)
+            .ilike("title", `%${searchQuery}%`)
+            .limit(10);
+          break;
+        case "document":
+          query = supabase
+            .from("documents")
+            .select("id, name")
+            .eq("company_id", activeCompanyId)
+            .ilike("name", `%${searchQuery}%`)
+            .limit(10);
+          break;
+        case "event":
+          query = supabase
+            .from("events")
+            .select("id, title")
+            .eq("company_id", activeCompanyId)
+            .ilike("title", `%${searchQuery}%`)
+            .limit(10);
+          break;
+        default:
+          return [];
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      return (data || []).map((item: Record<string, unknown>) => ({
+        id: item.id as string,
+        name: (item.title || item.name) as string,
+      }));
+    },
+    // Only run search if module is enabled
+    enabled: !!activeCompanyId && searchQuery.length >= 2 && isModuleEnabled && !modulesLoading,
   });
 }

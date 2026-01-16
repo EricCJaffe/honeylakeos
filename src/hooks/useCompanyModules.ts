@@ -20,6 +20,29 @@ interface CompanyModule {
   module: Module;
 }
 
+/**
+ * Maps entity types to their corresponding module keys.
+ * Used to determine module enablement for cross-module linking.
+ */
+export const ENTITY_TO_MODULE_MAP: Record<string, ModuleKey> = {
+  task: "tasks",
+  tasks: "tasks",
+  project: "projects",
+  projects: "projects",
+  note: "notes",
+  notes: "notes",
+  document: "documents",
+  documents: "documents",
+  event: "calendar",
+  calendar: "calendar",
+  folder: "folders",
+  folders: "folders",
+  group: "groups",
+  groups: "groups",
+  location: "locations",
+  locations: "locations",
+};
+
 interface UseCompanyModulesResult {
   /** All available modules in the system */
   modules: Module[];
@@ -27,8 +50,12 @@ interface UseCompanyModulesResult {
   companyModules: CompanyModule[];
   /** Check if a specific module is enabled */
   isEnabled: (moduleKey: ModuleKey) => boolean;
+  /** Check if an entity type's module is enabled */
+  isEntityModuleEnabled: (entityType: string) => boolean;
   /** Get module status (active, trial, suspended, etc.) */
   getModuleStatus: (moduleKey: ModuleKey) => string | null;
+  /** Get list of enabled module keys */
+  getEnabledModuleKeys: () => ModuleKey[];
   /** Loading state */
   loading: boolean;
   /** Error if any */
@@ -125,6 +152,16 @@ export function useCompanyModules(): UseCompanyModulesResult {
   };
 
   /**
+   * Check if an entity type's corresponding module is enabled.
+   * Useful for cross-module linking and entity operations.
+   */
+  const isEntityModuleEnabled = (entityType: string): boolean => {
+    const moduleKey = ENTITY_TO_MODULE_MAP[entityType.toLowerCase()];
+    if (!moduleKey) return false;
+    return isEnabled(moduleKey);
+  };
+
+  /**
    * Get the status of a module for the current company.
    */
   const getModuleStatus = (moduleKey: ModuleKey): string | null => {
@@ -139,11 +176,40 @@ export function useCompanyModules(): UseCompanyModulesResult {
     return companyModule?.status || null;
   };
 
+  /**
+   * Get list of all enabled module keys for the current company.
+   */
+  const getEnabledModuleKeys = (): ModuleKey[] => {
+    const enabledKeys: ModuleKey[] = [];
+    
+    // Add core modules if company is active
+    if (activeCompanyId) {
+      enabledKeys.push(...CORE_MODULES);
+    }
+    
+    // Add enabled premium modules
+    companyModules.forEach((cm) => {
+      if (cm.module?.slug) {
+        const isActiveStatus = cm.status === "active" || cm.status === "trial";
+        const isExpired = cm.expires_at
+          ? new Date(cm.expires_at) < new Date()
+          : false;
+        if (isActiveStatus && !isExpired && !enabledKeys.includes(cm.module.slug as ModuleKey)) {
+          enabledKeys.push(cm.module.slug as ModuleKey);
+        }
+      }
+    });
+    
+    return enabledKeys;
+  };
+
   return {
     modules,
     companyModules,
     isEnabled,
+    isEntityModuleEnabled,
     getModuleStatus,
+    getEnabledModuleKeys,
     loading,
     error: error as Error | null,
   };
