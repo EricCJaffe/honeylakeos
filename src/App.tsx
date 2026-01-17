@@ -76,6 +76,11 @@ import ExternalContactsPage from "@/pages/app/contacts/ExternalContactsPage";
 import ExternalContactDetailPage from "@/pages/app/contacts/ExternalContactDetailPage";
 import CoachesPage from "@/pages/app/coaches/CoachesPage";
 import CoachDetailPage from "@/pages/app/coaches/CoachDetailPage";
+import CoachingPage from "@/pages/app/coaching/CoachingPage";
+import CoachHomePage from "@/pages/app/coaching/CoachHomePage";
+import CoachingClientDetailPage from "@/pages/app/coaching/ClientDetailPage";
+import RecommendationFormPage from "@/pages/app/coaching/RecommendationFormPage";
+import PlaybooksPage from "@/pages/app/coaching/PlaybooksPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -162,6 +167,11 @@ function App() {
                     <Route path="contacts/:contactId" element={<ModuleGuard moduleKey="external_contacts" moduleName="Contacts"><ExternalContactDetailPage /></ModuleGuard>} />
                     <Route path="coaches" element={<ModuleGuard moduleKey="coaches" moduleName="Coaches"><CoachesPage /></ModuleGuard>} />
                     <Route path="coaches/:coachId" element={<ModuleGuard moduleKey="coaches" moduleName="Coaches"><CoachDetailPage /></ModuleGuard>} />
+                    <Route path="coaching" element={<CoachingPage />} />
+                    <Route path="coaching/home" element={<CoachHomePage />} />
+                    <Route path="coaching/clients/:engagementId" element={<CoachingClientDetailPage />} />
+                    <Route path="coaching/recommendations/new" element={<RecommendationFormPage />} />
+                    <Route path="coaching/playbooks" element={<PlaybooksPage />} />
                     <Route path="settings" element={<SettingsPage />} />
                     <Route path="framework" element={<FrameworksPage />} />
                     <Route path="admin/company-console" element={<CompanyConsolePage />} />
