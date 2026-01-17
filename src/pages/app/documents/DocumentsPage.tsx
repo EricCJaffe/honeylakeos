@@ -3,15 +3,16 @@ import { useState, useRef, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { FileText, MoreHorizontal, Pencil, Trash2, Download, Upload, Lock, Users, Filter, X, Search, FolderInput, CheckSquare, Square } from "lucide-react";
+import { FileText, MoreHorizontal, Pencil, Trash2, Download, Upload, Lock, Users, Filter, X, FolderInput, Bookmark } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
-import { useFolderItemMutations } from "@/hooks/useFolders";
+import { useFolderItemMutations, useFolders, Folder } from "@/hooks/useFolders";
+import { useSavedViews, SavedView, SavedViewConfig } from "@/hooks/useSavedViews";
+import { useRecentDocuments } from "@/hooks/useRecentItems";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -31,7 +32,17 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { DocumentFormDialog } from "./DocumentFormDialog";
-import { FolderTreeSidebar, FolderBreadcrumb, MoveToFolderDialog, type FolderFilter } from "@/components/folders";
+import { 
+  FolderTreeSidebar, 
+  FolderBreadcrumb, 
+  MoveToFolderDialog, 
+  SavedViewsSection, 
+  RecentItemsSection, 
+  FolderSearchBar,
+  FolderPathDisplay,
+  type FolderFilter,
+  type RecentFilter,
+} from "@/components/folders";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -46,6 +57,7 @@ interface Document {
   description: string | null;
   created_by: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 export default function DocumentsPage() {
@@ -57,9 +69,12 @@ export default function DocumentsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingDocument, setEditingDocument] = useState<Document | null>(null);
   const [folderFilter, setFolderFilter] = useState<FolderFilter>("all");
+  const [recentFilter, setRecentFilter] = useState<RecentFilter>(null);
+  const [selectedViewId, setSelectedViewId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [projectFilter, setProjectFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchAllFolders, setSearchAllFolders] = useState(false);
   
   // Selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -67,6 +82,25 @@ export default function DocumentsPage() {
   const [moveTargetDoc, setMoveTargetDoc] = useState<Document | null>(null);
 
   const { moveDocuments } = useFolderItemMutations();
+  const { data: recentDocs = [] } = useRecentDocuments();
+  const { data: savedViews = [] } = useSavedViews("documents");
+  const { data: folderTree } = useFolders();
+
+  // Build folder map for path display
+  const folderMap = useMemo(() => {
+    const map = new Map<string, Folder>();
+    const addToMap = (folders: Folder[]) => {
+      for (const folder of folders) {
+        map.set(folder.id, folder);
+        if (folder.children?.length) addToMap(folder.children);
+      }
+    };
+    if (folderTree) {
+      addToMap(folderTree.companyFolders);
+      addToMap(folderTree.personalFolders);
+    }
+    return map;
+  }, [folderTree]);
 
   const { data: projects = [] } = useQuery({
     queryKey: ["projects", activeCompanyId],
@@ -84,21 +118,54 @@ export default function DocumentsPage() {
     enabled: !!activeCompanyId,
   });
 
+  // Determine effective filter from saved view or manual selections
+  const effectiveFilter = useMemo(() => {
+    if (selectedViewId) {
+      const view = savedViews.find((v) => v.id === selectedViewId);
+      if (view) {
+        return {
+          folder_id: view.config_json.folder_id ?? null,
+          unfiled: view.config_json.unfiled ?? false,
+          search: view.config_json.search ?? "",
+          search_all: view.config_json.search_all ?? false,
+        };
+      }
+    }
+    return {
+      folder_id: folderFilter !== "all" && folderFilter !== "unfiled" ? folderFilter : null,
+      unfiled: folderFilter === "unfiled",
+      search: searchQuery,
+      search_all: searchAllFolders,
+    };
+  }, [selectedViewId, savedViews, folderFilter, searchQuery, searchAllFolders]);
+
+  // Current config for save view
+  const currentViewConfig = useMemo((): SavedViewConfig => ({
+    folder_id: folderFilter !== "all" && folderFilter !== "unfiled" ? folderFilter : null,
+    unfiled: folderFilter === "unfiled",
+    search: searchQuery || undefined,
+    search_all: searchAllFolders || undefined,
+  }), [folderFilter, searchQuery, searchAllFolders]);
+
+  const hasActiveFilters = folderFilter !== "all" || searchQuery || searchAllFolders;
+
   const { data: documents = [], isLoading } = useQuery({
-    queryKey: ["documents", activeCompanyId, folderFilter, projectFilter],
+    queryKey: ["documents", activeCompanyId, effectiveFilter.folder_id, effectiveFilter.unfiled, projectFilter, effectiveFilter.search_all],
     queryFn: async () => {
       if (!activeCompanyId) return [];
       let query = supabase
         .from("documents")
         .select("*")
         .eq("company_id", activeCompanyId)
-        .order("created_at", { ascending: false });
+        .order("updated_at", { ascending: false });
 
-      // Apply folder filter
-      if (folderFilter === "unfiled") {
-        query = query.is("folder_id", null);
-      } else if (folderFilter !== "all") {
-        query = query.eq("folder_id", folderFilter);
+      // Apply folder filter (only if not searching all folders)
+      if (!effectiveFilter.search_all) {
+        if (effectiveFilter.unfiled) {
+          query = query.is("folder_id", null);
+        } else if (effectiveFilter.folder_id) {
+          query = query.eq("folder_id", effectiveFilter.folder_id);
+        }
       }
 
       if (projectFilter !== "all") {
@@ -114,14 +181,27 @@ export default function DocumentsPage() {
 
   // Client-side search filtering
   const filteredDocuments = useMemo(() => {
-    if (!searchQuery) return documents;
-    const query = searchQuery.toLowerCase();
+    // If showing recent, use that list
+    if (recentFilter === "recent") {
+      const recentIds = new Set(recentDocs.map((d) => d.id));
+      let result = documents.filter((doc) => recentIds.has(doc.id));
+      // Sort by recent order
+      result.sort((a, b) => {
+        const aIdx = recentDocs.findIndex((d) => d.id === a.id);
+        const bIdx = recentDocs.findIndex((d) => d.id === b.id);
+        return aIdx - bIdx;
+      });
+      return result;
+    }
+
+    const query = (effectiveFilter.search || "").toLowerCase();
+    if (!query) return documents;
     return documents.filter(
       (doc) =>
         doc.name.toLowerCase().includes(query) ||
         doc.description?.toLowerCase().includes(query)
     );
-  }, [documents, searchQuery]);
+  }, [documents, effectiveFilter.search, recentFilter, recentDocs]);
 
   // Calculate counts for folder sidebar
   const { itemCounts, unfiledCount, totalCount } = useMemo(() => {
@@ -140,7 +220,33 @@ export default function DocumentsPage() {
   }, [documents]);
 
   // Get current folder ID for breadcrumb
-  const currentFolderId = folderFilter !== "all" && folderFilter !== "unfiled" ? folderFilter : null;
+  const currentFolderId = effectiveFilter.folder_id;
+
+  const handleSelectView = (view: SavedView | null) => {
+    setSelectedViewId(view?.id ?? null);
+    setRecentFilter(null);
+    if (view) {
+      // Apply view filters to state
+      setFolderFilter(view.config_json.unfiled ? "unfiled" : view.config_json.folder_id ?? "all");
+      setSearchQuery(view.config_json.search ?? "");
+      setSearchAllFolders(view.config_json.search_all ?? false);
+    }
+  };
+
+  const handleSelectRecent = (filter: RecentFilter) => {
+    setRecentFilter(filter);
+    setSelectedViewId(null);
+    if (filter === "recent") {
+      setFolderFilter("all");
+      setSearchQuery("");
+    }
+  };
+
+  const handleSelectFolder = (filter: FolderFilter) => {
+    setFolderFilter(filter);
+    setRecentFilter(null);
+    setSelectedViewId(null);
+  };
 
   const uploadDocument = useMutation({
     mutationFn: async (file: File) => {
@@ -150,14 +256,12 @@ export default function DocumentsPage() {
       const fileExt = file.name.split(".").pop();
       const filePath = `${activeCompanyId}/${user.id}/${Date.now()}.${fileExt}`;
 
-      // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from("documents")
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
-      // Create document record - assign to current folder if one is selected
       const { error: insertError } = await supabase.from("documents").insert({
         company_id: activeCompanyId,
         name: file.name,
@@ -173,10 +277,11 @@ export default function DocumentsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["documents"] });
+      queryClient.invalidateQueries({ queryKey: ["recent-documents"] });
       toast.success("Document uploaded");
       setUploading(false);
     },
-    onError: (error) => {
+    onError: () => {
       toast.error("Failed to upload document");
       setUploading(false);
     },
@@ -184,19 +289,18 @@ export default function DocumentsPage() {
 
   const deleteDocument = useMutation({
     mutationFn: async (doc: Document) => {
-      // Delete from storage
       const { error: storageError } = await supabase.storage
         .from("documents")
         .remove([doc.file_path]);
 
       if (storageError) throw storageError;
 
-      // Delete record
       const { error } = await supabase.from("documents").delete().eq("id", doc.id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["documents"] });
+      queryClient.invalidateQueries({ queryKey: ["recent-documents"] });
       toast.success("Document deleted");
     },
     onError: () => {
@@ -294,7 +398,7 @@ export default function DocumentsPage() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const getFileIcon = (mimeType: string | null) => {
+  const getFileIcon = () => {
     return FileText;
   };
 
@@ -385,15 +489,20 @@ export default function DocumentsPage() {
               )}
             </div>
 
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search documents..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-[200px] pl-8"
-              />
-            </div>
+            <FolderSearchBar
+              searchQuery={searchQuery}
+              onSearchChange={(q) => {
+                setSearchQuery(q);
+                setSelectedViewId(null);
+              }}
+              searchAllFolders={searchAllFolders}
+              onSearchAllChange={(val) => {
+                setSearchAllFolders(val);
+                setSelectedViewId(null);
+              }}
+              placeholder="Search documents..."
+              showToggle={folderFilter !== "all"}
+            />
           </>
         )}
       </div>
@@ -403,12 +512,28 @@ export default function DocumentsPage() {
         <div className="hidden lg:block">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Folders</CardTitle>
+              <CardTitle className="text-sm">Browse</CardTitle>
             </CardHeader>
-            <CardContent className="p-2">
+            <CardContent className="p-2 space-y-1">
+              {/* Recent */}
+              <RecentItemsSection
+                selectedFilter={recentFilter}
+                onSelectFilter={handleSelectRecent}
+                recentCount={recentDocs.length}
+              />
+
+              {/* Saved Views */}
+              <SavedViewsSection
+                module="documents"
+                selectedViewId={selectedViewId}
+                onSelectView={handleSelectView}
+                currentConfig={hasActiveFilters ? currentViewConfig : undefined}
+              />
+
+              {/* Folder Tree */}
               <FolderTreeSidebar
-                selectedFilter={folderFilter}
-                onSelectFilter={setFolderFilter}
+                selectedFilter={recentFilter ? "all" : folderFilter}
+                onSelectFilter={handleSelectFolder}
                 itemCounts={itemCounts}
                 unfiledCount={unfiledCount}
                 totalCount={totalCount}
@@ -420,23 +545,46 @@ export default function DocumentsPage() {
         {/* Documents list */}
         <div>
           {/* Breadcrumb */}
-          {currentFolderId && (
+          {currentFolderId && !recentFilter && (
             <FolderBreadcrumb
               folderId={currentFolderId}
-              onNavigate={(id) => setFolderFilter(id ?? "all")}
+              onNavigate={(id) => handleSelectFolder(id ?? "all")}
               rootLabel="All Documents"
             />
+          )}
+
+          {/* Current view indicator */}
+          {(recentFilter || selectedViewId) && (
+            <div className="flex items-center gap-2 mb-4 text-sm">
+              {recentFilter && (
+                <Badge variant="secondary">
+                  Showing recent documents
+                  <button onClick={() => setRecentFilter(null)} className="ml-1">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {selectedViewId && (
+                <Badge variant="secondary">
+                  <Bookmark className="h-3 w-3 mr-1" />
+                  {savedViews.find((v) => v.id === selectedViewId)?.name}
+                  <button onClick={() => setSelectedViewId(null)} className="ml-1">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+            </div>
           )}
 
           {filteredDocuments.length === 0 ? (
             <EmptyState
               icon={FileText}
-              title={searchQuery || projectFilter !== "all" || folderFilter !== "all" ? "No matching documents" : "No documents yet"}
-              description={searchQuery || projectFilter !== "all" || folderFilter !== "all"
+              title={searchQuery || projectFilter !== "all" || folderFilter !== "all" || recentFilter ? "No matching documents" : "No documents yet"}
+              description={searchQuery || projectFilter !== "all" || folderFilter !== "all" || recentFilter
                 ? "Try adjusting your search or filters."
                 : "Upload your first document to get started."}
-              actionLabel={!searchQuery && projectFilter === "all" && folderFilter === "all" ? "Upload Document" : undefined}
-              onAction={!searchQuery && projectFilter === "all" && folderFilter === "all" ? () => fileInputRef.current?.click() : undefined}
+              actionLabel={!searchQuery && projectFilter === "all" && folderFilter === "all" && !recentFilter ? "Upload Document" : undefined}
+              onAction={!searchQuery && projectFilter === "all" && folderFilter === "all" && !recentFilter ? () => fileInputRef.current?.click() : undefined}
             />
           ) : (
             <div className="space-y-2">
@@ -450,8 +598,10 @@ export default function DocumentsPage() {
               </div>
 
               {filteredDocuments.map((doc, index) => {
-                const FileIcon = getFileIcon(doc.mime_type);
+                const FileIcon = getFileIcon();
                 const isSelected = selectedIds.has(doc.id);
+                const showFolderPath = searchAllFolders && doc.folder_id;
+                
                 return (
                   <motion.div
                     key={doc.id}
@@ -492,6 +642,12 @@ export default function DocumentsPage() {
                                 <span>{formatFileSize(doc.file_size)}</span>
                                 <span>•</span>
                                 <span>{format(new Date(doc.created_at), "MMM d, yyyy")}</span>
+                                {showFolderPath && (
+                                  <>
+                                    <span>•</span>
+                                    <FolderPathDisplay folderId={doc.folder_id} />
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>

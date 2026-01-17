@@ -4452,6 +4452,53 @@ export type Database = {
           },
         ]
       }
+      saved_views: {
+        Row: {
+          company_id: string | null
+          config_json: Json
+          created_at: string
+          id: string
+          is_personal: boolean
+          module: string
+          name: string
+          owner_user_id: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          config_json?: Json
+          created_at?: string
+          id?: string
+          is_personal?: boolean
+          module: string
+          name: string
+          owner_user_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          config_json?: Json
+          created_at?: string
+          id?: string
+          is_personal?: boolean
+          module?: string
+          name?: string
+          owner_user_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_views_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_memberships: {
         Row: {
           created_at: string
