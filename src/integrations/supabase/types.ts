@@ -4710,6 +4710,7 @@ export type Database = {
           id: string
           language_code: string | null
           published_at: string | null
+          published_by: string | null
           scope_type: Database["public"]["Enums"]["wf_scope_type"]
           site_id: string | null
           status: Database["public"]["Enums"]["wf_status"]
@@ -4726,6 +4727,7 @@ export type Database = {
           id?: string
           language_code?: string | null
           published_at?: string | null
+          published_by?: string | null
           scope_type?: Database["public"]["Enums"]["wf_scope_type"]
           site_id?: string | null
           status?: Database["public"]["Enums"]["wf_status"]
@@ -4742,6 +4744,7 @@ export type Database = {
           id?: string
           language_code?: string | null
           published_at?: string | null
+          published_by?: string | null
           scope_type?: Database["public"]["Enums"]["wf_scope_type"]
           site_id?: string | null
           status?: Database["public"]["Enums"]["wf_status"]
@@ -4775,8 +4778,11 @@ export type Database = {
       }
       wf_workflow_runs: {
         Row: {
+          cancellation_reason: string | null
+          cancelled_by: string | null
           company_context_id: string | null
           completed_at: string | null
+          definition_published_at: string | null
           id: string
           initiated_by_user_id: string | null
           metadata: Json | null
@@ -4786,8 +4792,11 @@ export type Database = {
           workflow_id: string
         }
         Insert: {
+          cancellation_reason?: string | null
+          cancelled_by?: string | null
           company_context_id?: string | null
           completed_at?: string | null
+          definition_published_at?: string | null
           id?: string
           initiated_by_user_id?: string | null
           metadata?: Json | null
@@ -4797,8 +4806,11 @@ export type Database = {
           workflow_id: string
         }
         Update: {
+          cancellation_reason?: string | null
+          cancelled_by?: string | null
           company_context_id?: string | null
           completed_at?: string | null
+          definition_published_at?: string | null
           id?: string
           initiated_by_user_id?: string | null
           metadata?: Json | null
@@ -4839,7 +4851,10 @@ export type Database = {
           id: string
           notes: string | null
           output_links: Json | null
+          reassigned_by: string | null
+          reassigned_from_user_id: string | null
           run_id: string
+          skip_reason: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["wf_step_run_status"]
           step_id: string
@@ -4852,7 +4867,10 @@ export type Database = {
           id?: string
           notes?: string | null
           output_links?: Json | null
+          reassigned_by?: string | null
+          reassigned_from_user_id?: string | null
           run_id: string
+          skip_reason?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["wf_step_run_status"]
           step_id: string
@@ -4865,7 +4883,10 @@ export type Database = {
           id?: string
           notes?: string | null
           output_links?: Json | null
+          reassigned_by?: string | null
+          reassigned_from_user_id?: string | null
           run_id?: string
+          skip_reason?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["wf_step_run_status"]
           step_id?: string
@@ -4953,6 +4974,7 @@ export type Database = {
           group_id: string | null
           id: string
           published_at: string | null
+          published_by: string | null
           scope_type: Database["public"]["Enums"]["wf_scope_type"]
           site_id: string | null
           status: Database["public"]["Enums"]["wf_status"]
@@ -4969,6 +4991,7 @@ export type Database = {
           group_id?: string | null
           id?: string
           published_at?: string | null
+          published_by?: string | null
           scope_type?: Database["public"]["Enums"]["wf_scope_type"]
           site_id?: string | null
           status?: Database["public"]["Enums"]["wf_status"]
@@ -4985,6 +5008,7 @@ export type Database = {
           group_id?: string | null
           id?: string
           published_at?: string | null
+          published_by?: string | null
           scope_type?: Database["public"]["Enums"]["wf_scope_type"]
           site_id?: string | null
           status?: Database["public"]["Enums"]["wf_status"]

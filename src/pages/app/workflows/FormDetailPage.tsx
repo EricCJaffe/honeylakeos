@@ -31,6 +31,9 @@ import { useMembership } from "@/lib/membership";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { FormFieldDialog } from "./FormFieldDialog";
 import { FormPreviewPanel } from "./FormPreviewPanel";
+import { DefinitionOwnershipPanel } from "@/components/workflows/DefinitionOwnershipPanel";
+import { SafeEditWarning } from "@/components/workflows/SafeEditWarning";
+import { useFormSubmissionCount } from "@/hooks/useWorkflowGovernance";
 import type { WfFormField } from "@/hooks/useWorkflowForms";
 
 const FIELD_TYPE_LABELS: Record<string, string> = {
@@ -65,13 +68,16 @@ export default function FormDetailPage() {
   const { data: fields, isLoading: fieldsLoading } = useWfFormFields(formId);
   const { data: stats } = useWfFormStats(formId);
   const { data: submissions } = useWfFormSubmissions({ formId });
+  const { data: submissionData } = useFormSubmissionCount(formId);
 
   const { publishForm, archiveForm, deleteForm, updateForm } = useWfFormMutations();
   const { deleteField, reorderFields } = useWfFormFieldMutations(formId ?? "");
 
   const canManage = isCompanyAdmin;
   const isDraft = form?.status === "draft";
+  const isPublished = form?.status === "published";
   const hasFields = fields && fields.length > 0;
+  const hasSubmissions = submissionData?.hasSubmissions ?? false;
 
   if (formLoading) {
     return (
@@ -184,10 +190,30 @@ export default function FormDetailPage() {
         </Alert>
       )}
 
+      {/* Safe Editing Warning */}
+      <SafeEditWarning
+        isPublished={isPublished}
+        hasSubmissions={hasSubmissions}
+        entityType="form"
+      />
+
       {showPreview ? (
         <FormPreviewPanel form={form} fields={fields ?? []} onClose={() => setShowPreview(false)} />
       ) : (
         <>
+          {/* Ownership Panel */}
+          <DefinitionOwnershipPanel
+            ownership={{
+              createdBy: form.created_by,
+              createdAt: form.created_at,
+              updatedAt: form.updated_at,
+              publishedAt: form.published_at,
+              publishedBy: (form as { published_by?: string }).published_by ?? null,
+              scopeType: form.scope_type,
+            }}
+            className="max-w-sm"
+          />
+
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
             <TabsList>
               <TabsTrigger value="builder">Form Builder</TabsTrigger>

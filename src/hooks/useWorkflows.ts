@@ -145,9 +145,14 @@ export function useWfWorkflowMutations() {
 
   const publishWorkflow = useMutation({
     mutationFn: async (id: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("wf_workflows")
-        .update({ status: "published", published_at: new Date().toISOString() })
+        .update({ 
+          status: "published", 
+          published_at: new Date().toISOString(),
+          published_by: user?.id,
+        })
         .eq("id", id)
         .select()
         .single();
@@ -383,7 +388,15 @@ export function useWfRunMutations() {
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Create the run
+      // Get workflow to capture definition_published_at for versioning
+      const { data: workflow, error: workflowError } = await supabase
+        .from("wf_workflows")
+        .select("published_at")
+        .eq("id", workflowId)
+        .single();
+      if (workflowError) throw workflowError;
+
+      // Create the run with definition version reference
       const { data: run, error: runError } = await supabase
         .from("wf_workflow_runs")
         .insert([{
@@ -393,6 +406,7 @@ export function useWfRunMutations() {
           target_employee_id: targetEmployeeId ?? null,
           status: "running" as const,
           metadata: JSON.parse(JSON.stringify(metadata ?? {})),
+          definition_published_at: workflow?.published_at ?? null,
         }])
         .select()
         .single();
