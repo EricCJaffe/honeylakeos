@@ -6,7 +6,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Users,
-  TrendingUp,
   Filter,
 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
@@ -23,7 +22,6 @@ import {
 } from "@/components/ui/select";
 import {
   useOpenTickets,
-  useSupportTickets,
   useTicketStats,
   useSupportTicketMutations,
 } from "@/hooks/useSupportCenter";
@@ -66,11 +64,6 @@ export default function TicketDashboardPage() {
     if (priorityFilter !== "all" && ticket.priority !== priorityFilter) return false;
     return true;
   });
-
-  const getUserName = (user: { email: string; raw_user_meta_data: Record<string, unknown> } | null) => {
-    if (!user) return "Unassigned";
-    return (user.raw_user_meta_data?.full_name as string) || user.email;
-  };
 
   const handleStatusChange = (ticketId: string, newStatus: TicketStatus) => {
     updateTicket.mutate({ id: ticketId, status: newStatus });
@@ -242,7 +235,6 @@ export default function TicketDashboardPage() {
                     <div className="min-w-0">
                       <p className="font-medium truncate">{ticket.subject}</p>
                       <p className="text-sm text-muted-foreground truncate">
-                        {getUserName(ticket.creator)} •{" "}
                         {ticket.company?.name || "No company"} •{" "}
                         {format(new Date(ticket.created_at), "MMM d")}
                       </p>
@@ -281,12 +273,10 @@ export default function TicketDashboardPage() {
                     <Badge
                       variant="outline"
                       className={
-                        ticket.assigned_user ? "" : "text-destructive border-destructive"
+                        ticket.assigned_to_user_id ? "" : "text-destructive border-destructive"
                       }
                     >
-                      {ticket.assigned_user
-                        ? getUserName(ticket.assigned_user)
-                        : "Unassigned"}
+                      {ticket.assigned_to_user_id ? "Assigned" : "Unassigned"}
                     </Badge>
                   </div>
                 </div>
