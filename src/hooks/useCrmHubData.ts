@@ -44,6 +44,16 @@ interface LinkedDocument extends LinkedItemBase {
   fileSize: number | null;
 }
 
+// Opportunities use a direct FK to crm_client, not entity_links system
+export interface LinkedOpportunity {
+  id: string;
+  name: string;
+  date: string;
+  status: "open" | "won" | "lost";
+  valueAmount: number | null;
+  stageName: string | null;
+}
+
 export type LinkedItem = LinkedTask | LinkedProject | LinkedEvent | LinkedNote | LinkedDocument;
 
 export interface CrmHubLinkedItems {
@@ -52,6 +62,7 @@ export interface CrmHubLinkedItems {
   events: LinkedEvent[];
   notes: LinkedNote[];
   documents: LinkedDocument[];
+  opportunities: LinkedOpportunity[];
 }
 
 export interface TimelineItem {
@@ -254,6 +265,36 @@ export function useCrmHubData(crmClientId: string | undefined) {
     enabled: !!crmClientId && (linkedIds.document?.length || 0) > 0 && isEnabled("documents"),
   });
 
+  // Fetch sales opportunities linked to this CRM client (direct FK, not entity_links)
+  const { data: linkedOpportunities = [], isLoading: opportunitiesLoading } = useQuery({
+    queryKey: ["crm-hub-opportunities", crmClientId, activeCompanyId],
+    queryFn: async () => {
+      if (!crmClientId || !activeCompanyId) return [];
+
+      const { data, error } = await supabase
+        .from("sales_opportunities")
+        .select(`
+          id, name, status, value_amount, created_at, updated_at,
+          stage:sales_pipeline_stages(name)
+        `)
+        .eq("company_id", activeCompanyId)
+        .eq("crm_client_id", crmClientId)
+        .order("updated_at", { ascending: false })
+        .limit(ITEMS_LIMIT);
+
+      if (error) throw error;
+      return (data || []).map((o) => ({
+        id: o.id,
+        name: o.name,
+        date: o.updated_at || o.created_at,
+        status: o.status as "open" | "won" | "lost",
+        valueAmount: o.value_amount,
+        stageName: o.stage?.name || null,
+      }));
+    },
+    enabled: !!crmClientId && !!activeCompanyId && isEnabled("sales"),
+  });
+
   // Build timeline from all linked items
   const timeline: TimelineItem[] = [
     ...linkedTasks.map((t) => ({
@@ -306,7 +347,11 @@ export function useCrmHubData(crmClientId: string | undefined) {
     events: linkedEvents,
     notes: linkedNotes,
     documents: linkedDocuments,
+    opportunities: linkedOpportunities,
   };
+
+  // Count opportunities separately since they use direct FK not entity_links
+  const opportunitiesCount = linkedOpportunities.length;
 
   const counts = {
     tasks: linkedIds.task?.length || 0,
@@ -314,7 +359,8 @@ export function useCrmHubData(crmClientId: string | undefined) {
     events: linkedIds.event?.length || 0,
     notes: linkedIds.note?.length || 0,
     documents: linkedIds.document?.length || 0,
-    total: links.length,
+    opportunities: opportunitiesCount,
+    total: links.length + opportunitiesCount,
   };
 
   const isLoading =
@@ -324,6 +370,7 @@ export function useCrmHubData(crmClientId: string | undefined) {
     eventsLoading ||
     notesLoading ||
     documentsLoading ||
+    opportunitiesLoading ||
     modulesLoading;
 
   return {

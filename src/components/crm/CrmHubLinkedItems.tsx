@@ -9,6 +9,8 @@ import {
   ChevronRight,
   Clock,
   AlertCircle,
+  TrendingUp,
+  DollarSign,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +29,7 @@ interface CrmHubLinkedItemsProps {
     events: number;
     notes: number;
     documents: number;
+    opportunities: number;
     total: number;
   };
   isLoading: boolean;
@@ -218,6 +221,39 @@ function DocumentItem({ document }: { document: any }) {
   );
 }
 
+function OpportunityItem({ opportunity }: { opportunity: any }) {
+  const statusColor = opportunity.status === "won" 
+    ? "text-green-600" 
+    : opportunity.status === "lost" 
+    ? "text-destructive" 
+    : "text-blue-600";
+
+  return (
+    <Link
+      to={`/app/sales/opportunities/${opportunity.id}`}
+      className="flex items-center gap-2 p-2 rounded-md hover:bg-accent transition-colors text-sm"
+    >
+      <TrendingUp className={cn("h-4 w-4", statusColor)} />
+      <span className="flex-1 truncate">{opportunity.name}</span>
+      {opportunity.valueAmount != null && (
+        <span className="text-xs text-muted-foreground flex items-center gap-1">
+          <DollarSign className="h-3 w-3" />
+          {opportunity.valueAmount.toLocaleString()}
+        </span>
+      )}
+      <Badge
+        variant={
+          opportunity.status === "won" ? "default" :
+          opportunity.status === "lost" ? "destructive" : "secondary"
+        }
+        className="text-xs capitalize"
+      >
+        {opportunity.stageName || opportunity.status}
+      </Badge>
+    </Link>
+  );
+}
+
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
@@ -311,6 +347,18 @@ export function CrmHubLinkedItems({
         renderItem={(item) => <DocumentItem key={item.id} document={item} />}
         emptyMessage="No linked documents yet"
         moduleKey="documents"
+        isEnabled={isEnabled}
+      />
+
+      <LinkedItemsSection
+        title="Sales Opportunities"
+        icon={<TrendingUp className="h-4 w-4" />}
+        items={linkedItems.opportunities}
+        totalCount={counts.opportunities}
+        viewAllPath={`/app/sales/pipelines?crm=${crmClientId}`}
+        renderItem={(item) => <OpportunityItem key={item.id} opportunity={item} />}
+        emptyMessage="No sales opportunities yet"
+        moduleKey="sales"
         isEnabled={isEnabled}
       />
     </div>
