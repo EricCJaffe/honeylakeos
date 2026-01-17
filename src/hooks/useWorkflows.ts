@@ -386,14 +386,14 @@ export function useWfRunMutations() {
       // Create the run
       const { data: run, error: runError } = await supabase
         .from("wf_workflow_runs")
-        .insert({
+        .insert([{
           workflow_id: workflowId,
-          initiated_by_user_id: user?.id,
-          company_context_id: activeCompanyId,
-          target_employee_id: targetEmployeeId,
-          status: "running",
-          metadata: metadata ?? {},
-        })
+          initiated_by_user_id: user?.id ?? null,
+          company_context_id: activeCompanyId ?? null,
+          target_employee_id: targetEmployeeId ?? null,
+          status: "running" as const,
+          metadata: JSON.parse(JSON.stringify(metadata ?? {})),
+        }])
         .select()
         .single();
       if (runError) throw runError;
