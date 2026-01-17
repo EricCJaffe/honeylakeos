@@ -392,8 +392,8 @@ export function useWfSubmissionMutations() {
           base.value_number = v.value;
         } else if (v.value instanceof Date) {
           base.value_date = v.value.toISOString().split("T")[0];
-        } else if (v.value !== null) {
-          base.value_json = v.value as object;
+        } else if (v.value !== null && typeof v.value === "object") {
+          base.value_json = JSON.parse(JSON.stringify(v.value));
         }
 
         return base;

@@ -139,13 +139,8 @@ export default function WorkflowRunsPage() {
               ? "No workflows have been executed yet."
               : `No ${statusFilter} workflow runs found.`
           }
-          action={
-            statusFilter !== "all" ? (
-              <Button variant="outline" onClick={() => setStatusFilter("all")}>
-                Clear Filter
-              </Button>
-            ) : undefined
-          }
+          actionLabel={statusFilter !== "all" ? "Clear Filter" : undefined}
+          onAction={statusFilter !== "all" ? () => setStatusFilter("all") : undefined}
         />
       )}
     </div>

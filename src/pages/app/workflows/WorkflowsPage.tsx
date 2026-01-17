@@ -135,14 +135,8 @@ export default function WorkflowsPage() {
               icon={Settings2}
               title="No workflows yet"
               description="Create your first workflow to automate processes like onboarding, approvals, and more."
-              action={
-                canManage ? (
-                  <Button onClick={() => setShowWorkflowDialog(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Workflow
-                  </Button>
-                ) : undefined
-              }
+              actionLabel={canManage ? "Create Workflow" : undefined}
+              onAction={canManage ? () => setShowWorkflowDialog(true) : undefined}
             />
           )}
         </TabsContent>
@@ -197,14 +191,8 @@ export default function WorkflowsPage() {
               icon={FileText}
               title="No forms yet"
               description="Create your first form to collect information from your team or clients."
-              action={
-                canManage ? (
-                  <Button onClick={() => setShowFormDialog(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Form
-                  </Button>
-                ) : undefined
-              }
+              actionLabel={canManage ? "Create Form" : undefined}
+              onAction={canManage ? () => setShowFormDialog(true) : undefined}
             />
           )}
         </TabsContent>
