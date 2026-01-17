@@ -1,37 +1,19 @@
+import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import {
-  LayoutDashboard,
-  FolderKanban,
-  CheckCircle2,
-  Calendar,
-  FileText,
-  StickyNote,
-  Settings,
-  Building2,
-  Shield,
-  Globe,
-  Workflow,
-  BookOpen,
-  Users,
-  Contact,
-  UserCheck,
-  CreditCard,
-  Compass,
-  HelpCircle,
-  Ticket,
-} from "lucide-react";
+import { Settings, ChevronRight, Building2 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Logo } from "@/components/Logo";
 import { useMembership } from "@/lib/membership";
 import { useCompanyModules } from "@/hooks/useCompanyModules";
+import { useCompanyTerminology } from "@/hooks/useCompanyTerminology";
+import { useNavState } from "@/hooks/useNavState";
 import { Badge } from "@/components/ui/badge";
-import { ModuleKey } from "@/hooks/useModuleAccess";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -39,53 +21,34 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-
-interface NavItem {
-  title: string;
-  url: string;
-  icon: React.ComponentType<{ className?: string }>;
-  moduleKey?: ModuleKey;
-}
-
-const coreNavItems: NavItem[] = [
-  { title: "Dashboard", url: "/app", icon: LayoutDashboard },
-  { title: "Projects", url: "/app/projects", icon: FolderKanban, moduleKey: "projects" },
-  { title: "Tasks", url: "/app/tasks", icon: CheckCircle2, moduleKey: "tasks" },
-  { title: "Calendar", url: "/app/calendar", icon: Calendar, moduleKey: "calendar" },
-];
-
-const knowledgeNavItems: NavItem[] = [
-  { title: "Documents", url: "/app/documents", icon: FileText, moduleKey: "documents" },
-  { title: "Notes", url: "/app/notes", icon: StickyNote, moduleKey: "notes" },
-];
-
-const crmNavItems: NavItem[] = [
-  { title: "CRM", url: "/app/crm", icon: Users, moduleKey: "crm" },
-  { title: "Contacts", url: "/app/contacts", icon: Contact, moduleKey: "crm" }, // Uses CRM module
-  { title: "Coaches", url: "/app/coaches", icon: UserCheck, moduleKey: "coaches" },
-];
-
-const premiumNavItems: NavItem[] = [
-  { title: "Framework", url: "/app/framework", icon: Compass },
-  { title: "Forms", url: "/app/forms", icon: Globe, moduleKey: "forms" },
-  { title: "Workflows", url: "/app/workflows", icon: Workflow, moduleKey: "workflows" },
-  { title: "LMS", url: "/app/lms", icon: BookOpen, moduleKey: "lms" },
-];
-
-const supportNavItems: NavItem[] = [
-  { title: "Help Center", url: "/app/support/kb", icon: HelpCircle },
-  { title: "My Tickets", url: "/app/support/tickets", icon: Ticket },
-];
+import {
+  navigationSections,
+  adminNavItems,
+  getSectionForRoute,
+  type NavItem,
+  type NavSection,
+} from "@/lib/navigationConfig";
+import { cn } from "@/lib/utils";
 
 export function AppSidebar() {
   const location = useLocation();
   const { state } = useSidebar();
   const { isCompanyAdmin, isSiteAdmin, isSuperAdmin, activeCompany } = useMembership();
   const { isEnabled, loading: modulesLoading } = useCompanyModules();
+  const { getPlural } = useCompanyTerminology();
+  const { isExpanded, toggleSection, expandSection } = useNavState();
   const collapsed = state === "collapsed";
 
   const showCompanyAdmin = isCompanyAdmin || isSiteAdmin || isSuperAdmin;
   const showSiteAdmin = isSiteAdmin || isSuperAdmin;
+
+  // Auto-expand section when navigating to a deep link
+  useEffect(() => {
+    const section = getSectionForRoute(location.pathname);
+    if (section) {
+      expandSection(section);
+    }
+  }, [location.pathname, expandSection]);
 
   const isActive = (path: string) => {
     if (path === "/app") {
@@ -95,50 +58,203 @@ export function AppSidebar() {
   };
 
   // Filter nav items based on module enablement
-  const filterByModuleAccess = (items: NavItem[]): NavItem[] => {
-    if (modulesLoading) return items; // Show all while loading
-    return items.filter(item => !item.moduleKey || isEnabled(item.moduleKey));
+  const filterItems = (items: NavItem[]): NavItem[] => {
+    if (modulesLoading) return items;
+    return items.filter((item) => !item.moduleKey || isEnabled(item.moduleKey));
   };
 
-  const visibleCoreItems = filterByModuleAccess(coreNavItems);
-  const visibleKnowledgeItems = filterByModuleAccess(knowledgeNavItems);
-  const visibleCrmItems = filterByModuleAccess(crmNavItems);
-  const visiblePremiumItems = filterByModuleAccess(premiumNavItems);
+  // Get the display title for a nav item (with terminology support)
+  const getItemTitle = (item: NavItem): string => {
+    if (item.terminologyKey) {
+      return getPlural(item.terminologyKey);
+    }
+    return item.title;
+  };
 
-  const renderNavGroup = (
-    label: string,
-    items: NavItem[]
-  ) => {
-    if (items.length === 0) return null;
-    
+  // Render a collapsible section
+  const renderSection = (section: NavSection) => {
+    const visibleItems = filterItems(section.items);
+
+    // Hide section if empty and configured to hide
+    if (section.hideIfEmpty && visibleItems.length === 0) {
+      return null;
+    }
+
+    // Dashboard section renders without collapsible
+    if (section.key === "dashboard") {
+      return (
+        <SidebarGroup key={section.key}>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {visibleItems.map((item) => (
+                <SidebarMenuItem key={item.key}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive(item.url)}
+                    tooltip={getItemTitle(item)}
+                  >
+                    <NavLink
+                      to={item.url}
+                      end={item.url === "/app"}
+                      className="flex items-center gap-3"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span>{getItemTitle(item)}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      );
+    }
+
+    const sectionExpanded = isExpanded(section.key);
+    const hasActiveItem = visibleItems.some((item) => isActive(item.url));
+
+    return (
+      <SidebarGroup key={section.key}>
+        <Collapsible open={sectionExpanded} onOpenChange={() => toggleSection(section.key)}>
+          <CollapsibleTrigger asChild>
+            <SidebarMenuButton
+              className={cn(
+                "w-full justify-between",
+                hasActiveItem && !sectionExpanded && "text-sidebar-accent-foreground"
+              )}
+              tooltip={section.title}
+            >
+              <div className="flex items-center gap-3">
+                <section.icon className="h-4 w-4" />
+                <span className="text-xs uppercase tracking-wider font-medium">
+                  {section.title}
+                </span>
+              </div>
+              <ChevronRight
+                className={cn(
+                  "h-4 w-4 transition-transform duration-200",
+                  sectionExpanded && "rotate-90"
+                )}
+              />
+            </SidebarMenuButton>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <SidebarGroupContent className="pl-4 pt-1">
+              <SidebarMenu>
+                {visibleItems.map((item) => (
+                  <SidebarMenuItem key={item.key}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.url)}
+                      tooltip={getItemTitle(item)}
+                    >
+                      <NavLink
+                        to={item.url}
+                        className="flex items-center gap-3"
+                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{getItemTitle(item)}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </SidebarGroup>
+    );
+  };
+
+  // Render admin section
+  const renderAdminSection = () => {
+    if (!showCompanyAdmin) return null;
+
+    const adminExpanded = isExpanded("admin");
+
     return (
       <SidebarGroup>
-        <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground/70">
-          {label}
-        </SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu>
-            {items.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive(item.url)}
-                  tooltip={item.title}
-                >
-                  <NavLink
-                    to={item.url}
-                    end={item.url === "/app"}
-                    className="flex items-center gap-3"
-                    activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+        <Collapsible open={adminExpanded} onOpenChange={() => toggleSection("admin")}>
+          <CollapsibleTrigger asChild>
+            <SidebarMenuButton
+              className="w-full justify-between"
+              tooltip="Administration"
+            >
+              <div className="flex items-center gap-3">
+                <Building2 className="h-4 w-4" />
+                <span className="text-xs uppercase tracking-wider font-medium">
+                  Admin
+                </span>
+              </div>
+              <ChevronRight
+                className={cn(
+                  "h-4 w-4 transition-transform duration-200",
+                  adminExpanded && "rotate-90"
+                )}
+              />
+            </SidebarMenuButton>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <SidebarGroupContent className="pl-4 pt-1">
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive(adminNavItems.companyConsole.url)}
+                    tooltip={adminNavItems.companyConsole.title}
                   >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroupContent>
+                    <NavLink
+                      to={adminNavItems.companyConsole.url}
+                      className="flex items-center gap-3"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    >
+                      <adminNavItems.companyConsole.icon className="h-4 w-4" />
+                      <span>{adminNavItems.companyConsole.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive(adminNavItems.plansUsage.url)}
+                    tooltip={adminNavItems.plansUsage.title}
+                  >
+                    <NavLink
+                      to={adminNavItems.plansUsage.url}
+                      className="flex items-center gap-3"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    >
+                      <adminNavItems.plansUsage.icon className="h-4 w-4" />
+                      <span>{adminNavItems.plansUsage.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                {showSiteAdmin && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(adminNavItems.siteConsole.url)}
+                      tooltip={adminNavItems.siteConsole.title}
+                    >
+                      <NavLink
+                        to={adminNavItems.siteConsole.url}
+                        className="flex items-center gap-3"
+                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      >
+                        <adminNavItems.siteConsole.icon className="h-4 w-4" />
+                        <span>{adminNavItems.siteConsole.title}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </CollapsibleContent>
+        </Collapsible>
       </SidebarGroup>
     );
   };
@@ -165,85 +281,11 @@ export function AppSidebar() {
       )}
 
       <SidebarContent className="px-2">
-        {/* Core Navigation */}
-        {renderNavGroup("Core", visibleCoreItems)}
+        {/* Render all navigation sections */}
+        {navigationSections.map(renderSection)}
 
-        {/* Knowledge Navigation */}
-        {renderNavGroup("Knowledge", visibleKnowledgeItems)}
-
-        {/* CRM Navigation */}
-        {renderNavGroup("CRM", visibleCrmItems)}
-
-        {/* Premium Modules - only show if any are enabled */}
-        {renderNavGroup("Premium", visiblePremiumItems)}
-
-        {/* Support */}
-        {renderNavGroup("Support", supportNavItems)}
-
-        {/* Administration - consolidated admin consoles */}
-        {showCompanyAdmin && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground/70">
-              Administration
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive("/app/admin/company-console")}
-                    tooltip="Company Console"
-                  >
-                    <NavLink
-                      to="/app/admin/company-console"
-                      className="flex items-center gap-3"
-                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    >
-                      <Building2 className="h-4 w-4" />
-                      <span>Company Console</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive("/app/admin/plans-usage")}
-                    tooltip="Plans & Usage"
-                  >
-                    <NavLink
-                      to="/app/admin/plans-usage"
-                      className="flex items-center gap-3"
-                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    >
-                      <CreditCard className="h-4 w-4" />
-                      <span>Plans & Usage</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-
-                {showSiteAdmin && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive("/app/admin/site-console")}
-                      tooltip="Site Console"
-                    >
-                      <NavLink
-                        to="/app/admin/site-console"
-                        className="flex items-center gap-3"
-                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                      >
-                        <Shield className="h-4 w-4" />
-                        <span>Site Console</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+        {/* Admin section */}
+        {renderAdminSection()}
       </SidebarContent>
 
       <SidebarFooter className="p-2">
