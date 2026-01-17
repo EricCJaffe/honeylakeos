@@ -91,6 +91,12 @@ import TicketDetailPage from "@/pages/app/support/TicketDetailPage";
 import TicketDashboardPage from "@/pages/app/support/TicketDashboardPage";
 import KbAdminPage from "@/pages/app/support/KbAdminPage";
 import NotFound from "@/pages/NotFound";
+import WorkflowsPage from "@/pages/app/workflows/WorkflowsPage";
+import WorkflowDetailPage from "@/pages/app/workflows/WorkflowDetailPage";
+import FormDetailPage from "@/pages/app/workflows/FormDetailPage";
+import FormSubmitPage from "@/pages/app/workflows/FormSubmitPage";
+import MyWorkPage from "@/pages/app/workflows/MyWorkPage";
+import WorkflowRunsPage from "@/pages/app/workflows/WorkflowRunsPage";
 
 const queryClient = new QueryClient();
 
@@ -156,8 +162,13 @@ function App() {
                     <Route path="notes/:noteId" element={<ModuleGuard moduleKey="notes" moduleName="Notes"><NoteDetailPage /></ModuleGuard>} />
                     <Route path="documents" element={<ModuleGuard moduleKey="documents" moduleName="Documents"><DocumentsPage /></ModuleGuard>} />
                     <Route path="documents/:documentId" element={<ModuleGuard moduleKey="documents" moduleName="Documents"><DocumentDetailPage /></ModuleGuard>} />
-                    <Route path="forms" element={<ModuleGuard moduleKey="forms" moduleName="Forms"><ModulePage /></ModuleGuard>} />
-                    <Route path="workflows" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><ModulePage /></ModuleGuard>} />
+                    <Route path="forms" element={<ModuleGuard moduleKey="forms" moduleName="Forms"><WorkflowsPage /></ModuleGuard>} />
+                    <Route path="workflows" element={<WorkflowsPage />} />
+                    <Route path="workflows/:workflowId" element={<WorkflowDetailPage />} />
+                    <Route path="workflows/forms/:formId" element={<FormDetailPage />} />
+                    <Route path="workflows/forms/:formId/submit" element={<FormSubmitPage />} />
+                    <Route path="workflows/my-work" element={<MyWorkPage />} />
+                    <Route path="workflows/runs" element={<WorkflowRunsPage />} />
                     <Route path="lms" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsPage /></ModuleGuard>} />
                     <Route path="lms/my-learning" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><MyLearningPage /></ModuleGuard>} />
                     <Route path="lms/paths" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsPathsPage /></ModuleGuard>} />
