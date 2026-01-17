@@ -55,6 +55,44 @@ export type Database = {
           },
         ]
       }
+      coach_assignments: {
+        Row: {
+          archived_at: string | null
+          assignment_role: Database["public"]["Enums"]["coach_assignment_role"]
+          coach_user_id: string
+          created_at: string
+          engagement_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          assignment_role?: Database["public"]["Enums"]["coach_assignment_role"]
+          coach_user_id: string
+          created_at?: string
+          engagement_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          assignment_role?: Database["public"]["Enums"]["coach_assignment_role"]
+          coach_user_id?: string
+          created_at?: string
+          engagement_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_assignments_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_engagements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_profiles: {
         Row: {
           archived_at: string | null
@@ -105,6 +143,224 @@ export type Database = {
             columns: ["external_contact_id"]
             isOneToOne: false
             referencedRelation: "external_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coach_recommendations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          converted_entity_id: string | null
+          converted_entity_type: string | null
+          created_at: string
+          description: string | null
+          engagement_id: string
+          id: string
+          payload: Json | null
+          recommendation_type: Database["public"]["Enums"]["recommendation_type"]
+          recommended_by: string
+          rejection_reason: string | null
+          status: Database["public"]["Enums"]["recommendation_status"]
+          target_company_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          converted_entity_id?: string | null
+          converted_entity_type?: string | null
+          created_at?: string
+          description?: string | null
+          engagement_id: string
+          id?: string
+          payload?: Json | null
+          recommendation_type: Database["public"]["Enums"]["recommendation_type"]
+          recommended_by: string
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["recommendation_status"]
+          target_company_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          converted_entity_id?: string | null
+          converted_entity_type?: string | null
+          created_at?: string
+          description?: string | null
+          engagement_id?: string
+          id?: string
+          payload?: Json | null
+          recommendation_type?: Database["public"]["Enums"]["recommendation_type"]
+          recommended_by?: string
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["recommendation_status"]
+          target_company_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_recommendations_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_recommendations_target_company_id_fkey"
+            columns: ["target_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_coach_profiles: {
+        Row: {
+          archived_at: string | null
+          bio: string | null
+          coach_role: Database["public"]["Enums"]["coaching_role"]
+          company_id: string
+          created_at: string
+          id: string
+          specialties: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          bio?: string | null
+          coach_role?: Database["public"]["Enums"]["coaching_role"]
+          company_id: string
+          created_at?: string
+          id?: string
+          specialties?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          bio?: string | null
+          coach_role?: Database["public"]["Enums"]["coaching_role"]
+          company_id?: string
+          created_at?: string
+          id?: string
+          specialties?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_coach_profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_engagements: {
+        Row: {
+          archived_at: string | null
+          client_company_id: string
+          coaching_org_company_id: string
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          engagement_status: Database["public"]["Enums"]["engagement_status"]
+          id: string
+          notes: string | null
+          primary_framework_id: string | null
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          client_company_id: string
+          coaching_org_company_id: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          engagement_status?: Database["public"]["Enums"]["engagement_status"]
+          id?: string
+          notes?: string | null
+          primary_framework_id?: string | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          client_company_id?: string
+          coaching_org_company_id?: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          engagement_status?: Database["public"]["Enums"]["engagement_status"]
+          id?: string
+          notes?: string | null
+          primary_framework_id?: string | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_engagements_client_company_id_fkey"
+            columns: ["client_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_engagements_coaching_org_company_id_fkey"
+            columns: ["coaching_org_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_engagements_primary_framework_id_fkey"
+            columns: ["primary_framework_id"]
+            isOneToOne: false
+            referencedRelation: "frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_org_settings: {
+        Row: {
+          branding_name: string | null
+          coach_manager_enabled: boolean
+          company_id: string
+          created_at: string
+          default_client_access_level: string
+          updated_at: string
+        }
+        Insert: {
+          branding_name?: string | null
+          coach_manager_enabled?: boolean
+          company_id: string
+          created_at?: string
+          default_client_access_level?: string
+          updated_at?: string
+        }
+        Update: {
+          branding_name?: string | null
+          coach_manager_enabled?: boolean
+          company_id?: string
+          created_at?: string
+          default_client_access_level?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_org_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -4005,6 +4261,18 @@ export type Database = {
           table_name: string
         }[]
       }
+      is_assigned_to_engagement: {
+        Args: { p_engagement_id: string; p_user_id?: string }
+        Returns: boolean
+      }
+      is_coach_manager_or_admin: {
+        Args: { p_company_id: string; p_user_id?: string }
+        Returns: boolean
+      }
+      is_coaching_org_member: {
+        Args: { p_company_id: string; p_user_id?: string }
+        Returns: boolean
+      }
       is_company_admin: { Args: { p_company_id: string }; Returns: boolean }
       is_company_member: { Args: { p_company_id: string }; Returns: boolean }
       is_group_manager: {
@@ -4088,12 +4356,15 @@ export type Database = {
       }
     }
     Enums: {
+      coach_assignment_role: "primary_coach" | "support_coach"
+      coaching_role: "coach" | "coach_manager" | "org_admin"
       company_status:
         | "active"
         | "inactive"
         | "archived"
         | "pending"
         | "suspended"
+      engagement_status: "active" | "paused" | "ended"
       framework_dashboard_audience:
         | "company_admin"
         | "leadership"
@@ -4116,6 +4387,14 @@ export type Database = {
         | "user"
         | "external"
       module_status: "active" | "trial" | "expired" | "suspended"
+      recommendation_status: "proposed" | "accepted" | "rejected" | "expired"
+      recommendation_type:
+        | "task"
+        | "project"
+        | "calendar_event"
+        | "note_prompt"
+        | "document_prompt"
+        | "framework_change_suggestion"
       site_role: "super_admin" | "site_admin"
     }
     CompositeTypes: {
@@ -4244,6 +4523,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      coach_assignment_role: ["primary_coach", "support_coach"],
+      coaching_role: ["coach", "coach_manager", "org_admin"],
       company_status: [
         "active",
         "inactive",
@@ -4251,6 +4532,7 @@ export const Constants = {
         "pending",
         "suspended",
       ],
+      engagement_status: ["active", "paused", "ended"],
       framework_dashboard_audience: [
         "company_admin",
         "leadership",
@@ -4276,6 +4558,15 @@ export const Constants = {
         "external",
       ],
       module_status: ["active", "trial", "expired", "suspended"],
+      recommendation_status: ["proposed", "accepted", "rejected", "expired"],
+      recommendation_type: [
+        "task",
+        "project",
+        "calendar_event",
+        "note_prompt",
+        "document_prompt",
+        "framework_change_suggestion",
+      ],
       site_role: ["super_admin", "site_admin"],
     },
   },
