@@ -10,6 +10,7 @@ import {
   RotateCcw,
   LayoutList,
   ClipboardList,
+  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +40,7 @@ import { useMembership } from "@/lib/membership";
 import { WorkflowFormDialog } from "./WorkflowFormDialog";
 import { FormBuilderDialog } from "./FormBuilderDialog";
 import { useAuditLog } from "@/hooks/useAuditLog";
+import { StarterTemplateLibrary } from "@/components/workflows/StarterTemplateLibrary";
 import type { WfStatus, WfScopeType } from "@/hooks/useWorkflowForms";
 
 export default function WorkflowsPage() {
