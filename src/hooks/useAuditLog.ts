@@ -145,7 +145,15 @@ export type AuditAction =
   | "folder.moved"
   | "folder.acl_added"
   | "folder.acl_updated"
-  | "folder.acl_removed";
+  | "folder.acl_removed"
+  // Onboarding actions
+  | "onboarding.started"
+  | "onboarding.completed"
+  | "onboarding.skipped"
+  // Framework actions
+  | "framework.cloned"
+  | "framework.adopted"
+  | "framework.updated";
 
 export type EntityType =
   | "employee"

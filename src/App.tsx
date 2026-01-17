@@ -54,6 +54,7 @@ import BootstrapPage from "@/pages/app/dev/BootstrapPage";
 import DevCompaniesPage from "@/pages/app/dev/DevCompaniesPage";
 import RlsTestPage from "@/pages/app/dev/RlsTestPage";
 import OnboardingPage from "@/pages/app/onboarding/OnboardingPage";
+import FrameworkOnboardingPage from "@/pages/app/onboarding/FrameworkOnboardingPage";
 import SettingsPage from "@/pages/app/settings/SettingsPage";
 import TemplatesPage from "@/pages/app/admin/TemplatesPage";
 import FrameworksPage from "@/pages/app/frameworks/FrameworksPage";
@@ -127,6 +128,7 @@ function App() {
                   >
                     <Route index element={<AppDashboard />} />
                     <Route path="onboarding" element={<OnboardingPage />} />
+                    <Route path="onboarding/framework" element={<FrameworkOnboardingPage />} />
                     <Route path="projects" element={<ModuleGuard moduleKey="projects" moduleName="Projects"><ProjectsPage /></ModuleGuard>} />
                     <Route path="projects/:projectId" element={<ModuleGuard moduleKey="projects" moduleName="Projects"><ProjectDetailPage /></ModuleGuard>} />
                     <Route path="tasks" element={<ModuleGuard moduleKey="tasks" moduleName="Tasks"><TasksPage /></ModuleGuard>} />
