@@ -2,6 +2,10 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useActiveCompany } from "@/hooks/useActiveCompany";
+import { useProjectPhases } from "@/hooks/useProjectPhases";
 import {
   Dialog,
   DialogContent,
@@ -40,6 +44,8 @@ const templateSchema = z.object({
   task_description: z.string().optional(),
   task_priority: z.string().optional(),
   task_status: z.string().optional(),
+  task_project_id: z.string().optional(),
+  task_phase_id: z.string().optional(),
   // Project fields
   project_name: z.string().optional(),
   project_description: z.string().optional(),
@@ -49,11 +55,17 @@ const templateSchema = z.object({
   note_title: z.string().optional(),
   note_content: z.string().optional(),
   note_color: z.string().optional(),
+  note_project_id: z.string().optional(),
+  // Document fields
+  document_name: z.string().optional(),
+  document_description: z.string().optional(),
+  document_project_id: z.string().optional(),
   // Event fields
   event_title: z.string().optional(),
   event_description: z.string().optional(),
   event_all_day: z.boolean().optional(),
   event_category: z.string().optional(),
+  event_project_id: z.string().optional(),
 });
 
 type TemplateFormValues = z.infer<typeof templateSchema>;
@@ -114,6 +126,7 @@ export function TemplateFormDialog({
   template,
   defaultType,
 }: TemplateFormDialogProps) {
+  const { activeCompanyId } = useActiveCompany();
   const { createTemplate, updateTemplate } = useTemplateMutations();
   const isEditing = !!template;
 
@@ -128,6 +141,27 @@ export function TemplateFormDialog({
   });
 
   const selectedType = form.watch("template_type");
+  const selectedTaskProjectId = form.watch("task_project_id");
+
+  // Fetch active projects for linking
+  const { data: projects = [] } = useQuery({
+    queryKey: ["active-projects", activeCompanyId],
+    queryFn: async () => {
+      if (!activeCompanyId) return [];
+      const { data, error } = await supabase
+        .from("projects")
+        .select("id, name, emoji")
+        .eq("company_id", activeCompanyId)
+        .eq("status", "active")
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!activeCompanyId && open,
+  });
+
+  // Fetch phases for selected project (tasks only)
+  const { data: phases = [] } = useProjectPhases(selectedTaskProjectId);
 
   React.useEffect(() => {
     if (template) {
@@ -308,6 +342,75 @@ export function TemplateFormDialog({
                       )}
                     />
                   </div>
+                  
+                  {/* Optional project linkage */}
+                  <FormField
+                    control={form.control}
+                    name="task_project_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Link to Project (optional)</FormLabel>
+                        <Select 
+                          onValueChange={(v) => {
+                            field.onChange(v === "__none__" ? "" : v);
+                            // Clear phase when project changes
+                            if (v === "__none__" || v !== field.value) {
+                              form.setValue("task_phase_id", "");
+                            }
+                          }} 
+                          value={field.value || "__none__"}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="No project" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="__none__">No project</SelectItem>
+                            {projects.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.emoji} {p.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Tasks created from this template will be linked to this project
+                        </FormDescription>
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Optional phase assignment (only when project selected) */}
+                  {selectedTaskProjectId && phases.length > 0 && (
+                    <FormField
+                      control={form.control}
+                      name="task_phase_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Assign to Phase (optional)</FormLabel>
+                          <Select 
+                            onValueChange={(v) => field.onChange(v === "__none__" ? "" : v)} 
+                            value={field.value || "__none__"}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="No phase" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="__none__">No phase</SelectItem>
+                              {phases.filter(p => p.status === "active").map((phase) => (
+                                <SelectItem key={phase.id} value={phase.id}>
+                                  {phase.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </div>
               )}
 
@@ -433,6 +536,34 @@ export function TemplateFormDialog({
                       </FormItem>
                     )}
                   />
+                  {/* Optional project linkage for notes */}
+                  <FormField
+                    control={form.control}
+                    name="note_project_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Link to Project (optional)</FormLabel>
+                        <Select 
+                          onValueChange={(v) => field.onChange(v === "__none__" ? "" : v)} 
+                          value={field.value || "__none__"}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="No project" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="__none__">No project</SelectItem>
+                            {projects.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.emoji} {p.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )}
+                  />
                 </div>
               )}
 
@@ -489,14 +620,93 @@ export function TemplateFormDialog({
                       )}
                     />
                   </div>
+                  {/* Optional project linkage for events */}
+                  <FormField
+                    control={form.control}
+                    name="event_project_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Link to Project (optional)</FormLabel>
+                        <Select 
+                          onValueChange={(v) => field.onChange(v === "__none__" ? "" : v)} 
+                          value={field.value || "__none__"}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="No project" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="__none__">No project</SelectItem>
+                            {projects.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.emoji} {p.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )}
+                  />
                 </div>
               )}
 
-              {/* Document - minimal fields */}
+              {/* Document Fields */}
               {selectedType === "document" && (
-                <p className="text-sm text-muted-foreground">
-                  Document templates can pre-fill name and description when uploading files.
-                </p>
+                <div className="space-y-3">
+                  <FormField
+                    control={form.control}
+                    name="document_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Default document name" {...field} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="document_description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Default description" rows={2} {...field} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  {/* Optional project linkage for documents */}
+                  <FormField
+                    control={form.control}
+                    name="document_project_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Link to Project (optional)</FormLabel>
+                        <Select 
+                          onValueChange={(v) => field.onChange(v === "__none__" ? "" : v)} 
+                          value={field.value || "__none__"}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="No project" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="__none__">No project</SelectItem>
+                            {projects.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.emoji} {p.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )}
+                  />
+                </div>
               )}
             </div>
 
