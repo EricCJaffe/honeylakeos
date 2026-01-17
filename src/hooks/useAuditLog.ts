@@ -104,11 +104,13 @@ export type AuditAction =
   | "form.created"
   | "form.updated"
   | "form.published"
+  | "form.unpublished"
   | "form.archived"
   | "form.deleted"
   | "form.field_added"
   | "form.field_updated"
   | "form.field_removed"
+  | "form.field_deleted"
   | "form.fields_reordered"
   | "form.submission_received"
   | "form.submission_deleted"
@@ -153,7 +155,19 @@ export type AuditAction =
   // Framework actions
   | "framework.cloned"
   | "framework.adopted"
-  // Workflow actions
+  | "framework.updated"
+  // Workflow definition actions
+  | "workflow.created"
+  | "workflow.updated"
+  | "workflow.published"
+  | "workflow.unpublished"
+  | "workflow.archived"
+  | "workflow.deleted"
+  | "workflow.step_added"
+  | "workflow.step_updated"
+  | "workflow.step_deleted"
+  | "workflow.steps_reordered"
+  // Workflow runtime actions
   | "workflow.run_started"
   | "workflow.run_completed"
   | "workflow.run_cancelled"
@@ -163,8 +177,7 @@ export type AuditAction =
   | "workflow.step_completed"
   | "workflow.step_rejected"
   | "workflow.step_skipped"
-  | "workflow.step_reassigned"
-  | "framework.updated";
+  | "workflow.step_reassigned";
 
 export type EntityType =
   | "employee"
@@ -197,6 +210,7 @@ export type EntityType =
   | "lms_quiz_attempt"
   | "lms_progress"
   | "folder"
+  | "workflow"
   | "workflow_run"
   | "workflow_step_run"
   | "folder_acl";
