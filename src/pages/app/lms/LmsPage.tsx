@@ -8,7 +8,9 @@ import {
   ClipboardList,
   Plus,
   ChevronRight,
-  Library
+  Library,
+  User,
+  BarChart3
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,7 +21,17 @@ import { useLmsLearningPaths } from "@/hooks/useLmsLearningPaths";
 import { useLmsLessons } from "@/hooks/useLmsLessons";
 import { useLmsPermissions } from "@/hooks/useModulePermissions";
 
-const quickLinks = [
+const learnerLinks = [
+  {
+    title: "My Learning",
+    description: "Your assigned content and progress",
+    icon: User,
+    href: "/app/lms/my-learning",
+    color: "bg-green-500/10 text-green-600 dark:text-green-400",
+  },
+];
+
+const adminLinks = [
   {
     title: "Learning Paths",
     description: "Structured sequences of courses",
@@ -51,7 +63,7 @@ const quickLinks = [
   {
     title: "Reports",
     description: "View progress and analytics",
-    icon: Library,
+    icon: BarChart3,
     href: "/app/lms/reports",
     color: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
   },
@@ -67,6 +79,9 @@ export default function LmsPage() {
   const publishedPaths = paths.filter(p => p.status === "published");
   const publishedLessons = lessons.filter(l => l.status === "published");
 
+  // Combine links: learner links always shown, admin links for admins
+  const quickLinks = [...learnerLinks, ...(permissions.canAdmin ? adminLinks : [])];
+
   return (
     <div className="p-6 lg:p-8 space-y-8">
       <PageHeader 
@@ -75,7 +90,7 @@ export default function LmsPage() {
       />
 
       {/* Quick Links Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {quickLinks.map((link, index) => (
           <motion.div
             key={link.href}

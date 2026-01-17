@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { ModuleGuard } from "@/components/ModuleGuard";
 import { EntityLinksPanel } from "@/components/EntityLinksPanel";
+import { CrmLearningPanel } from "@/components/lms/CrmLearningPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +40,7 @@ import {
   useCrmClients,
   getCrmClientDisplayName,
 } from "@/hooks/useCrmClients";
+import { useCompanyModules } from "@/hooks/useCompanyModules";
 import { CrmFormDialog } from "./CrmFormDialog";
 import { format } from "date-fns";
 
@@ -82,6 +84,8 @@ function CrmDetailContent() {
   const navigate = useNavigate();
   const { getSingular } = useCompanyTerminology();
   const clientTerm = getSingular("crm_client");
+  const { isEnabled } = useCompanyModules();
+  const lmsEnabled = isEnabled("lms");
 
   const { data: client, isLoading, error } = useCrmClient(id);
   const { archiveClient, unarchiveClient, deleteClient } = useCrmClients();
@@ -257,6 +261,13 @@ function CrmDetailContent() {
         <div className="md:col-span-2">
           <EntityLinksPanel entityType="crm_client" entityId={client.id} />
         </div>
+
+        {/* LMS Learning Activity - only show if LMS enabled */}
+        {lmsEnabled && (
+          <div className="md:col-span-2">
+            <CrmLearningPanel crmClientId={client.id} />
+          </div>
+        )}
 
         {/* Metadata */}
         <Card className="md:col-span-2">
