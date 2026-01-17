@@ -540,6 +540,61 @@ export type Database = {
           },
         ]
       }
+      company_onboarding_state: {
+        Row: {
+          coach_engagement_id: string | null
+          company_id: string
+          completed_at: string | null
+          completed_steps: string[]
+          created_at: string
+          current_step: string
+          framework_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          coach_engagement_id?: string | null
+          company_id: string
+          completed_at?: string | null
+          completed_steps?: string[]
+          created_at?: string
+          current_step?: string
+          framework_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          coach_engagement_id?: string | null
+          company_id?: string
+          completed_at?: string | null
+          completed_steps?: string[]
+          created_at?: string
+          current_step?: string
+          framework_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_onboarding_state_coach_engagement_id_fkey"
+            columns: ["coach_engagement_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_onboarding_state_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_onboarding_state_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_terminology: {
         Row: {
           company_id: string
