@@ -58,11 +58,8 @@ function SalesContent() {
           icon={Target}
           title="No Sales Pipeline"
           description="Create a sales pipeline to start tracking opportunities and deals."
-          action={
-            <Button onClick={() => createDefaultPipeline.mutate()} disabled={createDefaultPipeline.isPending}>
-              {createDefaultPipeline.isPending ? "Creating..." : "Create Default Pipeline"}
-            </Button>
-          }
+          actionLabel={createDefaultPipeline.isPending ? "Creating..." : "Create Default Pipeline"}
+          onAction={() => createDefaultPipeline.mutate()}
         />
       </div>
     );
@@ -169,7 +166,7 @@ function SalesContent() {
 
 export default function SalesPage() {
   return (
-    <ModuleGuard moduleKey="sales">
+    <ModuleGuard moduleKey="sales" moduleName="Sales">
       <SalesContent />
     </ModuleGuard>
   );

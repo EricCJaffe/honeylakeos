@@ -78,12 +78,8 @@ function PipelinesContent() {
           icon={Layers}
           title="No Pipelines"
           description="Create a pipeline to organize your sales stages."
-          action={
-            <Button onClick={() => setShowForm(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Pipeline
-            </Button>
-          }
+          actionLabel="Create Pipeline"
+          onAction={() => setShowForm(true)}
         />
       ) : (
         <motion.div
@@ -202,7 +198,7 @@ function PipelineCard({
 
 export default function PipelinesPage() {
   return (
-    <ModuleGuard moduleKey="sales">
+    <ModuleGuard moduleKey="sales" moduleName="Sales">
       <PipelinesContent />
     </ModuleGuard>
   );

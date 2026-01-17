@@ -89,7 +89,23 @@ const MODULE_QUERY_KEYS: Record<ModuleKey, string[][]> = {
     ["coach-profiles"],
     ["coach-profile"],
   ],
-  // external_contacts uses crm module, query keys handled under crm
+  sales: [
+    ["sales_pipelines"],
+    ["sales_pipeline"],
+    ["sales_pipeline_stages"],
+    ["sales_opportunities"],
+    ["sales_opportunity"],
+    ["sales_campaigns"],
+    ["sales_campaign"],
+  ],
+  donors: [
+    ["donor-profiles"],
+    ["donor-profile"],
+    ["donations"],
+    ["donation"],
+    ["donor-pledges"],
+    ["donor-campaigns"],
+  ],
 };
 
 /**
