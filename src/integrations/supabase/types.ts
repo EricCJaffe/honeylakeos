@@ -3916,6 +3916,289 @@ export type Database = {
           },
         ]
       }
+      sales_campaigns: {
+        Row: {
+          archived_at: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          name: string
+          start_date: string | null
+          type: Database["public"]["Enums"]["campaign_type"]
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name: string
+          start_date?: string | null
+          type?: Database["public"]["Enums"]["campaign_type"]
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name?: string
+          start_date?: string | null
+          type?: Database["public"]["Enums"]["campaign_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_campaigns_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_opportunities: {
+        Row: {
+          closed_at: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          crm_client_id: string | null
+          expected_close_date: string | null
+          id: string
+          lost_reason: string | null
+          name: string
+          owner_user_id: string | null
+          pipeline_id: string
+          source_campaign_id: string | null
+          stage_id: string
+          status: Database["public"]["Enums"]["opportunity_status"]
+          updated_at: string
+          value_amount: number | null
+        }
+        Insert: {
+          closed_at?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          crm_client_id?: string | null
+          expected_close_date?: string | null
+          id?: string
+          lost_reason?: string | null
+          name: string
+          owner_user_id?: string | null
+          pipeline_id: string
+          source_campaign_id?: string | null
+          stage_id: string
+          status?: Database["public"]["Enums"]["opportunity_status"]
+          updated_at?: string
+          value_amount?: number | null
+        }
+        Update: {
+          closed_at?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          crm_client_id?: string | null
+          expected_close_date?: string | null
+          id?: string
+          lost_reason?: string | null
+          name?: string
+          owner_user_id?: string | null
+          pipeline_id?: string
+          source_campaign_id?: string | null
+          stage_id?: string
+          status?: Database["public"]["Enums"]["opportunity_status"]
+          updated_at?: string
+          value_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_opportunities_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_opportunities_crm_client_id_fkey"
+            columns: ["crm_client_id"]
+            isOneToOne: false
+            referencedRelation: "crm_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_opportunities_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "sales_pipelines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_opportunities_source_campaign_id_fkey"
+            columns: ["source_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "sales_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_opportunities_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "sales_pipeline_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_opportunity_stage_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          from_stage_id: string | null
+          id: string
+          opportunity_id: string
+          to_stage_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          from_stage_id?: string | null
+          id?: string
+          opportunity_id: string
+          to_stage_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          from_stage_id?: string | null
+          id?: string
+          opportunity_id?: string
+          to_stage_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_opportunity_stage_history_from_stage_id_fkey"
+            columns: ["from_stage_id"]
+            isOneToOne: false
+            referencedRelation: "sales_pipeline_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_opportunity_stage_history_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "sales_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_opportunity_stage_history_to_stage_id_fkey"
+            columns: ["to_stage_id"]
+            isOneToOne: false
+            referencedRelation: "sales_pipeline_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_pipeline_stages: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          id: string
+          is_closed_lost: boolean
+          is_closed_won: boolean
+          name: string
+          pipeline_id: string
+          probability_percent: number | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          is_closed_lost?: boolean
+          is_closed_won?: boolean
+          name: string
+          pipeline_id: string
+          probability_percent?: number | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          is_closed_lost?: boolean
+          is_closed_won?: boolean
+          name?: string
+          pipeline_id?: string
+          probability_percent?: number | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_pipeline_stages_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "sales_pipelines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_pipelines: {
+        Row: {
+          archived_at: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_default: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_pipelines_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_memberships: {
         Row: {
           created_at: string
@@ -5348,6 +5631,7 @@ export type Database = {
       }
     }
     Enums: {
+      campaign_type: "email" | "event" | "referral" | "content" | "other"
       coach_assignment_role: "primary_coach" | "support_coach"
       coaching_role: "coach" | "coach_manager" | "org_admin"
       company_status:
@@ -5380,6 +5664,7 @@ export type Database = {
         | "user"
         | "external"
       module_status: "active" | "trial" | "expired" | "suspended"
+      opportunity_status: "open" | "won" | "lost"
       plan_status: "active" | "grace" | "expired" | "cancelled"
       plan_tier:
         | "starter"
@@ -5584,6 +5869,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      campaign_type: ["email", "event", "referral", "content", "other"],
       coach_assignment_role: ["primary_coach", "support_coach"],
       coaching_role: ["coach", "coach_manager", "org_admin"],
       company_status: [
@@ -5620,6 +5906,7 @@ export const Constants = {
         "external",
       ],
       module_status: ["active", "trial", "expired", "suspended"],
+      opportunity_status: ["open", "won", "lost"],
       plan_status: ["active", "grace", "expired", "cancelled"],
       plan_tier: [
         "starter",
