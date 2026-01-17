@@ -456,6 +456,47 @@ export type Database = {
           },
         ]
       }
+      company_entitlement_overrides: {
+        Row: {
+          company_id: string
+          created_at: string
+          entitlement_key: string
+          entitlement_value: Json
+          expires_at: string | null
+          granted_by: string | null
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          entitlement_key: string
+          entitlement_value: Json
+          expires_at?: string | null
+          granted_by?: string | null
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          entitlement_key?: string
+          entitlement_value?: Json
+          expires_at?: string | null
+          granted_by?: string | null
+          id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_entitlement_overrides_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_frameworks: {
         Row: {
           active_framework_id: string
@@ -591,6 +632,62 @@ export type Database = {
             columns: ["framework_id"]
             isOneToOne: false
             referencedRelation: "frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_plans: {
+        Row: {
+          company_id: string
+          created_at: string
+          expires_at: string | null
+          grace_period_days: number | null
+          id: string
+          metadata: Json | null
+          plan_tier: Database["public"]["Enums"]["plan_tier"]
+          plan_type: Database["public"]["Enums"]["plan_type"]
+          started_at: string
+          status: Database["public"]["Enums"]["plan_status"]
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          expires_at?: string | null
+          grace_period_days?: number | null
+          id?: string
+          metadata?: Json | null
+          plan_tier: Database["public"]["Enums"]["plan_tier"]
+          plan_type: Database["public"]["Enums"]["plan_type"]
+          started_at?: string
+          status?: Database["public"]["Enums"]["plan_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          expires_at?: string | null
+          grace_period_days?: number | null
+          id?: string
+          metadata?: Json | null
+          plan_tier?: Database["public"]["Enums"]["plan_tier"]
+          plan_type?: Database["public"]["Enums"]["plan_type"]
+          started_at?: string
+          status?: Database["public"]["Enums"]["plan_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_plans_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -3268,6 +3365,33 @@ export type Database = {
           },
         ]
       }
+      plan_entitlements: {
+        Row: {
+          created_at: string
+          entitlement_key: string
+          entitlement_value: Json
+          id: string
+          plan_tier: Database["public"]["Enums"]["plan_tier"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entitlement_key: string
+          entitlement_value: Json
+          id?: string
+          plan_tier: Database["public"]["Enums"]["plan_tier"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entitlement_key?: string
+          entitlement_value?: Json
+          id?: string
+          plan_tier?: Database["public"]["Enums"]["plan_tier"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           active_company_id: string | null
@@ -4470,6 +4594,15 @@ export type Database = {
         | "user"
         | "external"
       module_status: "active" | "trial" | "expired" | "suspended"
+      plan_status: "active" | "grace" | "expired" | "cancelled"
+      plan_tier:
+        | "starter"
+        | "growth"
+        | "scale"
+        | "solo_coach"
+        | "coaching_team"
+        | "coaching_firm"
+      plan_type: "company" | "coach_org"
       recommendation_status: "proposed" | "accepted" | "rejected" | "expired"
       recommendation_type:
         | "task"
@@ -4642,6 +4775,16 @@ export const Constants = {
         "external",
       ],
       module_status: ["active", "trial", "expired", "suspended"],
+      plan_status: ["active", "grace", "expired", "cancelled"],
+      plan_tier: [
+        "starter",
+        "growth",
+        "scale",
+        "solo_coach",
+        "coaching_team",
+        "coaching_firm",
+      ],
+      plan_type: ["company", "coach_org"],
       recommendation_status: ["proposed", "accepted", "rejected", "expired"],
       recommendation_type: [
         "task",
