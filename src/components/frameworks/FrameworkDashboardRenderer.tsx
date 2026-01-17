@@ -5,6 +5,7 @@ import {
   useCompanyActiveFramework,
   FrameworkDashboard,
   FrameworkDashboardSection,
+  FrameworkDashboardAudience,
 } from "@/hooks/useFrameworks";
 import { useCompanyModules } from "@/hooks/useCompanyModules";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -311,7 +312,7 @@ export function FrameworkDashboardRenderer({
         query = query.eq("key", dashboardKey);
       }
       if (audience) {
-        query = query.eq("audience", audience);
+        query = query.eq("audience", audience as FrameworkDashboardAudience);
       }
 
       const { data: dashboards } = await query.order("sort_order").limit(1);
