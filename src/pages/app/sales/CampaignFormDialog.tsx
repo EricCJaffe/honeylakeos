@@ -17,7 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextField } from "@/components/ui/rich-text-field";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -195,9 +195,14 @@ export function CampaignFormDialog({ open, onOpenChange, campaign }: CampaignFor
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Campaign details..." rows={3} {...field} />
+                    <RichTextField
+                      label="Description"
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Campaign details..."
+                      minHeight="80px"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

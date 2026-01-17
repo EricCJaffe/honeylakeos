@@ -16,7 +16,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextField } from "@/components/ui/rich-text-field";
 import { Button } from "@/components/ui/button";
 import { useExternalContactMutations, ExternalContact } from "@/hooks/useExternalContacts";
 import { toast } from "sonner";
@@ -240,11 +240,12 @@ export function ExternalContactFormDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <Textarea
+                      <RichTextField
+                        label="Notes"
+                        value={field.value}
+                        onChange={field.onChange}
                         placeholder="Additional notes about this contact..."
-                        className="resize-none"
-                        rows={3}
-                        {...field}
+                        minHeight="80px"
                       />
                     </FormControl>
                     <FormMessage />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RichTextField } from "@/components/ui/rich-text-field";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -74,14 +75,14 @@ export default function KbAdminPage() {
   const { data: articles, isLoading: articlesLoading } = useKbArticles();
   const { createArticle, publishArticle, archiveArticle } = useKbArticleMutations();
 
-  const [activeTab, setActiveTab] = useState("articles");
-  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
-  const [articleDialogOpen, setArticleDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<{ type: "category" | "article"; id: string } | null>(null);
+  const [activeTab, setActiveTab] = React.useState("articles");
+  const [categoryDialogOpen, setCategoryDialogOpen] = React.useState(false);
+  const [articleDialogOpen, setArticleDialogOpen] = React.useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [itemToDelete, setItemToDelete] = React.useState<{ type: "category" | "article"; id: string } | null>(null);
 
-  const [newCategory, setNewCategory] = useState({ name: "", description: "" });
-  const [newArticle, setNewArticle] = useState({
+  const [newCategory, setNewCategory] = React.useState({ name: "", description: "" });
+  const [newArticle, setNewArticle] = React.useState({
     title: "",
     body_rich_text: "",
     category_id: "",
@@ -208,18 +209,17 @@ export default function KbAdminPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="body">Content</Label>
-                    <Textarea
-                      id="body"
+                    <RichTextField
+                      label="Content"
                       value={newArticle.body_rich_text}
-                      onChange={(e) =>
+                      onChange={(value) =>
                         setNewArticle({
                           ...newArticle,
-                          body_rich_text: e.target.value,
+                          body_rich_text: value,
                         })
                       }
-                      placeholder="Article content (HTML supported)"
-                      rows={8}
+                      placeholder="Write your article content..."
+                      minHeight="200px"
                     />
                   </div>
                   <div className="space-y-2">

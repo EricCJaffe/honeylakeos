@@ -1,9 +1,15 @@
+import * as React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+
+// Lazy load rich text display for consistent rendering
+const RichTextDisplay = React.lazy(() => 
+  import("@/components/ui/rich-text-editor").then(m => ({ default: m.RichTextDisplay }))
+);
 import { EmptyState } from "@/components/EmptyState";
 import { EntityLinksPanel } from "@/components/EntityLinksPanel";
 import {
@@ -41,7 +47,7 @@ import {
 } from "@/hooks/useExternalContacts";
 import { ExternalContactFormDialog } from "./ExternalContactFormDialog";
 import { toast } from "sonner";
-import { useState } from "react";
+
 import { format } from "date-fns";
 
 export default function ExternalContactDetailPage() {
@@ -50,8 +56,8 @@ export default function ExternalContactDetailPage() {
   const { data: contact, isLoading, error } = useExternalContact(id);
   const { archive, unarchive, remove } = useExternalContactMutations();
 
-  const [formOpen, setFormOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [formOpen, setFormOpen] = React.useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
 
   if (isLoading) {
     return (
@@ -239,7 +245,9 @@ export default function ExternalContactDetailPage() {
           </CardHeader>
           <CardContent>
             {contact.notes ? (
-              <p className="text-sm whitespace-pre-wrap">{contact.notes}</p>
+              <React.Suspense fallback={<Skeleton className="h-8 w-full" />}>
+                <RichTextDisplay content={contact.notes} className="text-sm" />
+              </React.Suspense>
             ) : (
               <p className="text-sm text-muted-foreground italic">No notes</p>
             )}
