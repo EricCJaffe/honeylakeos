@@ -8,7 +8,7 @@ import type { Json } from "@/integrations/supabase/types";
 export type CoachingRole = "coach" | "coach_manager" | "org_admin";
 export type EngagementStatus = "active" | "paused" | "ended";
 export type CoachAssignmentRole = "primary_coach" | "support_coach";
-export type RecommendationType = "task" | "project" | "calendar_event" | "note_prompt" | "document_prompt" | "framework_change_suggestion";
+export type RecommendationType = "task" | "project" | "calendar_event" | "note_prompt" | "document_prompt" | "framework_change_suggestion" | "framework_adoption";
 export type RecommendationStatus = "proposed" | "accepted" | "rejected" | "expired";
 
 export interface CoachingOrgSettings {
