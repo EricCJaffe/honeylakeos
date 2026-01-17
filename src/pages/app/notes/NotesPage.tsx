@@ -3,15 +3,16 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { MessageSquare, MoreHorizontal, Pencil, Trash2, Pin, Lock, Users, Archive, ArchiveRestore, Filter, X, FolderInput, Search } from "lucide-react";
+import { MessageSquare, MoreHorizontal, Pencil, Trash2, Pin, Lock, Users, Archive, ArchiveRestore, Filter, X, FolderInput, Bookmark } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
-import { useFolderItemMutations } from "@/hooks/useFolders";
+import { useFolderItemMutations, useFolders, Folder } from "@/hooks/useFolders";
+import { useSavedViews, SavedView, SavedViewConfig } from "@/hooks/useSavedViews";
+import { useRecentNotes } from "@/hooks/useRecentItems";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -32,7 +33,17 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { NoteFormDialog } from "./NoteFormDialog";
-import { FolderTreeSidebar, FolderBreadcrumb, MoveToFolderDialog, type FolderFilter } from "@/components/folders";
+import { 
+  FolderTreeSidebar, 
+  FolderBreadcrumb, 
+  MoveToFolderDialog, 
+  SavedViewsSection, 
+  RecentItemsSection, 
+  FolderSearchBar,
+  FolderPathDisplay,
+  type FolderFilter,
+  type RecentFilter,
+} from "@/components/folders";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
@@ -59,9 +70,12 @@ export default function NotesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [folderFilter, setFolderFilter] = useState<FolderFilter>("all");
+  const [recentFilter, setRecentFilter] = useState<RecentFilter>(null);
+  const [selectedViewId, setSelectedViewId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"active" | "archived">("active");
   const [projectFilter, setProjectFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchAllFolders, setSearchAllFolders] = useState(false);
 
   // Selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -69,6 +83,9 @@ export default function NotesPage() {
   const [moveTargetNote, setMoveTargetNote] = useState<Note | null>(null);
 
   const { moveNotes } = useFolderItemMutations();
+  const { data: recentNotes = [] } = useRecentNotes();
+  const { data: savedViews = [] } = useSavedViews("notes");
+  const { data: folderTree } = useFolders();
 
   const { data: projects = [] } = useQuery({
     queryKey: ["projects", activeCompanyId],
@@ -86,8 +103,39 @@ export default function NotesPage() {
     enabled: !!activeCompanyId,
   });
 
+  // Determine effective filter from saved view or manual selections
+  const effectiveFilter = useMemo(() => {
+    if (selectedViewId) {
+      const view = savedViews.find((v) => v.id === selectedViewId);
+      if (view) {
+        return {
+          folder_id: view.config_json.folder_id ?? null,
+          unfiled: view.config_json.unfiled ?? false,
+          search: view.config_json.search ?? "",
+          search_all: view.config_json.search_all ?? false,
+        };
+      }
+    }
+    return {
+      folder_id: folderFilter !== "all" && folderFilter !== "unfiled" ? folderFilter : null,
+      unfiled: folderFilter === "unfiled",
+      search: searchQuery,
+      search_all: searchAllFolders,
+    };
+  }, [selectedViewId, savedViews, folderFilter, searchQuery, searchAllFolders]);
+
+  // Current config for save view
+  const currentViewConfig = useMemo((): SavedViewConfig => ({
+    folder_id: folderFilter !== "all" && folderFilter !== "unfiled" ? folderFilter : null,
+    unfiled: folderFilter === "unfiled",
+    search: searchQuery || undefined,
+    search_all: searchAllFolders || undefined,
+  }), [folderFilter, searchQuery, searchAllFolders]);
+
+  const hasActiveFilters = folderFilter !== "all" || searchQuery || searchAllFolders;
+
   const { data: notes = [], isLoading } = useQuery({
-    queryKey: ["notes", activeCompanyId, folderFilter, statusFilter, projectFilter],
+    queryKey: ["notes", activeCompanyId, effectiveFilter.folder_id, effectiveFilter.unfiled, statusFilter, projectFilter, effectiveFilter.search_all],
     queryFn: async () => {
       if (!activeCompanyId) return [];
       let query = supabase
@@ -98,11 +146,13 @@ export default function NotesPage() {
         .order("is_pinned", { ascending: false })
         .order("updated_at", { ascending: false });
 
-      // Apply folder filter
-      if (folderFilter === "unfiled") {
-        query = query.is("folder_id", null);
-      } else if (folderFilter !== "all") {
-        query = query.eq("folder_id", folderFilter);
+      // Apply folder filter (only if not searching all folders)
+      if (!effectiveFilter.search_all) {
+        if (effectiveFilter.unfiled) {
+          query = query.is("folder_id", null);
+        } else if (effectiveFilter.folder_id) {
+          query = query.eq("folder_id", effectiveFilter.folder_id);
+        }
       }
 
       if (projectFilter === "standalone") {
@@ -120,14 +170,27 @@ export default function NotesPage() {
 
   // Client-side search filtering
   const filteredNotes = useMemo(() => {
-    if (!searchQuery) return notes;
-    const query = searchQuery.toLowerCase();
+    // If showing recent, use that list
+    if (recentFilter === "recent") {
+      const recentIds = new Set(recentNotes.map((n) => n.id));
+      let result = notes.filter((note) => recentIds.has(note.id));
+      // Sort by recent order
+      result.sort((a, b) => {
+        const aIdx = recentNotes.findIndex((n) => n.id === a.id);
+        const bIdx = recentNotes.findIndex((n) => n.id === b.id);
+        return aIdx - bIdx;
+      });
+      return result;
+    }
+
+    const query = (effectiveFilter.search || "").toLowerCase();
+    if (!query) return notes;
     return notes.filter(
       (note) =>
         note.title.toLowerCase().includes(query) ||
         note.content?.toLowerCase().includes(query)
     );
-  }, [notes, searchQuery]);
+  }, [notes, effectiveFilter.search, recentFilter, recentNotes]);
 
   // Calculate counts for folder sidebar
   const { itemCounts, unfiledCount, totalCount } = useMemo(() => {
@@ -146,7 +209,32 @@ export default function NotesPage() {
   }, [notes]);
 
   // Get current folder ID for breadcrumb
-  const currentFolderId = folderFilter !== "all" && folderFilter !== "unfiled" ? folderFilter : null;
+  const currentFolderId = effectiveFilter.folder_id;
+
+  const handleSelectView = (view: SavedView | null) => {
+    setSelectedViewId(view?.id ?? null);
+    setRecentFilter(null);
+    if (view) {
+      setFolderFilter(view.config_json.unfiled ? "unfiled" : view.config_json.folder_id ?? "all");
+      setSearchQuery(view.config_json.search ?? "");
+      setSearchAllFolders(view.config_json.search_all ?? false);
+    }
+  };
+
+  const handleSelectRecent = (filter: RecentFilter) => {
+    setRecentFilter(filter);
+    setSelectedViewId(null);
+    if (filter === "recent") {
+      setFolderFilter("all");
+      setSearchQuery("");
+    }
+  };
+
+  const handleSelectFolder = (filter: FolderFilter) => {
+    setFolderFilter(filter);
+    setRecentFilter(null);
+    setSelectedViewId(null);
+  };
 
   const deleteNote = useMutation({
     mutationFn: async (noteId: string) => {
@@ -155,6 +243,7 @@ export default function NotesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notes"] });
+      queryClient.invalidateQueries({ queryKey: ["recent-notes"] });
       toast.success("Note deleted");
     },
     onError: () => {
@@ -185,6 +274,7 @@ export default function NotesPage() {
     },
     onSuccess: (_, { archive }) => {
       queryClient.invalidateQueries({ queryKey: ["notes"] });
+      queryClient.invalidateQueries({ queryKey: ["recent-notes"] });
       toast.success(archive ? "Note archived" : "Note restored");
     },
     onError: () => {
@@ -254,7 +344,6 @@ export default function NotesPage() {
 
   const getPreview = (content: string | null) => {
     if (!content) return "No content";
-    // Strip HTML tags for preview
     const stripped = content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
     return stripped.length > 100 ? stripped.substring(0, 100) + "..." : stripped;
   };
@@ -344,15 +433,20 @@ export default function NotesPage() {
               )}
             </div>
 
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search notes..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-[200px] pl-8"
-              />
-            </div>
+            <FolderSearchBar
+              searchQuery={searchQuery}
+              onSearchChange={(q) => {
+                setSearchQuery(q);
+                setSelectedViewId(null);
+              }}
+              searchAllFolders={searchAllFolders}
+              onSearchAllChange={(val) => {
+                setSearchAllFolders(val);
+                setSelectedViewId(null);
+              }}
+              placeholder="Search notes..."
+              showToggle={folderFilter !== "all"}
+            />
           </>
         )}
       </div>
@@ -362,12 +456,28 @@ export default function NotesPage() {
         <div className="hidden lg:block">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Folders</CardTitle>
+              <CardTitle className="text-sm">Browse</CardTitle>
             </CardHeader>
-            <CardContent className="p-2">
+            <CardContent className="p-2 space-y-1">
+              {/* Recent */}
+              <RecentItemsSection
+                selectedFilter={recentFilter}
+                onSelectFilter={handleSelectRecent}
+                recentCount={recentNotes.length}
+              />
+
+              {/* Saved Views */}
+              <SavedViewsSection
+                module="notes"
+                selectedViewId={selectedViewId}
+                onSelectView={handleSelectView}
+                currentConfig={hasActiveFilters ? currentViewConfig : undefined}
+              />
+
+              {/* Folder Tree */}
               <FolderTreeSidebar
-                selectedFilter={folderFilter}
-                onSelectFilter={setFolderFilter}
+                selectedFilter={recentFilter ? "all" : folderFilter}
+                onSelectFilter={handleSelectFolder}
                 itemCounts={itemCounts}
                 unfiledCount={unfiledCount}
                 totalCount={totalCount}
@@ -379,25 +489,48 @@ export default function NotesPage() {
         {/* Notes grid */}
         <div>
           {/* Breadcrumb */}
-          {currentFolderId && (
+          {currentFolderId && !recentFilter && (
             <FolderBreadcrumb
               folderId={currentFolderId}
-              onNavigate={(id) => setFolderFilter(id ?? "all")}
+              onNavigate={(id) => handleSelectFolder(id ?? "all")}
               rootLabel="All Notes"
             />
+          )}
+
+          {/* Current view indicator */}
+          {(recentFilter || selectedViewId) && (
+            <div className="flex items-center gap-2 mb-4 text-sm">
+              {recentFilter && (
+                <Badge variant="secondary">
+                  Showing recent notes
+                  <button onClick={() => setRecentFilter(null)} className="ml-1">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {selectedViewId && (
+                <Badge variant="secondary">
+                  <Bookmark className="h-3 w-3 mr-1" />
+                  {savedViews.find((v) => v.id === selectedViewId)?.name}
+                  <button onClick={() => setSelectedViewId(null)} className="ml-1">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+            </div>
           )}
 
           {filteredNotes.length === 0 ? (
             <EmptyState
               icon={statusFilter === "archived" ? Archive : MessageSquare}
-              title={searchQuery || folderFilter !== "all" ? "No matching notes" : statusFilter === "archived" ? "No archived notes" : "No notes yet"}
-              description={searchQuery || folderFilter !== "all"
+              title={searchQuery || folderFilter !== "all" || recentFilter ? "No matching notes" : statusFilter === "archived" ? "No archived notes" : "No notes yet"}
+              description={searchQuery || folderFilter !== "all" || recentFilter
                 ? "Try adjusting your search or filters." 
                 : statusFilter === "archived" 
                   ? "Notes you archive will appear here." 
                   : "Create your first note to start capturing your ideas."}
-              actionLabel={!searchQuery && statusFilter === "active" && folderFilter === "all" ? "Create Note" : undefined}
-              onAction={!searchQuery && statusFilter === "active" && folderFilter === "all" ? handleCreate : undefined}
+              actionLabel={!searchQuery && statusFilter === "active" && folderFilter === "all" && !recentFilter ? "Create Note" : undefined}
+              onAction={!searchQuery && statusFilter === "active" && folderFilter === "all" && !recentFilter ? handleCreate : undefined}
             />
           ) : (
             <>
@@ -413,6 +546,8 @@ export default function NotesPage() {
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {filteredNotes.map((note, index) => {
                   const isSelected = selectedIds.has(note.id);
+                  const showFolderPath = searchAllFolders && note.folder_id;
+                  
                   return (
                     <motion.div
                       key={note.id}
@@ -505,18 +640,18 @@ export default function NotesPage() {
                                     <DropdownMenuItem
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        archiveNote.mutate({ noteId: note.id, archive: note.status === "active" });
+                                        archiveNote.mutate({ noteId: note.id, archive: note.status !== "archived" });
                                       }}
                                     >
-                                      {note.status === "active" ? (
-                                        <>
-                                          <Archive className="h-4 w-4 mr-2" />
-                                          Archive
-                                        </>
-                                      ) : (
+                                      {note.status === "archived" ? (
                                         <>
                                           <ArchiveRestore className="h-4 w-4 mr-2" />
                                           Restore
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Archive className="h-4 w-4 mr-2" />
+                                          Archive
                                         </>
                                       )}
                                     </DropdownMenuItem>
@@ -535,13 +670,19 @@ export default function NotesPage() {
                               )}
                             </div>
                           </CardHeader>
-                          <CardContent className="pl-10">
-                            <p className="text-sm text-muted-foreground line-clamp-3 mb-2">
+                          <CardContent className="pt-0 pl-10">
+                            <p className="text-sm text-muted-foreground line-clamp-3">
                               {getPreview(note.content)}
                             </p>
-                            <p className="text-xs text-muted-foreground">
-                              {format(new Date(note.updated_at), "MMM d, yyyy")}
-                            </p>
+                            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                              <span>{format(new Date(note.updated_at), "MMM d, yyyy")}</span>
+                              {showFolderPath && (
+                                <>
+                                  <span>•</span>
+                                  <FolderPathDisplay folderId={note.folder_id} />
+                                </>
+                              )}
+                            </div>
                           </CardContent>
                         </div>
                       </Card>
