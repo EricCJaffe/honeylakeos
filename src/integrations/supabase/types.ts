@@ -200,6 +200,42 @@ export type Database = {
           },
         ]
       }
+      company_frameworks: {
+        Row: {
+          active_framework_id: string
+          adopted_at: string
+          adopted_by: string | null
+          company_id: string
+        }
+        Insert: {
+          active_framework_id: string
+          adopted_at?: string
+          adopted_by?: string | null
+          company_id: string
+        }
+        Update: {
+          active_framework_id?: string
+          adopted_at?: string
+          adopted_by?: string | null
+          company_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_frameworks_active_framework_id_fkey"
+            columns: ["active_framework_id"]
+            isOneToOne: false
+            referencedRelation: "frameworks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_frameworks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_modules: {
         Row: {
           company_id: string
@@ -1305,6 +1341,369 @@ export type Database = {
           {
             foreignKeyName: "forms_company_id_fkey"
             columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      framework_cadences: {
+        Row: {
+          created_at: string
+          default_owner_role_hint: string | null
+          display_name: string
+          duration_minutes: number | null
+          enabled: boolean
+          framework_id: string
+          frequency_type: Database["public"]["Enums"]["framework_frequency_type"]
+          id: string
+          interval_n: number | null
+          key: string
+          sort_order: number
+          target_day_of_month: number | null
+          target_day_of_week: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_owner_role_hint?: string | null
+          display_name: string
+          duration_minutes?: number | null
+          enabled?: boolean
+          framework_id: string
+          frequency_type?: Database["public"]["Enums"]["framework_frequency_type"]
+          id?: string
+          interval_n?: number | null
+          key: string
+          sort_order?: number
+          target_day_of_month?: number | null
+          target_day_of_week?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_owner_role_hint?: string | null
+          display_name?: string
+          duration_minutes?: number | null
+          enabled?: boolean
+          framework_id?: string
+          frequency_type?: Database["public"]["Enums"]["framework_frequency_type"]
+          id?: string
+          interval_n?: number | null
+          key?: string
+          sort_order?: number
+          target_day_of_month?: number | null
+          target_day_of_week?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "framework_cadences_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      framework_concepts: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_name_plural: string
+          display_name_singular: string
+          enabled: boolean
+          framework_id: string
+          id: string
+          key: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_name_plural: string
+          display_name_singular: string
+          enabled?: boolean
+          framework_id: string
+          id?: string
+          key: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_name_plural?: string
+          display_name_singular?: string
+          enabled?: boolean
+          framework_id?: string
+          id?: string
+          key?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "framework_concepts_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      framework_dashboard_sections: {
+        Row: {
+          config: Json | null
+          created_at: string
+          dashboard_id: string
+          data_source_type: string
+          display_name: string
+          enabled: boolean
+          id: string
+          section_key: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string
+          dashboard_id: string
+          data_source_type: string
+          display_name: string
+          enabled?: boolean
+          id?: string
+          section_key: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string
+          dashboard_id?: string
+          data_source_type?: string
+          display_name?: string
+          enabled?: boolean
+          id?: string
+          section_key?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "framework_dashboard_sections_dashboard_id_fkey"
+            columns: ["dashboard_id"]
+            isOneToOne: false
+            referencedRelation: "framework_dashboards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      framework_dashboards: {
+        Row: {
+          audience: Database["public"]["Enums"]["framework_dashboard_audience"]
+          created_at: string
+          display_name: string
+          enabled: boolean
+          framework_id: string
+          id: string
+          key: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          audience?: Database["public"]["Enums"]["framework_dashboard_audience"]
+          created_at?: string
+          display_name: string
+          enabled?: boolean
+          framework_id: string
+          id?: string
+          key: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          audience?: Database["public"]["Enums"]["framework_dashboard_audience"]
+          created_at?: string
+          display_name?: string
+          enabled?: boolean
+          framework_id?: string
+          id?: string
+          key?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "framework_dashboards_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      framework_health_metrics: {
+        Row: {
+          calculation_key: string
+          created_at: string
+          data_source_type: string
+          description: string | null
+          display_name: string
+          enabled: boolean
+          framework_id: string
+          id: string
+          key: string
+          metric_type: Database["public"]["Enums"]["framework_metric_type"]
+          sort_order: number
+          thresholds: Json | null
+          updated_at: string
+        }
+        Insert: {
+          calculation_key: string
+          created_at?: string
+          data_source_type: string
+          description?: string | null
+          display_name: string
+          enabled?: boolean
+          framework_id: string
+          id?: string
+          key: string
+          metric_type?: Database["public"]["Enums"]["framework_metric_type"]
+          sort_order?: number
+          thresholds?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          calculation_key?: string
+          created_at?: string
+          data_source_type?: string
+          description?: string | null
+          display_name?: string
+          enabled?: boolean
+          framework_id?: string
+          id?: string
+          key?: string
+          metric_type?: Database["public"]["Enums"]["framework_metric_type"]
+          sort_order?: number
+          thresholds?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "framework_health_metrics_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      framework_templates: {
+        Row: {
+          applies_to_concept_key: string | null
+          cadence_key: string | null
+          created_at: string
+          enabled: boolean
+          framework_id: string
+          id: string
+          sort_order: number
+          template_id: string | null
+          template_type: string
+          updated_at: string
+        }
+        Insert: {
+          applies_to_concept_key?: string | null
+          cadence_key?: string | null
+          created_at?: string
+          enabled?: boolean
+          framework_id: string
+          id?: string
+          sort_order?: number
+          template_id?: string | null
+          template_type: string
+          updated_at?: string
+        }
+        Update: {
+          applies_to_concept_key?: string | null
+          cadence_key?: string | null
+          created_at?: string
+          enabled?: boolean
+          framework_id?: string
+          id?: string
+          sort_order?: number
+          template_id?: string | null
+          template_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "framework_templates_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      frameworks: {
+        Row: {
+          archived_at: string | null
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_system_template: boolean
+          name: string
+          owner_company_id: string | null
+          owner_type: Database["public"]["Enums"]["framework_owner_type"]
+          status: Database["public"]["Enums"]["framework_status"]
+          updated_at: string
+          version_label: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_system_template?: boolean
+          name: string
+          owner_company_id?: string | null
+          owner_type?: Database["public"]["Enums"]["framework_owner_type"]
+          status?: Database["public"]["Enums"]["framework_status"]
+          updated_at?: string
+          version_label?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_system_template?: boolean
+          name?: string
+          owner_company_id?: string | null
+          owner_type?: Database["public"]["Enums"]["framework_owner_type"]
+          status?: Database["public"]["Enums"]["framework_status"]
+          updated_at?: string
+          version_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "frameworks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "frameworks_owner_company_id_fkey"
+            columns: ["owner_company_id"]
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
@@ -3441,6 +3840,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      clone_framework: {
+        Args: {
+          p_new_description?: string
+          p_new_name: string
+          p_source_framework_id: string
+          p_target_company_id: string
+        }
+        Returns: string
+      }
       complete_task_occurrence: {
         Args: { p_occurrence_start_at: string; p_series_task_id: string }
         Returns: Json
@@ -3686,6 +4094,21 @@ export type Database = {
         | "archived"
         | "pending"
         | "suspended"
+      framework_dashboard_audience:
+        | "company_admin"
+        | "leadership"
+        | "member"
+        | "coach"
+        | "coach_manager"
+      framework_frequency_type:
+        | "weekly"
+        | "monthly"
+        | "quarterly"
+        | "annual"
+        | "custom"
+      framework_metric_type: "percentage" | "count" | "trend" | "boolean"
+      framework_owner_type: "system" | "coach_org" | "company"
+      framework_status: "draft" | "published" | "archived"
       membership_role:
         | "company_admin"
         | "location_admin"
@@ -3828,6 +4251,23 @@ export const Constants = {
         "pending",
         "suspended",
       ],
+      framework_dashboard_audience: [
+        "company_admin",
+        "leadership",
+        "member",
+        "coach",
+        "coach_manager",
+      ],
+      framework_frequency_type: [
+        "weekly",
+        "monthly",
+        "quarterly",
+        "annual",
+        "custom",
+      ],
+      framework_metric_type: ["percentage", "count", "trend", "boolean"],
+      framework_owner_type: ["system", "coach_org", "company"],
+      framework_status: ["draft", "published", "archived"],
       membership_role: [
         "company_admin",
         "location_admin",
