@@ -4226,6 +4226,88 @@ export type Database = {
           },
         ]
       }
+      report_runs: {
+        Row: {
+          created_by: string | null
+          expires_at: string
+          generated_at: string
+          id: string
+          report_id: string
+          result_json: Json
+        }
+        Insert: {
+          created_by?: string | null
+          expires_at?: string
+          generated_at?: string
+          id?: string
+          report_id: string
+          result_json?: Json
+        }
+        Update: {
+          created_by?: string | null
+          expires_at?: string
+          generated_at?: string
+          id?: string
+          report_id?: string
+          result_json?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_runs_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          company_id: string
+          config_json: Json
+          created_at: string
+          description: string | null
+          id: string
+          is_personal: boolean
+          name: string
+          owner_user_id: string | null
+          report_type: Database["public"]["Enums"]["report_type"]
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          config_json?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_personal?: boolean
+          name: string
+          owner_user_id?: string | null
+          report_type: Database["public"]["Enums"]["report_type"]
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          config_json?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_personal?: boolean
+          name?: string
+          owner_user_id?: string | null
+          report_type?: Database["public"]["Enums"]["report_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales_campaigns: {
         Row: {
           archived_at: string | null
@@ -6115,6 +6197,19 @@ export type Database = {
         | "document_prompt"
         | "framework_change_suggestion"
         | "framework_adoption"
+      report_type:
+        | "tasks_by_status"
+        | "tasks_by_assignee"
+        | "tasks_due_soon"
+        | "tasks_overdue"
+        | "projects_by_phase"
+        | "projects_active_completed"
+        | "crm_pipeline_totals"
+        | "crm_opportunities_won_lost"
+        | "donors_by_campaign"
+        | "donor_retention"
+        | "invoices_by_status"
+        | "receipts_by_tag"
       site_role: "super_admin" | "site_admin"
       ticket_author_type: "requester" | "agent"
       ticket_priority: "low" | "normal" | "high" | "urgent"
@@ -6363,6 +6458,20 @@ export const Constants = {
         "document_prompt",
         "framework_change_suggestion",
         "framework_adoption",
+      ],
+      report_type: [
+        "tasks_by_status",
+        "tasks_by_assignee",
+        "tasks_due_soon",
+        "tasks_overdue",
+        "projects_by_phase",
+        "projects_active_completed",
+        "crm_pipeline_totals",
+        "crm_opportunities_won_lost",
+        "donors_by_campaign",
+        "donor_retention",
+        "invoices_by_status",
+        "receipts_by_tag",
       ],
       site_role: ["super_admin", "site_admin"],
       ticket_author_type: ["requester", "agent"],
