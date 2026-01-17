@@ -94,11 +94,13 @@ export default function RecommendationFormPage() {
                   <SelectValue placeholder="Select a client" />
                 </SelectTrigger>
                 <SelectContent>
-                  {engagements?.map((assignment: any) => (
-                    <SelectItem key={assignment.engagement?.id} value={assignment.engagement?.id || ""}>
-                      {assignment.engagement?.client?.name}
-                    </SelectItem>
-                  ))}
+                  {engagements
+                    ?.filter((assignment: any) => assignment.engagement?.id)
+                    .map((assignment: any) => (
+                      <SelectItem key={assignment.engagement.id} value={assignment.engagement.id}>
+                        {assignment.engagement?.client?.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
