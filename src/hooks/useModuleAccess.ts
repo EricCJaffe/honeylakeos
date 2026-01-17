@@ -19,7 +19,8 @@ export type ModuleKey =
   | "locations"
   | "workflows"
   | "lms"
-  | "crm";
+  | "crm"
+  | "external_contacts";
 
 interface ModuleAccessResult {
   /** Whether the module is enabled for the company */
@@ -155,6 +156,8 @@ export const CORE_MODULES: ModuleKey[] = [
   "groups",
   "locations",
   "crm",
+  "external_contacts",
+  "coaches",
 ];
 
 /**

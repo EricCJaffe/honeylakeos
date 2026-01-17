@@ -12,6 +12,9 @@ import {
   Globe,
   Workflow,
   BookOpen,
+  Users,
+  Contact,
+  UserCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Logo } from "@/components/Logo";
@@ -52,6 +55,12 @@ const knowledgeNavItems: NavItem[] = [
   { title: "Notes", url: "/app/notes", icon: StickyNote, moduleKey: "notes" },
 ];
 
+const crmNavItems: NavItem[] = [
+  { title: "CRM", url: "/app/crm", icon: Users, moduleKey: "crm" },
+  { title: "Contacts", url: "/app/contacts", icon: Contact, moduleKey: "external_contacts" },
+  { title: "Coaches", url: "/app/coaches", icon: UserCheck, moduleKey: "coaches" },
+];
+
 const premiumNavItems: NavItem[] = [
   { title: "Forms", url: "/app/forms", icon: Globe, moduleKey: "forms" },
   { title: "Workflows", url: "/app/workflows", icon: Workflow, moduleKey: "workflows" },
@@ -83,6 +92,7 @@ export function AppSidebar() {
 
   const visibleCoreItems = filterByModuleAccess(coreNavItems);
   const visibleKnowledgeItems = filterByModuleAccess(knowledgeNavItems);
+  const visibleCrmItems = filterByModuleAccess(crmNavItems);
   const visiblePremiumItems = filterByModuleAccess(premiumNavItems);
 
   const renderNavGroup = (
@@ -150,6 +160,9 @@ export function AppSidebar() {
 
         {/* Knowledge Navigation */}
         {renderNavGroup("Knowledge", visibleKnowledgeItems)}
+
+        {/* CRM Navigation */}
+        {renderNavGroup("CRM", visibleCrmItems)}
 
         {/* Premium Modules - only show if any are enabled */}
         {renderNavGroup("Premium", visiblePremiumItems)}

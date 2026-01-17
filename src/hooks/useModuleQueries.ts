@@ -87,6 +87,10 @@ const MODULE_QUERY_KEYS: Record<ModuleKey, string[][]> = {
     ["coach-profiles"],
     ["coach-profile"],
   ],
+  external_contacts: [
+    ["external-contacts"],
+    ["external-contact"],
+  ],
 };
 
 /**
