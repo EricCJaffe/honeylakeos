@@ -47,6 +47,7 @@ import {
   rruleToConfig,
 } from "@/components/tasks/RecurrenceSelector";
 import { useProjectPhases } from "@/hooks/useProjectPhases";
+import { useTaskLists } from "@/hooks/useTaskLists";
 import { TemplateSelector } from "@/components/templates/TemplateSelector";
 import { applyTemplateToForm, Template } from "@/hooks/useTemplates";
 import { LinkPicker } from "@/components/LinkPicker";
@@ -59,6 +60,7 @@ const taskSchema = z.object({
   due_date: z.date().optional().nullable(),
   project_id: z.string().optional().nullable(),
   phase_id: z.string().optional().nullable(),
+  list_id: z.string().optional().nullable(),
 });
 
 type TaskFormValues = z.infer<typeof taskSchema>;
@@ -103,6 +105,9 @@ export function TaskFormDialog({
   // Recurrence state
   const [recurrenceConfig, setRecurrenceConfig] = React.useState<RecurrenceConfig | null>(null);
 
+  // Fetch task lists
+  const { taskLists } = useTaskLists();
+
   // Fetch projects for dropdown
   const { data: projects = [] } = useQuery({
     queryKey: ["projects", activeCompanyId],
@@ -130,6 +135,7 @@ export function TaskFormDialog({
       due_date: null,
       project_id: projectId || null,
       phase_id: null,
+      list_id: null,
     },
   });
 
@@ -150,6 +156,7 @@ export function TaskFormDialog({
         due_date: task.due_date ? new Date(task.due_date) : null,
         project_id: task.project_id || null,
         phase_id: task.phase_id || null,
+        list_id: task.list_id || null,
       });
       // Load recurrence config if exists
       if (task.recurrence_rules) {
@@ -168,6 +175,7 @@ export function TaskFormDialog({
         due_date: null,
         project_id: projectId || null,
         phase_id: null,
+        list_id: null,
       });
       setRecurrenceConfig(null);
     } else {
@@ -179,6 +187,7 @@ export function TaskFormDialog({
         due_date: null,
         project_id: projectId || null,
         phase_id: null,
+        list_id: null,
       });
       setRecurrenceConfig(null);
     }
@@ -199,6 +208,7 @@ export function TaskFormDialog({
         due_date: values.due_date ? format(values.due_date, "yyyy-MM-dd") : null,
         project_id: values.project_id || null,
         phase_id: values.phase_id || null,
+        list_id: values.list_id || null,
         recurrence_rules: rrule,
         recurrence_timezone: recurrenceConfig?.timezone || "America/New_York",
         is_recurring_template: isRecurring,
@@ -370,6 +380,42 @@ export function TaskFormDialog({
                         {phases.filter(p => p.status === "active").map((phase) => (
                           <SelectItem key={phase.id} value={phase.id}>
                             {phase.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* List selector */}
+            {taskLists.length > 0 && (
+              <FormField
+                control={form.control}
+                name="list_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>List</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || undefined}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select list (optional)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {taskLists.map((list) => (
+                          <SelectItem key={list.id} value={list.id}>
+                            <div className="flex items-center gap-2">
+                              {list.color && (
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: list.color }} />
+                              )}
+                              {list.name}
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>

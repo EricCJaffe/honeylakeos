@@ -42,6 +42,7 @@ interface TaskListProps {
   showProject?: boolean;
   showPhase?: boolean;
   showRecurrence?: boolean;
+  showList?: boolean;
 }
 
 export function TaskList({
@@ -52,6 +53,7 @@ export function TaskList({
   showProject = false,
   showPhase = false,
   showRecurrence = false,
+  showList = false,
 }: TaskListProps) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -276,6 +278,11 @@ export function TaskList({
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    {showList && task.task_list && (
+                      <Badge variant="outline" className="text-xs py-0 h-5" style={task.task_list.color ? { borderColor: task.task_list.color, color: task.task_list.color } : undefined}>
+                        {task.task_list.name}
+                      </Badge>
+                    )}
                     {showProject && task.project && (
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
                         {task.project.emoji} {task.project.name}

@@ -4170,6 +4170,50 @@ export type Database = {
           },
         ]
       }
+      task_lists: {
+        Row: {
+          color: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          sort_order: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_lists_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_occurrence_completions: {
         Row: {
           company_id: string
@@ -4324,6 +4368,7 @@ export type Database = {
           is_virtual_instance: boolean
           last_generated_date: string | null
           linked_note_id: string | null
+          list_id: string | null
           notes: string | null
           order_index: number
           parent_recurring_task_id: string | null
@@ -4360,6 +4405,7 @@ export type Database = {
           is_virtual_instance?: boolean
           last_generated_date?: string | null
           linked_note_id?: string | null
+          list_id?: string | null
           notes?: string | null
           order_index?: number
           parent_recurring_task_id?: string | null
@@ -4396,6 +4442,7 @@ export type Database = {
           is_virtual_instance?: boolean
           last_generated_date?: string | null
           linked_note_id?: string | null
+          list_id?: string | null
           notes?: string | null
           order_index?: number
           parent_recurring_task_id?: string | null
@@ -4428,6 +4475,13 @@ export type Database = {
             columns: ["linked_note_id"]
             isOneToOne: false
             referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "task_lists"
             referencedColumns: ["id"]
           },
           {
