@@ -1,20 +1,23 @@
 import * as React from "react";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { FileText, MoreHorizontal, Pencil, Trash2, Download, Upload, Lock, Users, Link2, Filter, X, Search } from "lucide-react";
+import { FileText, MoreHorizontal, Pencil, Trash2, Download, Upload, Lock, Users, Filter, X, Search, FolderInput, CheckSquare, Square } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
+import { useFolderItemMutations } from "@/hooks/useFolders";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -28,8 +31,9 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { DocumentFormDialog } from "./DocumentFormDialog";
-import FoldersPage from "../folders/FoldersPage";
+import { FolderTreeSidebar, FolderBreadcrumb, MoveToFolderDialog, type FolderFilter } from "@/components/folders";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface Document {
   id: string;
@@ -52,10 +56,17 @@ export default function DocumentsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingDocument, setEditingDocument] = useState<Document | null>(null);
-  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  const [folderFilter, setFolderFilter] = useState<FolderFilter>("all");
   const [uploading, setUploading] = useState(false);
   const [projectFilter, setProjectFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+  const [moveTargetDoc, setMoveTargetDoc] = useState<Document | null>(null);
+
+  const { moveDocuments } = useFolderItemMutations();
 
   const { data: projects = [] } = useQuery({
     queryKey: ["projects", activeCompanyId],
@@ -74,7 +85,7 @@ export default function DocumentsPage() {
   });
 
   const { data: documents = [], isLoading } = useQuery({
-    queryKey: ["documents", activeCompanyId, selectedFolderId, projectFilter],
+    queryKey: ["documents", activeCompanyId, folderFilter, projectFilter],
     queryFn: async () => {
       if (!activeCompanyId) return [];
       let query = supabase
@@ -83,9 +94,13 @@ export default function DocumentsPage() {
         .eq("company_id", activeCompanyId)
         .order("created_at", { ascending: false });
 
-      if (selectedFolderId) {
-        query = query.eq("folder_id", selectedFolderId);
+      // Apply folder filter
+      if (folderFilter === "unfiled") {
+        query = query.is("folder_id", null);
+      } else if (folderFilter !== "all") {
+        query = query.eq("folder_id", folderFilter);
       }
+
       if (projectFilter !== "all") {
         query = query.eq("project_id", projectFilter);
       }
@@ -98,7 +113,7 @@ export default function DocumentsPage() {
   });
 
   // Client-side search filtering
-  const filteredDocuments = React.useMemo(() => {
+  const filteredDocuments = useMemo(() => {
     if (!searchQuery) return documents;
     const query = searchQuery.toLowerCase();
     return documents.filter(
@@ -107,6 +122,25 @@ export default function DocumentsPage() {
         doc.description?.toLowerCase().includes(query)
     );
   }, [documents, searchQuery]);
+
+  // Calculate counts for folder sidebar
+  const { itemCounts, unfiledCount, totalCount } = useMemo(() => {
+    const counts: Record<string, number> = {};
+    let unfiled = 0;
+    
+    documents.forEach((doc) => {
+      if (doc.folder_id) {
+        counts[doc.folder_id] = (counts[doc.folder_id] || 0) + 1;
+      } else {
+        unfiled++;
+      }
+    });
+
+    return { itemCounts: counts, unfiledCount: unfiled, totalCount: documents.length };
+  }, [documents]);
+
+  // Get current folder ID for breadcrumb
+  const currentFolderId = folderFilter !== "all" && folderFilter !== "unfiled" ? folderFilter : null;
 
   const uploadDocument = useMutation({
     mutationFn: async (file: File) => {
@@ -123,14 +157,14 @@ export default function DocumentsPage() {
 
       if (uploadError) throw uploadError;
 
-      // Create document record
+      // Create document record - assign to current folder if one is selected
       const { error: insertError } = await supabase.from("documents").insert({
         company_id: activeCompanyId,
         name: file.name,
         file_path: filePath,
         file_size: file.size,
         mime_type: file.type,
-        folder_id: selectedFolderId,
+        folder_id: currentFolderId,
         access_level: "company",
         created_by: user.id,
       });
@@ -203,6 +237,52 @@ export default function DocumentsPage() {
     setIsDialogOpen(true);
   };
 
+  const handleMoveToFolder = (doc: Document) => {
+    setMoveTargetDoc(doc);
+    setSelectedIds(new Set([doc.id]));
+    setIsMoveDialogOpen(true);
+  };
+
+  const handleBulkMove = () => {
+    if (selectedIds.size === 0) return;
+    setMoveTargetDoc(null);
+    setIsMoveDialogOpen(true);
+  };
+
+  const handleMoveConfirm = (folderId: string | null) => {
+    const ids = Array.from(selectedIds);
+    moveDocuments.mutate(
+      { documentIds: ids, folderId },
+      {
+        onSuccess: () => {
+          setIsMoveDialogOpen(false);
+          setSelectedIds(new Set());
+          setMoveTargetDoc(null);
+        },
+      }
+    );
+  };
+
+  const toggleSelection = (docId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(docId)) {
+        next.delete(docId);
+      } else {
+        next.add(docId);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredDocuments.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredDocuments.map((d) => d.id)));
+    }
+  };
+
   const canEdit = (doc: Document) => {
     return isCompanyAdmin || doc.created_by === user?.id;
   };
@@ -265,45 +345,60 @@ export default function DocumentsPage() {
 
       {/* Filter toolbar */}
       <div className="flex flex-wrap items-center gap-4 mb-6">
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <Select value={projectFilter} onValueChange={setProjectFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by project" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Projects</SelectItem>
-              {projects.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.emoji} {p.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {projectFilter !== "all" && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setProjectFilter("all")}
-            >
-              <X className="h-4 w-4" />
+        {selectedIds.size > 0 ? (
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">{selectedIds.size} selected</Badge>
+            <Button variant="outline" size="sm" onClick={handleBulkMove}>
+              <FolderInput className="h-4 w-4 mr-1" />
+              Move to Folder
             </Button>
-          )}
-        </div>
+            <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+              Clear
+            </Button>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={projectFilter} onValueChange={setProjectFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by project" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Projects</SelectItem>
+                  {projects.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.emoji} {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {projectFilter !== "all" && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setProjectFilter("all")}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
 
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search documents..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-[200px] pl-8"
-          />
-        </div>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search documents..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-[200px] pl-8"
+              />
+            </div>
+          </>
+        )}
       </div>
 
-      <div className="grid lg:grid-cols-[250px_1fr] gap-6">
+      <div className="grid lg:grid-cols-[220px_1fr] gap-6">
         {/* Sidebar with folders */}
         <div className="hidden lg:block">
           <Card>
@@ -311,10 +406,12 @@ export default function DocumentsPage() {
               <CardTitle className="text-sm">Folders</CardTitle>
             </CardHeader>
             <CardContent className="p-2">
-              <FoldersPage
-                onSelectFolder={setSelectedFolderId}
-                selectedFolderId={selectedFolderId}
-                showHeader={false}
+              <FolderTreeSidebar
+                selectedFilter={folderFilter}
+                onSelectFilter={setFolderFilter}
+                itemCounts={itemCounts}
+                unfiledCount={unfiledCount}
+                totalCount={totalCount}
               />
             </CardContent>
           </Card>
@@ -322,20 +419,39 @@ export default function DocumentsPage() {
 
         {/* Documents list */}
         <div>
+          {/* Breadcrumb */}
+          {currentFolderId && (
+            <FolderBreadcrumb
+              folderId={currentFolderId}
+              onNavigate={(id) => setFolderFilter(id ?? "all")}
+              rootLabel="All Documents"
+            />
+          )}
+
           {filteredDocuments.length === 0 ? (
             <EmptyState
               icon={FileText}
-              title={searchQuery || projectFilter !== "all" ? "No matching documents" : "No documents yet"}
-              description={searchQuery || projectFilter !== "all" 
+              title={searchQuery || projectFilter !== "all" || folderFilter !== "all" ? "No matching documents" : "No documents yet"}
+              description={searchQuery || projectFilter !== "all" || folderFilter !== "all"
                 ? "Try adjusting your search or filters."
                 : "Upload your first document to get started."}
-              actionLabel={!searchQuery && projectFilter === "all" ? "Upload Document" : undefined}
-              onAction={!searchQuery && projectFilter === "all" ? () => fileInputRef.current?.click() : undefined}
+              actionLabel={!searchQuery && projectFilter === "all" && folderFilter === "all" ? "Upload Document" : undefined}
+              onAction={!searchQuery && projectFilter === "all" && folderFilter === "all" ? () => fileInputRef.current?.click() : undefined}
             />
           ) : (
             <div className="space-y-2">
+              {/* Select all header */}
+              <div className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground">
+                <Checkbox
+                  checked={selectedIds.size === filteredDocuments.length && filteredDocuments.length > 0}
+                  onCheckedChange={toggleSelectAll}
+                />
+                <span>Select all</span>
+              </div>
+
               {filteredDocuments.map((doc, index) => {
                 const FileIcon = getFileIcon(doc.mime_type);
+                const isSelected = selectedIds.has(doc.id);
                 return (
                   <motion.div
                     key={doc.id}
@@ -344,27 +460,39 @@ export default function DocumentsPage() {
                     transition={{ delay: index * 0.03 }}
                   >
                     <Card
-                      className="group cursor-pointer hover:border-primary/50 transition-colors"
-                      onClick={() => navigate(`/app/documents/${doc.id}`)}
+                      className={cn(
+                        "group cursor-pointer hover:border-primary/50 transition-colors",
+                        isSelected && "border-primary bg-primary/5"
+                      )}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                            <FileIcon className="h-5 w-5 text-primary" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <h3 className="text-sm font-medium truncate">{doc.name}</h3>
-                              {doc.access_level === "personal" ? (
-                                <Lock className="h-3 w-3 text-muted-foreground" />
-                              ) : (
-                                <Users className="h-3 w-3 text-muted-foreground" />
-                              )}
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleSelection(doc.id)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <div
+                            className="flex items-center gap-4 flex-1 min-w-0"
+                            onClick={() => navigate(`/app/documents/${doc.id}`)}
+                          >
+                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                              <FileIcon className="h-5 w-5 text-primary" />
                             </div>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <span>{formatFileSize(doc.file_size)}</span>
-                              <span>•</span>
-                              <span>{format(new Date(doc.created_at), "MMM d, yyyy")}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-sm font-medium truncate">{doc.name}</h3>
+                                {doc.access_level === "personal" ? (
+                                  <Lock className="h-3 w-3 text-muted-foreground" />
+                                ) : (
+                                  <Users className="h-3 w-3 text-muted-foreground" />
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span>{formatFileSize(doc.file_size)}</span>
+                                <span>•</span>
+                                <span>{format(new Date(doc.created_at), "MMM d, yyyy")}</span>
+                              </div>
                             </div>
                           </div>
                           <div className="flex items-center gap-1">
@@ -396,6 +524,11 @@ export default function DocumentsPage() {
                                     <Pencil className="h-4 w-4 mr-2" />
                                     Edit
                                   </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleMoveToFolder(doc)}>
+                                    <FolderInput className="h-4 w-4 mr-2" />
+                                    Move to Folder
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
                                   <DropdownMenuItem
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -425,6 +558,16 @@ export default function DocumentsPage() {
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         document={editingDocument}
+      />
+
+      <MoveToFolderDialog
+        open={isMoveDialogOpen}
+        onOpenChange={setIsMoveDialogOpen}
+        itemCount={selectedIds.size}
+        itemType="document"
+        currentFolderId={moveTargetDoc?.folder_id}
+        onMove={handleMoveConfirm}
+        isMoving={moveDocuments.isPending}
       />
     </div>
   );

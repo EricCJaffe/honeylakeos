@@ -2,7 +2,7 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
@@ -35,6 +35,7 @@ import { cn } from "@/lib/utils";
 import { TemplateSelector } from "@/components/templates/TemplateSelector";
 import { applyTemplateToForm } from "@/hooks/useTemplates";
 import { LinkPicker } from "@/components/LinkPicker";
+import { FolderPicker } from "@/components/folders";
 
 const noteSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -77,21 +78,17 @@ export function NoteFormDialog({
   const queryClient = useQueryClient();
   const isEditing = !!note;
 
-  const { data: folders = [] } = useQuery({
-    queryKey: ["folders", activeCompanyId],
-    queryFn: async () => {
-      if (!activeCompanyId) return [];
-      const { data, error } = await supabase
-        .from("folders")
-        .select("id, name")
-        .eq("company_id", activeCompanyId)
-        .order("name");
-      if (error) throw error;
-      return data;
+  const form = useForm<NoteFormValues>({
+    resolver: zodResolver(noteSchema),
+    defaultValues: {
+      title: "",
+      content: "",
+      access_level: "company",
+      folder_id: folderId || null,
+      color: null,
+      project_id: initialProjectId || null,
     },
-    enabled: !!activeCompanyId && open,
   });
-
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(noteSchema),
     defaultValues: {
@@ -253,20 +250,14 @@ export function NoteFormDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Folder</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || undefined}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="No folder" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {folders.map((folder) => (
-                          <SelectItem key={folder.id} value={folder.id}>
-                            {folder.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <FolderPicker
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="No folder"
+                        allowClear={false}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
