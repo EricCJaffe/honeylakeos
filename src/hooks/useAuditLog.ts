@@ -65,6 +65,9 @@ export type AuditAction =
   | "task.series_updated"
   | "task.series_split"
   | "task.linked_to_project"
+  | "task.archived"
+  | "task.reopened"
+  | "task.duplicated"
   // Event actions
   | "event.series_created"
   | "event.series_updated"
