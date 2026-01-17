@@ -91,7 +91,9 @@ export default function NotesPage() {
       if (selectedFolderId) {
         query = query.eq("folder_id", selectedFolderId);
       }
-      if (projectFilter !== "all") {
+      if (projectFilter === "standalone") {
+        query = query.is("project_id", null);
+      } else if (projectFilter !== "all") {
         query = query.eq("project_id", projectFilter);
       }
 
@@ -227,7 +229,8 @@ export default function NotesPage() {
               <SelectValue placeholder="Filter by project" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Projects</SelectItem>
+              <SelectItem value="all">All Notes</SelectItem>
+              <SelectItem value="standalone">Standalone Only</SelectItem>
               {projects.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
                   {p.emoji} {p.name}

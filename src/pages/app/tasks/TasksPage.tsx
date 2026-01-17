@@ -1,10 +1,11 @@
 import * as React from "react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, Repeat, Filter, FileText, Layers } from "lucide-react";
+import { CheckCircle2, Repeat, Filter, FileText, Layers, List, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
+import { useTaskLists } from "@/hooks/useTaskLists";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -15,24 +16,29 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { TaskList } from "./TaskList";
 import { TaskFormDialog } from "./TaskFormDialog";
 import { TaskTemplateList } from "@/components/tasks/TaskTemplateList";
 import { TemplateFormDialog } from "@/components/templates/TemplateFormDialog";
+import { TaskListManager } from "@/components/tasks/TaskListManager";
 import { Template } from "@/hooks/useTemplates";
 
 export default function TasksPage() {
-  const { activeCompanyId, loading: membershipLoading } = useActiveCompany();
+  const { activeCompanyId, isCompanyAdmin, loading: membershipLoading } = useActiveCompany();
   const { user } = useAuth();
+  const { taskLists } = useTaskLists();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(null);
   const [projectFilter, setProjectFilter] = useState<string>("all");
   const [phaseFilter, setPhaseFilter] = useState<string>("all");
+  const [listFilter, setListFilter] = useState<string>("all");
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [templateToApply, setTemplateToApply] = useState<Template | null>(null);
+  const [listManagerOpen, setListManagerOpen] = useState(false);
 
   const { data: projects = [] } = useQuery({
     queryKey: ["projects", activeCompanyId],
@@ -73,18 +79,23 @@ export default function TasksPage() {
   }, [projectFilter]);
 
   const { data: allTasks = [], isLoading: loadingAll } = useQuery({
-    queryKey: ["tasks", activeCompanyId, projectFilter, phaseFilter],
+    queryKey: ["tasks", activeCompanyId, projectFilter, phaseFilter, listFilter],
     queryFn: async () => {
       if (!activeCompanyId) return [];
       let query = supabase
         .from("tasks")
-        .select(`*, task_assignees(user_id), project:projects(id, name, emoji), phase:project_phases(id, name)`)
+        .select(`*, task_assignees(user_id), project:projects(id, name, emoji), phase:project_phases(id, name), task_list:task_lists(id, name, color)`)
         .eq("company_id", activeCompanyId)
         .eq("is_recurring_template", false)
         .is("parent_recurring_task_id", null)
         .order("order_index", { ascending: true });
       if (projectFilter !== "all") query = query.eq("project_id", projectFilter);
       if (phaseFilter !== "all") query = query.eq("phase_id", phaseFilter);
+      if (listFilter === "unlisted") {
+        query = query.is("list_id", null);
+      } else if (listFilter !== "all") {
+        query = query.eq("list_id", listFilter);
+      }
       const { data, error } = await query;
       if (error) throw error;
       return data;
@@ -93,7 +104,7 @@ export default function TasksPage() {
   });
 
   const { data: myTasks = [] } = useQuery({
-    queryKey: ["my-tasks", activeCompanyId, user?.id, projectFilter, phaseFilter],
+    queryKey: ["my-tasks", activeCompanyId, user?.id, projectFilter, phaseFilter, listFilter],
     queryFn: async () => {
       if (!activeCompanyId || !user) return [];
       const { data: assignments } = await supabase.from("task_assignees").select("task_id").eq("user_id", user.id);
@@ -101,12 +112,17 @@ export default function TasksPage() {
       if (taskIds.length === 0) return [];
       let query = supabase
         .from("tasks")
-        .select(`*, task_assignees(user_id), project:projects(id, name, emoji), phase:project_phases(id, name)`)
+        .select(`*, task_assignees(user_id), project:projects(id, name, emoji), phase:project_phases(id, name), task_list:task_lists(id, name, color)`)
         .in("id", taskIds)
         .eq("company_id", activeCompanyId)
         .order("due_date", { ascending: true, nullsFirst: false });
       if (projectFilter !== "all") query = query.eq("project_id", projectFilter);
       if (phaseFilter !== "all") query = query.eq("phase_id", phaseFilter);
+      if (listFilter === "unlisted") {
+        query = query.is("list_id", null);
+      } else if (listFilter !== "all") {
+        query = query.eq("list_id", listFilter);
+      }
       const { data, error } = await query;
       if (error) throw error;
       return data;
@@ -115,17 +131,22 @@ export default function TasksPage() {
   });
 
   const { data: recurringTasks = [] } = useQuery({
-    queryKey: ["recurring-tasks", activeCompanyId, projectFilter, phaseFilter],
+    queryKey: ["recurring-tasks", activeCompanyId, projectFilter, phaseFilter, listFilter],
     queryFn: async () => {
       if (!activeCompanyId) return [];
       let query = supabase
         .from("tasks")
-        .select(`*, task_assignees(user_id), project:projects(id, name, emoji), phase:project_phases(id, name)`)
+        .select(`*, task_assignees(user_id), project:projects(id, name, emoji), phase:project_phases(id, name), task_list:task_lists(id, name, color)`)
         .eq("company_id", activeCompanyId)
         .eq("is_recurring_template", true)
         .order("created_at", { ascending: false });
       if (projectFilter !== "all") query = query.eq("project_id", projectFilter);
       if (phaseFilter !== "all") query = query.eq("phase_id", phaseFilter);
+      if (listFilter === "unlisted") {
+        query = query.is("list_id", null);
+      } else if (listFilter !== "all") {
+        query = query.eq("list_id", listFilter);
+      }
       const { data, error } = await query;
       if (error) throw error;
       return data;
@@ -161,6 +182,14 @@ export default function TasksPage() {
     setTemplateDialogOpen(true);
   };
 
+  const clearFilters = () => {
+    setProjectFilter("all");
+    setPhaseFilter("all");
+    setListFilter("all");
+  };
+
+  const hasFilters = projectFilter !== "all" || phaseFilter !== "all" || listFilter !== "all";
+
   if (membershipLoading || loadingAll) {
     return <div className="p-6"><div className="animate-pulse space-y-4"><div className="h-8 bg-muted rounded w-48" /><div className="h-64 bg-muted rounded-lg" /></div></div>;
   }
@@ -172,8 +201,34 @@ export default function TasksPage() {
   return (
     <div className="p-6">
       <PageHeader title="Tasks" description="Manage your tasks and assignments" actionLabel="New Task" onAction={handleCreate} />
+      
+      {/* Filters */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">
         <Filter className="h-4 w-4 text-muted-foreground" />
+        
+        {/* List filter */}
+        <Select value={listFilter} onValueChange={setListFilter}>
+          <SelectTrigger className="w-[160px]">
+            <List className="h-4 w-4 mr-2 text-muted-foreground" />
+            <SelectValue placeholder="Filter by list" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Lists</SelectItem>
+            <SelectItem value="unlisted">Unlisted</SelectItem>
+            {taskLists.map((list) => (
+              <SelectItem key={list.id} value={list.id}>
+                <div className="flex items-center gap-2">
+                  {list.color && (
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: list.color }} />
+                  )}
+                  {list.name}
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Project filter */}
         <Select value={projectFilter} onValueChange={setProjectFilter}>
           <SelectTrigger className="w-[200px]"><SelectValue placeholder="Filter by project" /></SelectTrigger>
           <SelectContent>
@@ -181,6 +236,8 @@ export default function TasksPage() {
             {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.emoji} {p.name}</SelectItem>)}
           </SelectContent>
         </Select>
+
+        {/* Phase filter */}
         {projectFilter !== "all" && phases.length > 0 && (
           <Select value={phaseFilter} onValueChange={setPhaseFilter}>
             <SelectTrigger className="w-[180px]">
@@ -193,19 +250,22 @@ export default function TasksPage() {
             </SelectContent>
           </Select>
         )}
-        {(projectFilter !== "all" || phaseFilter !== "all") && (
-          <Badge 
-            variant="secondary" 
-            className="cursor-pointer" 
-            onClick={() => {
-              setProjectFilter("all");
-              setPhaseFilter("all");
-            }}
-          >
+
+        {hasFilters && (
+          <Badge variant="secondary" className="cursor-pointer" onClick={clearFilters}>
             Clear filters
           </Badge>
         )}
+
+        {/* Manage Lists button */}
+        {isCompanyAdmin && (
+          <Button variant="outline" size="sm" onClick={() => setListManagerOpen(true)} className="ml-auto">
+            <Settings className="h-4 w-4 mr-2" />
+            Manage Lists
+          </Button>
+        )}
       </div>
+
       <Tabs defaultValue="my" className="space-y-4">
         <TabsList>
           <TabsTrigger value="my">My Tasks ({myTasks.length})</TabsTrigger>
@@ -213,9 +273,63 @@ export default function TasksPage() {
           <TabsTrigger value="recurring" className="gap-1"><Repeat className="h-3.5 w-3.5" />Recurring ({recurringTasks.length})</TabsTrigger>
           <TabsTrigger value="templates" className="gap-1"><FileText className="h-3.5 w-3.5" />Templates</TabsTrigger>
         </TabsList>
-        <TabsContent value="my"><Card><CardContent className="p-0">{myTasks.length === 0 ? <div className="py-12"><EmptyState icon={CheckCircle2} title="No tasks assigned" description="Tasks assigned to you will appear here." /></div> : <TaskList tasks={myTasks} onEditTask={handleEdit} showProject showPhase />}</CardContent></Card></TabsContent>
-        <TabsContent value="all"><Card><CardContent className="p-0">{allTasks.length === 0 ? <div className="py-12"><EmptyState icon={CheckCircle2} title="No tasks yet" description="Create your first task." actionLabel="Create Task" onAction={handleCreate} /></div> : <TaskList tasks={allTasks} onEditTask={handleEdit} showProject showPhase />}</CardContent></Card></TabsContent>
-        <TabsContent value="recurring"><Card><CardContent className="p-0">{recurringTasks.length === 0 ? <div className="py-12"><EmptyState icon={Repeat} title="No recurring tasks" description="Create a recurring task." actionLabel="Create Recurring Task" onAction={handleCreate} /></div> : <TaskList tasks={recurringTasks} onEditTask={handleEdit} showProject showPhase showRecurrence />}</CardContent></Card></TabsContent>
+        <TabsContent value="my">
+          <Card>
+            <CardContent className="p-0">
+              {myTasks.length === 0 ? (
+                <div className="py-12">
+                  <EmptyState 
+                    icon={CheckCircle2} 
+                    title="No tasks assigned" 
+                    description="Tasks assigned to you will appear here."
+                    actionLabel="Create Task"
+                    onAction={handleCreate}
+                  />
+                </div>
+              ) : (
+                <TaskList tasks={myTasks} onEditTask={handleEdit} showProject showPhase showList />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="all">
+          <Card>
+            <CardContent className="p-0">
+              {allTasks.length === 0 ? (
+                <div className="py-12">
+                  <EmptyState 
+                    icon={CheckCircle2} 
+                    title="No tasks yet" 
+                    description="Create your first task to get started."
+                    actionLabel="Create Task"
+                    onAction={handleCreate}
+                  />
+                </div>
+              ) : (
+                <TaskList tasks={allTasks} onEditTask={handleEdit} showProject showPhase showList />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="recurring">
+          <Card>
+            <CardContent className="p-0">
+              {recurringTasks.length === 0 ? (
+                <div className="py-12">
+                  <EmptyState 
+                    icon={Repeat} 
+                    title="No recurring tasks" 
+                    description="Create a recurring task to automate repetitive work."
+                    actionLabel="Create Recurring Task"
+                    onAction={handleCreate}
+                  />
+                </div>
+              ) : (
+                <TaskList tasks={recurringTasks} onEditTask={handleEdit} showProject showPhase showRecurrence showList />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
         <TabsContent value="templates">
           <Card>
             <CardContent className="p-0">
@@ -228,6 +342,7 @@ export default function TasksPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
       <TaskFormDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
@@ -239,6 +354,10 @@ export default function TasksPage() {
         onOpenChange={setTemplateDialogOpen}
         template={editingTemplate}
         defaultType="task"
+      />
+      <TaskListManager
+        open={listManagerOpen}
+        onOpenChange={setListManagerOpen}
       />
     </div>
   );
