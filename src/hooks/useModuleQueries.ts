@@ -82,15 +82,14 @@ const MODULE_QUERY_KEYS: Record<ModuleKey, string[][]> = {
   crm: [
     ["crm-clients"],
     ["crm-client"],
+    ["external-contacts"], // External contacts use CRM module
+    ["external-contact"],
   ],
   coaches: [
     ["coach-profiles"],
     ["coach-profile"],
   ],
-  external_contacts: [
-    ["external-contacts"],
-    ["external-contact"],
-  ],
+  // external_contacts uses crm module, query keys handled under crm
 };
 
 /**

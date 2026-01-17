@@ -164,13 +164,13 @@ function App() {
                     <Route path="documents" element={<ModuleGuard moduleKey="documents" moduleName="Documents"><DocumentsPage /></ModuleGuard>} />
                     <Route path="documents/:documentId" element={<ModuleGuard moduleKey="documents" moduleName="Documents"><DocumentDetailPage /></ModuleGuard>} />
                     <Route path="forms" element={<ModuleGuard moduleKey="forms" moduleName="Forms"><WorkflowsPage /></ModuleGuard>} />
-                    <Route path="workflows" element={<WorkflowsPage />} />
-                    <Route path="workflows/:workflowId" element={<WorkflowDetailPage />} />
-                    <Route path="workflows/forms/:formId" element={<FormDetailPage />} />
-                    <Route path="workflows/forms/:formId/submit" element={<FormSubmitPage />} />
-                    <Route path="workflows/my-work" element={<MyWorkPage />} />
-                    <Route path="workflows/runs" element={<WorkflowRunsPage />} />
-                    <Route path="workflows/runs/:runId" element={<RunDetailPage />} />
+                    <Route path="workflows" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><WorkflowsPage /></ModuleGuard>} />
+                    <Route path="workflows/:workflowId" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><WorkflowDetailPage /></ModuleGuard>} />
+                    <Route path="workflows/forms/:formId" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><FormDetailPage /></ModuleGuard>} />
+                    <Route path="workflows/forms/:formId/submit" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><FormSubmitPage /></ModuleGuard>} />
+                    <Route path="workflows/my-work" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><MyWorkPage /></ModuleGuard>} />
+                    <Route path="workflows/runs" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><WorkflowRunsPage /></ModuleGuard>} />
+                    <Route path="workflows/runs/:runId" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><RunDetailPage /></ModuleGuard>} />
                     <Route path="lms" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsPage /></ModuleGuard>} />
                     <Route path="lms/my-learning" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><MyLearningPage /></ModuleGuard>} />
                     <Route path="lms/paths" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsPathsPage /></ModuleGuard>} />
@@ -185,8 +185,8 @@ function App() {
                     <Route path="lms/reports/learner/:userId" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LearnerReportPage /></ModuleGuard>} />
                     <Route path="crm" element={<ModuleGuard moduleKey="crm" moduleName="CRM"><CrmPage /></ModuleGuard>} />
                     <Route path="crm/:clientId" element={<ModuleGuard moduleKey="crm" moduleName="CRM"><CrmDetailPage /></ModuleGuard>} />
-                    <Route path="contacts" element={<ModuleGuard moduleKey="external_contacts" moduleName="Contacts"><ExternalContactsPage /></ModuleGuard>} />
-                    <Route path="contacts/:contactId" element={<ModuleGuard moduleKey="external_contacts" moduleName="Contacts"><ExternalContactDetailPage /></ModuleGuard>} />
+                    <Route path="contacts" element={<ModuleGuard moduleKey="crm" moduleName="Contacts"><ExternalContactsPage /></ModuleGuard>} />
+                    <Route path="contacts/:contactId" element={<ModuleGuard moduleKey="crm" moduleName="Contacts"><ExternalContactDetailPage /></ModuleGuard>} />
                     <Route path="coaches" element={<ModuleGuard moduleKey="coaches" moduleName="Coaches"><CoachesPage /></ModuleGuard>} />
                     <Route path="coaches/:coachId" element={<ModuleGuard moduleKey="coaches" moduleName="Coaches"><CoachDetailPage /></ModuleGuard>} />
                     <Route path="coaching" element={<CoachingPage />} />

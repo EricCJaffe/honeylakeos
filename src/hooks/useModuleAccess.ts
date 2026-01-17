@@ -5,6 +5,8 @@ import { useMembership } from "@/lib/membership";
 /**
  * Module slugs that map to routes and database module records.
  * These should match the `slug` field in the `modules` table.
+ * 
+ * Note: "external_contacts" is not a separate module - it uses the "crm" module.
  */
 export type ModuleKey =
   | "coaches"
@@ -19,8 +21,7 @@ export type ModuleKey =
   | "locations"
   | "workflows"
   | "lms"
-  | "crm"
-  | "external_contacts";
+  | "crm";
 
 interface ModuleAccessResult {
   /** Whether the module is enabled for the company */
@@ -143,8 +144,11 @@ export function useModuleAccess(moduleKey: ModuleKey): ModuleAccessResult {
 }
 
 /**
- * Core modules that are always available (don't require company_modules entry)
- * These are fundamental to the platform and shouldn't require explicit enablement.
+ * Core modules that are always available (don't require company_modules entry).
+ * These MUST match the core modules list in the SQL is_module_enabled() function.
+ * 
+ * IMPORTANT: Keep in sync with the is_module_enabled function in database migrations.
+ * SQL function defines: projects, tasks, calendar, documents, notes, folders, groups, locations
  */
 export const CORE_MODULES: ModuleKey[] = [
   "projects",
@@ -155,18 +159,18 @@ export const CORE_MODULES: ModuleKey[] = [
   "folders",
   "groups",
   "locations",
-  "crm",
-  "external_contacts",
-  "coaches",
 ];
 
 /**
- * Premium modules that require explicit enablement via company_modules
+ * Premium modules that require explicit enablement via company_modules.
+ * These have entries in the modules table and need to be enabled per-company.
  */
 export const PREMIUM_MODULES: ModuleKey[] = [
   "forms",
   "workflows",
   "lms",
+  "crm",
+  "coaches",
 ];
 
 /**

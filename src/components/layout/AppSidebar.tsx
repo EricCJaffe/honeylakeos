@@ -61,7 +61,7 @@ const knowledgeNavItems: NavItem[] = [
 
 const crmNavItems: NavItem[] = [
   { title: "CRM", url: "/app/crm", icon: Users, moduleKey: "crm" },
-  { title: "Contacts", url: "/app/contacts", icon: Contact, moduleKey: "external_contacts" },
+  { title: "Contacts", url: "/app/contacts", icon: Contact, moduleKey: "crm" }, // Uses CRM module
   { title: "Coaches", url: "/app/coaches", icon: UserCheck, moduleKey: "coaches" },
 ];
 
