@@ -1870,6 +1870,7 @@ export type Database = {
           sort_order: number
           thresholds: Json | null
           updated_at: string
+          weight_percent: number | null
         }
         Insert: {
           calculation_key: string
@@ -1885,6 +1886,7 @@ export type Database = {
           sort_order?: number
           thresholds?: Json | null
           updated_at?: string
+          weight_percent?: number | null
         }
         Update: {
           calculation_key?: string
@@ -1900,6 +1902,7 @@ export type Database = {
           sort_order?: number
           thresholds?: Json | null
           updated_at?: string
+          weight_percent?: number | null
         }
         Relationships: [
           {
@@ -1965,6 +1968,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          health_thresholds: Json | null
           id: string
           is_system_template: boolean
           marketplace_visibility: string | null
@@ -1985,6 +1989,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          health_thresholds?: Json | null
           id?: string
           is_system_template?: boolean
           marketplace_visibility?: string | null
@@ -2005,6 +2010,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          health_thresholds?: Json | null
           id?: string
           is_system_template?: boolean
           marketplace_visibility?: string | null
