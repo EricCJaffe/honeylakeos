@@ -83,6 +83,13 @@ import CoachingClientDetailPage from "@/pages/app/coaching/ClientDetailPage";
 import RecommendationFormPage from "@/pages/app/coaching/RecommendationFormPage";
 import PlaybooksPage from "@/pages/app/coaching/PlaybooksPage";
 import PlansUsagePage from "@/pages/app/admin/PlansUsagePage";
+import KnowledgeBasePage from "@/pages/app/support/KnowledgeBasePage";
+import ArticleDetailPage from "@/pages/app/support/ArticleDetailPage";
+import SubmitTicketPage from "@/pages/app/support/SubmitTicketPage";
+import MyTicketsPage from "@/pages/app/support/MyTicketsPage";
+import TicketDetailPage from "@/pages/app/support/TicketDetailPage";
+import TicketDashboardPage from "@/pages/app/support/TicketDashboardPage";
+import KbAdminPage from "@/pages/app/support/KbAdminPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -174,6 +181,13 @@ function App() {
                     <Route path="coaching/clients/:engagementId" element={<CoachingClientDetailPage />} />
                     <Route path="coaching/recommendations/new" element={<RecommendationFormPage />} />
                     <Route path="coaching/playbooks" element={<PlaybooksPage />} />
+                    <Route path="support/kb" element={<KnowledgeBasePage />} />
+                    <Route path="support/kb/:articleId" element={<ArticleDetailPage />} />
+                    <Route path="support/kb/admin" element={<KbAdminPage />} />
+                    <Route path="support/tickets" element={<MyTicketsPage />} />
+                    <Route path="support/tickets/new" element={<SubmitTicketPage />} />
+                    <Route path="support/tickets/:ticketId" element={<TicketDetailPage />} />
+                    <Route path="support/dashboard" element={<TicketDashboardPage />} />
                     <Route path="settings" element={<SettingsPage />} />
                     <Route path="framework" element={<FrameworksPage />} />
                     <Route path="framework/marketplace" element={<FrameworkMarketplacePage />} />

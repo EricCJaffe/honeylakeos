@@ -16,6 +16,9 @@ import {
   Contact,
   UserCheck,
   CreditCard,
+  Compass,
+  HelpCircle,
+  Ticket,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Logo } from "@/components/Logo";
@@ -63,9 +66,15 @@ const crmNavItems: NavItem[] = [
 ];
 
 const premiumNavItems: NavItem[] = [
+  { title: "Framework", url: "/app/framework", icon: Compass },
   { title: "Forms", url: "/app/forms", icon: Globe, moduleKey: "forms" },
   { title: "Workflows", url: "/app/workflows", icon: Workflow, moduleKey: "workflows" },
   { title: "LMS", url: "/app/lms", icon: BookOpen, moduleKey: "lms" },
+];
+
+const supportNavItems: NavItem[] = [
+  { title: "Help Center", url: "/app/support/kb", icon: HelpCircle },
+  { title: "My Tickets", url: "/app/support/tickets", icon: Ticket },
 ];
 
 export function AppSidebar() {
@@ -167,6 +176,9 @@ export function AppSidebar() {
 
         {/* Premium Modules - only show if any are enabled */}
         {renderNavGroup("Premium", visiblePremiumItems)}
+
+        {/* Support */}
+        {renderNavGroup("Support", supportNavItems)}
 
         {/* Administration - consolidated admin consoles */}
         {showCompanyAdmin && (

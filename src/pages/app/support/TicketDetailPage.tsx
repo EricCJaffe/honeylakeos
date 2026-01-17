@@ -62,20 +62,9 @@ export default function TicketDetailPage() {
     setNewMessage("");
   };
 
-  const getInitials = (user: { email: string; raw_user_meta_data: Record<string, unknown> } | null) => {
-    if (!user) return "?";
-    const name = (user.raw_user_meta_data?.full_name as string) || user.email;
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  const getUserName = (user: { email: string; raw_user_meta_data: Record<string, unknown> } | null) => {
-    if (!user) return "Unknown";
-    return (user.raw_user_meta_data?.full_name as string) || user.email;
+  const getInitials = (userId: string | null) => {
+    if (!userId) return "?";
+    return userId.substring(0, 2).toUpperCase();
   };
 
   if (ticketLoading) {
@@ -130,10 +119,10 @@ export default function TicketDetailPage() {
             <CardHeader className="pb-2">
               <div className="flex items-center gap-3">
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback>{getInitials(ticket.creator)}</AvatarFallback>
+                  <AvatarFallback>{getInitials(ticket.created_by_user_id)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-medium text-sm">{getUserName(ticket.creator)}</p>
+                  <p className="font-medium text-sm">Requester</p>
                   <p className="text-xs text-muted-foreground">
                     {format(new Date(ticket.created_at), "MMM d, yyyy 'at' h:mm a")}
                   </p>
@@ -170,12 +159,12 @@ export default function TicketDetailPage() {
                   <CardHeader className="pb-2">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
-                        <AvatarFallback>{getInitials(message.author)}</AvatarFallback>
+                        <AvatarFallback>{getInitials(message.author_user_id)}</AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-sm">
-                            {getUserName(message.author)}
+                            {message.author_type === "agent" ? "Support Agent" : "You"}
                           </p>
                           {message.author_type === "agent" && (
                             <Badge variant="secondary" className="text-xs">
@@ -264,11 +253,11 @@ export default function TicketDetailPage() {
                 </div>
               )}
 
-              {ticket.assigned_user && (
+              {ticket.assigned_to_user_id && (
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Assigned to:</span>
-                  <span>{getUserName(ticket.assigned_user)}</span>
+                  <span className="text-muted-foreground">Assigned:</span>
+                  <span>Support Agent</span>
                 </div>
               )}
 
