@@ -56,6 +56,7 @@ import RlsTestPage from "@/pages/app/dev/RlsTestPage";
 import OnboardingPage from "@/pages/app/onboarding/OnboardingPage";
 import SettingsPage from "@/pages/app/settings/SettingsPage";
 import TemplatesPage from "@/pages/app/admin/TemplatesPage";
+import FrameworksPage from "@/pages/app/frameworks/FrameworksPage";
 import LmsPage from "@/pages/app/lms/LmsPage";
 import LmsPathsPage from "@/pages/app/lms/PathsPage";
 import LmsPathDetailPage from "@/pages/app/lms/PathDetailPage";
@@ -160,6 +161,7 @@ function App() {
                     <Route path="coaches" element={<ModuleGuard moduleKey="coaches" moduleName="Coaches"><CoachesPage /></ModuleGuard>} />
                     <Route path="coaches/:coachId" element={<ModuleGuard moduleKey="coaches" moduleName="Coaches"><CoachDetailPage /></ModuleGuard>} />
                     <Route path="settings" element={<SettingsPage />} />
+                    <Route path="framework" element={<FrameworksPage />} />
                     <Route path="admin/company-console" element={<CompanyConsolePage />} />
                     <Route path="admin/company" element={<CompanySettingsPage />} />
                     <Route path="admin/members" element={<MembersPage />} />
