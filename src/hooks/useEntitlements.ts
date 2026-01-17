@@ -181,6 +181,12 @@ interface EntitlementResult {
 /**
  * Central hook for evaluating entitlements.
  * Returns functions to check specific entitlements.
+ * 
+ * BEHAVIOR:
+ * - Company Admin / Site Admin always allowed (admin override)
+ * - During grace period: allow access + show warnings
+ * - When expired: read-only for restricted features
+ * - Never delete data or break dashboards
  */
 export function useEntitlements() {
   const { activeCompanyId } = useActiveCompany();
@@ -260,11 +266,20 @@ export function useEntitlements() {
    * Get the current plan status
    */
   const getPlanStatus = () => {
-    if (!plan) return { hasPlan: false, status: "none" as const, isActive: true, isGrace: false };
+    if (!plan) return { hasPlan: false, status: "none" as const, isActive: true, isGrace: false, isExpired: false, graceDaysRemaining: 0 };
     
     const isActive = plan.status === "active";
     const isGrace = plan.status === "grace";
     const isExpired = plan.status === "expired" || plan.status === "cancelled";
+
+    // Calculate grace days remaining
+    let graceDaysRemaining = 0;
+    if (isGrace && plan.expires_at) {
+      const expiryDate = new Date(plan.expires_at);
+      const gracePeriod = plan.grace_period_days || 30;
+      const graceEndDate = new Date(expiryDate.getTime() + gracePeriod * 24 * 60 * 60 * 1000);
+      graceDaysRemaining = Math.max(0, Math.ceil((graceEndDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+    }
 
     return {
       hasPlan: true,
@@ -275,6 +290,8 @@ export function useEntitlements() {
       isGrace,
       isExpired,
       expiresAt: plan.expires_at,
+      graceDaysRemaining,
+      gracePeriodDays: plan.grace_period_days || 30,
     };
   };
 
@@ -288,7 +305,7 @@ export function useEntitlements() {
     getUsageInfo,
     getPlanStatus,
     // Convenience checks for common entitlements
-    canUsecrm: () => isEnabled("crm_enabled"),
+    canUseCrm: () => isEnabled("crm_enabled"),
     canUseLms: () => isEnabled("lms_enabled"),
     canUseCoaching: () => isEnabled("coaching_module_enabled"),
     canPublishFrameworks: () => isEnabled("framework_marketplace_publish"),
@@ -459,20 +476,171 @@ function parseEntitlementValue(value: unknown): unknown {
 }
 
 /**
- * Higher-order component/hook guard for features requiring entitlements
+ * Higher-order component/hook guard for features requiring entitlements.
+ * 
+ * BEHAVIOR:
+ * - Admin override: Company admins and site admins always get access
+ * - Grace period: Allow access but show warnings
+ * - Expired: Read-only for restricted features, never break dashboards
  */
-export function useEntitlementGuard(entitlementKey: EntitlementKey) {
+export function useEntitlementGuard(
+  entitlementKey: EntitlementKey,
+  options?: { isAdmin?: boolean; skipAdminOverride?: boolean }
+) {
   const { isEnabled, isLoading, getPlanStatus } = useEntitlements();
   
-  const isAllowed = isEnabled(entitlementKey);
-  const { isGrace, isExpired, planTier } = getPlanStatus();
-
+  const planStatus = getPlanStatus();
+  const { isGrace, isExpired, planTier, graceDaysRemaining } = planStatus;
+  
+  // Admin override - company admins and site admins always allowed
+  const hasAdminOverride = options?.isAdmin && !options?.skipAdminOverride;
+  
+  // Feature enabled check
+  const featureEnabled = isEnabled(entitlementKey);
+  
+  // Grace period allows access with warnings
+  const allowedDuringGrace = isGrace && featureEnabled;
+  
+  // Expired means read-only for restricted features
+  const readOnlyMode = isExpired && featureEnabled;
+  
+  // Final access determination
+  const isAllowed = hasAdminOverride || featureEnabled || allowedDuringGrace;
+  
   return {
     isLoading,
     isAllowed,
     isGrace,
     isExpired,
     planTier,
-    showUpgradePrompt: !isAllowed && !isLoading,
+    graceDaysRemaining,
+    readOnlyMode,
+    hasAdminOverride: !!hasAdminOverride,
+    showUpgradePrompt: !isAllowed && !isLoading && !hasAdminOverride,
+    showGraceWarning: isGrace && !isLoading,
+    showExpiredWarning: isExpired && !isLoading,
+  };
+}
+
+// ==========================================
+// USAGE TRACKING HOOKS
+// ==========================================
+
+/**
+ * Hook to get current usage counts for limit tracking
+ */
+export function useUsageCounts() {
+  const { activeCompanyId } = useActiveCompany();
+
+  const { data: userCount, isLoading: usersLoading } = useQuery({
+    queryKey: ["usage-count-users", activeCompanyId],
+    queryFn: async () => {
+      if (!activeCompanyId) return 0;
+      const { count, error } = await supabase
+        .from("memberships")
+        .select("*", { count: "exact", head: true })
+        .eq("company_id", activeCompanyId)
+        .eq("status", "active");
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!activeCompanyId,
+  });
+
+  const { data: frameworkCount, isLoading: frameworksLoading } = useQuery({
+    queryKey: ["usage-count-frameworks", activeCompanyId],
+    queryFn: async () => {
+      if (!activeCompanyId) return 0;
+      const { count, error } = await supabase
+        .from("company_frameworks")
+        .select("*", { count: "exact", head: true })
+        .eq("company_id", activeCompanyId);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!activeCompanyId,
+  });
+
+  const { data: publishedFrameworkCount, isLoading: publishedLoading } = useQuery({
+    queryKey: ["usage-count-published-frameworks", activeCompanyId],
+    queryFn: async () => {
+      if (!activeCompanyId) return 0;
+      const { count, error } = await supabase
+        .from("frameworks")
+        .select("*", { count: "exact", head: true })
+        .eq("owner_company_id", activeCompanyId)
+        .eq("status", "published")
+        .not("marketplace_visibility", "is", null);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!activeCompanyId,
+  });
+
+  const { data: clientCount, isLoading: clientsLoading } = useQuery({
+    queryKey: ["usage-count-clients", activeCompanyId],
+    queryFn: async () => {
+      if (!activeCompanyId) return 0;
+      const { count, error } = await supabase
+        .from("coaching_engagements")
+        .select("*", { count: "exact", head: true })
+        .eq("coaching_org_company_id", activeCompanyId)
+        .is("archived_at", null);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!activeCompanyId,
+  });
+
+  return {
+    isLoading: usersLoading || frameworksLoading || publishedLoading || clientsLoading,
+    counts: {
+      users: userCount ?? 0,
+      frameworks: frameworkCount ?? 0,
+      publishedFrameworks: publishedFrameworkCount ?? 0,
+      clients: clientCount ?? 0,
+    },
+  };
+}
+
+/**
+ * Hook for checking if a specific action can be performed (soft limit enforcement)
+ * Prevents new creation only, existing data remains usable
+ */
+export function useCanPerformAction(action: "add_user" | "add_framework" | "publish_framework" | "add_client") {
+  const { getLimit, getPlanStatus } = useEntitlements();
+  const { counts, isLoading: usageLoading } = useUsageCounts();
+
+  const actionToEntitlement: Record<typeof action, { key: EntitlementKey; countKey: keyof typeof counts }> = {
+    add_user: { key: "max_users", countKey: "users" },
+    add_framework: { key: "max_active_frameworks", countKey: "frameworks" },
+    publish_framework: { key: "max_published_frameworks", countKey: "publishedFrameworks" },
+    add_client: { key: "max_active_clients", countKey: "clients" },
+  };
+
+  const { key, countKey } = actionToEntitlement[action];
+  const limit = getLimit(key);
+  const current = counts[countKey];
+  const planStatus = getPlanStatus();
+
+  // During grace period, allow actions
+  // When expired, prevent new creation
+  const canPerform = planStatus.isExpired ? false : current < limit;
+  const wouldExceedLimit = current >= limit;
+
+  return {
+    isLoading: usageLoading,
+    canPerform,
+    wouldExceedLimit,
+    current,
+    limit,
+    remaining: Math.max(0, limit - current),
+    isExpired: planStatus.isExpired,
+    isGrace: planStatus.isGrace,
+    message: planStatus.isExpired
+      ? "Your plan has expired. Renew to continue adding new items."
+      : wouldExceedLimit
+      ? `You've reached your limit of ${limit}. Upgrade your plan to add more.`
+      : null,
   };
 }

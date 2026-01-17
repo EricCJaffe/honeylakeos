@@ -82,6 +82,7 @@ import CoachHomePage from "@/pages/app/coaching/CoachHomePage";
 import CoachingClientDetailPage from "@/pages/app/coaching/ClientDetailPage";
 import RecommendationFormPage from "@/pages/app/coaching/RecommendationFormPage";
 import PlaybooksPage from "@/pages/app/coaching/PlaybooksPage";
+import PlansUsagePage from "@/pages/app/admin/PlansUsagePage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -184,6 +185,7 @@ function App() {
                     <Route path="admin/permissions-check" element={<PermissionsCheckPage />} />
                     <Route path="admin/deferred" element={<AdminDeferredTasksPage />} />
                     <Route path="admin/templates" element={<TemplatesPage />} />
+                    <Route path="admin/plans-usage" element={<PlansUsagePage />} />
                     <Route path="admin/site-console" element={<SiteConsolePage />} />
                     <Route path="admin/sites" element={<SitesPage />} />
                     <Route path="admin/companies" element={<CompaniesPage />} />

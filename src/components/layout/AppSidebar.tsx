@@ -15,6 +15,7 @@ import {
   Users,
   Contact,
   UserCheck,
+  CreditCard,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Logo } from "@/components/Logo";
@@ -188,6 +189,23 @@ export function AppSidebar() {
                     >
                       <Building2 className="h-4 w-4" />
                       <span>Company Console</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive("/app/admin/plans-usage")}
+                    tooltip="Plans & Usage"
+                  >
+                    <NavLink
+                      to="/app/admin/plans-usage"
+                      className="flex items-center gap-3"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    >
+                      <CreditCard className="h-4 w-4" />
+                      <span>Plans & Usage</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
