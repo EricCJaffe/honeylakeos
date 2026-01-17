@@ -583,6 +583,7 @@ export type Database = {
       }
       company_onboarding_state: {
         Row: {
+          applied_preset_id: string | null
           coach_engagement_id: string | null
           company_id: string
           completed_at: string | null
@@ -593,6 +594,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          applied_preset_id?: string | null
           coach_engagement_id?: string | null
           company_id: string
           completed_at?: string | null
@@ -603,6 +605,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          applied_preset_id?: string | null
           coach_engagement_id?: string | null
           company_id?: string
           completed_at?: string | null
@@ -613,6 +616,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "company_onboarding_state_applied_preset_id_fkey"
+            columns: ["applied_preset_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_presets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "company_onboarding_state_coach_engagement_id_fkey"
             columns: ["coach_engagement_id"]
@@ -3725,6 +3735,53 @@ export type Database = {
           },
         ]
       }
+      onboarding_presets: {
+        Row: {
+          config_json: Json
+          created_at: string
+          description: string | null
+          framework_id: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          target_audience: string | null
+        }
+        Insert: {
+          config_json?: Json
+          created_at?: string
+          description?: string | null
+          framework_id?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          target_audience?: string | null
+        }
+        Update: {
+          config_json?: Json
+          created_at?: string
+          description?: string | null
+          framework_id?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          target_audience?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_presets_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_entitlements: {
         Row: {
           created_at: string
@@ -5636,6 +5693,10 @@ export type Database = {
     }
     Functions: {
       accept_employee_invite: { Args: { p_token: string }; Returns: Json }
+      apply_onboarding_preset: {
+        Args: { p_company_id: string; p_preset_id: string }
+        Returns: Json
+      }
       bootstrap_first_site: {
         Args: { p_company_name?: string; p_site_name?: string }
         Returns: Json
