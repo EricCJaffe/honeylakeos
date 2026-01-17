@@ -58,6 +58,7 @@ import FrameworkOnboardingPage from "@/pages/app/onboarding/FrameworkOnboardingP
 import SettingsPage from "@/pages/app/settings/SettingsPage";
 import TemplatesPage from "@/pages/app/admin/TemplatesPage";
 import FrameworksPage from "@/pages/app/frameworks/FrameworksPage";
+import FrameworkMarketplacePage from "@/pages/app/frameworks/FrameworkMarketplacePage";
 import LmsPage from "@/pages/app/lms/LmsPage";
 import LmsPathsPage from "@/pages/app/lms/PathsPage";
 import LmsPathDetailPage from "@/pages/app/lms/PathDetailPage";
@@ -174,6 +175,7 @@ function App() {
                     <Route path="coaching/playbooks" element={<PlaybooksPage />} />
                     <Route path="settings" element={<SettingsPage />} />
                     <Route path="framework" element={<FrameworksPage />} />
+                    <Route path="framework/marketplace" element={<FrameworkMarketplacePage />} />
                     <Route path="admin/company-console" element={<CompanyConsolePage />} />
                     <Route path="admin/company" element={<CompanySettingsPage />} />
                     <Route path="admin/members" element={<MembersPage />} />

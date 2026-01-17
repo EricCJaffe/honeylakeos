@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useCompanyActiveFramework, useFrameworks, useFrameworkMutations } from "@/hooks/useFrameworks";
 import { useMembership } from "@/lib/membership";
 import { PageHeader } from "@/components/PageHeader";
-import { FrameworkSelector } from "@/components/frameworks/FrameworkSelector";
+import { FrameworkMarketplaceBrowser } from "@/components/frameworks/FrameworkMarketplaceBrowser";
 import { FrameworkEditor } from "@/components/frameworks/FrameworkEditor";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Layers, Settings, AlertTriangle } from "lucide-react";
+import { Layers, Settings, AlertTriangle, Store } from "lucide-react";
 
 export default function FrameworksPage() {
   const navigate = useNavigate();
@@ -63,7 +63,10 @@ export default function FrameworksPage() {
               <Settings className="h-4 w-4 mr-2" />
               Customize
             </TabsTrigger>
-            <TabsTrigger value="browse">Browse Frameworks</TabsTrigger>
+            <TabsTrigger value="browse">
+              <Store className="h-4 w-4 mr-2" />
+              Marketplace
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="current" className="space-y-6">
@@ -162,7 +165,7 @@ export default function FrameworksPage() {
           </TabsContent>
 
           <TabsContent value="browse">
-            <FrameworkSelector onFrameworkAdopted={() => setActiveTab("current")} />
+            <FrameworkMarketplaceBrowser onFrameworkAdopted={() => setActiveTab("current")} />
           </TabsContent>
         </Tabs>
       ) : (
@@ -177,7 +180,7 @@ export default function FrameworksPage() {
             </CardHeader>
           </Card>
 
-          <FrameworkSelector onFrameworkAdopted={() => {}} />
+          <FrameworkMarketplaceBrowser onFrameworkAdopted={() => {}} />
         </div>
       )}
 

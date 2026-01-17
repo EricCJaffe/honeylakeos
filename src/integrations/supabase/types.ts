@@ -1967,10 +1967,15 @@ export type Database = {
           description: string | null
           id: string
           is_system_template: boolean
+          marketplace_visibility: string | null
           name: string
           owner_company_id: string | null
           owner_type: Database["public"]["Enums"]["framework_owner_type"]
+          published_at: string | null
+          short_summary: string | null
+          source_framework_id: string | null
           status: Database["public"]["Enums"]["framework_status"]
+          tags: string[] | null
           updated_at: string
           version_label: string | null
         }
@@ -1982,10 +1987,15 @@ export type Database = {
           description?: string | null
           id?: string
           is_system_template?: boolean
+          marketplace_visibility?: string | null
           name: string
           owner_company_id?: string | null
           owner_type?: Database["public"]["Enums"]["framework_owner_type"]
+          published_at?: string | null
+          short_summary?: string | null
+          source_framework_id?: string | null
           status?: Database["public"]["Enums"]["framework_status"]
+          tags?: string[] | null
           updated_at?: string
           version_label?: string | null
         }
@@ -1997,10 +2007,15 @@ export type Database = {
           description?: string | null
           id?: string
           is_system_template?: boolean
+          marketplace_visibility?: string | null
           name?: string
           owner_company_id?: string | null
           owner_type?: Database["public"]["Enums"]["framework_owner_type"]
+          published_at?: string | null
+          short_summary?: string | null
+          source_framework_id?: string | null
           status?: Database["public"]["Enums"]["framework_status"]
+          tags?: string[] | null
           updated_at?: string
           version_label?: string | null
         }
@@ -2017,6 +2032,13 @@ export type Database = {
             columns: ["owner_company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "frameworks_source_framework_id_fkey"
+            columns: ["source_framework_id"]
+            isOneToOne: false
+            referencedRelation: "frameworks"
             referencedColumns: ["id"]
           },
         ]
@@ -4450,6 +4472,7 @@ export type Database = {
         | "note_prompt"
         | "document_prompt"
         | "framework_change_suggestion"
+        | "framework_adoption"
       site_role: "super_admin" | "site_admin"
     }
     CompositeTypes: {
@@ -4621,6 +4644,7 @@ export const Constants = {
         "note_prompt",
         "document_prompt",
         "framework_change_suggestion",
+        "framework_adoption",
       ],
       site_role: ["super_admin", "site_admin"],
     },
