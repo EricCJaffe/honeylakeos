@@ -2,14 +2,14 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { List, Plus, Pencil, Trash2, MoreHorizontal } from "lucide-react";
+import { List, Plus, Pencil, Trash2, MoreHorizontal, User, Building2 } from "lucide-react";
 import { useTaskLists, TaskList } from "@/hooks/useTaskLists";
+import { useActiveCompany } from "@/hooks/useActiveCompany";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -27,13 +27,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/EmptyState";
 
 const listSchema = z.object({
   name: z.string().min(1, "Name is required"),
   color: z.string().optional().nullable(),
+  isPersonal: z.boolean().default(false),
 });
 
 type ListFormValues = z.infer<typeof listSchema>;
@@ -55,20 +57,21 @@ interface TaskListManagerProps {
 }
 
 export function TaskListManager({ open, onOpenChange }: TaskListManagerProps) {
-  const { taskLists, isCompanyAdmin, createList, updateList, deleteList } = useTaskLists();
+  const { personalLists, companyLists, isCompanyAdmin, canManageList, createList, updateList, deleteList } = useTaskLists();
+  const { activeCompanyId } = useActiveCompany();
   const [editingList, setEditingList] = React.useState<TaskList | null>(null);
   const [isFormOpen, setIsFormOpen] = React.useState(false);
 
   const form = useForm<ListFormValues>({
     resolver: zodResolver(listSchema),
-    defaultValues: { name: "", color: null },
+    defaultValues: { name: "", color: null, isPersonal: false },
   });
 
   React.useEffect(() => {
     if (editingList) {
-      form.reset({ name: editingList.name, color: editingList.color });
+      form.reset({ name: editingList.name, color: editingList.color, isPersonal: editingList.is_personal });
     } else {
-      form.reset({ name: "", color: null });
+      form.reset({ name: "", color: null, isPersonal: false });
     }
   }, [editingList, form]);
 
@@ -82,7 +85,7 @@ export function TaskListManager({ open, onOpenChange }: TaskListManagerProps) {
         },
       });
     } else {
-      createList.mutate({ name: values.name, color: values.color }, {
+      createList.mutate({ name: values.name, color: values.color, isPersonal: values.isPersonal }, {
         onSuccess: () => {
           setIsFormOpen(false);
           form.reset();
@@ -102,82 +105,122 @@ export function TaskListManager({ open, onOpenChange }: TaskListManagerProps) {
     }
   };
 
-  const handleAddNew = () => {
+  const handleAddNew = (isPersonal: boolean = false) => {
     setEditingList(null);
-    form.reset({ name: "", color: null });
+    form.reset({ name: "", color: null, isPersonal });
     setIsFormOpen(true);
   };
 
+  const renderListItem = (list: TaskList) => {
+    const canManage = canManageList(list);
+    return (
+      <div
+        key={list.id}
+        className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className={cn(
+              "w-3 h-3 rounded-full",
+              !list.color && "border border-muted-foreground/30 bg-muted"
+            )}
+            style={list.color ? { backgroundColor: list.color } : undefined}
+          />
+          <span className="font-medium">{list.name}</span>
+        </div>
+        {canManage && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleEdit(list)}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleDelete(list.id)}
+                className="text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+    );
+  };
+
+  const hasNoLists = personalLists.length === 0 && companyLists.length === 0;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Manage Task Lists</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          {taskLists.length === 0 && !isFormOpen ? (
+          {hasNoLists && !isFormOpen ? (
             <EmptyState
               icon={List}
               title="No lists yet"
               description="Create your first list to organize tasks."
-              actionLabel={isCompanyAdmin ? "Create List" : undefined}
-              onAction={isCompanyAdmin ? handleAddNew : undefined}
+              actionLabel="Create List"
+              onAction={() => handleAddNew(false)}
             />
           ) : (
             <>
-              <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                {taskLists.map((list) => (
-                  <div
-                    key={list.id}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={cn(
-                          "w-3 h-3 rounded-full",
-                          !list.color && "border border-muted-foreground/30 bg-muted"
-                        )}
-                        style={list.color ? { backgroundColor: list.color } : undefined}
-                      />
-                      <span className="font-medium">{list.name}</span>
-                    </div>
-                    {isCompanyAdmin && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEdit(list)}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(list.id)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
+              {/* Personal Lists Section */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Personal Lists
+                  </h4>
+                  <Button variant="ghost" size="sm" onClick={() => handleAddNew(true)}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {personalLists.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic px-2">No personal lists</p>
+                ) : (
+                  <div className="space-y-2">
+                    {personalLists.map(renderListItem)}
                   </div>
-                ))}
+                )}
               </div>
 
-              {isCompanyAdmin && !isFormOpen && (
-                <Button variant="outline" className="w-full" onClick={handleAddNew}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add List
-                </Button>
+              {/* Company Lists Section */}
+              {activeCompanyId && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <Building2 className="h-4 w-4" />
+                      Company Lists
+                    </h4>
+                    {isCompanyAdmin && (
+                      <Button variant="ghost" size="sm" onClick={() => handleAddNew(false)}>
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  {companyLists.length === 0 ? (
+                    <p className="text-xs text-muted-foreground italic px-2">No company lists</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {companyLists.map(renderListItem)}
+                    </div>
+                  )}
+                </div>
               )}
             </>
           )}
 
-          {isFormOpen && isCompanyAdmin && (
+          {isFormOpen && (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 border-t pt-4">
                 <FormField
@@ -193,6 +236,33 @@ export function TaskListManager({ open, onOpenChange }: TaskListManagerProps) {
                     </FormItem>
                   )}
                 />
+
+                {/* Personal toggle - only show when creating new */}
+                {!editingList && activeCompanyId && (
+                  <FormField
+                    control={form.control}
+                    name="isPersonal"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Personal List</FormLabel>
+                          <p className="text-sm text-muted-foreground">
+                            {field.value 
+                              ? "Only you can see this list" 
+                              : "Visible to company members"}
+                          </p>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            disabled={!isCompanyAdmin && !field.value}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <FormField
                   control={form.control}

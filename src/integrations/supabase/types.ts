@@ -4709,33 +4709,39 @@ export type Database = {
       task_lists: {
         Row: {
           color: string | null
-          company_id: string
+          company_id: string | null
           created_at: string
           created_by: string | null
           id: string
+          is_personal: boolean
           name: string
+          owner_user_id: string | null
           sort_order: number
           status: string
           updated_at: string
         }
         Insert: {
           color?: string | null
-          company_id: string
+          company_id?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
+          is_personal?: boolean
           name: string
+          owner_user_id?: string | null
           sort_order?: number
           status?: string
           updated_at?: string
         }
         Update: {
           color?: string | null
-          company_id?: string
+          company_id?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
+          is_personal?: boolean
           name?: string
+          owner_user_id?: string | null
           sort_order?: number
           status?: string
           updated_at?: string
