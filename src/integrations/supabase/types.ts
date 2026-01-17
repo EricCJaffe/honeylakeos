@@ -5746,6 +5746,32 @@ export type Database = {
               override_task_id: string
             }[]
           }
+      folder_create: {
+        Args: {
+          p_company_id?: string
+          p_name: string
+          p_parent_folder_id?: string
+          p_scope: string
+        }
+        Returns: string
+      }
+      folder_delete: { Args: { p_folder_id: string }; Returns: undefined }
+      folder_move: {
+        Args: {
+          p_folder_id: string
+          p_new_index?: number
+          p_new_parent_folder_id?: string
+        }
+        Returns: undefined
+      }
+      folder_rename: {
+        Args: { p_folder_id: string; p_name: string }
+        Returns: undefined
+      }
+      folder_reorder: {
+        Args: { p_folder_id: string; p_new_index: number }
+        Returns: undefined
+      }
       get_acl_grantee_profile: {
         Args: {
           p_entity_id: string
@@ -5837,6 +5863,14 @@ export type Database = {
           p_metadata?: Json
         }
         Returns: string
+      }
+      move_documents_to_folder: {
+        Args: { p_document_ids: string[]; p_folder_id?: string }
+        Returns: undefined
+      }
+      move_notes_to_folder: {
+        Args: { p_folder_id?: string; p_note_ids: string[] }
+        Returns: undefined
       }
       promote_self_to_super_admin: { Args: never; Returns: Json }
       require_module_enabled: {

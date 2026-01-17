@@ -85,10 +85,11 @@ export function useFolders() {
         return { companyFolders: [], personalFolders: [] };
       }
 
+      // Fetch both company folders and user's personal folders
       const { data, error } = await supabase
         .from("folders")
         .select("*")
-        .eq("company_id", activeCompanyId)
+        .or(`company_id.eq.${activeCompanyId},owner_user_id.eq.${user.id}`)
         .is("archived_at", null)
         .order("sort_order", { ascending: true })
         .order("name", { ascending: true });
@@ -173,39 +174,38 @@ export function useFolderMutations() {
     mutationFn: async (input: CreateFolderInput) => {
       if (!activeCompanyId || !user) throw new Error("No active company");
 
-      const insertData: TablesInsert<"folders"> = {
-        company_id: activeCompanyId,
-        name: input.name,
-        scope: input.scope,
-        owner_user_id: input.scope === "personal" ? user.id : null,
-        parent_folder_id: input.parent_folder_id || null,
-        access_level: input.scope === "company" ? "company" : "personal",
-        created_by: user.id,
-      };
-
-      const { data, error } = await supabase
-        .from("folders")
-        .insert(insertData)
-        .select()
-        .single();
+      // Use RPC for auto sort_order
+      const { data, error } = await supabase.rpc("folder_create", {
+        p_name: input.name,
+        p_scope: input.scope,
+        p_parent_folder_id: input.parent_folder_id || null,
+        p_company_id: activeCompanyId,
+      });
 
       if (error) throw error;
-      return data as Folder;
+      
+      // Fetch the created folder
+      const { data: folder, error: fetchError } = await supabase
+        .from("folders")
+        .select("*")
+        .eq("id", data)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      return folder as Folder;
     },
     onSuccess: async (data) => {
-      await log("folder.created", "folder", data.id, {
-        name: data.name,
-        scope: data.scope,
-      });
       invalidate();
       toast.success("Folder created");
     },
     onError: (error: Error) => {
       console.error("Failed to create folder:", error);
-      if (error.message.includes("nesting depth")) {
+      if (error.message.includes("nesting depth") || error.message.includes("depth")) {
         toast.error("Maximum folder depth (5 levels) exceeded");
       } else if (error.message.includes("cycle")) {
         toast.error("Invalid folder hierarchy");
+      } else if (error.message.includes("scope")) {
+        toast.error("Cannot nest personal folder in company folder or vice versa");
       } else {
         toast.error("Failed to create folder");
       }
@@ -214,29 +214,49 @@ export function useFolderMutations() {
 
   const update = useMutation({
     mutationFn: async (input: UpdateFolderInput) => {
-      const { id, ...updateData } = input;
+      const { id, name, ...rest } = input;
 
+      if (name) {
+        // Use RPC for rename
+        const { error } = await supabase.rpc("folder_rename", {
+          p_folder_id: id,
+          p_name: name,
+        });
+        if (error) throw error;
+      }
+
+      if (rest.parent_folder_id !== undefined) {
+        // Use RPC for move
+        const { error } = await supabase.rpc("folder_move", {
+          p_folder_id: id,
+          p_new_parent_folder_id: rest.parent_folder_id,
+          p_new_index: rest.sort_order ?? null,
+        });
+        if (error) throw error;
+      }
+
+      // Fetch updated folder
       const { data, error } = await supabase
         .from("folders")
-        .update(updateData)
+        .select("*")
         .eq("id", id)
-        .select()
         .single();
 
       if (error) throw error;
       return data as Folder;
     },
     onSuccess: async (data) => {
-      await log("folder.updated", "folder", data.id, { name: data.name });
       invalidate();
       toast.success("Folder updated");
     },
     onError: (error: Error) => {
       console.error("Failed to update folder:", error);
-      if (error.message.includes("nesting depth")) {
+      if (error.message.includes("nesting depth") || error.message.includes("depth")) {
         toast.error("Maximum folder depth (5 levels) exceeded");
-      } else if (error.message.includes("cycle")) {
+      } else if (error.message.includes("cycle") || error.message.includes("descendant")) {
         toast.error("Cannot move folder into itself");
+      } else if (error.message.includes("scope")) {
+        toast.error("Cannot move between personal and company folders");
       } else {
         toast.error("Failed to update folder");
       }
@@ -267,20 +287,22 @@ export function useFolderMutations() {
 
   const remove = useMutation({
     mutationFn: async (folderId: string) => {
-      // Get folder name for audit
+      // Get folder name for toast
       const { data: folder } = await supabase
         .from("folders")
         .select("name")
         .eq("id", folderId)
         .single();
 
-      const { error } = await supabase.from("folders").delete().eq("id", folderId);
+      // Use RPC which handles moving children and unfiling items
+      const { error } = await supabase.rpc("folder_delete", {
+        p_folder_id: folderId,
+      });
       if (error) throw error;
 
       return { id: folderId, name: folder?.name };
     },
     onSuccess: async (result) => {
-      await log("folder.deleted", "folder", result.id, { name: result.name });
       invalidate();
       toast.success("Folder deleted");
     },
@@ -289,11 +311,28 @@ export function useFolderMutations() {
     },
   });
 
+  const reorder = useMutation({
+    mutationFn: async ({ folderId, newIndex }: { folderId: string; newIndex: number }) => {
+      const { error } = await supabase.rpc("folder_reorder", {
+        p_folder_id: folderId,
+        p_new_index: newIndex,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidate();
+    },
+    onError: () => {
+      toast.error("Failed to reorder folder");
+    },
+  });
+
   return {
     create,
     update,
     archive,
     remove,
+    reorder,
     isCompanyAdmin,
   };
 }
@@ -394,6 +433,51 @@ export function useFolderAclMutations() {
     updateAcl,
     removeAcl,
   };
+}
+
+/**
+ * Hook for bulk moving documents/notes to folders
+ */
+export function useFolderItemMutations() {
+  const queryClient = useQueryClient();
+
+  const moveDocuments = useMutation({
+    mutationFn: async ({ documentIds, folderId }: { documentIds: string[]; folderId: string | null }) => {
+      const { error } = await supabase.rpc("move_documents_to_folder", {
+        p_document_ids: documentIds,
+        p_folder_id: folderId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      queryClient.invalidateQueries({ queryKey: ["document"] });
+      toast.success("Documents moved");
+    },
+    onError: () => {
+      toast.error("Failed to move documents");
+    },
+  });
+
+  const moveNotes = useMutation({
+    mutationFn: async ({ noteIds, folderId }: { noteIds: string[]; folderId: string | null }) => {
+      const { error } = await supabase.rpc("move_notes_to_folder", {
+        p_note_ids: noteIds,
+        p_folder_id: folderId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+      queryClient.invalidateQueries({ queryKey: ["note"] });
+      toast.success("Notes moved");
+    },
+    onError: () => {
+      toast.error("Failed to move notes");
+    },
+  });
+
+  return { moveDocuments, moveNotes };
 }
 
 // ============================================================================
