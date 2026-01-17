@@ -176,7 +176,6 @@ function OpportunityDetailContent() {
                   <EntityLinksPanel
                     entityType="sales_opportunity"
                     entityId={opportunity.id}
-                    showCreateMenu
                   />
                 </CardContent>
               </Card>
@@ -282,7 +281,7 @@ function OpportunityDetailContent() {
 
 export default function OpportunityDetailPage() {
   return (
-    <ModuleGuard moduleKey="sales">
+    <ModuleGuard moduleKey="sales" moduleName="Sales">
       <OpportunityDetailContent />
     </ModuleGuard>
   );

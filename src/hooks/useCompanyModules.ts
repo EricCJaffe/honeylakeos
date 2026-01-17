@@ -48,6 +48,12 @@ export const ENTITY_TO_MODULE_MAP: Record<string, ModuleKey> = {
   // Coach profiles use the coaches module
   coach_profile: "coaches",
   coaches: "coaches",
+  // Sales entities
+  sales_opportunity: "sales",
+  sales: "sales",
+  // Donor entities
+  donation: "donors",
+  donors: "donors",
 };
 
 interface UseCompanyModulesResult {

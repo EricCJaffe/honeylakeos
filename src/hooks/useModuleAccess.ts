@@ -21,7 +21,9 @@ export type ModuleKey =
   | "locations"
   | "workflows"
   | "lms"
-  | "crm";
+  | "crm"
+  | "sales"
+  | "donors";
 
 interface ModuleAccessResult {
   /** Whether the module is enabled for the company */

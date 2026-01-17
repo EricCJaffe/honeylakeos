@@ -881,6 +881,259 @@ export type Database = {
           },
         ]
       }
+      donations: {
+        Row: {
+          amount: number
+          campaign_id: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          donation_date: string
+          donor_profile_id: string
+          id: string
+          is_anonymous: boolean
+          notes: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          receipt_required: boolean
+          status: Database["public"]["Enums"]["donation_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          campaign_id?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          donation_date: string
+          donor_profile_id: string
+          id?: string
+          is_anonymous?: boolean
+          notes?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          receipt_required?: boolean
+          status?: Database["public"]["Enums"]["donation_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          campaign_id?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          donation_date?: string
+          donor_profile_id?: string
+          id?: string
+          is_anonymous?: boolean
+          notes?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          receipt_required?: boolean
+          status?: Database["public"]["Enums"]["donation_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donations_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "donor_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "donations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "donations_donor_profile_id_fkey"
+            columns: ["donor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "donor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      donor_campaigns: {
+        Row: {
+          archived_at: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          goal_amount: number | null
+          id: string
+          name: string
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          goal_amount?: number | null
+          id?: string
+          name: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          goal_amount?: number | null
+          id?: string
+          name?: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donor_campaigns_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      donor_pledges: {
+        Row: {
+          campaign_id: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          donor_profile_id: string
+          end_date: string | null
+          frequency: Database["public"]["Enums"]["pledge_frequency"]
+          fulfilled_amount: number
+          id: string
+          notes: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["pledge_status"]
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          donor_profile_id: string
+          end_date?: string | null
+          frequency?: Database["public"]["Enums"]["pledge_frequency"]
+          fulfilled_amount?: number
+          id?: string
+          notes?: string | null
+          start_date: string
+          status?: Database["public"]["Enums"]["pledge_status"]
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          donor_profile_id?: string
+          end_date?: string | null
+          frequency?: Database["public"]["Enums"]["pledge_frequency"]
+          fulfilled_amount?: number
+          id?: string
+          notes?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["pledge_status"]
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donor_pledges_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "donor_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "donor_pledges_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "donor_pledges_donor_profile_id_fkey"
+            columns: ["donor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "donor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      donor_profiles: {
+        Row: {
+          company_id: string
+          created_at: string
+          crm_client_id: string
+          donor_status: Database["public"]["Enums"]["donor_status"]
+          first_donation_date: string | null
+          id: string
+          last_donation_date: string | null
+          lifetime_giving_amount: number
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          crm_client_id: string
+          donor_status?: Database["public"]["Enums"]["donor_status"]
+          first_donation_date?: string | null
+          id?: string
+          last_donation_date?: string | null
+          lifetime_giving_amount?: number
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          crm_client_id?: string
+          donor_status?: Database["public"]["Enums"]["donor_status"]
+          first_donation_date?: string | null
+          id?: string
+          last_donation_date?: string | null
+          lifetime_giving_amount?: number
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donor_profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "donor_profiles_crm_client_id_fkey"
+            columns: ["crm_client_id"]
+            isOneToOne: false
+            referencedRelation: "crm_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_invites: {
         Row: {
           accepted_at: string | null
@@ -5640,6 +5893,8 @@ export type Database = {
         | "archived"
         | "pending"
         | "suspended"
+      donation_status: "recorded" | "receipted" | "refunded"
+      donor_status: "prospect" | "active" | "lapsed" | "major"
       engagement_status: "active" | "paused" | "ended"
       framework_dashboard_audience:
         | "company_admin"
@@ -5665,6 +5920,7 @@ export type Database = {
         | "external"
       module_status: "active" | "trial" | "expired" | "suspended"
       opportunity_status: "open" | "won" | "lost"
+      payment_method: "cash" | "check" | "credit_card" | "online" | "other"
       plan_status: "active" | "grace" | "expired" | "cancelled"
       plan_tier:
         | "starter"
@@ -5674,6 +5930,8 @@ export type Database = {
         | "coaching_team"
         | "coaching_firm"
       plan_type: "company" | "coach_org"
+      pledge_frequency: "one_time" | "monthly" | "quarterly" | "annual"
+      pledge_status: "active" | "fulfilled" | "cancelled"
       recommendation_status: "proposed" | "accepted" | "rejected" | "expired"
       recommendation_type:
         | "task"
@@ -5879,6 +6137,8 @@ export const Constants = {
         "pending",
         "suspended",
       ],
+      donation_status: ["recorded", "receipted", "refunded"],
+      donor_status: ["prospect", "active", "lapsed", "major"],
       engagement_status: ["active", "paused", "ended"],
       framework_dashboard_audience: [
         "company_admin",
@@ -5907,6 +6167,7 @@ export const Constants = {
       ],
       module_status: ["active", "trial", "expired", "suspended"],
       opportunity_status: ["open", "won", "lost"],
+      payment_method: ["cash", "check", "credit_card", "online", "other"],
       plan_status: ["active", "grace", "expired", "cancelled"],
       plan_tier: [
         "starter",
@@ -5917,6 +6178,8 @@ export const Constants = {
         "coaching_firm",
       ],
       plan_type: ["company", "coach_org"],
+      pledge_frequency: ["one_time", "monthly", "quarterly", "annual"],
+      pledge_status: ["active", "fulfilled", "cancelled"],
       recommendation_status: ["proposed", "accepted", "rejected", "expired"],
       recommendation_type: [
         "task",

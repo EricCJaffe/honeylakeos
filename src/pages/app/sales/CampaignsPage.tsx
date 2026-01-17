@@ -66,12 +66,8 @@ function CampaignsContent() {
           icon={Megaphone}
           title="No Campaigns"
           description="Create campaigns to track where your opportunities come from."
-          action={
-            <Button onClick={() => setShowForm(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Campaign
-            </Button>
-          }
+          actionLabel="Create Campaign"
+          onAction={() => setShowForm(true)}
         />
       ) : (
         <motion.div
@@ -140,7 +136,7 @@ function CampaignsContent() {
 
 export default function CampaignsPage() {
   return (
-    <ModuleGuard moduleKey="sales">
+    <ModuleGuard moduleKey="sales" moduleName="Sales">
       <CampaignsContent />
     </ModuleGuard>
   );
