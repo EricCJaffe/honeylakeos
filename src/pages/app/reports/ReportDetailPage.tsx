@@ -90,7 +90,7 @@ function ReportDetailContent() {
   const { reportId } = useParams<{ reportId: string }>();
   const navigate = useNavigate();
   const { data: report, isLoading: reportLoading } = useReport(reportId);
-  const { logAction } = useAuditLog();
+  const { log } = useAuditLog();
   
   const {
     data: result,
@@ -102,7 +102,7 @@ function ReportDetailContent() {
   const handleExport = () => {
     if (!result || !report) return;
     exportToCSV(result, report.name);
-    logAction("report", report.id, "exported", { format: "csv" });
+    log("report.exported" as any, "report" as any, report.id, { format: "csv" });
   };
 
   const handleRefresh = () => {

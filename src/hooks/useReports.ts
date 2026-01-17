@@ -4,6 +4,7 @@ import { useMembership } from "@/lib/membership";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { useAuditLog } from "@/hooks/useAuditLog";
+import type { Json } from "@/integrations/supabase/types";
 
 export type ReportType =
   | "tasks_by_status"
@@ -152,7 +153,7 @@ export function useCreateReport() {
   const queryClient = useQueryClient();
   const { activeCompanyId } = useMembership();
   const { user } = useAuth();
-  const { logAction } = useAuditLog();
+  const { log } = useAuditLog();
 
   return useMutation({
     mutationFn: async (
@@ -163,7 +164,11 @@ export function useCreateReport() {
       const { data, error } = await supabase
         .from("reports")
         .insert({
-          ...input,
+          name: input.name,
+          description: input.description,
+          is_personal: input.is_personal,
+          report_type: input.report_type,
+          config_json: input.config_json as Json,
           company_id: activeCompanyId,
           owner_user_id: input.is_personal ? user?.id : null,
         })
@@ -175,7 +180,7 @@ export function useCreateReport() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["reports", activeCompanyId] });
-      logAction("report", data.id, "created", { name: data.name });
+      log("report.created" as any, "report" as any, data.id, { name: data.name });
       toast.success("Report created");
     },
     onError: (error) => {
@@ -187,16 +192,23 @@ export function useCreateReport() {
 export function useUpdateReport() {
   const queryClient = useQueryClient();
   const { activeCompanyId } = useMembership();
-  const { logAction } = useAuditLog();
+  const { log } = useAuditLog();
 
   return useMutation({
     mutationFn: async ({
       id,
       ...updates
     }: Partial<Report> & { id: string }) => {
+      const updateData: Record<string, unknown> = {};
+      if (updates.name !== undefined) updateData.name = updates.name;
+      if (updates.description !== undefined) updateData.description = updates.description;
+      if (updates.is_personal !== undefined) updateData.is_personal = updates.is_personal;
+      if (updates.report_type !== undefined) updateData.report_type = updates.report_type;
+      if (updates.config_json !== undefined) updateData.config_json = updates.config_json as Json;
+
       const { data, error } = await supabase
         .from("reports")
-        .update(updates)
+        .update(updateData)
         .eq("id", id)
         .select()
         .single();
@@ -207,7 +219,7 @@ export function useUpdateReport() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["reports", activeCompanyId] });
       queryClient.invalidateQueries({ queryKey: ["report", data.id] });
-      logAction("report", data.id, "updated", { name: data.name });
+      log("report.updated" as any, "report" as any, data.id, { name: data.name });
       toast.success("Report updated");
     },
     onError: (error) => {
@@ -219,7 +231,7 @@ export function useUpdateReport() {
 export function useDeleteReport() {
   const queryClient = useQueryClient();
   const { activeCompanyId } = useMembership();
-  const { logAction } = useAuditLog();
+  const { log } = useAuditLog();
 
   return useMutation({
     mutationFn: async (reportId: string) => {
@@ -233,7 +245,7 @@ export function useDeleteReport() {
     },
     onSuccess: (reportId) => {
       queryClient.invalidateQueries({ queryKey: ["reports", activeCompanyId] });
-      logAction("report", reportId, "deleted", {});
+      log("report.deleted" as any, "report" as any, reportId, {});
       toast.success("Report deleted");
     },
     onError: (error) => {
@@ -257,7 +269,7 @@ export function useCacheReportRun() {
         .from("report_runs")
         .insert({
           report_id: reportId,
-          result_json: result,
+          result_json: result as Json,
           created_by: user?.id,
         })
         .select()

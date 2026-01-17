@@ -18,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +42,7 @@ import {
 } from "@/hooks/useReports";
 import { useAuth } from "@/lib/auth";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
   work: CheckCircle2,
@@ -146,6 +146,7 @@ function CategorySection({ category, reports }: { category: typeof REPORT_CATEGO
 }
 
 function ReportsContent() {
+  const navigate = useNavigate();
   const { data: reports = [], isLoading, refetch } = useReports();
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -223,14 +224,8 @@ function ReportsContent() {
                   ? "No company-wide reports have been created"
                   : "Get started by creating your first report"
               }
-              action={
-                <Button asChild>
-                  <Link to="/app/reports/new">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Report
-                  </Link>
-                </Button>
-              }
+              actionLabel="Create Report"
+              onAction={() => navigate("/app/reports/new")}
             />
           ) : (
             <div className="space-y-8">
