@@ -1,0 +1,478 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useActiveCompany } from "./useActiveCompany";
+import { toast } from "sonner";
+
+// Types
+export type PlanType = "company" | "coach_org";
+export type PlanTier = "starter" | "growth" | "scale" | "solo_coach" | "coaching_team" | "coaching_firm";
+export type PlanStatus = "active" | "grace" | "expired" | "cancelled";
+
+export interface CompanyPlan {
+  id: string;
+  company_id: string;
+  plan_type: PlanType;
+  plan_tier: PlanTier;
+  started_at: string;
+  expires_at: string | null;
+  grace_period_days: number;
+  status: PlanStatus;
+  stripe_subscription_id: string | null;
+  stripe_customer_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PlanEntitlement {
+  id: string;
+  plan_tier: PlanTier;
+  entitlement_key: string;
+  entitlement_value: unknown;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EntitlementOverride {
+  id: string;
+  company_id: string;
+  entitlement_key: string;
+  entitlement_value: unknown;
+  reason: string | null;
+  granted_by: string | null;
+  expires_at: string | null;
+  created_at: string;
+}
+
+// Entitlement keys for type safety
+export type EntitlementKey =
+  | "max_users"
+  | "max_companies"
+  | "max_active_frameworks"
+  | "max_published_frameworks"
+  | "max_active_clients"
+  | "crm_enabled"
+  | "lms_enabled"
+  | "coaching_module_enabled"
+  | "framework_engine_enabled"
+  | "reporting_enabled"
+  | "framework_marketplace_publish"
+  | "weighted_health_metrics"
+  | "coach_manager_views"
+  | "private_coach_notes"
+  | "advanced_reporting";
+
+// Plan display info
+export const PLAN_INFO: Record<PlanTier, { name: string; description: string; type: PlanType }> = {
+  starter: { name: "Starter", description: "For small teams getting started", type: "company" },
+  growth: { name: "Growth", description: "For growing organizations", type: "company" },
+  scale: { name: "Scale", description: "For large organizations", type: "company" },
+  solo_coach: { name: "Solo Coach", description: "For independent coaches", type: "coach_org" },
+  coaching_team: { name: "Coaching Team", description: "For small coaching teams", type: "coach_org" },
+  coaching_firm: { name: "Coaching Firm", description: "For large coaching organizations", type: "coach_org" },
+};
+
+// Default entitlements for companies without a plan (full access / legacy)
+const DEFAULT_ENTITLEMENTS: Record<string, unknown> = {
+  max_users: 999999,
+  max_companies: 999999,
+  max_active_frameworks: 999999,
+  max_published_frameworks: 999999,
+  max_active_clients: 999999,
+  crm_enabled: true,
+  lms_enabled: true,
+  coaching_module_enabled: true,
+  framework_engine_enabled: true,
+  reporting_enabled: true,
+  framework_marketplace_publish: true,
+  weighted_health_metrics: true,
+  coach_manager_views: true,
+  private_coach_notes: true,
+  advanced_reporting: true,
+};
+
+// ==========================================
+// COMPANY PLAN HOOKS
+// ==========================================
+
+export function useCompanyPlan() {
+  const { activeCompanyId } = useActiveCompany();
+
+  return useQuery({
+    queryKey: ["company-plan", activeCompanyId],
+    queryFn: async () => {
+      if (!activeCompanyId) return null;
+
+      const { data, error } = await supabase
+        .from("company_plans")
+        .select("*")
+        .eq("company_id", activeCompanyId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data as CompanyPlan | null;
+    },
+    enabled: !!activeCompanyId,
+  });
+}
+
+export function usePlanEntitlements(planTier: PlanTier | null) {
+  return useQuery({
+    queryKey: ["plan-entitlements", planTier],
+    queryFn: async () => {
+      if (!planTier) return {};
+
+      const { data, error } = await supabase
+        .from("plan_entitlements")
+        .select("*")
+        .eq("plan_tier", planTier);
+
+      if (error) throw error;
+
+      // Convert to key-value map
+      const entitlements: Record<string, unknown> = {};
+      for (const e of data || []) {
+        entitlements[e.entitlement_key] = parseEntitlementValue(e.entitlement_value);
+      }
+      return entitlements;
+    },
+    enabled: !!planTier,
+  });
+}
+
+export function useCompanyEntitlementOverrides() {
+  const { activeCompanyId } = useActiveCompany();
+
+  return useQuery({
+    queryKey: ["company-entitlement-overrides", activeCompanyId],
+    queryFn: async () => {
+      if (!activeCompanyId) return {};
+
+      const { data, error } = await supabase
+        .from("company_entitlement_overrides")
+        .select("*")
+        .eq("company_id", activeCompanyId);
+
+      if (error) throw error;
+
+      // Convert to key-value map, excluding expired overrides
+      const now = new Date();
+      const overrides: Record<string, unknown> = {};
+      for (const o of data || []) {
+        if (o.expires_at && new Date(o.expires_at) < now) continue;
+        overrides[o.entitlement_key] = parseEntitlementValue(o.entitlement_value);
+      }
+      return overrides;
+    },
+    enabled: !!activeCompanyId,
+  });
+}
+
+// ==========================================
+// ENTITLEMENT EVALUATION
+// ==========================================
+
+interface EntitlementResult {
+  value: unknown;
+  source: "plan" | "override" | "default";
+  isLimited: boolean;
+}
+
+/**
+ * Central hook for evaluating entitlements.
+ * Returns functions to check specific entitlements.
+ */
+export function useEntitlements() {
+  const { activeCompanyId } = useActiveCompany();
+  const { data: plan, isLoading: planLoading } = useCompanyPlan();
+  const { data: planEntitlements, isLoading: entitlementsLoading } = usePlanEntitlements(plan?.plan_tier || null);
+  const { data: overrides, isLoading: overridesLoading } = useCompanyEntitlementOverrides();
+
+  const isLoading = planLoading || entitlementsLoading || overridesLoading;
+
+  /**
+   * Get the effective value for an entitlement.
+   * Priority: override > plan > default
+   */
+  const getEntitlement = (key: EntitlementKey): EntitlementResult => {
+    // Check overrides first
+    if (overrides && key in overrides) {
+      return { value: overrides[key], source: "override", isLimited: false };
+    }
+
+    // Check plan entitlements
+    if (planEntitlements && key in planEntitlements) {
+      return { value: planEntitlements[key], source: "plan", isLimited: true };
+    }
+
+    // Fall back to default (full access)
+    return { value: DEFAULT_ENTITLEMENTS[key], source: "default", isLimited: false };
+  };
+
+  /**
+   * Check if a feature is enabled
+   */
+  const isEnabled = (key: EntitlementKey): boolean => {
+    const result = getEntitlement(key);
+    return result.value === true || result.value === "true";
+  };
+
+  /**
+   * Get a numeric limit
+   */
+  const getLimit = (key: EntitlementKey): number => {
+    const result = getEntitlement(key);
+    const val = result.value;
+    if (typeof val === "number") return val;
+    if (typeof val === "string") return parseInt(val, 10) || 0;
+    return 0;
+  };
+
+  /**
+   * Check if current usage is within limit
+   */
+  const isWithinLimit = (key: EntitlementKey, currentUsage: number): boolean => {
+    const limit = getLimit(key);
+    return currentUsage < limit;
+  };
+
+  /**
+   * Get usage info for a limit
+   */
+  const getUsageInfo = (key: EntitlementKey, currentUsage: number) => {
+    const limit = getLimit(key);
+    const percentage = limit > 0 ? Math.round((currentUsage / limit) * 100) : 0;
+    const remaining = Math.max(0, limit - currentUsage);
+    const isAtLimit = currentUsage >= limit;
+    const isNearLimit = percentage >= 80;
+
+    return {
+      current: currentUsage,
+      limit,
+      remaining,
+      percentage,
+      isAtLimit,
+      isNearLimit,
+    };
+  };
+
+  /**
+   * Get the current plan status
+   */
+  const getPlanStatus = () => {
+    if (!plan) return { hasPlan: false, status: "none" as const, isActive: true, isGrace: false };
+    
+    const isActive = plan.status === "active";
+    const isGrace = plan.status === "grace";
+    const isExpired = plan.status === "expired" || plan.status === "cancelled";
+
+    return {
+      hasPlan: true,
+      planTier: plan.plan_tier,
+      planType: plan.plan_type,
+      status: plan.status,
+      isActive,
+      isGrace,
+      isExpired,
+      expiresAt: plan.expires_at,
+    };
+  };
+
+  return {
+    isLoading,
+    plan,
+    getEntitlement,
+    isEnabled,
+    getLimit,
+    isWithinLimit,
+    getUsageInfo,
+    getPlanStatus,
+    // Convenience checks for common entitlements
+    canUsecrm: () => isEnabled("crm_enabled"),
+    canUseLms: () => isEnabled("lms_enabled"),
+    canUseCoaching: () => isEnabled("coaching_module_enabled"),
+    canPublishFrameworks: () => isEnabled("framework_marketplace_publish"),
+    canUseWeightedMetrics: () => isEnabled("weighted_health_metrics"),
+    canUseCoachManagerViews: () => isEnabled("coach_manager_views"),
+    canUseAdvancedReporting: () => isEnabled("advanced_reporting"),
+  };
+}
+
+// ==========================================
+// PLAN MANAGEMENT (Admin)
+// ==========================================
+
+export function usePlanMutations() {
+  const queryClient = useQueryClient();
+
+  const assignPlan = useMutation({
+    mutationFn: async ({
+      companyId,
+      planType,
+      planTier,
+      expiresAt,
+    }: {
+      companyId: string;
+      planType: PlanType;
+      planTier: PlanTier;
+      expiresAt?: string;
+    }) => {
+      const { data, error } = await supabase
+        .from("company_plans")
+        .upsert({
+          company_id: companyId,
+          plan_type: planType,
+          plan_tier: planTier,
+          expires_at: expiresAt,
+          status: "active",
+          started_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["company-plan", variables.companyId] });
+      toast.success("Plan assigned successfully");
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to assign plan: ${error.message}`);
+    },
+  });
+
+  const updatePlanStatus = useMutation({
+    mutationFn: async ({
+      planId,
+      status,
+    }: {
+      planId: string;
+      status: PlanStatus;
+    }) => {
+      const { data, error } = await supabase
+        .from("company_plans")
+        .update({ status })
+        .eq("id", planId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["company-plan"] });
+      toast.success("Plan status updated");
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to update status: ${error.message}`);
+    },
+  });
+
+  const addEntitlementOverride = useMutation({
+    mutationFn: async ({
+      companyId,
+      entitlementKey,
+      entitlementValue,
+      reason,
+      expiresAt,
+    }: {
+      companyId: string;
+      entitlementKey: string;
+      entitlementValue: unknown;
+      reason?: string;
+      expiresAt?: string;
+    }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase
+        .from("company_entitlement_overrides")
+        .upsert({
+          company_id: companyId,
+          entitlement_key: entitlementKey,
+          entitlement_value: JSON.stringify(entitlementValue),
+          reason,
+          expires_at: expiresAt,
+          granted_by: user?.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["company-entitlement-overrides", variables.companyId] });
+      toast.success("Entitlement override added");
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to add override: ${error.message}`);
+    },
+  });
+
+  const removeEntitlementOverride = useMutation({
+    mutationFn: async (overrideId: string) => {
+      const { error } = await supabase
+        .from("company_entitlement_overrides")
+        .delete()
+        .eq("id", overrideId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["company-entitlement-overrides"] });
+      toast.success("Override removed");
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to remove override: ${error.message}`);
+    },
+  });
+
+  return {
+    assignPlan,
+    updatePlanStatus,
+    addEntitlementOverride,
+    removeEntitlementOverride,
+  };
+}
+
+// ==========================================
+// HELPERS
+// ==========================================
+
+function parseEntitlementValue(value: unknown): unknown {
+  if (typeof value === "string") {
+    // Try to parse as JSON
+    try {
+      const parsed = JSON.parse(value);
+      return parsed;
+    } catch {
+      // Return as-is if not valid JSON
+      if (value === "true") return true;
+      if (value === "false") return false;
+      const num = parseInt(value, 10);
+      if (!isNaN(num)) return num;
+      return value;
+    }
+  }
+  return value;
+}
+
+/**
+ * Higher-order component/hook guard for features requiring entitlements
+ */
+export function useEntitlementGuard(entitlementKey: EntitlementKey) {
+  const { isEnabled, isLoading, getPlanStatus } = useEntitlements();
+  
+  const isAllowed = isEnabled(entitlementKey);
+  const { isGrace, isExpired, planTier } = getPlanStatus();
+
+  return {
+    isLoading,
+    isAllowed,
+    isGrace,
+    isExpired,
+    planTier,
+    showUpgradePrompt: !isAllowed && !isLoading,
+  };
+}
