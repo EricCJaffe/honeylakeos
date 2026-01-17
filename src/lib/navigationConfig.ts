@@ -98,11 +98,10 @@ export const navigationSections: NavSection[] = [
     title: "Finance",
     icon: CreditCard,
     items: [
-      // Finance module items - to be implemented in future
-      // Placeholder items that won't show until modules exist
-      { key: "invoices", title: "Invoices", url: "/app/invoices", icon: Receipt, moduleKey: "invoices" as ModuleKey },
-      { key: "payments", title: "Payments", url: "/app/payments", icon: CreditCard, moduleKey: "payments" as ModuleKey },
-      { key: "receipts", title: "Receipts", url: "/app/receipts", icon: FileCheck, moduleKey: "receipts" as ModuleKey },
+      { key: "finance", title: "Finance", url: "/app/finance", icon: CreditCard, moduleKey: "finance" },
+      { key: "invoices", title: "Invoices", url: "/app/finance/invoices", icon: Receipt, moduleKey: "finance" },
+      { key: "payments", title: "Payments", url: "/app/finance/payments", icon: CreditCard, moduleKey: "finance" },
+      { key: "receipts", title: "Receipts", url: "/app/finance/receipts", icon: FileCheck, moduleKey: "finance" },
     ],
     hideIfEmpty: true,
   },
@@ -120,8 +119,8 @@ export const navigationSections: NavSection[] = [
     title: "Reports",
     icon: BarChart3,
     items: [
-      { key: "analytics", title: "Analytics", url: "/app/reports/analytics", icon: BarChart3, moduleKey: "analytics" as ModuleKey },
-      { key: "exports", title: "Exports", url: "/app/reports/exports", icon: Download, moduleKey: "exports" as ModuleKey },
+      { key: "analytics", title: "Analytics", url: "/app/reports", icon: BarChart3, moduleKey: "reports" },
+      { key: "exports", title: "Exports", url: "/app/reports/exports", icon: Download, moduleKey: "reports" },
     ],
     hideIfEmpty: true,
   },

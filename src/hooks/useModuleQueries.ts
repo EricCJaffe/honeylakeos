@@ -106,6 +106,18 @@ const MODULE_QUERY_KEYS: Record<ModuleKey, string[][]> = {
     ["donor-pledges"],
     ["donor-campaigns"],
   ],
+  finance: [
+    ["finance-accounts"],
+    ["invoices"],
+    ["payments"],
+    ["receipts"],
+    ["bank-transactions"],
+  ],
+  reports: [
+    ["analytics"],
+    ["exports"],
+    ["report-definitions"],
+  ],
 };
 
 /**

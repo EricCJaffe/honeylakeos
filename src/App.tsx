@@ -90,6 +90,14 @@ import MyTicketsPage from "@/pages/app/support/MyTicketsPage";
 import TicketDetailPage from "@/pages/app/support/TicketDetailPage";
 import TicketDashboardPage from "@/pages/app/support/TicketDashboardPage";
 import KbAdminPage from "@/pages/app/support/KbAdminPage";
+import SalesPage from "@/pages/app/sales/SalesPage";
+import PipelinesPage from "@/pages/app/sales/PipelinesPage";
+import OpportunityDetailPage from "@/pages/app/sales/OpportunityDetailPage";
+import CampaignsPage from "@/pages/app/sales/CampaignsPage";
+import FinancePage from "@/pages/app/finance/FinancePage";
+import InvoicesPage from "@/pages/app/finance/InvoicesPage";
+import PaymentsPage from "@/pages/app/finance/PaymentsPage";
+import ReceiptsPage from "@/pages/app/finance/ReceiptsPage";
 import NotFound from "@/pages/NotFound";
 import WorkflowsPage from "@/pages/app/workflows/WorkflowsPage";
 import WorkflowDetailPage from "@/pages/app/workflows/WorkflowDetailPage";
@@ -201,6 +209,14 @@ function App() {
                     <Route path="support/tickets/new" element={<SubmitTicketPage />} />
                     <Route path="support/tickets/:ticketId" element={<TicketDetailPage />} />
                     <Route path="support/dashboard" element={<TicketDashboardPage />} />
+                    <Route path="sales" element={<ModuleGuard moduleKey="sales" moduleName="Sales"><SalesPage /></ModuleGuard>} />
+                    <Route path="sales/pipelines" element={<ModuleGuard moduleKey="sales" moduleName="Sales"><PipelinesPage /></ModuleGuard>} />
+                    <Route path="sales/opportunities/:opportunityId" element={<ModuleGuard moduleKey="sales" moduleName="Sales"><OpportunityDetailPage /></ModuleGuard>} />
+                    <Route path="sales/campaigns" element={<ModuleGuard moduleKey="sales" moduleName="Sales"><CampaignsPage /></ModuleGuard>} />
+                    <Route path="finance" element={<ModuleGuard moduleKey="finance" moduleName="Finance"><FinancePage /></ModuleGuard>} />
+                    <Route path="finance/invoices" element={<ModuleGuard moduleKey="finance" moduleName="Finance"><InvoicesPage /></ModuleGuard>} />
+                    <Route path="finance/payments" element={<ModuleGuard moduleKey="finance" moduleName="Finance"><PaymentsPage /></ModuleGuard>} />
+                    <Route path="finance/receipts" element={<ModuleGuard moduleKey="finance" moduleName="Finance"><ReceiptsPage /></ModuleGuard>} />
                     <Route path="settings" element={<SettingsPage />} />
                     <Route path="framework" element={<FrameworksPage />} />
                     <Route path="framework/marketplace" element={<FrameworkMarketplacePage />} />

@@ -54,6 +54,13 @@ export const ENTITY_TO_MODULE_MAP: Record<string, ModuleKey> = {
   // Donor entities
   donation: "donors",
   donors: "donors",
+  // Finance entities
+  invoice: "finance",
+  payment: "finance",
+  receipt: "finance",
+  finance: "finance",
+  // Reports
+  reports: "reports",
 };
 
 interface UseCompanyModulesResult {
