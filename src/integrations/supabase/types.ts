@@ -4500,6 +4500,469 @@ export type Database = {
           },
         ]
       }
+      wf_form_fields: {
+        Row: {
+          created_at: string
+          field_type: Database["public"]["Enums"]["wf_field_type"]
+          form_id: string
+          help_text: string | null
+          id: string
+          is_required: boolean
+          key: string
+          label: string
+          options: Json | null
+          sort_order: number
+          updated_at: string
+          validation_rules: Json | null
+        }
+        Insert: {
+          created_at?: string
+          field_type?: Database["public"]["Enums"]["wf_field_type"]
+          form_id: string
+          help_text?: string | null
+          id?: string
+          is_required?: boolean
+          key: string
+          label: string
+          options?: Json | null
+          sort_order?: number
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Update: {
+          created_at?: string
+          field_type?: Database["public"]["Enums"]["wf_field_type"]
+          form_id?: string
+          help_text?: string | null
+          id?: string
+          is_required?: boolean
+          key?: string
+          label?: string
+          options?: Json | null
+          sort_order?: number
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wf_form_fields_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "wf_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wf_form_submission_values: {
+        Row: {
+          created_at: string
+          field_id: string
+          id: string
+          submission_id: string
+          value_date: string | null
+          value_json: Json | null
+          value_number: number | null
+          value_text: string | null
+        }
+        Insert: {
+          created_at?: string
+          field_id: string
+          id?: string
+          submission_id: string
+          value_date?: string | null
+          value_json?: Json | null
+          value_number?: number | null
+          value_text?: string | null
+        }
+        Update: {
+          created_at?: string
+          field_id?: string
+          id?: string
+          submission_id?: string
+          value_date?: string | null
+          value_json?: Json | null
+          value_number?: number | null
+          value_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wf_form_submission_values_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "wf_form_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wf_form_submission_values_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "wf_form_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wf_form_submissions: {
+        Row: {
+          company_context_id: string | null
+          form_id: string
+          id: string
+          status: Database["public"]["Enums"]["wf_submission_status"]
+          submitted_at: string
+          submitter_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_context_id?: string | null
+          form_id: string
+          id?: string
+          status?: Database["public"]["Enums"]["wf_submission_status"]
+          submitted_at?: string
+          submitter_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_context_id?: string | null
+          form_id?: string
+          id?: string
+          status?: Database["public"]["Enums"]["wf_submission_status"]
+          submitted_at?: string
+          submitter_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wf_form_submissions_company_context_id_fkey"
+            columns: ["company_context_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wf_form_submissions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "wf_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wf_forms: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          group_id: string | null
+          id: string
+          language_code: string | null
+          published_at: string | null
+          scope_type: Database["public"]["Enums"]["wf_scope_type"]
+          site_id: string | null
+          status: Database["public"]["Enums"]["wf_status"]
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          group_id?: string | null
+          id?: string
+          language_code?: string | null
+          published_at?: string | null
+          scope_type?: Database["public"]["Enums"]["wf_scope_type"]
+          site_id?: string | null
+          status?: Database["public"]["Enums"]["wf_status"]
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          group_id?: string | null
+          id?: string
+          language_code?: string | null
+          published_at?: string | null
+          scope_type?: Database["public"]["Enums"]["wf_scope_type"]
+          site_id?: string | null
+          status?: Database["public"]["Enums"]["wf_status"]
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wf_forms_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wf_forms_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wf_forms_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wf_workflow_runs: {
+        Row: {
+          company_context_id: string | null
+          completed_at: string | null
+          id: string
+          initiated_by_user_id: string | null
+          metadata: Json | null
+          started_at: string
+          status: Database["public"]["Enums"]["wf_run_status"]
+          target_employee_id: string | null
+          workflow_id: string
+        }
+        Insert: {
+          company_context_id?: string | null
+          completed_at?: string | null
+          id?: string
+          initiated_by_user_id?: string | null
+          metadata?: Json | null
+          started_at?: string
+          status?: Database["public"]["Enums"]["wf_run_status"]
+          target_employee_id?: string | null
+          workflow_id: string
+        }
+        Update: {
+          company_context_id?: string | null
+          completed_at?: string | null
+          id?: string
+          initiated_by_user_id?: string | null
+          metadata?: Json | null
+          started_at?: string
+          status?: Database["public"]["Enums"]["wf_run_status"]
+          target_employee_id?: string | null
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wf_workflow_runs_company_context_id_fkey"
+            columns: ["company_context_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wf_workflow_runs_target_employee_id_fkey"
+            columns: ["target_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wf_workflow_runs_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "wf_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wf_workflow_step_runs: {
+        Row: {
+          assigned_to_user_id: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          output_links: Json | null
+          run_id: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["wf_step_run_status"]
+          step_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to_user_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          output_links?: Json | null
+          run_id: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["wf_step_run_status"]
+          step_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to_user_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          output_links?: Json | null
+          run_id?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["wf_step_run_status"]
+          step_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wf_workflow_step_runs_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "wf_workflow_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wf_workflow_step_runs_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "wf_workflow_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wf_workflow_steps: {
+        Row: {
+          assignee_id: string | null
+          assignee_type: Database["public"]["Enums"]["wf_assignee_type"] | null
+          config: Json | null
+          created_at: string
+          due_days_offset: number | null
+          enabled: boolean
+          id: string
+          instructions: string | null
+          sort_order: number
+          step_type: Database["public"]["Enums"]["wf_step_type"]
+          title: string
+          updated_at: string
+          workflow_id: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          assignee_type?: Database["public"]["Enums"]["wf_assignee_type"] | null
+          config?: Json | null
+          created_at?: string
+          due_days_offset?: number | null
+          enabled?: boolean
+          id?: string
+          instructions?: string | null
+          sort_order?: number
+          step_type: Database["public"]["Enums"]["wf_step_type"]
+          title: string
+          updated_at?: string
+          workflow_id: string
+        }
+        Update: {
+          assignee_id?: string | null
+          assignee_type?: Database["public"]["Enums"]["wf_assignee_type"] | null
+          config?: Json | null
+          created_at?: string
+          due_days_offset?: number | null
+          enabled?: boolean
+          id?: string
+          instructions?: string | null
+          sort_order?: number
+          step_type?: Database["public"]["Enums"]["wf_step_type"]
+          title?: string
+          updated_at?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wf_workflow_steps_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "wf_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wf_workflows: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          group_id: string | null
+          id: string
+          published_at: string | null
+          scope_type: Database["public"]["Enums"]["wf_scope_type"]
+          site_id: string | null
+          status: Database["public"]["Enums"]["wf_status"]
+          title: string
+          trigger_config: Json | null
+          trigger_type: Database["public"]["Enums"]["wf_trigger_type"]
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          group_id?: string | null
+          id?: string
+          published_at?: string | null
+          scope_type?: Database["public"]["Enums"]["wf_scope_type"]
+          site_id?: string | null
+          status?: Database["public"]["Enums"]["wf_status"]
+          title: string
+          trigger_config?: Json | null
+          trigger_type?: Database["public"]["Enums"]["wf_trigger_type"]
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          group_id?: string | null
+          id?: string
+          published_at?: string | null
+          scope_type?: Database["public"]["Enums"]["wf_scope_type"]
+          site_id?: string | null
+          status?: Database["public"]["Enums"]["wf_status"]
+          title?: string
+          trigger_config?: Json | null
+          trigger_type?: Database["public"]["Enums"]["wf_trigger_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wf_workflows_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wf_workflows_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wf_workflows_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -4867,6 +5330,55 @@ export type Database = {
         | "waiting_on_requester"
         | "resolved"
         | "closed"
+      wf_assignee_type:
+        | "user"
+        | "employee"
+        | "group"
+        | "company_admin"
+        | "workflow_initiator"
+      wf_field_type:
+        | "short_text"
+        | "long_text"
+        | "email"
+        | "phone"
+        | "number"
+        | "date"
+        | "dropdown"
+        | "multi_select"
+        | "checkbox"
+        | "rating"
+        | "yes_no"
+      wf_run_status: "running" | "completed" | "cancelled" | "failed"
+      wf_scope_type: "site" | "company" | "group"
+      wf_status: "draft" | "published" | "archived"
+      wf_step_run_status:
+        | "pending"
+        | "in_progress"
+        | "completed"
+        | "rejected"
+        | "skipped"
+        | "failed"
+      wf_step_type:
+        | "form_step"
+        | "approval_step"
+        | "task_step"
+        | "project_step"
+        | "calendar_step"
+        | "document_step"
+        | "note_step"
+        | "notify_step"
+        | "assign_lms_step"
+        | "support_ticket_step"
+      wf_submission_status:
+        | "submitted"
+        | "under_review"
+        | "completed"
+        | "closed"
+      wf_trigger_type:
+        | "manual"
+        | "employee_event"
+        | "scheduled"
+        | "form_submission"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -5060,6 +5572,61 @@ export const Constants = {
         "waiting_on_requester",
         "resolved",
         "closed",
+      ],
+      wf_assignee_type: [
+        "user",
+        "employee",
+        "group",
+        "company_admin",
+        "workflow_initiator",
+      ],
+      wf_field_type: [
+        "short_text",
+        "long_text",
+        "email",
+        "phone",
+        "number",
+        "date",
+        "dropdown",
+        "multi_select",
+        "checkbox",
+        "rating",
+        "yes_no",
+      ],
+      wf_run_status: ["running", "completed", "cancelled", "failed"],
+      wf_scope_type: ["site", "company", "group"],
+      wf_status: ["draft", "published", "archived"],
+      wf_step_run_status: [
+        "pending",
+        "in_progress",
+        "completed",
+        "rejected",
+        "skipped",
+        "failed",
+      ],
+      wf_step_type: [
+        "form_step",
+        "approval_step",
+        "task_step",
+        "project_step",
+        "calendar_step",
+        "document_step",
+        "note_step",
+        "notify_step",
+        "assign_lms_step",
+        "support_ticket_step",
+      ],
+      wf_submission_status: [
+        "submitted",
+        "under_review",
+        "completed",
+        "closed",
+      ],
+      wf_trigger_type: [
+        "manual",
+        "employee_event",
+        "scheduled",
+        "form_submission",
       ],
     },
   },
