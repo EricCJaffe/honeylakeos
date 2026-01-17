@@ -75,7 +75,9 @@ interface TaskFormDialogProps {
 const statuses = [
   { value: "to_do", label: "To Do" },
   { value: "in_progress", label: "In Progress" },
+  { value: "blocked", label: "Blocked" },
   { value: "done", label: "Done" },
+  { value: "archived", label: "Archived" },
 ];
 
 const priorities = [
