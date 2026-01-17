@@ -5869,10 +5869,36 @@ export type Database = {
         Returns: string
       }
       storage_path_user_id: { Args: { object_name: string }; Returns: string }
+      task_list_counts: {
+        Args: { p_company_id?: string }
+        Returns: {
+          list_id: string
+          task_count: number
+        }[]
+      }
+      task_list_create: {
+        Args: {
+          p_color?: string
+          p_company_id?: string
+          p_name: string
+          p_scope: string
+        }
+        Returns: string
+      }
+      task_list_delete: { Args: { p_list_id: string }; Returns: undefined }
+      task_list_rename: {
+        Args: { p_list_id: string; p_name: string }
+        Returns: undefined
+      }
+      task_list_reorder: {
+        Args: { p_list_id: string; p_new_index: number }
+        Returns: undefined
+      }
       uncomplete_task_occurrence: {
         Args: { p_occurrence_start_at: string; p_series_task_id: string }
         Returns: Json
       }
+      unlisted_task_count: { Args: { p_company_id: string }; Returns: number }
       update_event_series_from_occurrence: {
         Args: {
           p_all_day?: boolean

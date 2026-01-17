@@ -29,7 +29,7 @@ import { Template } from "@/hooks/useTemplates";
 export default function TasksPage() {
   const { activeCompanyId, isCompanyAdmin, loading: membershipLoading } = useActiveCompany();
   const { user } = useAuth();
-  const { taskLists, personalLists, companyLists } = useTaskLists();
+  const { taskLists, personalLists, companyLists, unlistedCount } = useTaskLists();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(null);
   const [projectFilter, setProjectFilter] = useState<string>("all");
@@ -214,7 +214,14 @@ export default function TasksPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Lists</SelectItem>
-            <SelectItem value="unlisted">No List</SelectItem>
+            <SelectItem value="unlisted">
+              <div className="flex items-center gap-2">
+                No List
+                {unlistedCount > 0 && (
+                  <span className="text-xs text-muted-foreground">({unlistedCount})</span>
+                )}
+              </div>
+            </SelectItem>
             {personalLists && personalLists.length > 0 && (
               <>
                 <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Personal</div>
@@ -225,6 +232,7 @@ export default function TasksPage() {
                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: list.color }} />
                       )}
                       {list.name}
+                      <span className="text-xs text-muted-foreground">({list.task_count})</span>
                     </div>
                   </SelectItem>
                 ))}
@@ -240,6 +248,7 @@ export default function TasksPage() {
                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: list.color }} />
                       )}
                       {list.name}
+                      <span className="text-xs text-muted-foreground">({list.task_count})</span>
                     </div>
                   </SelectItem>
                 ))}
