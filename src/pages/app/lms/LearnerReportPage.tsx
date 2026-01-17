@@ -21,6 +21,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { ModuleGuard } from "@/components/ModuleGuard";
 import { EmptyState } from "@/components/EmptyState";
 import { useUserLmsProgress } from "@/hooks/useLmsReporting";
+import { useLmsPermissions } from "@/hooks/useModulePermissions";
+import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { format } from "date-fns";
@@ -62,7 +64,13 @@ function LearnerReportContent() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const { activeCompanyId } = useActiveCompany();
+  const { user } = useAuth();
+  const permissions = useLmsPermissions();
   const { data: progressItems = [], isLoading: progressLoading } = useUserLmsProgress(userId);
+  
+  // Access control: users can only view their own progress unless admin
+  const isOwnProfile = user?.id === userId;
+  const canViewOtherProfiles = permissions.canAdmin;
 
   // Fetch user profile
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -80,7 +88,31 @@ function LearnerReportContent() {
     enabled: !!userId,
   });
 
-  const isLoading = progressLoading || profileLoading;
+  const isLoading = progressLoading || profileLoading || permissions.loading;
+
+  // Access denied for non-admins viewing other users
+  if (!isLoading && !isOwnProfile && !canViewOtherProfiles) {
+    return (
+      <div className="p-6 lg:p-8">
+        <Card className="border-destructive/50">
+          <CardContent className="py-12 text-center">
+            <AlertTriangle className="h-12 w-12 text-destructive/60 mx-auto mb-4" />
+            <h2 className="text-lg font-semibold text-foreground mb-2">Access Denied</h2>
+            <p className="text-muted-foreground text-sm max-w-md mx-auto">
+              You can only view your own learning progress. Admin access required to view other learners.
+            </p>
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={() => navigate("/app/lms/my-learning")}
+            >
+              View My Learning
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
