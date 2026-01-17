@@ -43,7 +43,7 @@ export interface Donation {
   notes: string | null;
   created_at: string;
   donor_profile?: DonorProfile;
-  campaign?: DonorCampaign;
+  campaign?: { id: string; name: string } | null;
 }
 
 export interface DonorCampaign {
@@ -123,7 +123,7 @@ export function useDonations(donorProfileId?: string) {
       if (!activeCompany?.id) return [];
       let query = supabase
         .from("donations")
-        .select(`*, donor_profile:donor_profiles(*, crm_client:crm_clients(id, person_full_name, org_name)), campaign:donor_campaigns(id, name)`)
+        .select(`*, donor_profile:donor_profiles(*, crm_client:crm_clients(id, person_full_name, org_name, type)), campaign:donor_campaigns(id, name)`)
         .eq("company_id", activeCompany.id)
         .order("donation_date", { ascending: false });
       if (donorProfileId) query = query.eq("donor_profile_id", donorProfileId);
