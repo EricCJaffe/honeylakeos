@@ -2222,6 +2222,113 @@ export type Database = {
           },
         ]
       }
+      kb_articles: {
+        Row: {
+          body_rich_text: string | null
+          category_id: string | null
+          created_at: string
+          created_by: string | null
+          helpful_no_count: number
+          helpful_yes_count: number
+          id: string
+          published_at: string | null
+          site_id: string
+          status: Database["public"]["Enums"]["kb_article_status"]
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body_rich_text?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          helpful_no_count?: number
+          helpful_yes_count?: number
+          id?: string
+          published_at?: string | null
+          site_id: string
+          status?: Database["public"]["Enums"]["kb_article_status"]
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body_rich_text?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          helpful_no_count?: number
+          helpful_yes_count?: number
+          id?: string
+          published_at?: string | null
+          site_id?: string
+          status?: Database["public"]["Enums"]["kb_article_status"]
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_articles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "kb_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_articles_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_categories: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          site_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          site_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          site_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_categories_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lms_assignments: {
         Row: {
           archived_at: string | null
@@ -3865,6 +3972,142 @@ export type Database = {
         }
         Relationships: []
       }
+      support_ticket_events: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          event_type: string
+          id: string
+          payload: Json | null
+          ticket_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          event_type: string
+          id?: string
+          payload?: Json | null
+          ticket_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_events_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_ticket_messages: {
+        Row: {
+          author_type: Database["public"]["Enums"]["ticket_author_type"]
+          author_user_id: string
+          body_rich_text: string
+          created_at: string
+          id: string
+          ticket_id: string
+        }
+        Insert: {
+          author_type?: Database["public"]["Enums"]["ticket_author_type"]
+          author_user_id: string
+          body_rich_text: string
+          created_at?: string
+          id?: string
+          ticket_id: string
+        }
+        Update: {
+          author_type?: Database["public"]["Enums"]["ticket_author_type"]
+          author_user_id?: string
+          body_rich_text?: string
+          created_at?: string
+          id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          assigned_to_user_id: string | null
+          category: string | null
+          closed_at: string | null
+          company_id: string | null
+          created_at: string
+          created_by_user_id: string
+          description: string | null
+          id: string
+          priority: Database["public"]["Enums"]["ticket_priority"]
+          site_id: string
+          status: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          ticket_number: number
+          updated_at: string
+        }
+        Insert: {
+          assigned_to_user_id?: string | null
+          category?: string | null
+          closed_at?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by_user_id: string
+          description?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          site_id: string
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          ticket_number?: number
+          updated_at?: string
+        }
+        Update: {
+          assigned_to_user_id?: string | null
+          category?: string | null
+          closed_at?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by_user_id?: string
+          description?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          site_id?: string
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject?: string
+          ticket_number?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_tickets_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_assignees: {
         Row: {
           created_at: string
@@ -4468,6 +4711,7 @@ export type Database = {
           table_name: string
         }[]
       }
+      get_user_site_id: { Args: never; Returns: string }
       is_assigned_to_engagement: {
         Args: { p_engagement_id: string; p_user_id?: string }
         Returns: boolean
@@ -4587,6 +4831,7 @@ export type Database = {
       framework_metric_type: "percentage" | "count" | "trend" | "boolean"
       framework_owner_type: "system" | "coach_org" | "company"
       framework_status: "draft" | "published" | "archived"
+      kb_article_status: "draft" | "published" | "archived"
       membership_role:
         | "company_admin"
         | "location_admin"
@@ -4613,6 +4858,15 @@ export type Database = {
         | "framework_change_suggestion"
         | "framework_adoption"
       site_role: "super_admin" | "site_admin"
+      ticket_author_type: "requester" | "agent"
+      ticket_priority: "low" | "normal" | "high" | "urgent"
+      ticket_status:
+        | "new"
+        | "triage"
+        | "in_progress"
+        | "waiting_on_requester"
+        | "resolved"
+        | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4767,6 +5021,7 @@ export const Constants = {
       framework_metric_type: ["percentage", "count", "trend", "boolean"],
       framework_owner_type: ["system", "coach_org", "company"],
       framework_status: ["draft", "published", "archived"],
+      kb_article_status: ["draft", "published", "archived"],
       membership_role: [
         "company_admin",
         "location_admin",
@@ -4796,6 +5051,16 @@ export const Constants = {
         "framework_adoption",
       ],
       site_role: ["super_admin", "site_admin"],
+      ticket_author_type: ["requester", "agent"],
+      ticket_priority: ["low", "normal", "high", "urgent"],
+      ticket_status: [
+        "new",
+        "triage",
+        "in_progress",
+        "waiting_on_requester",
+        "resolved",
+        "closed",
+      ],
     },
   },
 } as const
