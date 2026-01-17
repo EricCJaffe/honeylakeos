@@ -6,7 +6,9 @@ import { toast } from "sonner";
 
 export interface TaskList {
   id: string;
-  company_id: string;
+  company_id: string | null;
+  owner_user_id: string | null;
+  is_personal: boolean;
   name: string;
   color: string | null;
   status: string;
@@ -21,34 +23,69 @@ export function useTaskLists() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  // Fetch all visible lists (personal + company)
   const { data: taskLists = [], isLoading } = useQuery({
-    queryKey: ["task-lists", activeCompanyId],
+    queryKey: ["task-lists", activeCompanyId, user?.id],
     queryFn: async () => {
-      if (!activeCompanyId) return [];
-      const { data, error } = await supabase
+      if (!user) return [];
+      
+      // Fetch personal lists (always visible to owner)
+      const { data: personalLists, error: personalError } = await supabase
         .from("task_lists")
         .select("*")
-        .eq("company_id", activeCompanyId)
+        .eq("is_personal", true)
+        .eq("owner_user_id", user.id)
         .eq("status", "active")
         .order("sort_order", { ascending: true });
-      if (error) throw error;
-      return data as TaskList[];
+      
+      if (personalError) throw personalError;
+
+      // Fetch company lists (if active company)
+      let companyLists: TaskList[] = [];
+      if (activeCompanyId) {
+        const { data, error } = await supabase
+          .from("task_lists")
+          .select("*")
+          .eq("is_personal", false)
+          .eq("company_id", activeCompanyId)
+          .eq("status", "active")
+          .order("sort_order", { ascending: true });
+        if (error) throw error;
+        companyLists = data as TaskList[];
+      }
+
+      return [...(personalLists as TaskList[]), ...companyLists];
     },
-    enabled: !!activeCompanyId,
+    enabled: !!user,
   });
 
+  // Split lists into personal and company
+  const personalLists = taskLists.filter(l => l.is_personal);
+  const companyLists = taskLists.filter(l => !l.is_personal);
+
   const createList = useMutation({
-    mutationFn: async (values: { name: string; color?: string | null }) => {
-      if (!activeCompanyId || !user) throw new Error("Missing context");
-      const maxOrder = taskLists.length > 0 
-        ? Math.max(...taskLists.map(l => l.sort_order)) + 1 
+    mutationFn: async (values: { name: string; color?: string | null; isPersonal?: boolean }) => {
+      if (!user) throw new Error("Not authenticated");
+      
+      const isPersonal = values.isPersonal ?? false;
+      
+      if (!isPersonal && !activeCompanyId) {
+        throw new Error("No active company for company list");
+      }
+
+      const relevantLists = isPersonal ? personalLists : companyLists;
+      const maxOrder = relevantLists.length > 0 
+        ? Math.max(...relevantLists.map(l => l.sort_order)) + 1 
         : 0;
+
       const { error } = await supabase.from("task_lists").insert({
-        company_id: activeCompanyId,
         name: values.name,
         color: values.color || null,
         sort_order: maxOrder,
         created_by: user.id,
+        is_personal: isPersonal,
+        owner_user_id: isPersonal ? user.id : null,
+        company_id: isPersonal ? null : activeCompanyId,
       });
       if (error) throw error;
     },
@@ -62,7 +99,7 @@ export function useTaskLists() {
   });
 
   const updateList = useMutation({
-    mutationFn: async ({ id, ...values }: { id: string; name?: string; color?: string | null; status?: string }) => {
+    mutationFn: async ({ id, ...values }: { id: string; name?: string; color?: string | null; status?: string; sort_order?: number }) => {
       const { error } = await supabase
         .from("task_lists")
         .update(values)
@@ -121,10 +158,21 @@ export function useTaskLists() {
     },
   });
 
+  // Check if user can manage a specific list
+  const canManageList = (list: TaskList) => {
+    if (list.is_personal) {
+      return list.owner_user_id === user?.id;
+    }
+    return isCompanyAdmin;
+  };
+
   return {
     taskLists,
+    personalLists,
+    companyLists,
     isLoading,
     isCompanyAdmin,
+    canManageList,
     createList,
     updateList,
     deleteList,
