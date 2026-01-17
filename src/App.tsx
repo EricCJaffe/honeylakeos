@@ -64,6 +64,9 @@ import LmsCourseDetailPage from "@/pages/app/lms/CourseDetailPage";
 import LmsLessonsPage from "@/pages/app/lms/LessonsPage";
 import LmsLessonDetailPage from "@/pages/app/lms/LessonDetailPage";
 import LmsAssignmentsPage from "@/pages/app/lms/AssignmentsPage";
+import LmsReportsPage from "@/pages/app/lms/LmsReportsPage";
+import AssignmentReportPage from "@/pages/app/lms/AssignmentReportPage";
+import LearnerReportPage from "@/pages/app/lms/LearnerReportPage";
 import MyLearningPage from "@/pages/app/lms/MyLearningPage";
 import CrmPage from "@/pages/app/crm/CrmPage";
 import CrmDetailPage from "@/pages/app/crm/CrmDetailPage";
@@ -147,6 +150,9 @@ function App() {
                     <Route path="lms/lessons" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsLessonsPage /></ModuleGuard>} />
                     <Route path="lms/lessons/:lessonId" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsLessonDetailPage /></ModuleGuard>} />
                     <Route path="lms/assignments" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsAssignmentsPage /></ModuleGuard>} />
+                    <Route path="lms/reports" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsReportsPage /></ModuleGuard>} />
+                    <Route path="lms/reports/assignment/:assignmentId" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><AssignmentReportPage /></ModuleGuard>} />
+                    <Route path="lms/reports/learner/:userId" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LearnerReportPage /></ModuleGuard>} />
                     <Route path="crm" element={<ModuleGuard moduleKey="crm" moduleName="CRM"><CrmPage /></ModuleGuard>} />
                     <Route path="crm/:clientId" element={<ModuleGuard moduleKey="crm" moduleName="CRM"><CrmDetailPage /></ModuleGuard>} />
                     <Route path="contacts" element={<ModuleGuard moduleKey="external_contacts" moduleName="Contacts"><ExternalContactsPage /></ModuleGuard>} />

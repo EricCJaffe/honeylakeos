@@ -48,6 +48,13 @@ const quickLinks = [
     href: "/app/lms/assignments",
     color: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   },
+  {
+    title: "Reports",
+    description: "View progress and analytics",
+    icon: Library,
+    href: "/app/lms/reports",
+    color: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
+  },
 ];
 
 export default function LmsPage() {
