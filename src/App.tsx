@@ -58,9 +58,13 @@ import SettingsPage from "@/pages/app/settings/SettingsPage";
 import TemplatesPage from "@/pages/app/admin/TemplatesPage";
 import LmsPage from "@/pages/app/lms/LmsPage";
 import LmsPathsPage from "@/pages/app/lms/PathsPage";
+import LmsPathDetailPage from "@/pages/app/lms/PathDetailPage";
 import LmsCoursesPage from "@/pages/app/lms/CoursesPage";
+import LmsCourseDetailPage from "@/pages/app/lms/CourseDetailPage";
 import LmsLessonsPage from "@/pages/app/lms/LessonsPage";
+import LmsLessonDetailPage from "@/pages/app/lms/LessonDetailPage";
 import LmsAssignmentsPage from "@/pages/app/lms/AssignmentsPage";
+import MyLearningPage from "@/pages/app/lms/MyLearningPage";
 import CrmPage from "@/pages/app/crm/CrmPage";
 import CrmDetailPage from "@/pages/app/crm/CrmDetailPage";
 import ExternalContactsPage from "@/pages/app/contacts/ExternalContactsPage";
@@ -135,9 +139,13 @@ function App() {
                     <Route path="forms" element={<ModuleGuard moduleKey="forms" moduleName="Forms"><ModulePage /></ModuleGuard>} />
                     <Route path="workflows" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><ModulePage /></ModuleGuard>} />
                     <Route path="lms" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsPage /></ModuleGuard>} />
+                    <Route path="lms/my-learning" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><MyLearningPage /></ModuleGuard>} />
                     <Route path="lms/paths" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsPathsPage /></ModuleGuard>} />
+                    <Route path="lms/paths/:pathId" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsPathDetailPage /></ModuleGuard>} />
                     <Route path="lms/courses" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsCoursesPage /></ModuleGuard>} />
+                    <Route path="lms/courses/:courseId" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsCourseDetailPage /></ModuleGuard>} />
                     <Route path="lms/lessons" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsLessonsPage /></ModuleGuard>} />
+                    <Route path="lms/lessons/:lessonId" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsLessonDetailPage /></ModuleGuard>} />
                     <Route path="lms/assignments" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsAssignmentsPage /></ModuleGuard>} />
                     <Route path="crm" element={<ModuleGuard moduleKey="crm" moduleName="CRM"><CrmPage /></ModuleGuard>} />
                     <Route path="crm/:clientId" element={<ModuleGuard moduleKey="crm" moduleName="CRM"><CrmDetailPage /></ModuleGuard>} />
