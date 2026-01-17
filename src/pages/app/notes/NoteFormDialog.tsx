@@ -89,17 +89,6 @@ export function NoteFormDialog({
       project_id: initialProjectId || null,
     },
   });
-  const form = useForm<NoteFormValues>({
-    resolver: zodResolver(noteSchema),
-    defaultValues: {
-      title: "",
-      content: "",
-      access_level: "company",
-      folder_id: folderId || null,
-      color: null,
-      project_id: initialProjectId || null,
-    },
-  });
 
   React.useEffect(() => {
     if (note) {
