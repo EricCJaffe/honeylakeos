@@ -1,4 +1,4 @@
-import { useState } from "react";
+import * as React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, 
@@ -12,6 +12,11 @@ import {
   Globe,
   Calendar
 } from "lucide-react";
+
+// Lazy load rich text display for consistent rendering
+const RichTextDisplay = React.lazy(() => 
+  import("@/components/ui/rich-text-editor").then(m => ({ default: m.RichTextDisplay }))
+);
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,8 +43,8 @@ function CoachDetailContent() {
   const { data: profile, isLoading } = useCoachProfile(id);
   const { archiveProfile, unarchiveProfile, deleteProfile } = useCoachProfiles();
 
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = React.useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
 
   if (isLoading) {
     return (
@@ -216,7 +221,9 @@ function CoachDetailContent() {
               {profile.bio && (
                 <div className="pt-2 border-t">
                   <h4 className="text-sm font-medium mb-2">Bio / Notes</h4>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{profile.bio}</p>
+                  <React.Suspense fallback={<div className="h-8 animate-pulse bg-muted rounded" />}>
+                    <RichTextDisplay content={profile.bio} className="text-sm" />
+                  </React.Suspense>
                 </div>
               )}
               {!specialties.length && !profile.bio && (

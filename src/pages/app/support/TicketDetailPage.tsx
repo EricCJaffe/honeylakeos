@@ -1,4 +1,4 @@
-import { useState } from "react";
+import * as React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Send, Clock, User, Building2, Tag } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
@@ -18,6 +18,11 @@ import {
 import { useMembership } from "@/lib/membership";
 import { format } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
+
+// Lazy load rich text display for consistent rendering
+const RichTextDisplay = React.lazy(() => 
+  import("@/components/ui/rich-text-editor").then(m => ({ default: m.RichTextDisplay }))
+);
 
 type TicketStatus = Database["public"]["Enums"]["ticket_status"];
 type TicketPriority = Database["public"]["Enums"]["ticket_priority"];
@@ -48,7 +53,7 @@ export default function TicketDetailPage() {
   const { data: events } = useTicketEvents(ticketId);
   const { addMessage } = useSupportTicketMutations();
 
-  const [newMessage, setNewMessage] = useState("");
+  const [newMessage, setNewMessage] = React.useState("");
 
   const handleSendMessage = async () => {
     if (!ticketId || !newMessage.trim()) return;
@@ -179,10 +184,9 @@ export default function TicketDetailPage() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div
-                      className="prose prose-sm dark:prose-invert max-w-none"
-                      dangerouslySetInnerHTML={{ __html: message.body_rich_text }}
-                    />
+                    <React.Suspense fallback={<Skeleton className="h-8 w-full" />}>
+                      <RichTextDisplay content={message.body_rich_text} />
+                    </React.Suspense>
                   </CardContent>
                 </Card>
               ))}

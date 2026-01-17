@@ -9,6 +9,11 @@ import { CrmTimeline } from "@/components/crm/CrmTimeline";
 import { CrmLearningPanel } from "@/components/lms/CrmLearningPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+
+// Lazy load rich text display for consistent rendering
+const RichTextDisplay = React.lazy(() => 
+  import("@/components/ui/rich-text-editor").then(m => ({ default: m.RichTextDisplay }))
+);
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -273,7 +278,9 @@ function CrmDetailContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm whitespace-pre-wrap">{client.notes}</p>
+                <React.Suspense fallback={<div className="h-8 animate-pulse bg-muted rounded" />}>
+                  <RichTextDisplay content={client.notes} className="text-sm" />
+                </React.Suspense>
               </CardContent>
             </Card>
           )}

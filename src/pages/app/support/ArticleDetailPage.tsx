@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, ThumbsUp, ThumbsDown, Tag, Clock, User } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
@@ -6,15 +7,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useKbArticle, useKbArticleMutations, useKbArticles } from "@/hooks/useSupportCenter";
-import { useState } from "react";
 import { format } from "date-fns";
 
+// Lazy load rich text display for consistent rendering
+const RichTextDisplay = React.lazy(() => 
+  import("@/components/ui/rich-text-editor").then(m => ({ default: m.RichTextDisplay }))
+);
 export default function ArticleDetailPage() {
   const { articleId } = useParams<{ articleId: string }>();
   const navigate = useNavigate();
   const { data: article, isLoading } = useKbArticle(articleId);
   const { markHelpful } = useKbArticleMutations();
-  const [hasVoted, setHasVoted] = useState(false);
+  const [hasVoted, setHasVoted] = React.useState(false);
 
   // Get related articles by tags
   const { data: allArticles } = useKbArticles({ status: "published" });
@@ -88,10 +92,9 @@ export default function ArticleDetailPage() {
               </div>
 
               {/* Article body */}
-              <div
-                className="prose prose-sm dark:prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ __html: article.body_rich_text || "" }}
-              />
+              <React.Suspense fallback={<Skeleton className="h-32 w-full" />}>
+                <RichTextDisplay content={article.body_rich_text} />
+              </React.Suspense>
 
               {/* Tags */}
               {article.tags && article.tags.length > 0 && (
