@@ -61,6 +61,12 @@ import LmsPathsPage from "@/pages/app/lms/PathsPage";
 import LmsCoursesPage from "@/pages/app/lms/CoursesPage";
 import LmsLessonsPage from "@/pages/app/lms/LessonsPage";
 import LmsAssignmentsPage from "@/pages/app/lms/AssignmentsPage";
+import CrmPage from "@/pages/app/crm/CrmPage";
+import CrmDetailPage from "@/pages/app/crm/CrmDetailPage";
+import ExternalContactsPage from "@/pages/app/contacts/ExternalContactsPage";
+import ExternalContactDetailPage from "@/pages/app/contacts/ExternalContactDetailPage";
+import CoachesPage from "@/pages/app/coaches/CoachesPage";
+import CoachDetailPage from "@/pages/app/coaches/CoachDetailPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -133,6 +139,12 @@ function App() {
                     <Route path="lms/courses" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsCoursesPage /></ModuleGuard>} />
                     <Route path="lms/lessons" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsLessonsPage /></ModuleGuard>} />
                     <Route path="lms/assignments" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsAssignmentsPage /></ModuleGuard>} />
+                    <Route path="crm" element={<ModuleGuard moduleKey="crm" moduleName="CRM"><CrmPage /></ModuleGuard>} />
+                    <Route path="crm/:clientId" element={<ModuleGuard moduleKey="crm" moduleName="CRM"><CrmDetailPage /></ModuleGuard>} />
+                    <Route path="contacts" element={<ModuleGuard moduleKey="external_contacts" moduleName="Contacts"><ExternalContactsPage /></ModuleGuard>} />
+                    <Route path="contacts/:contactId" element={<ModuleGuard moduleKey="external_contacts" moduleName="Contacts"><ExternalContactDetailPage /></ModuleGuard>} />
+                    <Route path="coaches" element={<ModuleGuard moduleKey="coaches" moduleName="Coaches"><CoachesPage /></ModuleGuard>} />
+                    <Route path="coaches/:coachId" element={<ModuleGuard moduleKey="coaches" moduleName="Coaches"><CoachDetailPage /></ModuleGuard>} />
                     <Route path="settings" element={<SettingsPage />} />
                     <Route path="admin/company-console" element={<CompanyConsolePage />} />
                     <Route path="admin/company" element={<CompanySettingsPage />} />
