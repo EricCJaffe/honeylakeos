@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "./useActiveCompany";
 import { toast } from "sonner";
+import type { Json } from "@/integrations/supabase/types";
 
 // Types
 export type CoachingRole = "coach" | "coach_manager" | "org_admin";
@@ -533,7 +534,12 @@ export function useRecommendationMutations() {
       const { data, error } = await supabase
         .from("coach_recommendations")
         .insert({
-          ...recommendation,
+          engagement_id: recommendation.engagement_id,
+          target_company_id: recommendation.target_company_id,
+          recommendation_type: recommendation.recommendation_type,
+          title: recommendation.title,
+          description: recommendation.description,
+          payload: recommendation.payload as Json | null,
           recommended_by: user.id,
         })
         .select()
