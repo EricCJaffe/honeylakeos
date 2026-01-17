@@ -140,9 +140,14 @@ export function useWfFormMutations() {
 
   const publishForm = useMutation({
     mutationFn: async (id: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("wf_forms")
-        .update({ status: "published", published_at: new Date().toISOString() })
+        .update({ 
+          status: "published", 
+          published_at: new Date().toISOString(),
+          published_by: user?.id,
+        })
         .eq("id", id)
         .select()
         .single();

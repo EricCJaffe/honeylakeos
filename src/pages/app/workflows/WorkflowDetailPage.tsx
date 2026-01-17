@@ -33,6 +33,9 @@ import { useAuditLog } from "@/hooks/useAuditLog";
 import { WorkflowStepDialog } from "./WorkflowStepDialog";
 import { WorkflowPreviewPanel } from "./WorkflowPreviewPanel";
 import { StartWorkflowDialog } from "./StartWorkflowDialog";
+import { DefinitionOwnershipPanel } from "@/components/workflows/DefinitionOwnershipPanel";
+import { SafeEditWarning } from "@/components/workflows/SafeEditWarning";
+import { useWorkflowActiveRuns } from "@/hooks/useWorkflowGovernance";
 import type { WfWorkflowStep } from "@/hooks/useWorkflows";
 
 const STEP_TYPE_LABELS: Record<string, string> = {
@@ -71,13 +74,16 @@ export default function WorkflowDetailPage() {
   const { data: steps, isLoading: stepsLoading } = useWfWorkflowSteps(workflowId);
   const { data: stats } = useWfWorkflowStats(workflowId);
   const { data: runs } = useWfWorkflowRuns({ workflowId });
+  const { data: activeRunsData } = useWorkflowActiveRuns(workflowId);
 
   const { publishWorkflow, archiveWorkflow, deleteWorkflow, updateWorkflow } = useWfWorkflowMutations();
   const { deleteStep, reorderSteps } = useWfWorkflowStepMutations(workflowId ?? "");
 
   const canManage = isCompanyAdmin;
   const isDraft = workflow?.status === "draft";
+  const isPublished = workflow?.status === "published";
   const hasSteps = steps && steps.length > 0;
+  const hasActiveRuns = activeRunsData?.hasActiveRuns ?? false;
 
   if (workflowLoading) {
     return (
@@ -202,6 +208,13 @@ export default function WorkflowDetailPage() {
         </Alert>
       )}
 
+      {/* Safe Editing Warning for Published Workflows */}
+      <SafeEditWarning
+        isPublished={isPublished}
+        hasActiveRuns={hasActiveRuns}
+        entityType="workflow"
+      />
+
       {showPreview ? (
         <WorkflowPreviewPanel
           workflow={workflow}
@@ -210,6 +223,19 @@ export default function WorkflowDetailPage() {
         />
       ) : (
         <>
+          {/* Ownership Panel */}
+          <DefinitionOwnershipPanel
+            ownership={{
+              createdBy: workflow.created_by,
+              createdAt: workflow.created_at,
+              updatedAt: workflow.updated_at,
+              publishedAt: workflow.published_at,
+              publishedBy: (workflow as { published_by?: string }).published_by ?? null,
+              scopeType: workflow.scope_type,
+            }}
+            className="max-w-sm"
+          />
+
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
             <TabsList>
               <TabsTrigger value="builder">Workflow Builder</TabsTrigger>
