@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Download,
   FileText,
@@ -14,6 +14,7 @@ import { useReports } from "@/hooks/useReports";
 import { EmptyState } from "@/components/EmptyState";
 
 function ExportsContent() {
+  const navigate = useNavigate();
   const { data: reports = [], isLoading } = useReports();
 
   return (
@@ -58,11 +59,8 @@ function ExportsContent() {
               icon={BarChart3}
               title="No reports created yet"
               description="Create a report first, then you can export its data"
-              action={
-                <Button asChild>
-                  <Link to="/app/reports/new">Create Report</Link>
-                </Button>
-              }
+              actionLabel="Create Report"
+              onAction={() => navigate("/app/reports/new")}
             />
           ) : (
             <div className="space-y-2">

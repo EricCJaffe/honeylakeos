@@ -105,6 +105,10 @@ import FormDetailPage from "@/pages/app/workflows/FormDetailPage";
 import FormSubmitPage from "@/pages/app/workflows/FormSubmitPage";
 import MyWorkPage from "@/pages/app/workflows/MyWorkPage";
 import WorkflowRunsPage from "@/pages/app/workflows/WorkflowRunsPage";
+import ReportsPage from "@/pages/app/reports/ReportsPage";
+import ReportFormPage from "@/pages/app/reports/ReportFormPage";
+import ReportDetailPage from "@/pages/app/reports/ReportDetailPage";
+import ExportsPage from "@/pages/app/reports/ExportsPage";
 import RunDetailPage from "@/pages/app/workflows/RunDetailPage";
 
 const queryClient = new QueryClient();
@@ -217,6 +221,10 @@ function App() {
                     <Route path="finance/invoices" element={<ModuleGuard moduleKey="finance" moduleName="Finance"><InvoicesPage /></ModuleGuard>} />
                     <Route path="finance/payments" element={<ModuleGuard moduleKey="finance" moduleName="Finance"><PaymentsPage /></ModuleGuard>} />
                     <Route path="finance/receipts" element={<ModuleGuard moduleKey="finance" moduleName="Finance"><ReceiptsPage /></ModuleGuard>} />
+                    <Route path="reports" element={<ReportsPage />} />
+                    <Route path="reports/new" element={<ReportFormPage />} />
+                    <Route path="reports/exports" element={<ExportsPage />} />
+                    <Route path="reports/:reportId" element={<ReportDetailPage />} />
                     <Route path="settings" element={<SettingsPage />} />
                     <Route path="framework" element={<FrameworksPage />} />
                     <Route path="framework/marketplace" element={<FrameworkMarketplacePage />} />
