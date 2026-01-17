@@ -39,10 +39,13 @@ import {
   getReportLabel,
   getReportCategory,
   Report,
+  ReportType,
 } from "@/hooks/useReports";
 import { useAuth } from "@/lib/auth";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { WORK_REPORT_TEMPLATES, WorkReportTemplateCard } from "./WorkReportTemplates";
+import { QuickReportRunner } from "./QuickReportRunner";
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
   work: CheckCircle2,
@@ -150,16 +153,22 @@ function ReportsContent() {
   const { data: reports = [], isLoading, refetch } = useReports();
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get("tab") || "all";
+  const activeTab = searchParams.get("tab") || "templates";
+  const [runningReport, setRunningReport] = React.useState<ReportType | null>(null);
 
   const personalReports = reports.filter((r) => r.is_personal && r.owner_user_id === user?.id);
   const companyReports = reports.filter((r) => !r.is_personal);
 
-  const displayedReports = activeTab === "personal" 
-    ? personalReports 
-    : activeTab === "company" 
-    ? companyReports 
-    : reports;
+  if (runningReport) {
+    return (
+      <div className="p-6 lg:p-8">
+        <QuickReportRunner
+          reportType={runningReport}
+          onBack={() => setRunningReport(null)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -175,15 +184,19 @@ function ReportsContent() {
         </Button>
       </PageHeader>
 
-      <Tabs 
-        value={activeTab} 
+      <Tabs
+        value={activeTab}
         onValueChange={(v) => setSearchParams({ tab: v })}
         className="space-y-6"
       >
         <TabsList>
-          <TabsTrigger value="all" className="gap-2">
+          <TabsTrigger value="templates" className="gap-2">
             <BarChart3 className="h-4 w-4" />
-            All Reports
+            Quick Reports
+          </TabsTrigger>
+          <TabsTrigger value="saved" className="gap-2">
+            <CheckCircle2 className="h-4 w-4" />
+            Saved
             <Badge variant="secondary" className="text-xs">{reports.length}</Badge>
           </TabsTrigger>
           <TabsTrigger value="personal" className="gap-2">
@@ -191,14 +204,32 @@ function ReportsContent() {
             My Reports
             <Badge variant="secondary" className="text-xs">{personalReports.length}</Badge>
           </TabsTrigger>
-          <TabsTrigger value="company" className="gap-2">
-            <Building2 className="h-4 w-4" />
-            Company Reports
-            <Badge variant="secondary" className="text-xs">{companyReports.length}</Badge>
-          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab} className="mt-6">
+        {/* Quick Reports / Templates */}
+        <TabsContent value="templates" className="mt-6 space-y-8">
+          <div>
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-primary" />
+              Work Reports
+            </h3>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {WORK_REPORT_TEMPLATES.map((template) => (
+                <WorkReportTemplateCard
+                  key={template.id}
+                  template={template}
+                  onRun={() => setRunningReport(template.type)}
+                  onSave={() => {
+                    setRunningReport(template.type);
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Saved Reports */}
+        <TabsContent value="saved" className="mt-6">
           {isLoading ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3].map((i) => (
@@ -213,28 +244,41 @@ function ReportsContent() {
                 </Card>
               ))}
             </div>
-          ) : displayedReports.length === 0 ? (
+          ) : reports.length === 0 ? (
             <EmptyState
               icon={BarChart3}
-              title="No reports yet"
-              description={
-                activeTab === "personal"
-                  ? "Create a personal report to track your own metrics"
-                  : activeTab === "company"
-                  ? "No company-wide reports have been created"
-                  : "Get started by creating your first report"
-              }
-              actionLabel="Create Report"
-              onAction={() => navigate("/app/reports/new")}
+              title="No saved reports"
+              description="Run a quick report and save it for quick access"
+              actionLabel="View Quick Reports"
+              onAction={() => setSearchParams({ tab: "templates" })}
             />
           ) : (
             <div className="space-y-8">
               {REPORT_CATEGORIES.map((category) => (
-                <CategorySection 
-                  key={category.key} 
-                  category={category} 
-                  reports={displayedReports} 
+                <CategorySection
+                  key={category.key}
+                  category={category}
+                  reports={reports}
                 />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Personal Reports */}
+        <TabsContent value="personal" className="mt-6">
+          {personalReports.length === 0 ? (
+            <EmptyState
+              icon={User}
+              title="No personal reports"
+              description="Save a report as personal to see it here"
+              actionLabel="View Quick Reports"
+              onAction={() => setSearchParams({ tab: "templates" })}
+            />
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {personalReports.map((report) => (
+                <ReportCard key={report.id} report={report} onDelete={() => refetch()} />
               ))}
             </div>
           )}
