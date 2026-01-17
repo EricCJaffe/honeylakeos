@@ -153,6 +153,17 @@ export type AuditAction =
   // Framework actions
   | "framework.cloned"
   | "framework.adopted"
+  // Workflow actions
+  | "workflow.run_started"
+  | "workflow.run_completed"
+  | "workflow.run_cancelled"
+  | "workflow.run_failed"
+  | "workflow.step_assigned"
+  | "workflow.step_started"
+  | "workflow.step_completed"
+  | "workflow.step_rejected"
+  | "workflow.step_skipped"
+  | "workflow.step_reassigned"
   | "framework.updated";
 
 export type EntityType =
@@ -186,6 +197,8 @@ export type EntityType =
   | "lms_quiz_attempt"
   | "lms_progress"
   | "folder"
+  | "workflow_run"
+  | "workflow_step_run"
   | "folder_acl";
 
 interface LogAuditEventParams {

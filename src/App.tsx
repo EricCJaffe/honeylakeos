@@ -97,6 +97,7 @@ import FormDetailPage from "@/pages/app/workflows/FormDetailPage";
 import FormSubmitPage from "@/pages/app/workflows/FormSubmitPage";
 import MyWorkPage from "@/pages/app/workflows/MyWorkPage";
 import WorkflowRunsPage from "@/pages/app/workflows/WorkflowRunsPage";
+import RunDetailPage from "@/pages/app/workflows/RunDetailPage";
 
 const queryClient = new QueryClient();
 
@@ -169,6 +170,7 @@ function App() {
                     <Route path="workflows/forms/:formId/submit" element={<FormSubmitPage />} />
                     <Route path="workflows/my-work" element={<MyWorkPage />} />
                     <Route path="workflows/runs" element={<WorkflowRunsPage />} />
+                    <Route path="workflows/runs/:runId" element={<RunDetailPage />} />
                     <Route path="lms" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsPage /></ModuleGuard>} />
                     <Route path="lms/my-learning" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><MyLearningPage /></ModuleGuard>} />
                     <Route path="lms/paths" element={<ModuleGuard moduleKey="lms" moduleName="LMS"><LmsPathsPage /></ModuleGuard>} />
