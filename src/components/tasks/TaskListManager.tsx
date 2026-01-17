@@ -2,8 +2,8 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { List, Plus, Pencil, Trash2, MoreHorizontal, User, Building2 } from "lucide-react";
-import { useTaskLists, TaskList } from "@/hooks/useTaskLists";
+import { List, Plus, Pencil, Trash2, MoreHorizontal, User, Building2, GripVertical } from "lucide-react";
+import { useTaskLists, TaskList, TaskListWithCount } from "@/hooks/useTaskLists";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import {
   Dialog,
@@ -28,7 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/EmptyState";
 
@@ -57,10 +57,13 @@ interface TaskListManagerProps {
 }
 
 export function TaskListManager({ open, onOpenChange }: TaskListManagerProps) {
-  const { personalLists, companyLists, isCompanyAdmin, canManageList, createList, updateList, deleteList } = useTaskLists();
+  const { personalLists, companyLists, isCompanyAdmin, canManageList, createList, updateList, deleteList, reorderList } = useTaskLists();
   const { activeCompanyId } = useActiveCompany();
   const [editingList, setEditingList] = React.useState<TaskList | null>(null);
   const [isFormOpen, setIsFormOpen] = React.useState(false);
+  const [draggedItem, setDraggedItem] = React.useState<TaskListWithCount | null>(null);
+  const [dragOverIndex, setDragOverIndex] = React.useState<number | null>(null);
+  const [dragScope, setDragScope] = React.useState<"personal" | "company" | null>(null);
 
   const form = useForm<ListFormValues>({
     resolver: zodResolver(listSchema),
@@ -100,7 +103,7 @@ export function TaskListManager({ open, onOpenChange }: TaskListManagerProps) {
   };
 
   const handleDelete = (listId: string) => {
-    if (confirm("Delete this list? Tasks will be moved to 'Unlisted'.")) {
+    if (confirm("Delete this list? Tasks will be moved to 'No List'.")) {
       deleteList.mutate(listId);
     }
   };
@@ -111,14 +114,60 @@ export function TaskListManager({ open, onOpenChange }: TaskListManagerProps) {
     setIsFormOpen(true);
   };
 
-  const renderListItem = (list: TaskList) => {
+  const handleDragStart = (e: React.DragEvent, list: TaskListWithCount, scope: "personal" | "company") => {
+    setDraggedItem(list);
+    setDragScope(scope);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number, scope: "personal" | "company") => {
+    e.preventDefault();
+    if (dragScope !== scope) return; // Cannot drag between scopes
+    setDragOverIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    if (draggedItem && dragOverIndex !== null && dragScope) {
+      const lists = dragScope === "personal" ? personalLists : companyLists;
+      const oldIndex = lists.findIndex(l => l.id === draggedItem.id);
+      
+      if (oldIndex !== dragOverIndex) {
+        reorderList.mutate({ listId: draggedItem.id, newIndex: dragOverIndex });
+      }
+    }
+    setDraggedItem(null);
+    setDragOverIndex(null);
+    setDragScope(null);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const renderListItem = (list: TaskListWithCount, index: number, scope: "personal" | "company") => {
     const canManage = canManageList(list);
+    const isDragging = draggedItem?.id === list.id;
+    const isDragOver = dragOverIndex === index && dragScope === scope;
+
     return (
       <div
         key={list.id}
-        className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+        draggable={canManage}
+        onDragStart={(e) => handleDragStart(e, list, scope)}
+        onDragOver={(e) => handleDragOver(e, index, scope)}
+        onDragEnd={handleDragEnd}
+        onDragLeave={handleDragLeave}
+        className={cn(
+          "flex items-center justify-between p-3 rounded-lg border bg-card transition-all",
+          canManage && "cursor-grab active:cursor-grabbing",
+          isDragging && "opacity-50",
+          isDragOver && "border-primary border-2"
+        )}
       >
         <div className="flex items-center gap-3">
+          {canManage && (
+            <GripVertical className="h-4 w-4 text-muted-foreground" />
+          )}
           <div
             className={cn(
               "w-3 h-3 rounded-full",
@@ -127,6 +176,9 @@ export function TaskListManager({ open, onOpenChange }: TaskListManagerProps) {
             style={list.color ? { backgroundColor: list.color } : undefined}
           />
           <span className="font-medium">{list.name}</span>
+          <Badge variant="secondary" className="text-xs">
+            {list.task_count}
+          </Badge>
         </div>
         {canManage && (
           <DropdownMenu>
@@ -189,7 +241,7 @@ export function TaskListManager({ open, onOpenChange }: TaskListManagerProps) {
                   <p className="text-xs text-muted-foreground italic px-2">No personal lists</p>
                 ) : (
                   <div className="space-y-2">
-                    {personalLists.map(renderListItem)}
+                    {personalLists.map((list, index) => renderListItem(list, index, "personal"))}
                   </div>
                 )}
               </div>
@@ -212,7 +264,7 @@ export function TaskListManager({ open, onOpenChange }: TaskListManagerProps) {
                     <p className="text-xs text-muted-foreground italic px-2">No company lists</p>
                   ) : (
                     <div className="space-y-2">
-                      {companyLists.map(renderListItem)}
+                      {companyLists.map((list, index) => renderListItem(list, index, "company"))}
                     </div>
                   )}
                 </div>

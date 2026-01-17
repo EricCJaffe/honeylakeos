@@ -106,7 +106,7 @@ export function TaskFormDialog({
   const [recurrenceConfig, setRecurrenceConfig] = React.useState<RecurrenceConfig | null>(null);
 
   // Fetch task lists
-  const { taskLists } = useTaskLists();
+  const { taskLists, personalLists, companyLists } = useTaskLists();
 
   // Fetch projects for dropdown
   const { data: projects = [] } = useQuery({
@@ -399,8 +399,8 @@ export function TaskFormDialog({
                   <FormItem>
                     <FormLabel>List</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
-                      value={field.value || undefined}
+                      onValueChange={(val) => field.onChange(val === "none" ? null : val)}
+                      value={field.value || "none"}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -408,16 +408,37 @@ export function TaskFormDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {taskLists.map((list) => (
-                          <SelectItem key={list.id} value={list.id}>
-                            <div className="flex items-center gap-2">
-                              {list.color && (
-                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: list.color }} />
-                              )}
-                              {list.name}
-                            </div>
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="none">None</SelectItem>
+                        {personalLists && personalLists.length > 0 && (
+                          <>
+                            <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Personal</div>
+                            {personalLists.map((list) => (
+                              <SelectItem key={list.id} value={list.id}>
+                                <div className="flex items-center gap-2">
+                                  {list.color && (
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: list.color }} />
+                                  )}
+                                  {list.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
+                        {companyLists && companyLists.length > 0 && (
+                          <>
+                            <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Company</div>
+                            {companyLists.map((list) => (
+                              <SelectItem key={list.id} value={list.id}>
+                                <div className="flex items-center gap-2">
+                                  {list.color && (
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: list.color }} />
+                                  )}
+                                  {list.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
