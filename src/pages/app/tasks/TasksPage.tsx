@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, Repeat, Filter, FileText, Layers, List, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +28,7 @@ import { TaskListManager } from "@/components/tasks/TaskListManager";
 import { Template } from "@/hooks/useTemplates";
 
 export default function TasksPage() {
+  const navigate = useNavigate();
   const { activeCompanyId, isCompanyAdmin, loading: membershipLoading } = useActiveCompany();
   const { user } = useAuth();
   const { taskLists, personalLists, companyLists, unlistedCount } = useTaskLists();
@@ -377,6 +379,11 @@ export default function TasksPage() {
         onOpenChange={setIsDialogOpen}
         task={editingTask}
         templateToApply={templateToApply}
+        onSuccess={(taskId) => {
+          if (!editingTask) {
+            navigate(`/app/tasks/${taskId}`);
+          }
+        }}
       />
       <TemplateFormDialog
         open={templateDialogOpen}
