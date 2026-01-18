@@ -64,14 +64,8 @@ export default function ResourcesPage() {
       <PageHeader
         title="Resources"
         description="Company-wide resources, documents, and links accessible to all team members."
-        actions={
-          isCompanyAdmin && (
-            <Button onClick={() => setFormOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Resource
-            </Button>
-          )
-        }
+        actionLabel={isCompanyAdmin ? "Add Resource" : undefined}
+        onAction={isCompanyAdmin ? () => setFormOpen(true) : undefined}
       />
 
       {isLoading ? (
@@ -85,14 +79,8 @@ export default function ResourcesPage() {
               ? "Add company-wide documents, links, or files for your team."
               : "No company-wide resources have been added yet."
           }
-          action={
-            isCompanyAdmin && (
-              <Button onClick={() => setFormOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Resource
-              </Button>
-            )
-          }
+          actionLabel={isCompanyAdmin ? "Add Resource" : undefined}
+          onAction={isCompanyAdmin ? () => setFormOpen(true) : undefined}
         />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

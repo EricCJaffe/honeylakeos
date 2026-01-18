@@ -25,10 +25,8 @@ export interface DepartmentMember {
   created_at: string;
   created_by: string | null;
   // Joined fields
-  profile?: {
-    full_name: string | null;
-    email: string | null;
-  };
+  full_name: string | null;
+  email: string | null;
 }
 
 export interface CreateDepartmentInput {
@@ -89,17 +87,48 @@ export function useDepartmentMembers(departmentId: string | undefined) {
     queryFn: async () => {
       if (!departmentId) return [];
 
-      const { data, error } = await supabase
+      // First get department members
+      const { data: members, error: membersError } = await supabase
         .from("department_members")
-        .select(`
-          *,
-          profile:profiles(full_name, email)
-        `)
+        .select("*")
         .eq("department_id", departmentId)
         .order("role", { ascending: false });
 
-      if (error) throw error;
-      return data as DepartmentMember[];
+      if (membersError) throw membersError;
+      if (!members?.length) return [];
+
+      // Get user IDs to fetch profiles
+      const userIds = members.map((m) => m.user_id);
+
+      // Fetch profiles for those users
+      const { data: profiles, error: profileError } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, email")
+        .in("user_id", userIds);
+
+      if (profileError) throw profileError;
+
+      // Create profile lookup map
+      const profileMap = new Map(
+        (profiles || []).map((p) => [p.user_id, p])
+      );
+
+      // Combine data
+      const result: DepartmentMember[] = members.map((m) => {
+        const profile = profileMap.get(m.user_id);
+        return {
+          id: m.id,
+          department_id: m.department_id,
+          user_id: m.user_id,
+          role: m.role,
+          created_at: m.created_at,
+          created_by: m.created_by,
+          full_name: profile?.full_name || null,
+          email: profile?.email || null,
+        };
+      });
+
+      return result;
     },
     enabled: !!departmentId,
   });
@@ -155,12 +184,7 @@ export function useDepartmentMutations() {
 
       if (error) throw error;
 
-      await log({
-        action: "department.created",
-        entityType: "department",
-        entityId: data.id,
-        metadata: { name: input.name },
-      });
+      await log("department.created", "department", data.id, { name: input.name });
 
       return data as Department;
     },
@@ -184,12 +208,7 @@ export function useDepartmentMutations() {
 
       if (error) throw error;
 
-      await log({
-        action: "department.updated",
-        entityType: "department",
-        entityId: id,
-        metadata: input,
-      });
+      await log("department.updated", "department", id, input);
 
       return data as Department;
     },
@@ -212,11 +231,7 @@ export function useDepartmentMutations() {
 
       if (error) throw error;
 
-      await log({
-        action: "department.deleted",
-        entityType: "department",
-        entityId: id,
-      });
+      await log("department.deleted", "department", id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["departments"] });
@@ -252,14 +267,9 @@ export function useDepartmentMutations() {
 
       if (error) throw error;
 
-      await log({
-        action: "department.member_added",
-        entityType: "department",
-        entityId: departmentId,
-        metadata: { userId, role },
-      });
+      await log("department.member_added", "department", departmentId, { userId, role });
 
-      return data as DepartmentMember;
+      return data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["department-members", variables.departmentId] });
@@ -290,14 +300,9 @@ export function useDepartmentMutations() {
 
       if (error) throw error;
 
-      await log({
-        action: "department.member_role_changed",
-        entityType: "department",
-        entityId: departmentId,
-        metadata: { memberId, role },
-      });
+      await log("department.member_role_changed", "department", departmentId, { memberId, role });
 
-      return data as DepartmentMember;
+      return data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["department-members", variables.departmentId] });
@@ -323,12 +328,7 @@ export function useDepartmentMutations() {
 
       if (error) throw error;
 
-      await log({
-        action: "department.member_removed",
-        entityType: "department",
-        entityId: departmentId,
-        metadata: { memberId },
-      });
+      await log("department.member_removed", "department", departmentId, { memberId });
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["department-members", variables.departmentId] });

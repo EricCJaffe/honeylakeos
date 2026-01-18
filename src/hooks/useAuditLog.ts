@@ -100,6 +100,18 @@ export type AuditAction =
   | "coach_profile.archived"
   | "coach_profile.unarchived"
   | "coach_profile.deleted"
+  // Department actions
+  | "department.created"
+  | "department.updated"
+  | "department.deleted"
+  | "department.member_added"
+  | "department.member_removed"
+  | "department.member_role_changed"
+  // Resource actions
+  | "resource.created"
+  | "resource.updated"
+  | "resource.deleted"
+  | "resource.archived"
   // Form actions
   | "form.created"
   | "form.updated"
@@ -318,7 +330,9 @@ export type EntityType =
   | "coa_template"
   | "reconciliation"
   | "bank_account"
-  | "bank_transaction";
+  | "bank_transaction"
+  | "department"
+  | "resource";
 
 interface LogAuditEventParams {
   companyId: string;

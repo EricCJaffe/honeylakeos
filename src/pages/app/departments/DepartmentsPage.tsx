@@ -53,14 +53,8 @@ export default function DepartmentsPage() {
       <PageHeader
         title="Departments"
         description="Organize your team by department with dedicated resources, SOPs, and workflows."
-        actions={
-          isCompanyAdmin && (
-            <Button onClick={() => setFormOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Department
-            </Button>
-          )
-        }
+        actionLabel={isCompanyAdmin ? "New Department" : undefined}
+        onAction={isCompanyAdmin ? () => setFormOpen(true) : undefined}
       />
 
       {isLoading ? (
@@ -74,14 +68,8 @@ export default function DepartmentsPage() {
               ? "Create departments to organize your team and resources."
               : "No departments have been set up for your organization yet."
           }
-          action={
-            isCompanyAdmin && (
-              <Button onClick={() => setFormOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Department
-              </Button>
-            )
-          }
+          actionLabel={isCompanyAdmin ? "Create Department" : undefined}
+          onAction={isCompanyAdmin ? () => setFormOpen(true) : undefined}
         />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

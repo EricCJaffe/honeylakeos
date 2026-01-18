@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Building2, Pencil, Users, FileText, Link2, Video, File, Plus } from "lucide-react";
+import { ArrowLeft, Building2, Pencil, Users, FileText } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDepartment, useDepartmentMembers, useDepartmentMutations } from "@/hooks/useDepartments";
+import { useDepartment, useDepartmentMembers } from "@/hooks/useDepartments";
 import { useDepartmentResources } from "@/hooks/useResources";
 import { useMembership } from "@/lib/membership";
 import { DepartmentFormDialog } from "./DepartmentFormDialog";
@@ -62,23 +62,23 @@ export default function DepartmentDetailPage() {
         Back to Departments
       </Button>
 
-      <PageHeader
-        title={
-          <div className="flex items-center gap-3">
-            <Building2 className="h-6 w-6 text-muted-foreground" />
-            {department.name}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Building2 className="h-6 w-6 text-muted-foreground" />
+          <div>
+            <h1 className="text-xl font-bold text-foreground">{department.name}</h1>
+            {department.description && (
+              <p className="text-sm text-muted-foreground mt-0.5">{department.description}</p>
+            )}
           </div>
-        }
-        description={department.description || "No description"}
-        actions={
-          isCompanyAdmin && (
-            <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
-              <Pencil className="mr-2 h-4 w-4" />
-              Edit
-            </Button>
-          )
-        }
-      />
+        </div>
+        {isCompanyAdmin && (
+          <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
+            <Pencil className="mr-2 h-4 w-4" />
+            Edit
+          </Button>
+        )}
+      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
@@ -158,7 +158,7 @@ export default function DepartmentDetailPage() {
                     .filter((m) => m.role === "manager")
                     .map((m) => (
                       <Badge key={m.id} variant="secondary">
-                        {m.profile?.full_name || m.profile?.email || "Unknown"}
+                        {m.full_name || m.email || "Unknown"}
                       </Badge>
                     ))}
                 </div>
