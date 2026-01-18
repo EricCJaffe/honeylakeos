@@ -7108,6 +7108,30 @@ export type Database = {
       }
       is_site_admin: { Args: { p_site_id: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      list_audit_logs: {
+        Args: {
+          p_action?: string
+          p_actor_user_id?: string
+          p_company_id: string
+          p_end_date?: string
+          p_entity_type?: string
+          p_page?: number
+          p_page_size?: number
+          p_search?: string
+          p_start_date?: string
+        }
+        Returns: {
+          action: string
+          actor_email: string
+          actor_user_id: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          metadata: Json
+          total_count: number
+        }[]
+      }
       log_audit_event: {
         Args: {
           p_action: string

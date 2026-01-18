@@ -1,0 +1,1 @@
+export { TrashManager } from './TrashManager';

@@ -185,7 +185,11 @@ export type AuditAction =
   | "backup.created"
   | "backup.failed"
   | "backup.restore_started"
-  | "backup.restore_completed";
+  | "backup.restore_completed"
+  // Soft delete actions
+  | "entity.soft_deleted"
+  | "entity.restored"
+  | "entity.hard_deleted";
 
 export type EntityType =
   | "employee"
