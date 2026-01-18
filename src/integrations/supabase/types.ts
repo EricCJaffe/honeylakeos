@@ -981,6 +981,7 @@ export type Database = {
           external_contact_id: string | null
           id: string
           is_active: boolean
+          is_sample: boolean
           lifecycle_status: string
           notes: string | null
           org_email: string | null
@@ -990,6 +991,7 @@ export type Database = {
           person_email: string | null
           person_full_name: string | null
           person_phone: string | null
+          sample_batch_id: string | null
           type: string
           updated_at: string
         }
@@ -1001,6 +1003,7 @@ export type Database = {
           external_contact_id?: string | null
           id?: string
           is_active?: boolean
+          is_sample?: boolean
           lifecycle_status?: string
           notes?: string | null
           org_email?: string | null
@@ -1010,6 +1013,7 @@ export type Database = {
           person_email?: string | null
           person_full_name?: string | null
           person_phone?: string | null
+          sample_batch_id?: string | null
           type?: string
           updated_at?: string
         }
@@ -1021,6 +1025,7 @@ export type Database = {
           external_contact_id?: string | null
           id?: string
           is_active?: boolean
+          is_sample?: boolean
           lifecycle_status?: string
           notes?: string | null
           org_email?: string | null
@@ -1030,6 +1035,7 @@ export type Database = {
           person_email?: string | null
           person_full_name?: string | null
           person_phone?: string | null
+          sample_batch_id?: string | null
           type?: string
           updated_at?: string
         }
@@ -1046,6 +1052,13 @@ export type Database = {
             columns: ["external_contact_id"]
             isOneToOne: false
             referencedRelation: "external_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_clients_sample_batch_id_fkey"
+            columns: ["sample_batch_id"]
+            isOneToOne: false
+            referencedRelation: "sample_data_batches"
             referencedColumns: ["id"]
           },
         ]
@@ -1135,9 +1148,11 @@ export type Database = {
           donor_profile_id: string
           id: string
           is_anonymous: boolean
+          is_sample: boolean
           notes: string | null
           payment_method: Database["public"]["Enums"]["payment_method"]
           receipt_required: boolean
+          sample_batch_id: string | null
           status: Database["public"]["Enums"]["donation_status"]
           updated_at: string
         }
@@ -1152,9 +1167,11 @@ export type Database = {
           donor_profile_id: string
           id?: string
           is_anonymous?: boolean
+          is_sample?: boolean
           notes?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"]
           receipt_required?: boolean
+          sample_batch_id?: string | null
           status?: Database["public"]["Enums"]["donation_status"]
           updated_at?: string
         }
@@ -1169,9 +1186,11 @@ export type Database = {
           donor_profile_id?: string
           id?: string
           is_anonymous?: boolean
+          is_sample?: boolean
           notes?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"]
           receipt_required?: boolean
+          sample_batch_id?: string | null
           status?: Database["public"]["Enums"]["donation_status"]
           updated_at?: string
         }
@@ -1197,6 +1216,13 @@ export type Database = {
             referencedRelation: "donor_profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "donations_sample_batch_id_fkey"
+            columns: ["sample_batch_id"]
+            isOneToOne: false
+            referencedRelation: "sample_data_batches"
+            referencedColumns: ["id"]
+          },
         ]
       }
       donor_campaigns: {
@@ -1209,7 +1235,9 @@ export type Database = {
           end_date: string | null
           goal_amount: number | null
           id: string
+          is_sample: boolean
           name: string
+          sample_batch_id: string | null
           start_date: string | null
           updated_at: string
         }
@@ -1222,7 +1250,9 @@ export type Database = {
           end_date?: string | null
           goal_amount?: number | null
           id?: string
+          is_sample?: boolean
           name: string
+          sample_batch_id?: string | null
           start_date?: string | null
           updated_at?: string
         }
@@ -1235,7 +1265,9 @@ export type Database = {
           end_date?: string | null
           goal_amount?: number | null
           id?: string
+          is_sample?: boolean
           name?: string
+          sample_batch_id?: string | null
           start_date?: string | null
           updated_at?: string
         }
@@ -1245,6 +1277,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "donor_campaigns_sample_batch_id_fkey"
+            columns: ["sample_batch_id"]
+            isOneToOne: false
+            referencedRelation: "sample_data_batches"
             referencedColumns: ["id"]
           },
         ]
@@ -1330,9 +1369,11 @@ export type Database = {
           donor_status: Database["public"]["Enums"]["donor_status"]
           first_donation_date: string | null
           id: string
+          is_sample: boolean
           last_donation_date: string | null
           lifetime_giving_amount: number
           notes: string | null
+          sample_batch_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1342,9 +1383,11 @@ export type Database = {
           donor_status?: Database["public"]["Enums"]["donor_status"]
           first_donation_date?: string | null
           id?: string
+          is_sample?: boolean
           last_donation_date?: string | null
           lifetime_giving_amount?: number
           notes?: string | null
+          sample_batch_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1354,9 +1397,11 @@ export type Database = {
           donor_status?: Database["public"]["Enums"]["donor_status"]
           first_donation_date?: string | null
           id?: string
+          is_sample?: boolean
           last_donation_date?: string | null
           lifetime_giving_amount?: number
           notes?: string | null
+          sample_batch_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1372,6 +1417,13 @@ export type Database = {
             columns: ["crm_client_id"]
             isOneToOne: false
             referencedRelation: "crm_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "donor_profiles_sample_batch_id_fkey"
+            columns: ["sample_batch_id"]
+            isOneToOne: false
+            referencedRelation: "sample_data_batches"
             referencedColumns: ["id"]
           },
         ]
@@ -2825,8 +2877,10 @@ export type Database = {
           export_status: string
           id: string
           invoice_number: string
+          is_sample: boolean
           issue_date: string
           notes: string | null
+          sample_batch_id: string | null
           status: string
           subtotal_amount: number
           tags: string[] | null
@@ -2846,8 +2900,10 @@ export type Database = {
           export_status?: string
           id?: string
           invoice_number: string
+          is_sample?: boolean
           issue_date?: string
           notes?: string | null
+          sample_batch_id?: string | null
           status?: string
           subtotal_amount?: number
           tags?: string[] | null
@@ -2867,8 +2923,10 @@ export type Database = {
           export_status?: string
           id?: string
           invoice_number?: string
+          is_sample?: boolean
           issue_date?: string
           notes?: string | null
+          sample_batch_id?: string | null
           status?: string
           subtotal_amount?: number
           tags?: string[] | null
@@ -2889,6 +2947,13 @@ export type Database = {
             columns: ["crm_client_id"]
             isOneToOne: false
             referencedRelation: "crm_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_sample_batch_id_fkey"
+            columns: ["sample_batch_id"]
+            isOneToOne: false
+            referencedRelation: "sample_data_batches"
             referencedColumns: ["id"]
           },
         ]
@@ -3237,6 +3302,8 @@ export type Database = {
           description: string | null
           estimated_hours: number | null
           id: string
+          is_sample: boolean
+          sample_batch_id: string | null
           status: string
           syllabus_asset_path: string | null
           title: string
@@ -3252,6 +3319,8 @@ export type Database = {
           description?: string | null
           estimated_hours?: number | null
           id?: string
+          is_sample?: boolean
+          sample_batch_id?: string | null
           status?: string
           syllabus_asset_path?: string | null
           title: string
@@ -3267,6 +3336,8 @@ export type Database = {
           description?: string | null
           estimated_hours?: number | null
           id?: string
+          is_sample?: boolean
+          sample_batch_id?: string | null
           status?: string
           syllabus_asset_path?: string | null
           title?: string
@@ -3279,6 +3350,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lms_courses_sample_batch_id_fkey"
+            columns: ["sample_batch_id"]
+            isOneToOne: false
+            referencedRelation: "sample_data_batches"
             referencedColumns: ["id"]
           },
         ]
@@ -4081,7 +4159,9 @@ export type Database = {
           folder_id: string | null
           id: string
           is_pinned: boolean
+          is_sample: boolean
           project_id: string | null
+          sample_batch_id: string | null
           status: string
           tags: Json
           title: string
@@ -4097,7 +4177,9 @@ export type Database = {
           folder_id?: string | null
           id?: string
           is_pinned?: boolean
+          is_sample?: boolean
           project_id?: string | null
+          sample_batch_id?: string | null
           status?: string
           tags?: Json
           title: string
@@ -4113,7 +4195,9 @@ export type Database = {
           folder_id?: string | null
           id?: string
           is_pinned?: boolean
+          is_sample?: boolean
           project_id?: string | null
+          sample_batch_id?: string | null
           status?: string
           tags?: Json
           title?: string
@@ -4139,6 +4223,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_sample_batch_id_fkey"
+            columns: ["sample_batch_id"]
+            isOneToOne: false
+            referencedRelation: "sample_data_batches"
             referencedColumns: ["id"]
           },
         ]
@@ -4474,8 +4565,10 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          is_sample: boolean
           name: string
           project_id: string
+          sample_batch_id: string | null
           sort_order: number
           status: string
         }
@@ -4484,8 +4577,10 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          is_sample?: boolean
           name: string
           project_id: string
+          sample_batch_id?: string | null
           sort_order?: number
           status?: string
         }
@@ -4494,8 +4589,10 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          is_sample?: boolean
           name?: string
           project_id?: string
+          sample_batch_id?: string | null
           sort_order?: number
           status?: string
         }
@@ -4512,6 +4609,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_phases_sample_batch_id_fkey"
+            columns: ["sample_batch_id"]
+            isOneToOne: false
+            referencedRelation: "sample_data_batches"
             referencedColumns: ["id"]
           },
         ]
@@ -4649,11 +4753,13 @@ export type Database = {
           due_date: string | null
           emoji: string
           id: string
+          is_sample: boolean
           is_template: boolean
           name: string
           owner_user_id: string
           phases: Json
           progress: number
+          sample_batch_id: string | null
           settings: Json
           start_date: string | null
           status: string
@@ -4668,11 +4774,13 @@ export type Database = {
           due_date?: string | null
           emoji?: string
           id?: string
+          is_sample?: boolean
           is_template?: boolean
           name: string
           owner_user_id: string
           phases?: Json
           progress?: number
+          sample_batch_id?: string | null
           settings?: Json
           start_date?: string | null
           status?: string
@@ -4687,11 +4795,13 @@ export type Database = {
           due_date?: string | null
           emoji?: string
           id?: string
+          is_sample?: boolean
           is_template?: boolean
           name?: string
           owner_user_id?: string
           phases?: Json
           progress?: number
+          sample_batch_id?: string | null
           settings?: Json
           start_date?: string | null
           status?: string
@@ -4703,6 +4813,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_sample_batch_id_fkey"
+            columns: ["sample_batch_id"]
+            isOneToOne: false
+            referencedRelation: "sample_data_batches"
             referencedColumns: ["id"]
           },
         ]
@@ -4718,8 +4835,10 @@ export type Database = {
           description: string | null
           export_status: string
           id: string
+          is_sample: boolean
           payment_method: string | null
           receipt_date: string
+          sample_batch_id: string | null
           tags: string[] | null
           updated_at: string
           vendor_name: string | null
@@ -4734,8 +4853,10 @@ export type Database = {
           description?: string | null
           export_status?: string
           id?: string
+          is_sample?: boolean
           payment_method?: string | null
           receipt_date?: string
+          sample_batch_id?: string | null
           tags?: string[] | null
           updated_at?: string
           vendor_name?: string | null
@@ -4750,8 +4871,10 @@ export type Database = {
           description?: string | null
           export_status?: string
           id?: string
+          is_sample?: boolean
           payment_method?: string | null
           receipt_date?: string
+          sample_batch_id?: string | null
           tags?: string[] | null
           updated_at?: string
           vendor_name?: string | null
@@ -4762,6 +4885,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_sample_batch_id_fkey"
+            columns: ["sample_batch_id"]
+            isOneToOne: false
+            referencedRelation: "sample_data_batches"
             referencedColumns: ["id"]
           },
         ]
@@ -4927,9 +5057,11 @@ export type Database = {
           description: string | null
           id: string
           is_personal: boolean
+          is_sample: boolean
           name: string
           owner_user_id: string | null
           report_type: Database["public"]["Enums"]["report_type"]
+          sample_batch_id: string | null
           updated_at: string
           visibility: string
         }
@@ -4940,9 +5072,11 @@ export type Database = {
           description?: string | null
           id?: string
           is_personal?: boolean
+          is_sample?: boolean
           name: string
           owner_user_id?: string | null
           report_type: Database["public"]["Enums"]["report_type"]
+          sample_batch_id?: string | null
           updated_at?: string
           visibility?: string
         }
@@ -4953,9 +5087,11 @@ export type Database = {
           description?: string | null
           id?: string
           is_personal?: boolean
+          is_sample?: boolean
           name?: string
           owner_user_id?: string | null
           report_type?: Database["public"]["Enums"]["report_type"]
+          sample_batch_id?: string | null
           updated_at?: string
           visibility?: string
         }
@@ -4965,6 +5101,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_sample_batch_id_fkey"
+            columns: ["sample_batch_id"]
+            isOneToOne: false
+            referencedRelation: "sample_data_batches"
             referencedColumns: ["id"]
           },
         ]
@@ -5028,10 +5171,12 @@ export type Database = {
           crm_client_id: string | null
           expected_close_date: string | null
           id: string
+          is_sample: boolean
           lost_reason: string | null
           name: string
           owner_user_id: string | null
           pipeline_id: string
+          sample_batch_id: string | null
           source_campaign_id: string | null
           stage_id: string
           status: Database["public"]["Enums"]["opportunity_status"]
@@ -5046,10 +5191,12 @@ export type Database = {
           crm_client_id?: string | null
           expected_close_date?: string | null
           id?: string
+          is_sample?: boolean
           lost_reason?: string | null
           name: string
           owner_user_id?: string | null
           pipeline_id: string
+          sample_batch_id?: string | null
           source_campaign_id?: string | null
           stage_id: string
           status?: Database["public"]["Enums"]["opportunity_status"]
@@ -5064,10 +5211,12 @@ export type Database = {
           crm_client_id?: string | null
           expected_close_date?: string | null
           id?: string
+          is_sample?: boolean
           lost_reason?: string | null
           name?: string
           owner_user_id?: string | null
           pipeline_id?: string
+          sample_batch_id?: string | null
           source_campaign_id?: string | null
           stage_id?: string
           status?: Database["public"]["Enums"]["opportunity_status"]
@@ -5094,6 +5243,13 @@ export type Database = {
             columns: ["pipeline_id"]
             isOneToOne: false
             referencedRelation: "sales_pipelines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_opportunities_sample_batch_id_fkey"
+            columns: ["sample_batch_id"]
+            isOneToOne: false
+            referencedRelation: "sample_data_batches"
             referencedColumns: ["id"]
           },
           {
@@ -5245,6 +5401,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "sales_pipelines_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sample_data_batches: {
+        Row: {
+          batch_type: string
+          company_id: string
+          created_at: string
+          created_by_user_id: string
+          id: string
+          removed_at: string | null
+        }
+        Insert: {
+          batch_type: string
+          company_id: string
+          created_at?: string
+          created_by_user_id: string
+          id?: string
+          removed_at?: string | null
+        }
+        Update: {
+          batch_type?: string
+          company_id?: string
+          created_at?: string
+          created_by_user_id?: string
+          id?: string
+          removed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sample_data_batches_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -5641,8 +5832,10 @@ export type Database = {
           created_by: string | null
           id: string
           is_personal: boolean
+          is_sample: boolean
           name: string
           owner_user_id: string | null
+          sample_batch_id: string | null
           sort_order: number
           status: string
           updated_at: string
@@ -5654,8 +5847,10 @@ export type Database = {
           created_by?: string | null
           id?: string
           is_personal?: boolean
+          is_sample?: boolean
           name: string
           owner_user_id?: string | null
+          sample_batch_id?: string | null
           sort_order?: number
           status?: string
           updated_at?: string
@@ -5667,8 +5862,10 @@ export type Database = {
           created_by?: string | null
           id?: string
           is_personal?: boolean
+          is_sample?: boolean
           name?: string
           owner_user_id?: string | null
+          sample_batch_id?: string | null
           sort_order?: number
           status?: string
           updated_at?: string
@@ -5679,6 +5876,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_lists_sample_batch_id_fkey"
+            columns: ["sample_batch_id"]
+            isOneToOne: false
+            referencedRelation: "sample_data_batches"
             referencedColumns: ["id"]
           },
         ]
@@ -5834,6 +6038,7 @@ export type Database = {
           id: string
           is_recurrence_exception: boolean | null
           is_recurring_template: boolean
+          is_sample: boolean
           is_virtual_instance: boolean
           last_generated_date: string | null
           linked_note_id: string | null
@@ -5852,6 +6057,7 @@ export type Database = {
           recurrence_rules: string | null
           recurrence_start_at: string | null
           recurrence_timezone: string | null
+          sample_batch_id: string | null
           status: string
           subtasks: Json
           tags: Json
@@ -5871,6 +6077,7 @@ export type Database = {
           id?: string
           is_recurrence_exception?: boolean | null
           is_recurring_template?: boolean
+          is_sample?: boolean
           is_virtual_instance?: boolean
           last_generated_date?: string | null
           linked_note_id?: string | null
@@ -5889,6 +6096,7 @@ export type Database = {
           recurrence_rules?: string | null
           recurrence_start_at?: string | null
           recurrence_timezone?: string | null
+          sample_batch_id?: string | null
           status?: string
           subtasks?: Json
           tags?: Json
@@ -5908,6 +6116,7 @@ export type Database = {
           id?: string
           is_recurrence_exception?: boolean | null
           is_recurring_template?: boolean
+          is_sample?: boolean
           is_virtual_instance?: boolean
           last_generated_date?: string | null
           linked_note_id?: string | null
@@ -5926,6 +6135,7 @@ export type Database = {
           recurrence_rules?: string | null
           recurrence_start_at?: string | null
           recurrence_timezone?: string | null
+          sample_batch_id?: string | null
           status?: string
           subtasks?: Json
           tags?: Json
@@ -5972,6 +6182,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_sample_batch_id_fkey"
+            columns: ["sample_batch_id"]
+            isOneToOne: false
+            referencedRelation: "sample_data_batches"
             referencedColumns: ["id"]
           },
         ]
@@ -6624,6 +6841,10 @@ export type Database = {
         }
         Returns: Json
       }
+      create_sample_data: {
+        Args: { p_batch_type: string; p_company_id: string }
+        Returns: string
+      }
       create_task_occurrence_override: {
         Args: {
           p_description?: string
@@ -6726,6 +6947,14 @@ export type Database = {
           full_name: string
         }[]
       }
+      get_active_sample_batch: {
+        Args: { p_company_id: string }
+        Returns: {
+          batch_type: string
+          created_at: string
+          id: string
+        }[]
+      }
       get_coach_client_metrics: {
         Args: { _client_company_id: string }
         Returns: Json
@@ -6768,6 +6997,10 @@ export type Database = {
         }[]
       }
       get_user_site_id: { Args: never; Returns: string }
+      has_active_sample_data: {
+        Args: { p_company_id: string }
+        Returns: boolean
+      }
       has_coach_access: {
         Args: { _client_company_id: string; _user_id: string }
         Returns: boolean
@@ -6824,6 +7057,7 @@ export type Database = {
         Returns: undefined
       }
       promote_self_to_super_admin: { Args: never; Returns: Json }
+      remove_sample_data: { Args: { p_company_id: string }; Returns: boolean }
       require_module_enabled: {
         Args: { p_company_id: string; p_module_key: string }
         Returns: undefined

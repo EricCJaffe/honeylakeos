@@ -177,7 +177,10 @@ export type AuditAction =
   | "workflow.step_completed"
   | "workflow.step_rejected"
   | "workflow.step_skipped"
-  | "workflow.step_reassigned";
+  | "workflow.step_reassigned"
+  // Sample data actions
+  | "sample_data.created"
+  | "sample_data.removed";
 
 export type EntityType =
   | "employee"
@@ -213,7 +216,8 @@ export type EntityType =
   | "workflow"
   | "workflow_run"
   | "workflow_step_run"
-  | "folder_acl";
+  | "folder_acl"
+  | "sample_batch";
 
 interface LogAuditEventParams {
   companyId: string;
