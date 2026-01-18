@@ -22,7 +22,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
-  navigationSections,
+  getNavigationSections,
   adminNavItems,
   getSectionForRoute,
   type NavItem,
@@ -38,6 +38,10 @@ export function AppSidebar() {
   const { getPlural } = useCompanyTerminology();
   const { isExpanded, toggleSection, expandSection } = useNavState();
   const collapsed = state === "collapsed";
+  
+  // Get navigation sections based on finance mode
+  const financeMode = activeCompany?.finance_mode;
+  const navigationSections = getNavigationSections(financeMode);
 
   const showCompanyAdmin = isCompanyAdmin || isSiteAdmin || isSuperAdmin;
   const showSiteAdmin = isSiteAdmin || isSuperAdmin;

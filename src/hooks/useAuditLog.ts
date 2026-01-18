@@ -221,7 +221,15 @@ export type AuditAction =
   | "integration.enabled"
   | "integration.disabled"
   | "integration.configured"
-  | "integration.secrets_deleted";
+  | "integration.secrets_deleted"
+  // Finance actions
+  | "finance_mode_changed"
+  | "financial_import.created"
+  | "reconciliation.started"
+  | "reconciliation.completed"
+  | "journal_entry.posted"
+  | "bill.created"
+  | "bill.paid";
 
 export type EntityType =
   | "employee"
@@ -269,7 +277,11 @@ export type EntityType =
   | "activation_event"
   | "feedback"
   | "attachment"
-  | "integration";
+  | "integration"
+  | "financial_import"
+  | "journal_entry"
+  | "bill"
+  | "reconciliation";
 
 interface LogAuditEventParams {
   companyId: string;
