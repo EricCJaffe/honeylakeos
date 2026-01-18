@@ -16,6 +16,7 @@ import { EventFormDialog } from "./EventFormDialog";
 import { EntityLinksPanel } from "@/components/EntityLinksPanel";
 import { RecurringEventOccurrences } from "@/components/calendar/RecurringEventOccurrences";
 import { EventAttendeesManager } from "@/components/calendar/EventAttendeesManager";
+import { AttachmentsPanel } from "@/components/attachments";
 
 export default function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -217,6 +218,11 @@ export default function EventDetailPage() {
           <EventAttendeesManager eventId={event.id} canManage={canEdit || false} />
         </CardContent>
       </Card>
+
+      {/* Attachments */}
+      <div className="mt-6">
+        <AttachmentsPanel entityType="event" entityId={event.id} />
+      </div>
 
       <EventFormDialog
         open={isFormDialogOpen}
