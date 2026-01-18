@@ -79,6 +79,8 @@ import CoachesPage from "@/pages/app/coaches/CoachesPage";
 import CoachDetailPage from "@/pages/app/coaches/CoachDetailPage";
 import CoachingPage from "@/pages/app/coaching/CoachingPage";
 import CoachHomePage from "@/pages/app/coaching/CoachHomePage";
+import CoachDashboardPage from "@/pages/app/coaching/CoachDashboardPage";
+import CoachClientViewPage from "@/pages/app/coaching/CoachClientViewPage";
 import CoachingClientDetailPage from "@/pages/app/coaching/ClientDetailPage";
 import RecommendationFormPage from "@/pages/app/coaching/RecommendationFormPage";
 import PlaybooksPage from "@/pages/app/coaching/PlaybooksPage";
@@ -203,7 +205,9 @@ function App() {
                     <Route path="coaches/:coachId" element={<ModuleGuard moduleKey="coaches" moduleName="Coaches"><CoachDetailPage /></ModuleGuard>} />
                     <Route path="coaching" element={<CoachingPage />} />
                     <Route path="coaching/home" element={<CoachHomePage />} />
-                    <Route path="coaching/clients/:engagementId" element={<CoachingClientDetailPage />} />
+                    <Route path="coaching/dashboard" element={<CoachDashboardPage />} />
+                    <Route path="coaching/clients/:clientId" element={<CoachClientViewPage />} />
+                    <Route path="coaching/engagements/:engagementId" element={<CoachingClientDetailPage />} />
                     <Route path="coaching/recommendations/new" element={<RecommendationFormPage />} />
                     <Route path="coaching/playbooks" element={<PlaybooksPage />} />
                     <Route path="support/kb" element={<KnowledgeBasePage />} />
