@@ -71,9 +71,12 @@ export function useRecurringEvents(rangeStart: Date, rangeEnd: Date) {
     enabled: !!activeCompanyId,
   });
 
+  // Get IDs of recurring events for stable query key
+  const recurringEventIds = recurringEvents.map(e => e.id).sort().join(',');
+
   // Get occurrences for all recurring events
   const { data: allOccurrences = [], isLoading: loadingOccurrences } = useQuery({
-    queryKey: ["all-event-occurrences", activeCompanyId, rangeStart.toISOString(), rangeEnd.toISOString(), recurringEvents.length],
+    queryKey: ["all-event-occurrences", activeCompanyId, rangeStart.toISOString(), rangeEnd.toISOString(), recurringEventIds],
     queryFn: async () => {
       if (!activeCompanyId || recurringEvents.length === 0) return [];
 
