@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -28,7 +27,6 @@ import {
 } from "@/components/ui/select";
 import { useDepartmentMutations } from "@/hooks/useDepartments";
 import { useCompanyMembers } from "@/hooks/useCompanyMembers";
-import { useActiveCompany } from "@/hooks/useActiveCompany";
 import type { Database } from "@/integrations/supabase/types";
 
 type DepartmentRole = Database["public"]["Enums"]["department_role"];
@@ -53,9 +51,8 @@ export function AddMemberDialog({
   departmentId,
   existingMemberIds,
 }: AddMemberDialogProps) {
-  const { activeCompanyId } = useActiveCompany();
   const { addMember } = useDepartmentMutations();
-  const { data: companyMembers, isLoading } = useCompanyMembers(activeCompanyId);
+  const { data: companyMembers, isLoading } = useCompanyMembers();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -116,7 +113,7 @@ export function AddMemberDialog({
                       ) : (
                         availableUsers.map((member) => (
                           <SelectItem key={member.user_id} value={member.user_id}>
-                            {member.profile?.full_name || member.profile?.email || member.user_id}
+                            {member.full_name || member.email || member.user_id}
                           </SelectItem>
                         ))
                       )}

@@ -163,15 +163,10 @@ export function useResourceMutations() {
 
       if (error) throw error;
 
-      await log({
-        action: "resource.created",
-        entityType: "resource",
-        entityId: data.id,
-        metadata: {
-          title: input.title,
-          resource_type: input.resource_type,
-          department_id: input.department_id || null,
-        },
+      await log("resource.created", "resource", data.id, {
+        title: input.title,
+        resource_type: input.resource_type,
+        department_id: input.department_id || null,
       });
 
       return data as Resource;
@@ -196,12 +191,7 @@ export function useResourceMutations() {
 
       if (error) throw error;
 
-      await log({
-        action: "resource.updated",
-        entityType: "resource",
-        entityId: id,
-        metadata: input,
-      });
+      await log("resource.updated", "resource", id, input);
 
       return data as Resource;
     },
@@ -224,11 +214,7 @@ export function useResourceMutations() {
 
       if (error) throw error;
 
-      await log({
-        action: "resource.deleted",
-        entityType: "resource",
-        entityId: id,
-      });
+      await log("resource.deleted", "resource", id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["resources"] });
@@ -250,11 +236,7 @@ export function useResourceMutations() {
 
       if (error) throw error;
 
-      await log({
-        action: "resource.archived",
-        entityType: "resource",
-        entityId: id,
-      });
+      await log("resource.archived", "resource", id);
 
       return data as Resource;
     },

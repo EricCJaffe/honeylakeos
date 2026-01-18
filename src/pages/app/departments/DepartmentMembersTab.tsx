@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Plus, MoreHorizontal, Shield, User, Trash2, UserCog } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,14 +73,8 @@ export function DepartmentMembersTab({ departmentId }: DepartmentMembersTabProps
               ? "Add team members to this department."
               : "This department has no members yet."
           }
-          action={
-            isCompanyAdmin && (
-              <Button onClick={() => setAddDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Member
-              </Button>
-            )
-          }
+          actionLabel={isCompanyAdmin ? "Add Member" : undefined}
+          onAction={isCompanyAdmin ? () => setAddDialogOpen(true) : undefined}
         />
       ) : (
         <div className="space-y-2">
@@ -97,10 +91,10 @@ export function DepartmentMembersTab({ departmentId }: DepartmentMembersTabProps
                   </div>
                   <div>
                     <p className="font-medium">
-                      {member.profile?.full_name || member.profile?.email || "Unknown User"}
+                      {member.full_name || member.email || "Unknown User"}
                     </p>
-                    {member.profile?.email && member.profile?.full_name && (
-                      <p className="text-sm text-muted-foreground">{member.profile.email}</p>
+                    {member.email && member.full_name && (
+                      <p className="text-sm text-muted-foreground">{member.email}</p>
                     )}
                   </div>
                 </div>

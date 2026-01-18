@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { useDepartmentResources, useResourceMutations, type Resource } from "@/hooks/useResources";
-import { useDepartment, useDepartmentMembers } from "@/hooks/useDepartments";
+import { useDepartmentMembers } from "@/hooks/useDepartments";
 import { useMembership } from "@/lib/membership";
 import { EmptyState } from "@/components/EmptyState";
 import { ListSkeleton } from "@/components/ui/list-skeleton";
@@ -103,14 +103,8 @@ export function ResourcesTab({ departmentId }: ResourcesTabProps) {
               ? "Add documents, links, or files for this department."
               : "No resources have been added to this department yet."
           }
-          action={
-            canManage && (
-              <Button onClick={() => setFormOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Resource
-              </Button>
-            )
-          }
+          actionLabel={canManage ? "Add Resource" : undefined}
+          onAction={canManage ? () => setFormOpen(true) : undefined}
         />
       ) : (
         <div className="space-y-2">
