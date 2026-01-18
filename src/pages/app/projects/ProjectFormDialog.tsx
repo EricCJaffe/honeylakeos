@@ -52,6 +52,7 @@ interface ProjectFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   project?: Tables<"projects"> | null;
+  onSuccess?: (projectId: string) => void;
 }
 
 const emojis = ["📋", "🚀", "💡", "🎯", "📊", "🔧", "📝", "⭐", "🏆", "🎨"];
@@ -66,11 +67,13 @@ export function ProjectFormDialog({
   open,
   onOpenChange,
   project,
+  onSuccess,
 }: ProjectFormDialogProps) {
   const { activeCompanyId } = useActiveCompany();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const isEditing = !!project;
+  const [createdProjectId, setCreatedProjectId] = React.useState<string | null>(null);
 
   // Fetch phase templates for new project creation
   const { data: phaseTemplates = [] } = usePhaseTemplates();
@@ -125,6 +128,7 @@ export function ProjectFormDialog({
           })
           .eq("id", project.id);
         if (error) throw error;
+        return project.id;
       } else {
         // Create project
         const { data: newProject, error } = await supabase
@@ -164,14 +168,18 @@ export function ProjectFormDialog({
             }
           }
         }
+        return newProject.id;
       }
     },
-    onSuccess: () => {
+    onSuccess: (projectId) => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["project-phases"] });
       toast.success(isEditing ? "Project updated" : "Project created");
       onOpenChange(false);
       form.reset();
+      if (!isEditing && onSuccess && projectId) {
+        onSuccess(projectId);
+      }
     },
     onError: (error) => {
       toast.error(error.message || "Something went wrong");
