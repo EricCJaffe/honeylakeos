@@ -129,6 +129,14 @@ export const baseNavigationSections: NavSection[] = [
     ],
   },
   {
+    key: "departments",
+    title: "Departments",
+    icon: Building2,
+    items: [
+      { key: "departments", title: "Departments", url: "/app/departments", icon: Building2 },
+    ],
+  },
+  {
     key: "work",
     title: "Work",
     icon: CheckCircle2,
@@ -141,7 +149,6 @@ export const baseNavigationSections: NavSection[] = [
       { key: "my-work", title: "My Work", url: "/app/workflows/my-work", icon: Inbox, moduleKey: "workflows" },
       { key: "forms", title: "Forms", url: "/app/forms", icon: ClipboardList, moduleKey: "forms" },
       { key: "workflows", title: "Workflows", url: "/app/workflows", icon: Workflow, moduleKey: "workflows" },
-      { key: "departments", title: "Departments", url: "/app/departments", icon: Building2 },
     ],
     hideIfEmpty: true,
   },
