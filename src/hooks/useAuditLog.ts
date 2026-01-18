@@ -180,7 +180,12 @@ export type AuditAction =
   | "workflow.step_reassigned"
   // Sample data actions
   | "sample_data.created"
-  | "sample_data.removed";
+  | "sample_data.removed"
+  // Backup actions
+  | "backup.created"
+  | "backup.failed"
+  | "backup.restore_started"
+  | "backup.restore_completed";
 
 export type EntityType =
   | "employee"
