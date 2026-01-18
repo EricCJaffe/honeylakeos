@@ -324,6 +324,66 @@ export type Database = {
           },
         ]
       }
+      coach_share_requests: {
+        Row: {
+          client_company_id: string
+          coach_company_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by_user_id: string | null
+          entity_id: string
+          entity_name: string | null
+          id: string
+          reason: string | null
+          request_type: Database["public"]["Enums"]["share_request_type"]
+          requested_by: string
+          status: Database["public"]["Enums"]["suggestion_status"]
+        }
+        Insert: {
+          client_company_id: string
+          coach_company_id: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by_user_id?: string | null
+          entity_id: string
+          entity_name?: string | null
+          id?: string
+          reason?: string | null
+          request_type?: Database["public"]["Enums"]["share_request_type"]
+          requested_by: string
+          status?: Database["public"]["Enums"]["suggestion_status"]
+        }
+        Update: {
+          client_company_id?: string
+          coach_company_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by_user_id?: string | null
+          entity_id?: string
+          entity_name?: string | null
+          id?: string
+          reason?: string | null
+          request_type?: Database["public"]["Enums"]["share_request_type"]
+          requested_by?: string
+          status?: Database["public"]["Enums"]["suggestion_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_share_requests_client_company_id_fkey"
+            columns: ["client_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_share_requests_coach_company_id_fkey"
+            columns: ["coach_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coaching_coach_profiles: {
         Row: {
           archived_at: string | null
@@ -466,6 +526,73 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: true
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_sessions: {
+        Row: {
+          agenda_rte: string | null
+          client_company_id: string
+          coach_company_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          id: string
+          notes_rte: string | null
+          playbook_id: string | null
+          scheduled_at: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          agenda_rte?: string | null
+          client_company_id: string
+          coach_company_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          notes_rte?: string | null
+          playbook_id?: string | null
+          scheduled_at?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          agenda_rte?: string | null
+          client_company_id?: string
+          coach_company_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          notes_rte?: string | null
+          playbook_id?: string | null
+          scheduled_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_sessions_client_company_id_fkey"
+            columns: ["client_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_sessions_coach_company_id_fkey"
+            columns: ["coach_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_sessions_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "framework_playbooks"
             referencedColumns: ["id"]
           },
         ]
@@ -2420,6 +2547,53 @@ export type Database = {
           },
           {
             foreignKeyName: "framework_health_scores_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      framework_playbooks: {
+        Row: {
+          created_at: string
+          description: string | null
+          enabled: boolean
+          framework_id: string
+          id: string
+          name: string
+          recommended_actions_json: Json
+          sort_order: number
+          trigger_conditions_json: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          framework_id: string
+          id?: string
+          name: string
+          recommended_actions_json?: Json
+          sort_order?: number
+          trigger_conditions_json?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          framework_id?: string
+          id?: string
+          name?: string
+          recommended_actions_json?: Json
+          sort_order?: number
+          trigger_conditions_json?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "framework_playbooks_framework_id_fkey"
             columns: ["framework_id"]
             isOneToOne: false
             referencedRelation: "frameworks"
@@ -5181,6 +5355,86 @@ export type Database = {
         }
         Relationships: []
       }
+      suggested_tasks: {
+        Row: {
+          client_company_id: string
+          coach_company_id: string
+          converted_task_id: string | null
+          created_at: string
+          created_by: string
+          decided_at: string | null
+          decided_by_user_id: string | null
+          description_rte: string | null
+          id: string
+          playbook_id: string | null
+          status: Database["public"]["Enums"]["suggestion_status"]
+          suggested_due_date: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          client_company_id: string
+          coach_company_id: string
+          converted_task_id?: string | null
+          created_at?: string
+          created_by: string
+          decided_at?: string | null
+          decided_by_user_id?: string | null
+          description_rte?: string | null
+          id?: string
+          playbook_id?: string | null
+          status?: Database["public"]["Enums"]["suggestion_status"]
+          suggested_due_date?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          client_company_id?: string
+          coach_company_id?: string
+          converted_task_id?: string | null
+          created_at?: string
+          created_by?: string
+          decided_at?: string | null
+          decided_by_user_id?: string | null
+          description_rte?: string | null
+          id?: string
+          playbook_id?: string | null
+          status?: Database["public"]["Enums"]["suggestion_status"]
+          suggested_due_date?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suggested_tasks_client_company_id_fkey"
+            columns: ["client_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suggested_tasks_coach_company_id_fkey"
+            columns: ["coach_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suggested_tasks_converted_task_id_fkey"
+            columns: ["converted_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suggested_tasks_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "framework_playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_ticket_events: {
         Row: {
           created_at: string
@@ -6262,6 +6516,10 @@ export type Database = {
     }
     Functions: {
       accept_employee_invite: { Args: { p_token: string }; Returns: Json }
+      accept_suggested_task: {
+        Args: { _assignee_user_id?: string; _suggestion_id: string }
+        Returns: string
+      }
       apply_onboarding_preset: {
         Args: { p_company_id: string; p_preset_id: string }
         Returns: Json
@@ -6718,7 +6976,9 @@ export type Database = {
         | "payments_summary"
         | "receipts_summary"
         | "ar_aging"
+      share_request_type: "report" | "document" | "note"
       site_role: "super_admin" | "site_admin"
+      suggestion_status: "pending" | "accepted" | "rejected"
       ticket_author_type: "requester" | "agent"
       ticket_priority: "low" | "normal" | "high" | "urgent"
       ticket_status:
@@ -6986,7 +7246,9 @@ export const Constants = {
         "receipts_summary",
         "ar_aging",
       ],
+      share_request_type: ["report", "document", "note"],
       site_role: ["super_admin", "site_admin"],
+      suggestion_status: ["pending", "accepted", "rejected"],
       ticket_author_type: ["requester", "agent"],
       ticket_priority: ["low", "normal", "high", "urgent"],
       ticket_status: [
