@@ -93,6 +93,54 @@ export type Database = {
           },
         ]
       }
+      coach_organizations: {
+        Row: {
+          client_company_id: string
+          coach_company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          relationship_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_company_id: string
+          coach_company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          relationship_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_company_id?: string
+          coach_company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          relationship_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_organizations_client_company_id_fkey"
+            columns: ["client_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_organizations_coach_company_id_fkey"
+            columns: ["coach_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_profiles: {
         Row: {
           archived_at: string | null
@@ -6307,6 +6355,10 @@ export type Database = {
           full_name: string
         }[]
       }
+      get_coach_client_metrics: {
+        Args: { _client_company_id: string }
+        Returns: Json
+      }
       get_company_member_directory: {
         Args: { p_company_id: string }
         Returns: {
@@ -6345,6 +6397,10 @@ export type Database = {
         }[]
       }
       get_user_site_id: { Args: never; Returns: string }
+      has_coach_access: {
+        Args: { _client_company_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_assigned_to_engagement: {
         Args: { p_engagement_id: string; p_user_id?: string }
         Returns: boolean
