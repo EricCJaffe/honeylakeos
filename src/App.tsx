@@ -84,6 +84,7 @@ import CoachClientViewPage from "@/pages/app/coaching/CoachClientViewPage";
 import CoachingClientDetailPage from "@/pages/app/coaching/ClientDetailPage";
 import RecommendationFormPage from "@/pages/app/coaching/RecommendationFormPage";
 import PlaybooksPage from "@/pages/app/coaching/PlaybooksPage";
+import CoachRequestsInbox from "@/pages/app/coaching/CoachRequestsInbox";
 import PlansUsagePage from "@/pages/app/admin/PlansUsagePage";
 import KnowledgeBasePage from "@/pages/app/support/KnowledgeBasePage";
 import ArticleDetailPage from "@/pages/app/support/ArticleDetailPage";
@@ -210,6 +211,7 @@ function App() {
                     <Route path="coaching/engagements/:engagementId" element={<CoachingClientDetailPage />} />
                     <Route path="coaching/recommendations/new" element={<RecommendationFormPage />} />
                     <Route path="coaching/playbooks" element={<PlaybooksPage />} />
+                    <Route path="coaching/requests" element={<CoachRequestsInbox />} />
                     <Route path="support/kb" element={<KnowledgeBasePage />} />
                     <Route path="support/kb/:articleId" element={<ArticleDetailPage />} />
                     <Route path="support/kb/admin" element={<KbAdminPage />} />
