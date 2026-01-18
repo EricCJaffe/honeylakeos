@@ -16,6 +16,7 @@ export interface Membership {
   default_location_id: string | null;
   expires_at: string | null;
   created_at: string;
+  can_access_finance: boolean;
   company: {
     id: string;
     name: string;
@@ -78,6 +79,7 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
           default_location_id,
           expires_at,
           created_at,
+          can_access_finance,
           company:companies (
             id,
             name,
@@ -104,6 +106,7 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
             default_location_id: m.default_location_id,
             expires_at: m.expires_at,
             created_at: m.created_at,
+            can_access_finance: m.can_access_finance ?? false,
             company: {
               id: (m.company as any).id,
               name: (m.company as any).name,

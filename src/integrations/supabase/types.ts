@@ -5522,6 +5522,7 @@ export type Database = {
       }
       memberships: {
         Row: {
+          can_access_finance: boolean
           company_id: string
           created_at: string
           default_location_id: string | null
@@ -5534,6 +5535,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          can_access_finance?: boolean
           company_id: string
           created_at?: string
           default_location_id?: string | null
@@ -5546,6 +5548,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          can_access_finance?: boolean
           company_id?: string
           created_at?: string
           default_location_id?: string | null
