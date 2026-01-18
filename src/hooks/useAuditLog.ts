@@ -206,7 +206,12 @@ export type AuditAction =
   | "attribution.deactivated"
   | "referral_link.created"
   | "referral_link.used"
-  | "revenue_event.recorded";
+  | "revenue_event.recorded"
+  // Pilot validation actions
+  | "pilot.enabled"
+  | "pilot.disabled"
+  | "feedback.submitted"
+  | "feedback.status_changed";
 
 export type EntityType =
   | "employee"
@@ -249,7 +254,10 @@ export type EntityType =
   | "coach_plan"
   | "coach_attribution"
   | "referral_link"
-  | "revenue_event";
+  | "revenue_event"
+  | "pilot_flag"
+  | "activation_event"
+  | "feedback";
 
 interface LogAuditEventParams {
   companyId: string;

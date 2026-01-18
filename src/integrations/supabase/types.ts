@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      activation_events: {
+        Row: {
+          company_id: string
+          event_key: string
+          id: string
+          metadata_json: Json | null
+          occurred_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          event_key: string
+          id?: string
+          metadata_json?: Json | null
+          occurred_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          event_key?: string
+          id?: string
+          metadata_json?: Json | null
+          occurred_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activation_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -2209,6 +2244,62 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "external_contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback_items: {
+        Row: {
+          company_id: string
+          created_at: string
+          feedback_type: string
+          id: string
+          message: string
+          module_key: string | null
+          page_path: string | null
+          severity: string
+          status: string
+          triage_notes: string | null
+          triaged_at: string | null
+          triaged_by: string | null
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          feedback_type?: string
+          id?: string
+          message: string
+          module_key?: string | null
+          page_path?: string | null
+          severity?: string
+          status?: string
+          triage_notes?: string | null
+          triaged_at?: string | null
+          triaged_by?: string | null
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          feedback_type?: string
+          id?: string
+          message?: string
+          module_key?: string | null
+          page_path?: string | null
+          severity?: string
+          status?: string
+          triage_notes?: string | null
+          triaged_at?: string | null
+          triaged_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_items_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -4607,6 +4698,47 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pilot_flags: {
+        Row: {
+          cohort_name: string | null
+          company_id: string
+          created_by: string | null
+          ended_at: string | null
+          id: string
+          is_pilot: boolean
+          notes: string | null
+          started_at: string
+        }
+        Insert: {
+          cohort_name?: string | null
+          company_id: string
+          created_by?: string | null
+          ended_at?: string | null
+          id?: string
+          is_pilot?: boolean
+          notes?: string | null
+          started_at?: string
+        }
+        Update: {
+          cohort_name?: string | null
+          company_id?: string
+          created_by?: string | null
+          ended_at?: string | null
+          id?: string
+          is_pilot?: boolean
+          notes?: string | null
+          started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilot_flags_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -7316,6 +7448,10 @@ export type Database = {
         Args: { _client_company_id: string }
         Returns: Json
       }
+      get_company_activation_score: {
+        Args: { p_company_id: string }
+        Returns: number
+      }
       get_company_member_directory: {
         Args: { p_company_id: string }
         Returns: {
@@ -7343,6 +7479,7 @@ export type Database = {
         Returns: string
       }
       get_folder_depth: { Args: { p_folder_id: string }; Returns: number }
+      get_pilot_company_stats: { Args: { p_company_id: string }; Returns: Json }
       get_table_columns: {
         Args: never
         Returns: {
