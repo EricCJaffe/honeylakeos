@@ -16,6 +16,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { NoteFormDialog } from "./NoteFormDialog";
 import { ShareDialog } from "@/components/ShareDialog";
 import { EntityLinksPanel } from "@/components/EntityLinksPanel";
+import { AttachmentsPanel } from "@/components/attachments";
 
 // Lazy load rich text components
 const RichTextEditor = lazy(() => import("@/components/ui/rich-text-editor").then(m => ({ default: m.RichTextEditor })));
@@ -215,6 +216,11 @@ export default function NoteDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Attachments Section - Below content */}
+      <div className="mt-6">
+        <AttachmentsPanel entityType="note" entityId={note.id} />
+      </div>
 
       <NoteFormDialog
         open={isFormDialogOpen}

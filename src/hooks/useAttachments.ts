@@ -7,6 +7,70 @@ import { toast } from "sonner";
 
 export type EntityType = "task" | "project" | "note" | "document" | "event";
 
+// Attachment limits and validation
+export const ATTACHMENT_LIMITS = {
+  maxFileSizeBytes: 25 * 1024 * 1024, // 25MB
+  maxFileSizeMB: 25,
+  allowedContentTypes: [
+    // PDFs
+    "application/pdf",
+    // Images
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    // Office docs
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    // Text files
+    "text/plain",
+    "text/csv",
+    "text/markdown",
+  ],
+  allowedExtensions: [
+    ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".webp",
+    ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+    ".txt", ".csv", ".md",
+  ],
+};
+
+export interface FileValidationResult {
+  valid: boolean;
+  error?: string;
+}
+
+export function validateAttachmentFile(file: File): FileValidationResult {
+  // Check file size
+  if (file.size > ATTACHMENT_LIMITS.maxFileSizeBytes) {
+    return {
+      valid: false,
+      error: `File size exceeds ${ATTACHMENT_LIMITS.maxFileSizeMB}MB limit`,
+    };
+  }
+
+  // Check content type
+  const isAllowedType = ATTACHMENT_LIMITS.allowedContentTypes.includes(file.type);
+  const extension = "." + file.name.split(".").pop()?.toLowerCase();
+  const isAllowedExtension = ATTACHMENT_LIMITS.allowedExtensions.includes(extension);
+
+  if (!isAllowedType && !isAllowedExtension) {
+    return {
+      valid: false,
+      error: `File type not allowed. Supported: PDF, images, Office docs, text files`,
+    };
+  }
+
+  // TODO: Future - Add virus scanning check here
+  // if (await scanForViruses(file)) { return { valid: false, error: "Security scan failed" }; }
+
+  return { valid: true };
+}
+
 export interface Attachment {
   id: string;
   company_id: string;
@@ -94,6 +158,12 @@ export function useAttachmentMutations(entityType: EntityType, entityId: string)
     mutationFn: async (file: File) => {
       if (!activeCompanyId || !user) throw new Error("Not authenticated");
 
+      // Validate file before upload
+      const validation = validateAttachmentFile(file);
+      if (!validation.valid) {
+        throw new Error(validation.error);
+      }
+
       const attachmentId = crypto.randomUUID();
       const storagePath = `company/${activeCompanyId}/${entityType}/${entityId}/${attachmentId}/${file.name}`;
 
@@ -126,8 +196,11 @@ export function useAttachmentMutations(entityType: EntityType, entityId: string)
         });
 
       if (uploadError) {
-        // Rollback: delete attachment record
-        await supabase.from("attachments").delete().eq("id", attachmentId);
+        // Orphan cleanup: soft-delete attachment record on storage failure
+        await supabase
+          .from("attachments")
+          .update({ deleted_at: new Date().toISOString(), deleted_by_user_id: user.id })
+          .eq("id", attachmentId);
         throw uploadError;
       }
 
@@ -144,7 +217,7 @@ export function useAttachmentMutations(entityType: EntityType, entityId: string)
     },
     onError: (error) => {
       console.error("Upload failed:", error);
-      toast.error("Failed to upload file");
+      toast.error(error instanceof Error ? error.message : "Failed to upload file");
     },
   });
 
@@ -175,6 +248,15 @@ export function useAttachmentMutations(entityType: EntityType, entityId: string)
 
     const uploadTasks = [...fileStates.entries()].map(([id, state]) => async () => {
       const file = state.file;
+
+      // Validate file before upload
+      const validation = validateAttachmentFile(file);
+      if (!validation.valid) {
+        onProgress(new Map([[id, { status: "error", progress: 0, error: validation.error }]]));
+        failed.push(file.name);
+        return null;
+      }
+
       const attachmentId = crypto.randomUUID();
       const storagePath = `company/${activeCompanyId}/${entityType}/${entityId}/${attachmentId}/${file.name}`;
 
@@ -215,8 +297,11 @@ export function useAttachmentMutations(entityType: EntityType, entityId: string)
           });
 
         if (uploadError) {
-          // Rollback: delete attachment record
-          await supabase.from("attachments").delete().eq("id", attachmentId);
+          // Orphan cleanup: soft-delete attachment record on storage failure
+          await supabase
+            .from("attachments")
+            .update({ deleted_at: new Date().toISOString(), deleted_by_user_id: user.id })
+            .eq("id", attachmentId);
           throw new Error(uploadError.message);
         }
 
