@@ -33,6 +33,7 @@ import { FINANCE_REPORT_TEMPLATES } from "./FinanceReportTemplates";
 
 interface FinanceReportRunnerProps {
   reportType: ReportType;
+  initialConfig?: ReportConfig;
   onBack: () => void;
 }
 
@@ -47,13 +48,16 @@ function SummaryTile({ label, value, className }: { label: string; value: string
   );
 }
 
-export function FinanceReportRunner({ reportType, onBack }: FinanceReportRunnerProps) {
-  const [config, setConfig] = React.useState<ReportConfig>({
-    dateRange: {
-      start: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-      end: new Date().toISOString().split("T")[0],
-    },
-    filters: {},
+export function FinanceReportRunner({ reportType, initialConfig, onBack }: FinanceReportRunnerProps) {
+  const [config, setConfig] = React.useState<ReportConfig>(() => {
+    if (initialConfig) return initialConfig;
+    return {
+      dateRange: {
+        start: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+        end: new Date().toISOString().split("T")[0],
+      },
+      filters: {},
+    };
   });
   const [saveDialogOpen, setSaveDialogOpen] = React.useState(false);
   const [reportName, setReportName] = React.useState("");
