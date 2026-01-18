@@ -700,6 +700,11 @@ export default function NotesPage() {
         onOpenChange={setIsDialogOpen}
         note={editingNote}
         folderId={currentFolderId}
+        onSuccess={(noteId) => {
+          if (!editingNote) {
+            navigate(`/app/notes/${noteId}`);
+          }
+        }}
       />
 
       <MoveToFolderDialog
