@@ -308,7 +308,11 @@ export function TaskFormDialog({
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="Task title" {...field} />
+                    <Input 
+                      placeholder="Task title" 
+                      autoFocus
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

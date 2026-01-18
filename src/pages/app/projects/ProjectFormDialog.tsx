@@ -235,7 +235,7 @@ export function ProjectFormDialog({
                   <FormItem className="flex-1">
                     <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Project name" {...field} />
+                      <Input placeholder="Project name" autoFocus {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

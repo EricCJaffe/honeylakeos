@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { useAuditLog } from "./useAuditLog";
 import { toast } from "sonner";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import { STALE_TIMES } from "@/lib/queryConfig";
 
 // ============================================================================
 // Types
@@ -110,6 +111,8 @@ export function useFolders() {
       };
     },
     enabled: !!activeCompanyId && !!user,
+    staleTime: STALE_TIMES.SEMI_STATIC, // 5 minutes - folder structure rarely changes
+    gcTime: STALE_TIMES.SEMI_STATIC * 2,
   });
 }
 

@@ -138,7 +138,7 @@ export function DocumentFormDialog({
                 <FormItem>
                   <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Document name" {...field} />
+                    <Input placeholder="Document name" autoFocus {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
