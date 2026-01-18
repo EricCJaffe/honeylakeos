@@ -2060,6 +2060,79 @@ export type Database = {
           },
         ]
       }
+      department_members: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          department_id: string
+          id: string
+          role: Database["public"]["Enums"]["department_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          department_id: string
+          id?: string
+          role?: Database["public"]["Enums"]["department_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          department_id?: string
+          id?: string
+          role?: Database["public"]["Enums"]["department_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "department_members_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      departments: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           access_level: string
@@ -7318,6 +7391,63 @@ export type Database = {
           },
         ]
       }
+      resources: {
+        Row: {
+          company_id: string
+          content_ref: string
+          created_at: string
+          created_by: string | null
+          department_id: string | null
+          description: string | null
+          id: string
+          is_archived: boolean
+          resource_type: Database["public"]["Enums"]["resource_type"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          content_ref: string
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          is_archived?: boolean
+          resource_type?: Database["public"]["Enums"]["resource_type"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          content_ref?: string
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          is_archived?: boolean
+          resource_type?: Database["public"]["Enums"]["resource_type"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resources_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resources_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       revenue_events: {
         Row: {
           coach_company_id: string | null
@@ -9436,6 +9566,10 @@ export type Database = {
         }[]
       }
       get_default_site_id: { Args: never; Returns: string }
+      get_department_company_id: {
+        Args: { p_department_id: string }
+        Returns: string
+      }
       get_employee_invite_public: {
         Args: { p_token: string }
         Returns: {
@@ -9488,6 +9622,14 @@ export type Database = {
       }
       is_company_admin: { Args: { p_company_id: string }; Returns: boolean }
       is_company_member: { Args: { p_company_id: string }; Returns: boolean }
+      is_department_manager: {
+        Args: { p_department_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      is_department_member: {
+        Args: { p_department_id: string; p_user_id: string }
+        Returns: boolean
+      }
       is_finance_admin: { Args: { p_company_id: string }; Returns: boolean }
       is_group_manager: {
         Args: { p_group_id: string; p_user_id: string }
@@ -9646,6 +9788,7 @@ export type Database = {
         | "archived"
         | "pending"
         | "suspended"
+      department_role: "member" | "manager"
       donation_status: "recorded" | "receipted" | "refunded"
       donor_status: "prospect" | "active" | "lapsed" | "major"
       engagement_status: "active" | "paused" | "ended"
@@ -9728,6 +9871,7 @@ export type Database = {
         | "payments_summary"
         | "receipts_summary"
         | "ar_aging"
+      resource_type: "document" | "link" | "file" | "video"
       share_request_type: "report" | "document" | "note"
       site_role: "super_admin" | "site_admin"
       suggestion_status: "pending" | "accepted" | "rejected"
@@ -9929,6 +10073,7 @@ export const Constants = {
         "pending",
         "suspended",
       ],
+      department_role: ["member", "manager"],
       donation_status: ["recorded", "receipted", "refunded"],
       donor_status: ["prospect", "active", "lapsed", "major"],
       engagement_status: ["active", "paused", "ended"],
@@ -10019,6 +10164,7 @@ export const Constants = {
         "receipts_summary",
         "ar_aging",
       ],
+      resource_type: ["document", "link", "file", "video"],
       share_request_type: ["report", "document", "note"],
       site_role: ["super_admin", "site_admin"],
       suggestion_status: ["pending", "accepted", "rejected"],
