@@ -236,7 +236,12 @@ export type AuditAction =
   | "bill.paid"
   | "vendor.created"
   | "vendor.updated"
-  | "vendor.deleted";
+  | "vendor.deleted"
+  | "coa.account_created"
+  | "coa.account_updated"
+  | "coa.account_deactivated"
+  | "coa.template_applied"
+  | "coa.import_completed";
 
 export type EntityType =
   | "employee"
@@ -289,6 +294,8 @@ export type EntityType =
   | "journal_entry"
   | "bill"
   | "vendor"
+  | "finance_account"
+  | "coa_template"
   | "reconciliation";
 
 interface LogAuditEventParams {
