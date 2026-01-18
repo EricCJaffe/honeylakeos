@@ -211,7 +211,9 @@ export type AuditAction =
   | "pilot.enabled"
   | "pilot.disabled"
   | "feedback.submitted"
-  | "feedback.status_changed";
+  | "feedback.status_changed"
+  // Activation score actions
+  | "activation_score.calculated";
 
 export type EntityType =
   | "employee"
