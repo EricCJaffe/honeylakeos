@@ -232,7 +232,7 @@ export default function CalendarPage() {
   const handleEventClick = (event: any, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!event.isRecurring) {
-      navigate(`/app/calendar/events/${event.id}`);
+      navigate(`/app/calendar/${event.id}`);
     }
   };
 
