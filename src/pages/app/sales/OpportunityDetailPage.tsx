@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ModuleGuard } from "@/components/ModuleGuard";
 import { EntityLinksPanel } from "@/components/EntityLinksPanel";
+import { OpportunityCreateActionsMenu } from "@/components/sales/OpportunityCreateActionsMenu";
 import { useSalesOpportunity, useOpportunityStageHistory } from "@/hooks/useSalesOpportunities";
 import { usePipelineStages } from "@/hooks/useSalesPipelines";
 import { OpportunityFormDialog } from "./OpportunityFormDialog";
@@ -87,6 +88,10 @@ function OpportunityDetailContent() {
         </div>
         <div className="flex items-center gap-2">
           {getStatusBadge()}
+          <OpportunityCreateActionsMenu
+            opportunityId={opportunity.id}
+            opportunityName={opportunity.name}
+          />
           <Button variant="outline" onClick={() => setShowEditForm(true)}>
             <Edit className="mr-2 h-4 w-4" />
             Edit
