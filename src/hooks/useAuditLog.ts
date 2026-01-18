@@ -230,7 +230,13 @@ export type AuditAction =
   | "reconciliation.completed"
   | "journal_entry.posted"
   | "bill.created"
-  | "bill.paid";
+  | "bill.updated"
+  | "bill.status_changed"
+  | "bill.deleted"
+  | "bill.paid"
+  | "vendor.created"
+  | "vendor.updated"
+  | "vendor.deleted";
 
 export type EntityType =
   | "employee"
@@ -282,6 +288,7 @@ export type EntityType =
   | "financial_import"
   | "journal_entry"
   | "bill"
+  | "vendor"
   | "reconciliation";
 
 interface LogAuditEventParams {
