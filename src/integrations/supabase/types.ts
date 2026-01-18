@@ -641,6 +641,65 @@ export type Database = {
           },
         ]
       }
+      company_backups: {
+        Row: {
+          backup_type: string
+          company_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          file_size_bytes: number | null
+          id: string
+          metadata_json: Json
+          restored_at: string | null
+          restored_by: string | null
+          schema_version: number
+          status: string
+          storage_path: string | null
+        }
+        Insert: {
+          backup_type: string
+          company_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          metadata_json?: Json
+          restored_at?: string | null
+          restored_by?: string | null
+          schema_version?: number
+          status?: string
+          storage_path?: string | null
+        }
+        Update: {
+          backup_type?: string
+          company_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          metadata_json?: Json
+          restored_at?: string | null
+          restored_by?: string | null
+          schema_version?: number
+          status?: string
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_backups_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_capability_settings: {
         Row: {
           coaches_member_manage_enabled: boolean
@@ -6749,6 +6808,10 @@ export type Database = {
         Args: { object_name: string }
         Returns: boolean
       }
+      can_create_manual_backup: {
+        Args: { p_company_id: string }
+        Returns: boolean
+      }
       can_delete_document_file: {
         Args: { object_name: string }
         Returns: boolean
@@ -6953,6 +7016,14 @@ export type Database = {
           batch_type: string
           created_at: string
           id: string
+        }[]
+      }
+      get_backup_stats: {
+        Args: { p_company_id: string }
+        Returns: {
+          last_backup_type: string
+          last_successful_backup: string
+          total_backups: number
         }[]
       }
       get_coach_client_metrics: {
