@@ -190,20 +190,29 @@ export function OpportunityFormDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Stage</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select stage" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {stages.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>
-                            {s.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {selectedPipelineId && stages.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No stages configured.{" "}
+                        <a href="/app/sales/pipelines" className="text-primary underline">
+                          Manage pipeline stages
+                        </a>
+                      </p>
+                    ) : (
+                      <Select value={field.value} onValueChange={field.onChange} disabled={!selectedPipelineId}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={selectedPipelineId ? "Select stage" : "Select a pipeline first"} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {stages.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
