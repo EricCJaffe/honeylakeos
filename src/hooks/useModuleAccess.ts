@@ -177,6 +177,8 @@ export const PREMIUM_MODULES: ModuleKey[] = [
   "lms",
   "crm",
   "coaches",
+  "sales",
+  "donors",
 ];
 
 /**
