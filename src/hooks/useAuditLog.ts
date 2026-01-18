@@ -245,7 +245,16 @@ export type AuditAction =
   | "journal_entry.created"
   | "journal_entry.updated"
   | "journal_entry.posted"
-  | "journal_entry.voided";
+  | "journal_entry.voided"
+  | "bank_account.created"
+  | "bank_account.updated"
+  | "bank_account.mapped_to_coa"
+  | "bank_account.deactivated"
+  | "bank_transaction.categorized"
+  | "bank_transaction.posted"
+  | "bank_transaction.excluded"
+  | "bank_transactions.imported"
+  | "reconciliation.voided";
 
 export type EntityType =
   | "employee"
@@ -300,7 +309,9 @@ export type EntityType =
   | "vendor"
   | "finance_account"
   | "coa_template"
-  | "reconciliation";
+  | "reconciliation"
+  | "bank_account"
+  | "bank_transaction";
 
 interface LogAuditEventParams {
   companyId: string;
