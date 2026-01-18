@@ -56,7 +56,8 @@ export function OpportunityFormDialog({
   opportunity,
 }: OpportunityFormDialogProps) {
   const { data: pipelines = [] } = useSalesPipelines();
-  const { clients = [] } = useCrmClients();
+  const crmResult = useCrmClients();
+  const clients = crmResult?.clients ?? [];
   const { data: campaigns = [] } = useSalesCampaigns();
   const createOpportunity = useCreateOpportunity();
   const updateOpportunity = useUpdateOpportunity();
