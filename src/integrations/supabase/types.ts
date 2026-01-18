@@ -3122,6 +3122,91 @@ export type Database = {
           },
         ]
       }
+      financial_categories: {
+        Row: {
+          category_type: string
+          company_id: string
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          category_type: string
+          company_id: string
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          category_type?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_categories_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_import_batches: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by_user_id: string | null
+          error_message: string | null
+          id: string
+          import_type: string
+          period_end: string
+          period_start: string
+          row_count: number | null
+          source_filename: string | null
+          status: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by_user_id?: string | null
+          error_message?: string | null
+          id?: string
+          import_type: string
+          period_end: string
+          period_start: string
+          row_count?: number | null
+          source_filename?: string | null
+          status?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by_user_id?: string | null
+          error_message?: string | null
+          id?: string
+          import_type?: string
+          period_end?: string
+          period_start?: string
+          row_count?: number | null
+          source_filename?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_import_batches_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financial_imports: {
         Row: {
           company_id: string
@@ -3174,6 +3259,67 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_statement_lines: {
+        Row: {
+          amount: number
+          batch_id: string
+          company_id: string
+          created_at: string
+          id: string
+          mapped_category_id: string | null
+          original_category: string
+          period_end: string
+          period_start: string
+          statement_type: string
+        }
+        Insert: {
+          amount?: number
+          batch_id: string
+          company_id: string
+          created_at?: string
+          id?: string
+          mapped_category_id?: string | null
+          original_category: string
+          period_end: string
+          period_start: string
+          statement_type: string
+        }
+        Update: {
+          amount?: number
+          batch_id?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          mapped_category_id?: string | null
+          original_category?: string
+          period_end?: string
+          period_start?: string
+          statement_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_statement_lines_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "financial_import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_statement_lines_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_statement_lines_mapped_category_id_fkey"
+            columns: ["mapped_category_id"]
+            isOneToOne: false
+            referencedRelation: "financial_categories"
             referencedColumns: ["id"]
           },
         ]
@@ -5888,6 +6034,102 @@ export type Database = {
             columns: ["framework_id"]
             isOneToOne: false
             referencedRelation: "frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      open_ap_items: {
+        Row: {
+          amount_due: number
+          batch_id: string
+          bill_number: string | null
+          company_id: string
+          created_at: string
+          due_date: string | null
+          id: string
+          vendor_name: string
+        }
+        Insert: {
+          amount_due?: number
+          batch_id: string
+          bill_number?: string | null
+          company_id: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          vendor_name: string
+        }
+        Update: {
+          amount_due?: number
+          batch_id?: string
+          bill_number?: string | null
+          company_id?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          vendor_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "open_ap_items_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "financial_import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "open_ap_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      open_ar_items: {
+        Row: {
+          amount_due: number
+          batch_id: string
+          company_id: string
+          created_at: string
+          customer_name: string
+          due_date: string | null
+          id: string
+          invoice_number: string | null
+        }
+        Insert: {
+          amount_due?: number
+          batch_id: string
+          company_id: string
+          created_at?: string
+          customer_name: string
+          due_date?: string | null
+          id?: string
+          invoice_number?: string | null
+        }
+        Update: {
+          amount_due?: number
+          batch_id?: string
+          company_id?: string
+          created_at?: string
+          customer_name?: string
+          due_date?: string | null
+          id?: string
+          invoice_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "open_ar_items_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "financial_import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "open_ar_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -9166,6 +9408,10 @@ export type Database = {
       remove_sample_data: { Args: { p_company_id: string }; Returns: boolean }
       require_module_enabled: {
         Args: { p_company_id: string; p_module_key: string }
+        Returns: undefined
+      }
+      seed_financial_categories: {
+        Args: { p_company_id: string }
         Returns: undefined
       }
       skip_event_occurrence: {
