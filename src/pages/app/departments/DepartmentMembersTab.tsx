@@ -24,6 +24,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DepartmentMembersTabProps {
   departmentId: string;
@@ -33,6 +35,22 @@ export function DepartmentMembersTab({ departmentId }: DepartmentMembersTabProps
   const { isCompanyAdmin } = useMembership();
   const { data: members, isLoading } = useDepartmentMembers(departmentId);
   const { updateMemberRole, removeMember } = useDepartmentMutations();
+
+  // Check if current user is a manager of this department
+  const { data: currentUser } = useQuery({
+    queryKey: ["current-user"],
+    queryFn: async () => {
+      const { data } = await supabase.auth.getUser();
+      return data.user;
+    },
+  });
+  
+  const isManager = members?.some(
+    (m) => m.user_id === currentUser?.id && m.role === "manager"
+  );
+  
+  // Company admin or department manager can manage members
+  const canManageMembers = isCompanyAdmin || isManager;
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [removingMember, setRemovingMember] = useState<string | null>(null);
@@ -55,7 +73,7 @@ export function DepartmentMembersTab({ departmentId }: DepartmentMembersTabProps
 
   return (
     <div className="space-y-4">
-      {isCompanyAdmin && (
+      {canManageMembers && (
         <div className="flex justify-end">
           <Button onClick={() => setAddDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
@@ -69,12 +87,12 @@ export function DepartmentMembersTab({ departmentId }: DepartmentMembersTabProps
           icon={User}
           title="No members yet"
           description={
-            isCompanyAdmin
+            canManageMembers
               ? "Add team members to this department."
               : "This department has no members yet."
           }
-          actionLabel={isCompanyAdmin ? "Add Member" : undefined}
-          onAction={isCompanyAdmin ? () => setAddDialogOpen(true) : undefined}
+          actionLabel={canManageMembers ? "Add Member" : undefined}
+          onAction={canManageMembers ? () => setAddDialogOpen(true) : undefined}
         />
       ) : (
         <div className="space-y-2">
@@ -104,7 +122,7 @@ export function DepartmentMembersTab({ departmentId }: DepartmentMembersTabProps
                     {member.role === "manager" ? "Manager" : "Member"}
                   </Badge>
 
-                  {isCompanyAdmin && (
+                  {canManageMembers && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -112,12 +130,15 @@ export function DepartmentMembersTab({ departmentId }: DepartmentMembersTabProps
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => handleToggleRole(member.id, member.role)}
-                        >
-                          <UserCog className="mr-2 h-4 w-4" />
-                          {member.role === "manager" ? "Demote to Member" : "Promote to Manager"}
-                        </DropdownMenuItem>
+                        {/* Only company admin can promote/demote, not just managers */}
+                        {isCompanyAdmin && (
+                          <DropdownMenuItem
+                            onClick={() => handleToggleRole(member.id, member.role)}
+                          >
+                            <UserCog className="mr-2 h-4 w-4" />
+                            {member.role === "manager" ? "Demote to Member" : "Promote to Manager"}
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem
                           onClick={() => setRemovingMember(member.id)}
                           className="text-destructive"

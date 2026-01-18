@@ -2225,6 +2225,7 @@ export type Database = {
           company_id: string
           created_at: string
           created_by: string | null
+          department_id: string | null
           description: string | null
           file_path: string
           file_size: number | null
@@ -2241,6 +2242,7 @@ export type Database = {
           company_id: string
           created_at?: string
           created_by?: string | null
+          department_id?: string | null
           description?: string | null
           file_path: string
           file_size?: number | null
@@ -2257,6 +2259,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           created_by?: string | null
+          department_id?: string | null
           description?: string | null
           file_path?: string
           file_size?: number | null
@@ -2274,6 +2277,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
             referencedColumns: ["id"]
           },
           {
@@ -3914,6 +3924,7 @@ export type Database = {
           company_id: string
           created_at: string
           created_by: string | null
+          department_id: string | null
           description: string | null
           id: string
           name: string
@@ -3930,6 +3941,7 @@ export type Database = {
           company_id: string
           created_at?: string
           created_by?: string | null
+          department_id?: string | null
           description?: string | null
           id?: string
           name: string
@@ -3946,6 +3958,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           created_by?: string | null
+          department_id?: string | null
           description?: string | null
           id?: string
           name?: string
@@ -3959,6 +3972,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forms_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
             referencedColumns: ["id"]
           },
         ]
@@ -6219,6 +6239,7 @@ export type Database = {
           content: string | null
           created_at: string
           created_by: string | null
+          department_id: string | null
           folder_id: string | null
           id: string
           is_pinned: boolean
@@ -6237,6 +6258,7 @@ export type Database = {
           content?: string | null
           created_at?: string
           created_by?: string | null
+          department_id?: string | null
           folder_id?: string | null
           id?: string
           is_pinned?: boolean
@@ -6255,6 +6277,7 @@ export type Database = {
           content?: string | null
           created_at?: string
           created_by?: string | null
+          department_id?: string | null
           folder_id?: string | null
           id?: string
           is_pinned?: boolean
@@ -6272,6 +6295,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
             referencedColumns: ["id"]
           },
           {
@@ -6982,6 +7012,7 @@ export type Database = {
           company_id: string
           created_at: string
           created_by: string | null
+          department_id: string | null
           description: string | null
           due_date: string | null
           emoji: string
@@ -7003,6 +7034,7 @@ export type Database = {
           company_id: string
           created_at?: string
           created_by?: string | null
+          department_id?: string | null
           description?: string | null
           due_date?: string | null
           emoji?: string
@@ -7024,6 +7056,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           created_by?: string | null
+          department_id?: string | null
           description?: string | null
           due_date?: string | null
           emoji?: string
@@ -7046,6 +7079,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
             referencedColumns: ["id"]
           },
           {
@@ -8595,6 +8635,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           custom_fields: Json
+          department_id: string | null
           description: string | null
           due_date: string | null
           estimated_time: number | null
@@ -8634,6 +8675,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           custom_fields?: Json
+          department_id?: string | null
           description?: string | null
           due_date?: string | null
           estimated_time?: number | null
@@ -8673,6 +8715,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           custom_fields?: Json
+          department_id?: string | null
           description?: string | null
           due_date?: string | null
           estimated_time?: number | null
@@ -8710,6 +8753,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
             referencedColumns: ["id"]
           },
           {
@@ -9783,6 +9833,10 @@ export type Database = {
       remove_sample_data: { Args: { p_company_id: string }; Returns: boolean }
       require_module_enabled: {
         Args: { p_company_id: string; p_module_key: string }
+        Returns: undefined
+      }
+      seed_default_departments: {
+        Args: { p_company_id: string; p_created_by?: string }
         Returns: undefined
       }
       seed_financial_categories: {

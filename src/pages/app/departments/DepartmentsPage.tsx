@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Building2, MoreHorizontal, Pencil, Trash2, Users } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useDepartments, useDepartmentMutations } from "@/hooks/useDepartments";
+import { useUserDepartmentMembership } from "@/hooks/useUserDepartmentMembership";
 import { useMembership } from "@/lib/membership";
+import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { ListSkeleton } from "@/components/ui/list-skeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { DepartmentFormDialog } from "./DepartmentFormDialog";
@@ -20,16 +22,51 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function DepartmentsPage() {
   const navigate = useNavigate();
   const { isCompanyAdmin } = useMembership();
-  const { data: departments, isLoading } = useDepartments();
+  const { activeCompanyId } = useActiveCompany();
+  const { data: allDepartments, isLoading: allLoading } = useDepartments();
+  const { data: userMemberships, isLoading: membershipLoading } = useUserDepartmentMembership();
   const { deleteDepartment } = useDepartmentMutations();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingDept, setEditingDept] = useState<{ id: string; name: string; description: string | null } | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [seeding, setSeeding] = useState(false);
+
+  // Seed default departments if none exist (for company admin)
+  useEffect(() => {
+    const seedIfNeeded = async () => {
+      if (!isCompanyAdmin || !activeCompanyId || allLoading || seeding) return;
+      if (allDepartments && allDepartments.length === 0) {
+        setSeeding(true);
+        try {
+          const { data: userData } = await supabase.auth.getUser();
+          await supabase.rpc("seed_default_departments", {
+            p_company_id: activeCompanyId,
+            p_created_by: userData.user?.id || null,
+          });
+          // Refetch departments
+          window.location.reload();
+        } catch (error) {
+          console.error("Failed to seed departments:", error);
+        }
+        setSeeding(false);
+      }
+    };
+    seedIfNeeded();
+  }, [isCompanyAdmin, activeCompanyId, allDepartments, allLoading, seeding]);
+
+  // For company admins: show all departments
+  // For regular users: show only departments they're members of
+  const departments = isCompanyAdmin 
+    ? allDepartments 
+    : userMemberships?.map(m => m.department) || [];
+
+  const isLoading = allLoading || membershipLoading;
 
   const handleEdit = (dept: { id: string; name: string; description: string | null }) => {
     setEditingDept(dept);
