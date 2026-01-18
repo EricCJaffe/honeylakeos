@@ -2,7 +2,7 @@ import { useState, Suspense, lazy } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CheckCircle2, Pencil, Trash2, Calendar, Clock, User, Repeat, Layers } from "lucide-react";
+import { CheckCircle2, Pencil, Trash2, Calendar, Clock, User, Repeat, Layers, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
@@ -10,12 +10,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { TaskFormDialog } from "./TaskFormDialog";
 import { EntityLinksPanel } from "@/components/EntityLinksPanel";
 import { RecurringTaskOccurrences } from "@/components/tasks/RecurringTaskOccurrences";
+import { TaskComments } from "@/components/tasks/TaskComments";
+import { TaskLinkedNotes } from "@/components/tasks/TaskLinkedNotes";
 import { useTaskOccurrenceActions } from "@/hooks/useTaskOccurrenceCompletions";
 import { configToRRule, rruleToConfig } from "@/components/tasks/RecurrenceSelector";
 
@@ -45,6 +48,7 @@ export default function TaskDetailPage() {
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState<"single" | "series">("series");
   const [occurrenceToEdit, setOccurrenceToEdit] = useState<Date | null>(null);
+  const [showLegacyNotes, setShowLegacyNotes] = useState(false);
   const { splitSeries } = useTaskOccurrenceActions();
 
   const { data: task, isLoading } = useQuery({
@@ -265,24 +269,38 @@ export default function TaskDetailPage() {
                 </span>
               </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Notes */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Notes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {task.notes ? (
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {task.notes}
-              </p>
-            ) : (
-              <p className="text-sm text-muted-foreground italic">No notes</p>
+            {/* Legacy Notes - Hidden behind toggle */}
+            {task.notes && (
+              <Collapsible open={showLegacyNotes} onOpenChange={setShowLegacyNotes}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="w-full justify-between text-muted-foreground">
+                    <span className="text-xs">Legacy Notes</span>
+                    {showLegacyNotes ? (
+                      <ChevronUp className="h-3 w-3" />
+                    ) : (
+                      <ChevronDown className="h-3 w-3" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-2">
+                  <div className="p-3 bg-muted/50 rounded-lg border border-dashed">
+                    <p className="text-xs text-muted-foreground mb-1">Internal Notes (legacy)</p>
+                    <p className="text-sm whitespace-pre-wrap">{task.notes}</p>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             )}
           </CardContent>
         </Card>
+
+        {/* Linked Notes Section */}
+        <TaskLinkedNotes taskId={task.id} />
+      </div>
+
+      {/* Comments Section */}
+      <div className="mt-6">
+        <TaskComments taskId={task.id} />
       </div>
 
       <TaskFormDialog
