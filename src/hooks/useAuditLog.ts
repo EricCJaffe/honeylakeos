@@ -181,7 +181,7 @@ export type AuditAction =
   // Sample data actions
   | "sample_data.created"
   | "sample_data.removed"
-  // Backup actions
+// Backup actions
   | "backup.created"
   | "backup.failed"
   | "backup.restore_started"
@@ -189,7 +189,14 @@ export type AuditAction =
   // Soft delete actions
   | "entity.soft_deleted"
   | "entity.restored"
-  | "entity.hard_deleted";
+  | "entity.hard_deleted"
+  // Plan / entitlement actions
+  | "plan.assigned"
+  | "plan.changed"
+  | "plan.expired"
+  | "entitlement.denied"
+  | "entitlement.override_added"
+  | "entitlement.override_removed";
 
 export type EntityType =
   | "employee"
@@ -226,7 +233,9 @@ export type EntityType =
   | "workflow_run"
   | "workflow_step_run"
   | "folder_acl"
-  | "sample_batch";
+  | "sample_batch"
+  | "company_plan"
+  | "entitlement_override";
 
 interface LogAuditEventParams {
   companyId: string;
