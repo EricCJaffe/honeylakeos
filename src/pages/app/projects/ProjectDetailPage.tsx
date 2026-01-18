@@ -48,6 +48,7 @@ import { TaskBoardView } from "@/components/projects/TaskBoardView";
 import { QuickAddButtons } from "@/components/projects/QuickAddButtons";
 import { SaveAsTemplateDialog } from "@/components/projects/SaveAsTemplateDialog";
 import { DuplicateProjectDialog } from "@/components/projects/DuplicateProjectDialog";
+import { AttachmentsPanel } from "@/components/attachments";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -448,6 +449,13 @@ export default function ProjectDetailPage() {
               )}
             </div>
           </div>
+
+          {/* Attachments Section */}
+          {projectId && (
+            <div className="mt-6">
+              <AttachmentsPanel entityType="project" entityId={projectId} />
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="tasks">
