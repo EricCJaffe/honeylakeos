@@ -196,7 +196,17 @@ export type AuditAction =
   | "plan.expired"
   | "entitlement.denied"
   | "entitlement.override_added"
-  | "entitlement.override_removed";
+  | "entitlement.override_removed"
+  // Coach monetization actions
+  | "coach_plan.created"
+  | "coach_plan.updated"
+  | "coach_plan.deactivated"
+  | "attribution.created"
+  | "attribution.updated"
+  | "attribution.deactivated"
+  | "referral_link.created"
+  | "referral_link.used"
+  | "revenue_event.recorded";
 
 export type EntityType =
   | "employee"
@@ -235,7 +245,11 @@ export type EntityType =
   | "folder_acl"
   | "sample_batch"
   | "company_plan"
-  | "entitlement_override";
+  | "entitlement_override"
+  | "coach_plan"
+  | "coach_attribution"
+  | "referral_link"
+  | "revenue_event";
 
 interface LogAuditEventParams {
   companyId: string;

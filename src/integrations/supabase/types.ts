@@ -198,6 +198,86 @@ export type Database = {
           },
         ]
       }
+      coach_plan_overrides: {
+        Row: {
+          coach_plan_id: string
+          created_at: string
+          entitlement_key: string
+          entitlement_value: Json
+          id: string
+        }
+        Insert: {
+          coach_plan_id: string
+          created_at?: string
+          entitlement_key: string
+          entitlement_value: Json
+          id?: string
+        }
+        Update: {
+          coach_plan_id?: string
+          created_at?: string
+          entitlement_key?: string
+          entitlement_value?: Json
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_plan_overrides_coach_plan_id_fkey"
+            columns: ["coach_plan_id"]
+            isOneToOne: false
+            referencedRelation: "coach_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coach_plans: {
+        Row: {
+          base_plan_id: string
+          coach_company_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          base_plan_id: string
+          coach_company_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          base_plan_id?: string
+          coach_company_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_plans_base_plan_id_fkey"
+            columns: ["base_plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_plans_coach_company_id_fkey"
+            columns: ["coach_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_profiles: {
         Row: {
           archived_at: string | null
@@ -320,6 +400,63 @@ export type Database = {
             columns: ["target_company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coach_referral_links: {
+        Row: {
+          coach_company_id: string
+          coach_plan_id: string | null
+          code: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          name: string | null
+          uses_count: number
+        }
+        Insert: {
+          coach_company_id: string
+          coach_plan_id?: string | null
+          code: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          name?: string | null
+          uses_count?: number
+        }
+        Update: {
+          coach_company_id?: string
+          coach_plan_id?: string | null
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          name?: string | null
+          uses_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_referral_links_coach_company_id_fkey"
+            columns: ["coach_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_referral_links_coach_plan_id_fkey"
+            columns: ["coach_plan_id"]
+            isOneToOne: false
+            referencedRelation: "coach_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -740,6 +877,67 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "company_capability_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_coach_attribution: {
+        Row: {
+          attributed_at: string
+          attribution_type: string
+          coach_company_id: string
+          coach_plan_id: string | null
+          company_id: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          referral_code: string | null
+        }
+        Insert: {
+          attributed_at?: string
+          attribution_type?: string
+          coach_company_id: string
+          coach_plan_id?: string | null
+          company_id: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          referral_code?: string | null
+        }
+        Update: {
+          attributed_at?: string
+          attribution_type?: string
+          coach_company_id?: string
+          coach_plan_id?: string | null
+          company_id?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          referral_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_coach_attribution_coach_company_id_fkey"
+            columns: ["coach_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_coach_attribution_coach_plan_id_fkey"
+            columns: ["coach_plan_id"]
+            isOneToOne: false
+            referencedRelation: "coach_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_coach_attribution_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: true
             referencedRelation: "companies"
@@ -5200,6 +5398,61 @@ export type Database = {
             columns: ["sample_batch_id"]
             isOneToOne: false
             referencedRelation: "sample_data_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      revenue_events: {
+        Row: {
+          coach_company_id: string | null
+          coach_plan_id: string | null
+          company_id: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          occurred_at: string
+          plan_tier: string
+        }
+        Insert: {
+          coach_company_id?: string | null
+          coach_plan_id?: string | null
+          company_id: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          occurred_at?: string
+          plan_tier: string
+        }
+        Update: {
+          coach_company_id?: string | null
+          coach_plan_id?: string | null
+          company_id?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          occurred_at?: string
+          plan_tier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_events_coach_company_id_fkey"
+            columns: ["coach_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_events_coach_plan_id_fkey"
+            columns: ["coach_plan_id"]
+            isOneToOne: false
+            referencedRelation: "coach_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
