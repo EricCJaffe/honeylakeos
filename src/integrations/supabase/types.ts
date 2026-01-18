@@ -6300,6 +6300,48 @@ export type Database = {
           },
         ]
       }
+      task_comments: {
+        Row: {
+          author_user_id: string
+          body_rte: string
+          company_id: string
+          created_at: string
+          id: string
+          task_id: string
+        }
+        Insert: {
+          author_user_id: string
+          body_rte: string
+          company_id: string
+          created_at?: string
+          id?: string
+          task_id: string
+        }
+        Update: {
+          author_user_id?: string
+          body_rte?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_comments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_comments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_documents: {
         Row: {
           created_at: string
