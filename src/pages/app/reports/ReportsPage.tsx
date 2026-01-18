@@ -45,7 +45,9 @@ import { useAuth } from "@/lib/auth";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { WORK_REPORT_TEMPLATES, WorkReportTemplateCard } from "./WorkReportTemplates";
+import { RELATIONSHIPS_REPORT_TEMPLATES, RelationshipsReportTemplateCard } from "./RelationshipsReportTemplates";
 import { QuickReportRunner } from "./QuickReportRunner";
+import { RelationshipsReportRunner } from "./RelationshipsReportRunner";
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
   work: CheckCircle2,
@@ -159,7 +161,20 @@ function ReportsContent() {
   const personalReports = reports.filter((r) => r.is_personal && r.owner_user_id === user?.id);
   const companyReports = reports.filter((r) => !r.is_personal);
 
+  const isRelationshipsReport = (type: ReportType) => 
+    type.startsWith("crm") || type.startsWith("donor");
+
   if (runningReport) {
+    if (isRelationshipsReport(runningReport)) {
+      return (
+        <div className="p-6 lg:p-8">
+          <RelationshipsReportRunner
+            reportType={runningReport}
+            onBack={() => setRunningReport(null)}
+          />
+        </div>
+      );
+    }
     return (
       <div className="p-6 lg:p-8">
         <QuickReportRunner
@@ -208,6 +223,7 @@ function ReportsContent() {
 
         {/* Quick Reports / Templates */}
         <TabsContent value="templates" className="mt-6 space-y-8">
+          {/* Work Reports */}
           <div>
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-primary" />
@@ -219,9 +235,25 @@ function ReportsContent() {
                   key={template.id}
                   template={template}
                   onRun={() => setRunningReport(template.type)}
-                  onSave={() => {
-                    setRunningReport(template.type);
-                  }}
+                  onSave={() => setRunningReport(template.type)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Relationships Reports */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Relationships Reports
+            </h3>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {RELATIONSHIPS_REPORT_TEMPLATES.map((template) => (
+                <RelationshipsReportTemplateCard
+                  key={template.id}
+                  template={template}
+                  onRun={() => setRunningReport(template.type)}
+                  onSave={() => setRunningReport(template.type)}
                 />
               ))}
             </div>

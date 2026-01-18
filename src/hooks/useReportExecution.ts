@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMembership } from "@/lib/membership";
 import { ReportType, ReportConfig } from "./useReports";
-import { subDays, subMonths, isAfter, parseISO } from "date-fns";
+import { subDays, subMonths, isAfter, parseISO, startOfWeek, startOfMonth, format, subQuarters, subYears } from "date-fns";
 
 export interface ReportResult {
   columns: string[];
@@ -27,9 +27,19 @@ export interface WorkReportFilters {
   completedOnly?: boolean;
 }
 
-// Date range validation - max 24 months
-const MAX_DATE_RANGE_MONTHS = 24;
-const DEFAULT_DATE_RANGE_DAYS = 30;
+export interface RelationshipsReportFilters {
+  pipelineId?: string;
+  campaignId?: string;
+  donorId?: string;
+  owner?: string;
+  useDateUpdated?: boolean;
+  groupInterval?: "week" | "month";
+  period?: "month" | "quarter" | "year";
+}
+
+// Date range validation - max 36 months for relationships reports
+const MAX_DATE_RANGE_MONTHS = 36;
+const DEFAULT_DATE_RANGE_DAYS = 90;
 
 function getDefaultDateRange(): { start: string; end: string } {
   const end = new Date();
@@ -40,7 +50,7 @@ function getDefaultDateRange(): { start: string; end: string } {
   };
 }
 
-function validateDateRange(start?: string, end?: string): { start: string; end: string } {
+function validateDateRange(start?: string, end?: string, maxMonths = MAX_DATE_RANGE_MONTHS): { start: string; end: string } {
   const defaults = getDefaultDateRange();
   
   if (!start || !end) {
@@ -49,7 +59,7 @@ function validateDateRange(start?: string, end?: string): { start: string; end: 
   
   const startDate = parseISO(start);
   const endDate = parseISO(end);
-  const maxStart = subMonths(endDate, MAX_DATE_RANGE_MONTHS);
+  const maxStart = subMonths(endDate, maxMonths);
   
   // If range exceeds max, cap it
   if (isAfter(maxStart, startDate)) {
@@ -80,6 +90,7 @@ export function useReportExecution(
       const { dateRange, filters } = config;
       const validatedRange = validateDateRange(dateRange?.start, dateRange?.end);
       const typedFilters = filters as WorkReportFilters | undefined;
+      const relationshipsFilters = filters as RelationshipsReportFilters | undefined;
 
       switch (reportType) {
         case "tasks_by_status":
@@ -101,16 +112,16 @@ export function useReportExecution(
           return executeProjectsActiveCompleted(activeCompanyId, validatedRange, typedFilters);
 
         case "crm_pipeline_totals":
-          return executeCrmPipelineTotals(activeCompanyId, filters);
+          return executeCrmPipelineTotals(activeCompanyId, validatedRange, relationshipsFilters);
 
         case "crm_opportunities_won_lost":
-          return executeCrmOpportunitiesWonLost(activeCompanyId, validatedRange.start, validatedRange.end);
+          return executeCrmOpportunitiesWonLost(activeCompanyId, validatedRange, relationshipsFilters);
 
         case "donors_by_campaign":
-          return executeDonorsByCampaign(activeCompanyId, validatedRange.start, validatedRange.end);
+          return executeDonorsByCampaign(activeCompanyId, validatedRange, relationshipsFilters);
 
         case "donor_retention":
-          return executeDonorRetention(activeCompanyId);
+          return executeDonorRetention(activeCompanyId, relationshipsFilters);
 
         case "invoices_by_status":
           return executeInvoicesByStatus();
@@ -541,165 +552,332 @@ async function executeProjectsActiveCompleted(
 
 async function executeCrmPipelineTotals(
   companyId: string,
-  filters?: Record<string, unknown>
+  dateRange: { start: string; end: string },
+  filters?: RelationshipsReportFilters
 ): Promise<ReportResult> {
+  if (!filters?.pipelineId) {
+    return { 
+      columns: ["stage_id", "stage_name", "count", "total_amount"], 
+      rows: [], 
+      summary: { totalOpportunities: 0, totalValue: 0 },
+      generatedAt: new Date().toISOString() 
+    };
+  }
+
+  // Fetch stages for this pipeline
+  const { data: stages } = await supabase
+    .from("sales_pipeline_stages")
+    .select("id, name, sort_order, is_closed_won, is_closed_lost")
+    .eq("pipeline_id", filters.pipelineId)
+    .is("archived_at", null)
+    .order("sort_order");
+
+  const stageMap = new Map((stages || []).map(s => [s.id, s]));
+
+  const dateField = filters.useDateUpdated ? "updated_at" : "created_at";
+  
   let query = supabase
     .from("sales_opportunities")
-    .select("id, value_amount, stage_id, status")
+    .select("id, value_amount, stage_id, status, owner_user_id")
     .eq("company_id", companyId)
-    .is("archived_at", null);
+    .eq("pipeline_id", filters.pipelineId)
+    .gte(dateField, dateRange.start)
+    .lte(dateField, dateRange.end);
 
-  if (filters?.pipelineId) {
-    query = query.eq("pipeline_id", filters.pipelineId as string);
+  if (filters.owner) {
+    query = query.eq("owner_user_id", filters.owner);
   }
 
   const { data, error } = await query;
   if (error) throw error;
 
-  const stageTotals: Record<string, { count: number; total: number }> = {};
-  (data || []).forEach((opp) => {
-    const stageId = opp.stage_id || "no-stage";
-    if (!stageTotals[stageId]) {
-      stageTotals[stageId] = { count: 0, total: 0 };
-    }
-    stageTotals[stageId].count++;
-    stageTotals[stageId].total += opp.value_amount || 0;
+  const stageTotals: Record<string, { count: number; total: number; name: string; sortOrder: number }> = {};
+  
+  // Initialize with all stages
+  (stages || []).forEach(stage => {
+    stageTotals[stage.id] = { count: 0, total: 0, name: stage.name, sortOrder: stage.sort_order };
   });
 
-  const rows = Object.entries(stageTotals).map(([id, { count, total }]) => ({
-    stage_id: id,
-    count,
-    total_amount: total,
-  }));
+  (data || []).forEach((opp) => {
+    const stageId = opp.stage_id;
+    if (stageTotals[stageId]) {
+      stageTotals[stageId].count++;
+      stageTotals[stageId].total += opp.value_amount || 0;
+    }
+  });
+
+  const rows = Object.entries(stageTotals)
+    .sort(([, a], [, b]) => a.sortOrder - b.sortOrder)
+    .map(([id, { count, total, name }]) => ({
+      stage_id: id,
+      stage_name: name,
+      count,
+      total_amount: total,
+      avg_amount: count > 0 ? Math.round(total / count) : 0,
+    }));
 
   const grandTotal = rows.reduce((sum, r) => sum + (r.total_amount as number), 0);
 
   return {
-    columns: ["stage_id", "count", "total_amount"],
+    columns: ["stage_name", "count", "total_amount", "avg_amount"],
     rows,
-    summary: { totalOpportunities: data?.length || 0, totalValue: grandTotal },
+    summary: { 
+      totalOpportunities: data?.length || 0, 
+      totalValue: grandTotal,
+      totalStages: stages?.length || 0,
+    },
+    metadata: {
+      dateRange,
+      filters: filters as Record<string, unknown>,
+      totalRows: rows.length,
+    },
     generatedAt: new Date().toISOString(),
   };
 }
 
 async function executeCrmOpportunitiesWonLost(
   companyId: string,
-  startDate?: string,
-  endDate?: string
+  dateRange: { start: string; end: string },
+  filters?: RelationshipsReportFilters
 ): Promise<ReportResult> {
+  if (!filters?.pipelineId) {
+    return { 
+      columns: ["period", "won_count", "won_amount", "lost_count", "lost_amount"], 
+      rows: [], 
+      summary: { wonCount: 0, lostCount: 0, wonTotal: 0, lostTotal: 0 },
+      generatedAt: new Date().toISOString() 
+    };
+  }
+
   let query = supabase
     .from("sales_opportunities")
-    .select("id, value_amount, status, closed_at")
+    .select("id, value_amount, status, closed_at, owner_user_id")
     .eq("company_id", companyId)
-    .in("status", ["won", "lost"]);
+    .eq("pipeline_id", filters.pipelineId)
+    .in("status", ["won", "lost"])
+    .not("closed_at", "is", null)
+    .gte("closed_at", dateRange.start)
+    .lte("closed_at", dateRange.end);
 
-  if (startDate) {
-    query = query.gte("closed_at", startDate);
-  }
-  if (endDate) {
-    query = query.lte("closed_at", endDate);
+  if (filters.owner) {
+    query = query.eq("owner_user_id", filters.owner);
   }
 
   const { data, error } = await query;
   if (error) throw error;
 
+  const groupInterval = filters?.groupInterval || "month";
+  const periodTotals: Record<string, { won_count: number; won_amount: number; lost_count: number; lost_amount: number }> = {};
+
+  (data || []).forEach((opp) => {
+    if (!opp.closed_at) return;
+    const closedDate = new Date(opp.closed_at);
+    let periodKey: string;
+    
+    if (groupInterval === "week") {
+      const weekStart = startOfWeek(closedDate, { weekStartsOn: 1 });
+      periodKey = format(weekStart, "yyyy-MM-dd");
+    } else {
+      periodKey = format(startOfMonth(closedDate), "yyyy-MM");
+    }
+
+    if (!periodTotals[periodKey]) {
+      periodTotals[periodKey] = { won_count: 0, won_amount: 0, lost_count: 0, lost_amount: 0 };
+    }
+
+    if (opp.status === "won") {
+      periodTotals[periodKey].won_count++;
+      periodTotals[periodKey].won_amount += opp.value_amount || 0;
+    } else if (opp.status === "lost") {
+      periodTotals[periodKey].lost_count++;
+      periodTotals[periodKey].lost_amount += opp.value_amount || 0;
+    }
+  });
+
+  const rows = Object.entries(periodTotals)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([period, totals]) => ({
+      period,
+      ...totals,
+    }));
+
   const won = (data || []).filter((o) => o.status === "won");
   const lost = (data || []).filter((o) => o.status === "lost");
-
   const wonTotal = won.reduce((sum, o) => sum + (o.value_amount || 0), 0);
   const lostTotal = lost.reduce((sum, o) => sum + (o.value_amount || 0), 0);
 
   return {
-    columns: ["outcome", "count", "total_amount"],
-    rows: [
-      { outcome: "Won", count: won.length, total_amount: wonTotal },
-      { outcome: "Lost", count: lost.length, total_amount: lostTotal },
-    ],
-    summary: { wonCount: won.length, lostCount: lost.length, wonTotal, lostTotal },
+    columns: ["period", "won_count", "won_amount", "lost_count", "lost_amount"],
+    rows,
+    summary: { 
+      wonCount: won.length, 
+      lostCount: lost.length, 
+      wonTotal, 
+      lostTotal,
+      winRate: won.length + lost.length > 0 ? Math.round((won.length / (won.length + lost.length)) * 100) : 0,
+    },
+    metadata: {
+      dateRange,
+      filters: filters as Record<string, unknown>,
+      totalRows: rows.length,
+    },
     generatedAt: new Date().toISOString(),
   };
 }
 
 async function executeDonorsByCampaign(
   companyId: string,
-  startDate?: string,
-  endDate?: string
+  dateRange: { start: string; end: string },
+  filters?: RelationshipsReportFilters
 ): Promise<ReportResult> {
   let query = supabase
     .from("donations")
-    .select("id, amount, campaign_id")
-    .eq("company_id", companyId);
+    .select("id, amount, campaign_id, donor_profile_id")
+    .eq("company_id", companyId)
+    .gte("donation_date", dateRange.start)
+    .lte("donation_date", dateRange.end);
 
-  if (startDate) {
-    query = query.gte("donation_date", startDate);
+  if (filters?.campaignId) {
+    query = query.eq("campaign_id", filters.campaignId);
   }
-  if (endDate) {
-    query = query.lte("donation_date", endDate);
+  if (filters?.donorId) {
+    query = query.eq("donor_profile_id", filters.donorId);
   }
 
-  const { data, error } = await query;
+  const { data: donations, error } = await query;
   if (error) throw error;
 
-  const campaignTotals: Record<string, { count: number; total: number }> = {};
-  (data || []).forEach((donation) => {
+  // Fetch campaigns for names
+  const { data: campaigns } = await supabase
+    .from("donor_campaigns")
+    .select("id, name")
+    .eq("company_id", companyId);
+
+  const campaignMap = new Map((campaigns || []).map(c => [c.id, c.name]));
+
+  const campaignTotals: Record<string, { count: number; total: number; donors: Set<string> }> = {};
+  
+  (donations || []).forEach((donation) => {
     const campaignId = donation.campaign_id || "no-campaign";
     if (!campaignTotals[campaignId]) {
-      campaignTotals[campaignId] = { count: 0, total: 0 };
+      campaignTotals[campaignId] = { count: 0, total: 0, donors: new Set() };
     }
     campaignTotals[campaignId].count++;
     campaignTotals[campaignId].total += donation.amount || 0;
+    if (donation.donor_profile_id) {
+      campaignTotals[campaignId].donors.add(donation.donor_profile_id);
+    }
   });
 
-  const rows = Object.entries(campaignTotals).map(([id, { count, total }]) => ({
+  const rows = Object.entries(campaignTotals).map(([id, { count, total, donors }]) => ({
     campaign_id: id,
+    campaign_name: id === "no-campaign" ? "No Campaign" : (campaignMap.get(id) || id),
     donation_count: count,
     total_amount: total,
+    avg_amount: count > 0 ? Math.round(total / count) : 0,
+    unique_donors: donors.size,
   }));
 
+  // Sort by total amount descending
+  rows.sort((a, b) => (b.total_amount as number) - (a.total_amount as number));
+
   const grandTotal = rows.reduce((sum, r) => sum + (r.total_amount as number), 0);
+  const totalDonors = new Set((donations || []).map(d => d.donor_profile_id).filter(Boolean));
 
   return {
-    columns: ["campaign_id", "donation_count", "total_amount"],
+    columns: ["campaign_name", "donation_count", "total_amount", "avg_amount", "unique_donors"],
     rows,
-    summary: { totalDonations: data?.length || 0, totalValue: grandTotal },
+    summary: { 
+      totalDonations: donations?.length || 0, 
+      totalValue: grandTotal,
+      totalCampaigns: rows.length,
+      uniqueDonors: totalDonors.size,
+    },
+    metadata: {
+      dateRange,
+      filters: filters as Record<string, unknown>,
+      totalRows: rows.length,
+    },
     generatedAt: new Date().toISOString(),
   };
 }
 
-async function executeDonorRetention(companyId: string): Promise<ReportResult> {
-  const thisYear = new Date().getFullYear();
-  const lastYear = thisYear - 1;
+async function executeDonorRetention(
+  companyId: string,
+  filters?: RelationshipsReportFilters
+): Promise<ReportResult> {
+  const period = filters?.period || "quarter";
+  const now = new Date();
+  
+  let currentStart: Date;
+  let currentEnd: Date = now;
+  let priorStart: Date;
+  let priorEnd: Date;
 
-  const { data: thisYearDonations } = await supabase
+  if (period === "month") {
+    currentStart = subMonths(now, 1);
+    priorStart = subMonths(now, 2);
+    priorEnd = subMonths(now, 1);
+  } else if (period === "quarter") {
+    currentStart = subQuarters(now, 1);
+    priorStart = subQuarters(now, 2);
+    priorEnd = subQuarters(now, 1);
+  } else {
+    currentStart = subYears(now, 1);
+    priorStart = subYears(now, 2);
+    priorEnd = subYears(now, 1);
+  }
+
+  const currentStartStr = currentStart.toISOString().split("T")[0];
+  const currentEndStr = currentEnd.toISOString().split("T")[0];
+  const priorStartStr = priorStart.toISOString().split("T")[0];
+  const priorEndStr = priorEnd.toISOString().split("T")[0];
+
+  // Build queries
+  let currentQuery = supabase
     .from("donations")
     .select("donor_profile_id")
     .eq("company_id", companyId)
-    .gte("donation_date", `${thisYear}-01-01`)
-    .lte("donation_date", `${thisYear}-12-31`);
+    .gte("donation_date", currentStartStr)
+    .lte("donation_date", currentEndStr);
 
-  const { data: lastYearDonations } = await supabase
+  let priorQuery = supabase
     .from("donations")
     .select("donor_profile_id")
     .eq("company_id", companyId)
-    .gte("donation_date", `${lastYear}-01-01`)
-    .lte("donation_date", `${lastYear}-12-31`);
+    .gte("donation_date", priorStartStr)
+    .lte("donation_date", priorEndStr);
 
-  const thisYearDonors = new Set((thisYearDonations || []).map((d) => d.donor_profile_id));
-  const lastYearDonors = new Set((lastYearDonations || []).map((d) => d.donor_profile_id));
+  if (filters?.campaignId) {
+    currentQuery = currentQuery.eq("campaign_id", filters.campaignId);
+    priorQuery = priorQuery.eq("campaign_id", filters.campaignId);
+  }
 
-  const retained = [...lastYearDonors].filter((d) => thisYearDonors.has(d)).length;
-  const newDonors = [...thisYearDonors].filter((d) => !lastYearDonors.has(d)).length;
-  const lapsed = [...lastYearDonors].filter((d) => !thisYearDonors.has(d)).length;
+  const [{ data: currentDonations }, { data: priorDonations }] = await Promise.all([
+    currentQuery,
+    priorQuery,
+  ]);
 
-  const retentionRate = lastYearDonors.size > 0
-    ? Math.round((retained / lastYearDonors.size) * 100)
+  const currentDonors = new Set((currentDonations || []).map((d) => d.donor_profile_id).filter(Boolean));
+  const priorDonors = new Set((priorDonations || []).map((d) => d.donor_profile_id).filter(Boolean));
+
+  const retained = [...priorDonors].filter((d) => currentDonors.has(d)).length;
+  const newDonors = [...currentDonors].filter((d) => !priorDonors.has(d)).length;
+  const lapsed = [...priorDonors].filter((d) => !currentDonors.has(d)).length;
+
+  const retentionRate = priorDonors.size > 0
+    ? Math.round((retained / priorDonors.size) * 100)
     : 0;
+
+  const periodLabel = period === "month" ? "Monthly" : period === "quarter" ? "Quarterly" : "Yearly";
 
   return {
     columns: ["metric", "value"],
     rows: [
+      { metric: "Prior Period Donors", value: priorDonors.size },
+      { metric: "Current Period Donors", value: currentDonors.size },
       { metric: "Retained Donors", value: retained },
-      { metric: "New Donors (This Year)", value: newDonors },
+      { metric: "New Donors", value: newDonors },
       { metric: "Lapsed Donors", value: lapsed },
       { metric: "Retention Rate", value: `${retentionRate}%` },
     ],
@@ -708,8 +886,14 @@ async function executeDonorRetention(companyId: string): Promise<ReportResult> {
       newDonors,
       lapsed,
       retentionRate,
-      lastYearTotal: lastYearDonors.size,
-      thisYearTotal: thisYearDonors.size,
+      lastYearTotal: priorDonors.size,
+      thisYearTotal: currentDonors.size,
+      period: periodLabel,
+    },
+    metadata: {
+      dateRange: { start: priorStartStr, end: currentEndStr },
+      filters: filters as Record<string, unknown>,
+      totalRows: 6,
     },
     generatedAt: new Date().toISOString(),
   };
