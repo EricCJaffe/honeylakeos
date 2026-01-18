@@ -224,6 +224,7 @@ export type AuditAction =
   | "integration.secrets_deleted"
   // Finance actions
   | "finance_mode_changed"
+  | "finance_permission_changed"
   | "financial_import.created"
   | "reconciliation.started"
   | "reconciliation.completed"

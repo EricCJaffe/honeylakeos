@@ -23,7 +23,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useMembership } from "@/lib/membership";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
-import { FinanceModeSettingsCard } from "@/components/finance";
+import { FinanceModeSettingsCard, FinancePermissionsCard } from "@/components/finance";
 
 const companySchema = z.object({
   name: z.string().min(2, "Company name must be at least 2 characters"),
@@ -243,6 +243,9 @@ export default function CompanySettingsPanel() {
 
         {/* Finance Mode Settings */}
         <FinanceModeSettingsCard />
+
+        {/* Finance Permissions */}
+        <FinancePermissionsCard />
 
         <div className="flex justify-end">
           <Button type="submit" disabled={isSaving}>
