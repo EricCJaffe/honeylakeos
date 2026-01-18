@@ -181,6 +181,472 @@ export type Database = {
           },
         ]
       }
+      bank_accounts: {
+        Row: {
+          account_mask: string | null
+          account_type: string
+          available_balance: number | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          current_balance: number
+          finance_account_id: string | null
+          id: string
+          institution_name: string | null
+          is_active: boolean
+          is_sample: boolean
+          last_synced_at: string | null
+          name: string
+          plaid_account_id: string | null
+          plaid_item_id: string | null
+          sample_batch_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_mask?: string | null
+          account_type?: string
+          available_balance?: number | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          current_balance?: number
+          finance_account_id?: string | null
+          id?: string
+          institution_name?: string | null
+          is_active?: boolean
+          is_sample?: boolean
+          last_synced_at?: string | null
+          name: string
+          plaid_account_id?: string | null
+          plaid_item_id?: string | null
+          sample_batch_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_mask?: string | null
+          account_type?: string
+          available_balance?: number | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          current_balance?: number
+          finance_account_id?: string | null
+          id?: string
+          institution_name?: string | null
+          is_active?: boolean
+          is_sample?: boolean
+          last_synced_at?: string | null
+          name?: string
+          plaid_account_id?: string | null
+          plaid_item_id?: string | null
+          sample_batch_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_accounts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_accounts_finance_account_id_fkey"
+            columns: ["finance_account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_accounts_sample_batch_id_fkey"
+            columns: ["sample_batch_id"]
+            isOneToOne: false
+            referencedRelation: "sample_data_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_reconciliations: {
+        Row: {
+          bank_account_id: string
+          cleared_balance: number
+          company_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string | null
+          difference: number | null
+          id: string
+          notes: string | null
+          started_at: string
+          statement_date: string
+          statement_ending_balance: number
+          status: Database["public"]["Enums"]["reconciliation_status"]
+          updated_at: string
+        }
+        Insert: {
+          bank_account_id: string
+          cleared_balance?: number
+          company_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          difference?: number | null
+          id?: string
+          notes?: string | null
+          started_at?: string
+          statement_date: string
+          statement_ending_balance: number
+          status?: Database["public"]["Enums"]["reconciliation_status"]
+          updated_at?: string
+        }
+        Update: {
+          bank_account_id?: string
+          cleared_balance?: number
+          company_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          difference?: number | null
+          id?: string
+          notes?: string | null
+          started_at?: string
+          statement_date?: string
+          statement_ending_balance?: number
+          status?: Database["public"]["Enums"]["reconciliation_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_reconciliations_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_reconciliations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_transactions: {
+        Row: {
+          amount: number
+          bank_account_id: string
+          category: string | null
+          company_id: string
+          created_at: string
+          description: string
+          id: string
+          import_batch_id: string | null
+          is_sample: boolean
+          journal_entry_id: string | null
+          matched_account_id: string | null
+          matched_crm_client_id: string | null
+          matched_vendor_id: string | null
+          notes: string | null
+          original_description: string | null
+          plaid_transaction_id: string | null
+          posted_date: string | null
+          reconciliation_id: string | null
+          sample_batch_id: string | null
+          status: Database["public"]["Enums"]["bank_transaction_status"]
+          tags: string[] | null
+          transaction_date: string
+          transaction_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          bank_account_id: string
+          category?: string | null
+          company_id: string
+          created_at?: string
+          description: string
+          id?: string
+          import_batch_id?: string | null
+          is_sample?: boolean
+          journal_entry_id?: string | null
+          matched_account_id?: string | null
+          matched_crm_client_id?: string | null
+          matched_vendor_id?: string | null
+          notes?: string | null
+          original_description?: string | null
+          plaid_transaction_id?: string | null
+          posted_date?: string | null
+          reconciliation_id?: string | null
+          sample_batch_id?: string | null
+          status?: Database["public"]["Enums"]["bank_transaction_status"]
+          tags?: string[] | null
+          transaction_date: string
+          transaction_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          bank_account_id?: string
+          category?: string | null
+          company_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+          import_batch_id?: string | null
+          is_sample?: boolean
+          journal_entry_id?: string | null
+          matched_account_id?: string | null
+          matched_crm_client_id?: string | null
+          matched_vendor_id?: string | null
+          notes?: string | null
+          original_description?: string | null
+          plaid_transaction_id?: string | null
+          posted_date?: string | null
+          reconciliation_id?: string | null
+          sample_batch_id?: string | null
+          status?: Database["public"]["Enums"]["bank_transaction_status"]
+          tags?: string[] | null
+          transaction_date?: string
+          transaction_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_transactions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_matched_account_id_fkey"
+            columns: ["matched_account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_matched_crm_client_id_fkey"
+            columns: ["matched_crm_client_id"]
+            isOneToOne: false
+            referencedRelation: "crm_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_matched_vendor_id_fkey"
+            columns: ["matched_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_sample_batch_id_fkey"
+            columns: ["sample_batch_id"]
+            isOneToOne: false
+            referencedRelation: "sample_data_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_bank_transactions_reconciliation"
+            columns: ["reconciliation_id"]
+            isOneToOne: false
+            referencedRelation: "bank_reconciliations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bill_lines: {
+        Row: {
+          account_id: string
+          amount: number
+          bill_id: string
+          created_at: string
+          description: string | null
+          id: string
+          line_order: number
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          account_id: string
+          amount?: number
+          bill_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          line_order?: number
+          quantity?: number
+          unit_price?: number
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          bill_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          line_order?: number
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bill_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bill_lines_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bills: {
+        Row: {
+          amount_paid: number
+          archived_at: string | null
+          balance_due: number | null
+          bill_date: string
+          bill_number: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          due_date: string
+          id: string
+          is_sample: boolean
+          journal_entry_id: string | null
+          memo: string | null
+          payment_date: string | null
+          payment_journal_entry_id: string | null
+          payment_method: string | null
+          payment_reference: string | null
+          sample_batch_id: string | null
+          status: Database["public"]["Enums"]["bill_status"]
+          subtotal_amount: number
+          tax_amount: number
+          total_amount: number
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          amount_paid?: number
+          archived_at?: string | null
+          balance_due?: number | null
+          bill_date: string
+          bill_number: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          due_date: string
+          id?: string
+          is_sample?: boolean
+          journal_entry_id?: string | null
+          memo?: string | null
+          payment_date?: string | null
+          payment_journal_entry_id?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          sample_batch_id?: string | null
+          status?: Database["public"]["Enums"]["bill_status"]
+          subtotal_amount?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          amount_paid?: number
+          archived_at?: string | null
+          balance_due?: number | null
+          bill_date?: string
+          bill_number?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          due_date?: string
+          id?: string
+          is_sample?: boolean
+          journal_entry_id?: string | null
+          memo?: string | null
+          payment_date?: string | null
+          payment_journal_entry_id?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          sample_batch_id?: string | null
+          status?: Database["public"]["Enums"]["bill_status"]
+          subtotal_amount?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bills_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_payment_journal_entry_id_fkey"
+            columns: ["payment_journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_sample_batch_id_fkey"
+            columns: ["sample_batch_id"]
+            isOneToOne: false
+            referencedRelation: "sample_data_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_alerts: {
         Row: {
           alert_type: string
@@ -865,6 +1331,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          finance_mode: Database["public"]["Enums"]["finance_mode"] | null
           id: string
           logo_url: string | null
           name: string
@@ -876,6 +1343,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          finance_mode?: Database["public"]["Enums"]["finance_mode"] | null
           id?: string
           logo_url?: string | null
           name: string
@@ -887,6 +1355,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          finance_mode?: Database["public"]["Enums"]["finance_mode"] | null
           id?: string
           logo_url?: string | null
           name?: string
@@ -2442,6 +2911,258 @@ export type Database = {
           },
         ]
       }
+      finance_accounts: {
+        Row: {
+          account_number: string | null
+          account_subtype: string | null
+          account_type: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          current_balance: number
+          description: string | null
+          display_order: number
+          id: string
+          is_active: boolean
+          is_system: boolean
+          name: string
+          normal_balance: string
+          opening_balance: number
+          parent_account_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_number?: string | null
+          account_subtype?: string | null
+          account_type: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          current_balance?: number
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name: string
+          normal_balance: string
+          opening_balance?: number
+          parent_account_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_number?: string | null
+          account_subtype?: string | null
+          account_type?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          current_balance?: number
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name?: string
+          normal_balance?: string
+          opening_balance?: number
+          parent_account_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_accounts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_accounts_parent_account_id_fkey"
+            columns: ["parent_account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_category_mappings: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          mapped_account_id: string | null
+          mapped_category: string
+          original_name: string
+          statement_type: Database["public"]["Enums"]["financial_import_type"]
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          mapped_account_id?: string | null
+          mapped_category: string
+          original_name: string
+          statement_type: Database["public"]["Enums"]["financial_import_type"]
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          mapped_account_id?: string | null
+          mapped_category?: string
+          original_name?: string
+          statement_type?: Database["public"]["Enums"]["financial_import_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_category_mappings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_category_mappings_mapped_account_id_fkey"
+            columns: ["mapped_account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_imports: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          file_name: string | null
+          id: string
+          import_type: Database["public"]["Enums"]["financial_import_type"]
+          mapping_config: Json | null
+          period_end: string
+          period_start: string
+          row_count: number | null
+          status: Database["public"]["Enums"]["financial_import_status"]
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          file_name?: string | null
+          id?: string
+          import_type: Database["public"]["Enums"]["financial_import_type"]
+          mapping_config?: Json | null
+          period_end: string
+          period_start: string
+          row_count?: number | null
+          status?: Database["public"]["Enums"]["financial_import_status"]
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          file_name?: string | null
+          id?: string
+          import_type?: Database["public"]["Enums"]["financial_import_type"]
+          mapping_config?: Json | null
+          period_end?: string
+          period_start?: string
+          row_count?: number | null
+          status?: Database["public"]["Enums"]["financial_import_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_imports_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_statement_rows: {
+        Row: {
+          amount: number
+          company_id: string
+          created_at: string
+          entity_name: string | null
+          id: string
+          import_id: string
+          mapped_account_id: string | null
+          mapped_category: string | null
+          metadata: Json | null
+          original_category: string
+          original_subcategory: string | null
+          period_end: string
+          period_start: string
+          statement_type: Database["public"]["Enums"]["financial_import_type"]
+        }
+        Insert: {
+          amount: number
+          company_id: string
+          created_at?: string
+          entity_name?: string | null
+          id?: string
+          import_id: string
+          mapped_account_id?: string | null
+          mapped_category?: string | null
+          metadata?: Json | null
+          original_category: string
+          original_subcategory?: string | null
+          period_end: string
+          period_start: string
+          statement_type: Database["public"]["Enums"]["financial_import_type"]
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          created_at?: string
+          entity_name?: string | null
+          id?: string
+          import_id?: string
+          mapped_account_id?: string | null
+          mapped_category?: string | null
+          metadata?: Json | null
+          original_category?: string
+          original_subcategory?: string | null
+          period_end?: string
+          period_start?: string
+          statement_type?: Database["public"]["Enums"]["financial_import_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_statement_rows_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_statement_rows_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "financial_imports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_statement_rows_mapped_account_id_fkey"
+            columns: ["mapped_account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       folder_acl: {
         Row: {
           access_level: string
@@ -3410,6 +4131,57 @@ export type Database = {
         }
         Relationships: []
       }
+      invoice_lines: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          invoice_id: string
+          line_order: number
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          invoice_id: string
+          line_order?: number
+          quantity?: number
+          unit_price?: number
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          invoice_id?: string
+          line_order?: number
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_lines_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           archived_at: string | null
@@ -3425,6 +4197,7 @@ export type Database = {
           invoice_number: string
           is_sample: boolean
           issue_date: string
+          journal_entry_id: string | null
           notes: string | null
           sample_batch_id: string | null
           status: string
@@ -3448,6 +4221,7 @@ export type Database = {
           invoice_number: string
           is_sample?: boolean
           issue_date?: string
+          journal_entry_id?: string | null
           notes?: string | null
           sample_batch_id?: string | null
           status?: string
@@ -3471,6 +4245,7 @@ export type Database = {
           invoice_number?: string
           is_sample?: boolean
           issue_date?: string
+          journal_entry_id?: string | null
           notes?: string | null
           sample_batch_id?: string | null
           status?: string
@@ -3496,10 +4271,155 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "invoices_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "invoices_sample_batch_id_fkey"
             columns: ["sample_batch_id"]
             isOneToOne: false
             referencedRelation: "sample_data_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entries: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          entry_date: string
+          entry_number: string
+          id: string
+          is_balanced: boolean | null
+          is_sample: boolean
+          memo: string | null
+          posted_at: string | null
+          posted_by: string | null
+          posting_date: string | null
+          reference_id: string | null
+          reference_type: string | null
+          sample_batch_id: string | null
+          status: Database["public"]["Enums"]["journal_entry_status"]
+          total_credit: number
+          total_debit: number
+          updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          entry_date: string
+          entry_number: string
+          id?: string
+          is_balanced?: boolean | null
+          is_sample?: boolean
+          memo?: string | null
+          posted_at?: string | null
+          posted_by?: string | null
+          posting_date?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          sample_batch_id?: string | null
+          status?: Database["public"]["Enums"]["journal_entry_status"]
+          total_credit?: number
+          total_debit?: number
+          updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          entry_date?: string
+          entry_number?: string
+          id?: string
+          is_balanced?: boolean | null
+          is_sample?: boolean
+          memo?: string | null
+          posted_at?: string | null
+          posted_by?: string | null
+          posting_date?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          sample_batch_id?: string | null
+          status?: Database["public"]["Enums"]["journal_entry_status"]
+          total_credit?: number
+          total_debit?: number
+          updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_sample_batch_id_fkey"
+            columns: ["sample_batch_id"]
+            isOneToOne: false
+            referencedRelation: "sample_data_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entry_lines: {
+        Row: {
+          account_id: string
+          created_at: string
+          credit_amount: number
+          debit_amount: number
+          description: string | null
+          id: string
+          journal_entry_id: string
+          line_order: number
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          credit_amount?: number
+          debit_amount?: number
+          description?: string | null
+          id?: string
+          journal_entry_id: string
+          line_order?: number
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          credit_amount?: number
+          debit_amount?: number
+          description?: string | null
+          id?: string
+          journal_entry_id?: string
+          line_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entry_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
             referencedColumns: ["id"]
           },
         ]
@@ -5516,6 +6436,138 @@ export type Database = {
           },
         ]
       }
+      recurring_invoice_lines: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          line_order: number
+          quantity: number
+          recurring_invoice_id: string
+          unit_price: number
+        }
+        Insert: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          line_order?: number
+          quantity?: number
+          recurring_invoice_id: string
+          unit_price?: number
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          line_order?: number
+          quantity?: number
+          recurring_invoice_id?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_invoice_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_invoice_lines_recurring_invoice_id_fkey"
+            columns: ["recurring_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recurring_invoices: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          crm_client_id: string | null
+          currency: string
+          end_date: string | null
+          frequency: Database["public"]["Enums"]["recurrence_frequency"]
+          id: string
+          invoices_generated: number
+          is_active: boolean
+          last_generated_at: string | null
+          next_issue_date: string
+          notes: string | null
+          payment_terms: number | null
+          subtotal_amount: number
+          tax_amount: number
+          template_name: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          crm_client_id?: string | null
+          currency?: string
+          end_date?: string | null
+          frequency?: Database["public"]["Enums"]["recurrence_frequency"]
+          id?: string
+          invoices_generated?: number
+          is_active?: boolean
+          last_generated_at?: string | null
+          next_issue_date: string
+          notes?: string | null
+          payment_terms?: number | null
+          subtotal_amount?: number
+          tax_amount?: number
+          template_name: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          crm_client_id?: string | null
+          currency?: string
+          end_date?: string | null
+          frequency?: Database["public"]["Enums"]["recurrence_frequency"]
+          id?: string
+          invoices_generated?: number
+          is_active?: boolean
+          last_generated_at?: string | null
+          next_issue_date?: string
+          notes?: string | null
+          payment_terms?: number | null
+          subtotal_amount?: number
+          tax_amount?: number
+          template_name?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_invoices_crm_client_id_fkey"
+            columns: ["crm_client_id"]
+            isOneToOne: false
+            referencedRelation: "crm_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       report_recent_runs: {
         Row: {
           company_id: string
@@ -7001,6 +8053,103 @@ export type Database = {
           },
         ]
       }
+      vendors: {
+        Row: {
+          address_line1: string | null
+          address_line2: string | null
+          archived_at: string | null
+          city: string | null
+          company_id: string
+          country: string | null
+          created_at: string
+          created_by: string | null
+          default_expense_account_id: string | null
+          email: string | null
+          id: string
+          is_active: boolean
+          is_sample: boolean
+          name: string
+          notes: string | null
+          payment_terms: number | null
+          phone: string | null
+          postal_code: string | null
+          sample_batch_id: string | null
+          state: string | null
+          tax_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          archived_at?: string | null
+          city?: string | null
+          company_id: string
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          default_expense_account_id?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          is_sample?: boolean
+          name: string
+          notes?: string | null
+          payment_terms?: number | null
+          phone?: string | null
+          postal_code?: string | null
+          sample_batch_id?: string | null
+          state?: string | null
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          archived_at?: string | null
+          city?: string | null
+          company_id?: string
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          default_expense_account_id?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          is_sample?: boolean
+          name?: string
+          notes?: string | null
+          payment_terms?: number | null
+          phone?: string | null
+          postal_code?: string | null
+          sample_batch_id?: string | null
+          state?: string | null
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendors_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendors_default_expense_account_id_fkey"
+            columns: ["default_expense_account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendors_sample_batch_id_fkey"
+            columns: ["sample_batch_id"]
+            isOneToOne: false
+            referencedRelation: "sample_data_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wf_form_fields: {
         Row: {
           created_at: string
@@ -7805,6 +8954,7 @@ export type Database = {
       }
       is_company_admin: { Args: { p_company_id: string }; Returns: boolean }
       is_company_member: { Args: { p_company_id: string }; Returns: boolean }
+      is_finance_admin: { Args: { p_company_id: string }; Returns: boolean }
       is_group_manager: {
         Args: { p_group_id: string; p_user_id: string }
         Returns: boolean
@@ -7947,6 +9097,8 @@ export type Database = {
     }
     Enums: {
       alert_severity: "low" | "medium" | "high"
+      bank_transaction_status: "unmatched" | "matched" | "posted" | "excluded"
+      bill_status: "draft" | "approved" | "paid" | "voided"
       campaign_type: "email" | "event" | "referral" | "content" | "other"
       coach_assignment_role: "primary_coach" | "support_coach"
       coaching_role: "coach" | "coach_manager" | "org_admin"
@@ -7959,6 +9111,13 @@ export type Database = {
       donation_status: "recorded" | "receipted" | "refunded"
       donor_status: "prospect" | "active" | "lapsed" | "major"
       engagement_status: "active" | "paused" | "ended"
+      finance_mode: "builtin_books" | "external_reporting"
+      financial_import_status: "pending" | "processing" | "completed" | "failed"
+      financial_import_type:
+        | "profit_loss"
+        | "balance_sheet"
+        | "open_ar"
+        | "open_ap"
       framework_dashboard_audience:
         | "company_admin"
         | "leadership"
@@ -7974,6 +9133,7 @@ export type Database = {
       framework_metric_type: "percentage" | "count" | "trend" | "boolean"
       framework_owner_type: "system" | "coach_org" | "company"
       framework_status: "draft" | "published" | "archived"
+      journal_entry_status: "draft" | "posted" | "voided"
       kb_article_status: "draft" | "published" | "archived"
       membership_role:
         | "company_admin"
@@ -8004,6 +9164,13 @@ export type Database = {
         | "document_prompt"
         | "framework_change_suggestion"
         | "framework_adoption"
+      reconciliation_status: "in_progress" | "completed" | "voided"
+      recurrence_frequency:
+        | "weekly"
+        | "biweekly"
+        | "monthly"
+        | "quarterly"
+        | "annually"
       report_type:
         | "tasks_by_status"
         | "tasks_by_assignee"
@@ -8210,6 +9377,8 @@ export const Constants = {
   public: {
     Enums: {
       alert_severity: ["low", "medium", "high"],
+      bank_transaction_status: ["unmatched", "matched", "posted", "excluded"],
+      bill_status: ["draft", "approved", "paid", "voided"],
       campaign_type: ["email", "event", "referral", "content", "other"],
       coach_assignment_role: ["primary_coach", "support_coach"],
       coaching_role: ["coach", "coach_manager", "org_admin"],
@@ -8223,6 +9392,14 @@ export const Constants = {
       donation_status: ["recorded", "receipted", "refunded"],
       donor_status: ["prospect", "active", "lapsed", "major"],
       engagement_status: ["active", "paused", "ended"],
+      finance_mode: ["builtin_books", "external_reporting"],
+      financial_import_status: ["pending", "processing", "completed", "failed"],
+      financial_import_type: [
+        "profit_loss",
+        "balance_sheet",
+        "open_ar",
+        "open_ap",
+      ],
       framework_dashboard_audience: [
         "company_admin",
         "leadership",
@@ -8240,6 +9417,7 @@ export const Constants = {
       framework_metric_type: ["percentage", "count", "trend", "boolean"],
       framework_owner_type: ["system", "coach_org", "company"],
       framework_status: ["draft", "published", "archived"],
+      journal_entry_status: ["draft", "posted", "voided"],
       kb_article_status: ["draft", "published", "archived"],
       membership_role: [
         "company_admin",
@@ -8272,6 +9450,14 @@ export const Constants = {
         "document_prompt",
         "framework_change_suggestion",
         "framework_adoption",
+      ],
+      reconciliation_status: ["in_progress", "completed", "voided"],
+      recurrence_frequency: [
+        "weekly",
+        "biweekly",
+        "monthly",
+        "quarterly",
+        "annually",
       ],
       report_type: [
         "tasks_by_status",
