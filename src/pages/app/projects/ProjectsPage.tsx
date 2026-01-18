@@ -197,8 +197,8 @@ export default function ProjectsPage() {
                           </DropdownMenu>
                         )}
                       </div>
-                      <Badge variant="secondary" className={getStatusColor(project.status)}>
-                        {project.status.replace("_", " ")}
+                      <Badge variant="secondary" className={getStatusColor(project.status || "active")}>
+                        {(project.status || "active").replace("_", " ")}
                       </Badge>
                     </CardHeader>
                     <CardContent>
