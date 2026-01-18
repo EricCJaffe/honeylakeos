@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { logAuditEvent } from "@/hooks/useAuditLog";
 import { toast } from "sonner";
+import type { Json } from "@/integrations/supabase/types";
 
 export interface FinanceTargets {
   revenue_target_mtd?: number | null;
@@ -61,21 +62,50 @@ export function useFrameworkFinanceTargetsMutations() {
       if (!activeCompanyId) throw new Error("No active company");
 
       const userId = (await supabase.auth.getUser()).data.user?.id;
+      const targetsAsJson = targets as unknown as Json;
 
-      const { data, error } = await supabase
+      // Check if record exists
+      const { data: existing } = await supabase
         .from("framework_finance_targets")
-        .upsert(
-          {
-            company_id: activeCompanyId,
-            framework_id: frameworkId,
-            targets_json: targets,
+        .select("id")
+        .eq("company_id", activeCompanyId)
+        .eq("framework_id", frameworkId)
+        .maybeSingle();
+
+      let data;
+      let error;
+
+      if (existing) {
+        // Update existing
+        const result = await supabase
+          .from("framework_finance_targets")
+          .update({
+            targets_json: targetsAsJson,
             updated_at: new Date().toISOString(),
             updated_by_user_id: userId,
-          },
-          { onConflict: "company_id,framework_id" }
-        )
-        .select()
-        .single();
+          })
+          .eq("id", existing.id)
+          .select()
+          .single();
+        data = result.data;
+        error = result.error;
+      } else {
+        // Insert new
+        const result = await supabase
+          .from("framework_finance_targets")
+          .insert([
+            {
+              company_id: activeCompanyId,
+              framework_id: frameworkId,
+              targets_json: targetsAsJson,
+              updated_by_user_id: userId,
+            },
+          ])
+          .select()
+          .single();
+        data = result.data;
+        error = result.error;
+      }
 
       if (error) throw error;
 
