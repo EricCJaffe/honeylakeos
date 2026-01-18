@@ -49,6 +49,41 @@ export type Database = {
           },
         ]
       }
+      activation_scores: {
+        Row: {
+          breakdown_json: Json
+          calculated_at: string
+          calculated_by: string | null
+          company_id: string
+          id: string
+          score: number
+        }
+        Insert: {
+          breakdown_json?: Json
+          calculated_at?: string
+          calculated_by?: string | null
+          company_id: string
+          id?: string
+          score?: number
+        }
+        Update: {
+          breakdown_json?: Json
+          calculated_at?: string
+          calculated_by?: string | null
+          company_id?: string
+          id?: string
+          score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activation_scores_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -7222,6 +7257,10 @@ export type Database = {
         Args: { p_company_name?: string; p_site_name?: string }
         Returns: Json
       }
+      calculate_activation_score: {
+        Args: { p_company_id: string }
+        Returns: Json
+      }
       can_access_document_file: {
         Args: { object_name: string }
         Returns: boolean
@@ -7273,6 +7312,10 @@ export type Database = {
       }
       complete_task_occurrence: {
         Args: { p_occurrence_start_at: string; p_series_task_id: string }
+        Returns: Json
+      }
+      compute_and_store_activation_score: {
+        Args: { p_calculated_by?: string; p_company_id: string }
         Returns: Json
       }
       compute_health_score: {
@@ -7575,6 +7618,7 @@ export type Database = {
         Returns: undefined
       }
       promote_self_to_super_admin: { Args: never; Returns: Json }
+      recalculate_all_pilot_scores: { Args: never; Returns: number }
       remove_sample_data: { Args: { p_company_id: string }; Returns: boolean }
       require_module_enabled: {
         Args: { p_company_id: string; p_module_key: string }

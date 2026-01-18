@@ -62,8 +62,42 @@ export interface FeedbackItem {
   user?: { email: string };
 }
 
+// ==========================================
+// ACTIVATION SCORE TYPES (v2)
+// ==========================================
+
+export interface ScoreCriterion {
+  met: boolean;
+  points: number;
+  label: string;
+  value?: number; // For numeric criteria like active_days
+}
+
+export interface ScoreSection {
+  score: number;
+  max: number;
+  criteria: Record<string, ScoreCriterion>;
+}
+
+export interface ActivationScoreBreakdown {
+  setup: ScoreSection;
+  engagement: ScoreSection;
+  value_signals: ScoreSection;
+}
+
+export interface ActivationScore {
+  id: string;
+  company_id: string;
+  score: number;
+  breakdown_json: ActivationScoreBreakdown;
+  calculated_at: string;
+  calculated_by: string;
+}
+
 export interface PilotCompanyStats {
   activation_score: number;
+  score_breakdown: ActivationScoreBreakdown | null;
+  score_calculated_at: string | null;
   active_users_7d: number;
   last_activity: string | null;
   milestones_achieved: string[];
@@ -75,6 +109,60 @@ export interface PilotCompany extends PilotFlag {
   company: { name: string };
   stats?: PilotCompanyStats;
 }
+
+// ==========================================
+// SCORE DISPLAY HELPERS
+// ==========================================
+
+export type ScoreBand = "red" | "yellow" | "green";
+
+export function getScoreBand(score: number): ScoreBand {
+  if (score >= 70) return "green";
+  if (score >= 40) return "yellow";
+  return "red";
+}
+
+export function getScoreColor(score: number): string {
+  const band = getScoreBand(score);
+  switch (band) {
+    case "green": return "text-green-600 dark:text-green-400";
+    case "yellow": return "text-yellow-600 dark:text-yellow-400";
+    case "red": return "text-red-600 dark:text-red-400";
+  }
+}
+
+export function getScoreBgColor(score: number): string {
+  const band = getScoreBand(score);
+  switch (band) {
+    case "green": return "bg-green-100 dark:bg-green-900/30";
+    case "yellow": return "bg-yellow-100 dark:bg-yellow-900/30";
+    case "red": return "bg-red-100 dark:bg-red-900/30";
+  }
+}
+
+export function getScoreBorderColor(score: number): string {
+  const band = getScoreBand(score);
+  switch (band) {
+    case "green": return "border-green-500";
+    case "yellow": return "border-yellow-500";
+    case "red": return "border-red-500";
+  }
+}
+
+export const SECTION_LABELS: Record<keyof ActivationScoreBreakdown, { label: string; suggestion: string }> = {
+  setup: { 
+    label: "Setup", 
+    suggestion: "Focus on initial configuration: invite team members, create task lists and projects." 
+  },
+  engagement: { 
+    label: "Engagement", 
+    suggestion: "Encourage regular usage: complete tasks, log in frequently with multiple users." 
+  },
+  value_signals: { 
+    label: "Value Signals", 
+    suggestion: "Unlock advanced features: run reports, use CRM/Donors/LMS, enable a framework." 
+  },
+};
 
 // ==========================================
 // PILOT FLAG HOOKS
@@ -507,7 +595,7 @@ export function useTriageFeedback() {
 }
 
 // ==========================================
-// ACTIVATION MILESTONE HELPERS
+// ACTIVATION MILESTONE HELPERS (Legacy)
 // ==========================================
 
 export const ACTIVATION_MILESTONES: Record<ActivationEventKey, { label: string; points: number }> = {
@@ -523,7 +611,7 @@ export const ACTIVATION_MILESTONES: Record<ActivationEventKey, { label: string; 
 };
 
 /**
- * Calculate detailed activation progress
+ * Calculate detailed activation progress (Legacy - kept for backwards compatibility)
  */
 export function useActivationProgress() {
   const { data: events = [], isLoading } = useActivationEvents();
@@ -554,4 +642,155 @@ export function useActivationProgress() {
     maxScore,
     percentage: Math.round((achievedCount / totalMilestones) * 100),
   };
+}
+
+// ==========================================
+// ACTIVATION SCORE HOOKS (v2)
+// ==========================================
+
+/**
+ * Fetch the stored activation score for a company
+ */
+export function useActivationScore(companyId?: string) {
+  const { activeCompanyId } = useActiveCompany();
+  const targetCompanyId = companyId || activeCompanyId;
+
+  return useQuery({
+    queryKey: ["activation-score", targetCompanyId],
+    queryFn: async () => {
+      if (!targetCompanyId) return null;
+
+      const { data, error } = await supabase
+        .from("activation_scores")
+        .select("*")
+        .eq("company_id", targetCompanyId)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) return null;
+      
+      return {
+        ...data,
+        breakdown_json: data.breakdown_json as unknown as ActivationScoreBreakdown,
+      } as ActivationScore;
+    },
+    enabled: !!targetCompanyId,
+  });
+}
+
+/**
+ * Calculate activation score on-demand (without storing)
+ */
+export function useCalculateActivationScore() {
+  const { activeCompanyId } = useActiveCompany();
+
+  return useMutation({
+    mutationFn: async (companyId?: string) => {
+      const targetCompanyId = companyId || activeCompanyId;
+      if (!targetCompanyId) throw new Error("No company ID");
+
+      const { data, error } = await supabase.rpc("calculate_activation_score", {
+        p_company_id: targetCompanyId,
+      });
+
+      if (error) throw error;
+      return data as unknown as { score: number; breakdown: ActivationScoreBreakdown; calculated_at: string };
+    },
+  });
+}
+
+/**
+ * Compute and store activation score
+ */
+export function useComputeAndStoreScore() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ companyId, calculatedBy }: { companyId: string; calculatedBy?: string }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase.rpc("compute_and_store_activation_score", {
+        p_company_id: companyId,
+        p_calculated_by: calculatedBy || user?.id || "system",
+      });
+
+      if (error) throw error;
+      return data as unknown as { score: number; breakdown: ActivationScoreBreakdown; calculated_at: string };
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["activation-score", variables.companyId] });
+      queryClient.invalidateQueries({ queryKey: ["pilot-companies"] });
+      toast.success("Activation score calculated");
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to calculate score: ${error.message}`);
+    },
+  });
+}
+
+/**
+ * Recalculate all pilot company scores (Site Admin)
+ */
+export function useRecalculateAllPilotScores() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("recalculate_all_pilot_scores");
+      if (error) throw error;
+      return data as number;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ["activation-score"] });
+      queryClient.invalidateQueries({ queryKey: ["pilot-companies"] });
+      toast.success(`Recalculated scores for ${count} pilot companies`);
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to recalculate scores: ${error.message}`);
+    },
+  });
+}
+
+/**
+ * Get the lowest-scoring section for coaching focus
+ */
+export function getLowestScoringSection(breakdown: ActivationScoreBreakdown | null): keyof ActivationScoreBreakdown | null {
+  if (!breakdown) return null;
+
+  const sections = Object.entries(breakdown) as [keyof ActivationScoreBreakdown, ScoreSection][];
+  
+  // Find section with lowest percentage (score/max)
+  let lowest: keyof ActivationScoreBreakdown | null = null;
+  let lowestPercentage = 1;
+
+  for (const [key, section] of sections) {
+    const percentage = section.max > 0 ? section.score / section.max : 1;
+    if (percentage < lowestPercentage) {
+      lowestPercentage = percentage;
+      lowest = key;
+    }
+  }
+
+  return lowest;
+}
+
+/**
+ * Get coaching suggestions based on unmet criteria
+ */
+export function getCoachingSuggestions(breakdown: ActivationScoreBreakdown | null): string[] {
+  if (!breakdown) return [];
+
+  const suggestions: string[] = [];
+
+  // Check each section
+  for (const [sectionKey, section] of Object.entries(breakdown) as [keyof ActivationScoreBreakdown, ScoreSection][]) {
+    const sectionInfo = SECTION_LABELS[sectionKey];
+    const unmetCriteria = Object.values(section.criteria).filter(c => !c.met);
+    
+    if (unmetCriteria.length > 0 && section.score < section.max) {
+      suggestions.push(sectionInfo.suggestion);
+    }
+  }
+
+  return suggestions;
 }
