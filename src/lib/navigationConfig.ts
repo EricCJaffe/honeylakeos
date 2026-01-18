@@ -28,6 +28,9 @@ import {
   Calculator,
   Scale,
   Wallet,
+  ClipboardList,
+  Workflow,
+  Inbox,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ModuleKey } from "@/hooks/useModuleAccess";
@@ -135,6 +138,9 @@ export const baseNavigationSections: NavSection[] = [
       { key: "calendar", title: "Calendar", url: "/app/calendar", icon: Calendar, moduleKey: "calendar" },
       { key: "notes", title: "Notes", url: "/app/notes", icon: StickyNote, moduleKey: "notes" },
       { key: "documents", title: "Documents", url: "/app/documents", icon: FileText, moduleKey: "documents" },
+      { key: "my-work", title: "My Work", url: "/app/workflows/my-work", icon: Inbox, moduleKey: "workflows" },
+      { key: "forms", title: "Forms", url: "/app/forms", icon: ClipboardList, moduleKey: "forms" },
+      { key: "workflows", title: "Workflows", url: "/app/workflows", icon: Workflow, moduleKey: "workflows" },
     ],
     hideIfEmpty: true,
   },
