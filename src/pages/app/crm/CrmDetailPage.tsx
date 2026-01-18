@@ -7,6 +7,7 @@ import { CrmHubLinkedItems } from "@/components/crm/CrmHubLinkedItems";
 import { CrmCreateActionsMenu } from "@/components/crm/CrmCreateActionsMenu";
 import { CrmTimeline } from "@/components/crm/CrmTimeline";
 import { CrmLearningPanel } from "@/components/lms/CrmLearningPanel";
+import { EntityContactsTab } from "@/components/contacts";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -43,6 +44,7 @@ import {
   AlertCircle,
   Link2,
   Clock,
+  Users,
 } from "lucide-react";
 import { useCompanyTerminology } from "@/hooks/useCompanyTerminology";
 import {
@@ -104,7 +106,7 @@ function CrmDetailContent() {
 
   const [formOpen, setFormOpen] = React.useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
-  const [activeTab, setActiveTab] = React.useState("linked");
+  const [activeTab, setActiveTab] = React.useState("contacts");
 
   const handleArchive = async () => {
     if (!client) return;
@@ -323,10 +325,14 @@ function CrmDetailContent() {
         {/* Right Column - Hub Content */}
         <div className="lg:col-span-2 space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="contacts" className="gap-2">
+                <Users className="h-4 w-4" />
+                Contacts
+              </TabsTrigger>
               <TabsTrigger value="linked" className="gap-2">
                 <Link2 className="h-4 w-4" />
-                Linked Items
+                Linked
                 {counts.total > 0 && (
                   <Badge variant="secondary" className="ml-1 text-xs">
                     {counts.total}
@@ -336,13 +342,17 @@ function CrmDetailContent() {
               <TabsTrigger value="timeline" className="gap-2">
                 <Clock className="h-4 w-4" />
                 Timeline
-                {timeline.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 text-xs">
-                    {timeline.length}
-                  </Badge>
-                )}
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="contacts" className="mt-4">
+              <EntityContactsTab
+                entityType="client"
+                entityId={client.id}
+                entityName={displayName}
+                canEdit={true}
+              />
+            </TabsContent>
 
             <TabsContent value="linked" className="mt-4">
               <CrmHubLinkedItems
