@@ -271,7 +271,11 @@ export type AuditAction =
   | "bank_transaction.posted"
   | "bank_transaction.excluded"
   | "bank_transactions.imported"
-  | "reconciliation.voided";
+  | "reconciliation.voided"
+  | "announcement.created"
+  | "announcement.updated"
+  | "announcement.published"
+  | "announcement.archived";
 
 export type EntityType =
   | "employee"
@@ -333,7 +337,8 @@ export type EntityType =
   | "bank_transaction"
   | "department"
   | "resource"
-  | "ticket";
+  | "ticket"
+  | "announcement";
 
 interface LogAuditEventParams {
   companyId: string;

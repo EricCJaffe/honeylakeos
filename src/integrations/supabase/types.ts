@@ -84,6 +84,92 @@ export type Database = {
           },
         ]
       }
+      announcement_reads: {
+        Row: {
+          announcement_id: string
+          company_id: string
+          id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          announcement_id: string
+          company_id: string
+          id?: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          announcement_id?: string
+          company_id?: string
+          id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_reads_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "announcement_reads_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      announcements: {
+        Row: {
+          body_rte: string
+          company_id: string
+          created_at: string
+          created_by_user_id: string
+          expires_at: string | null
+          id: string
+          publish_at: string | null
+          status: Database["public"]["Enums"]["announcement_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body_rte: string
+          company_id: string
+          created_at?: string
+          created_by_user_id: string
+          expires_at?: string | null
+          id?: string
+          publish_at?: string | null
+          status?: Database["public"]["Enums"]["announcement_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body_rte?: string
+          company_id?: string
+          created_at?: string
+          created_by_user_id?: string
+          expires_at?: string | null
+          id?: string
+          publish_at?: string | null
+          status?: Database["public"]["Enums"]["announcement_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attachments: {
         Row: {
           company_id: string
@@ -9777,6 +9863,7 @@ export type Database = {
     }
     Enums: {
       alert_severity: "low" | "medium" | "high"
+      announcement_status: "draft" | "published" | "archived"
       bank_transaction_status: "unmatched" | "matched" | "posted" | "excluded"
       bill_status: "draft" | "approved" | "paid" | "voided"
       campaign_type: "email" | "event" | "referral" | "content" | "other"
@@ -10061,6 +10148,7 @@ export const Constants = {
   public: {
     Enums: {
       alert_severity: ["low", "medium", "high"],
+      announcement_status: ["draft", "published", "archived"],
       bank_transaction_status: ["unmatched", "matched", "posted", "excluded"],
       bill_status: ["draft", "approved", "paid", "voided"],
       campaign_type: ["email", "event", "referral", "content", "other"],
