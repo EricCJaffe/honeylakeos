@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Paperclip } from "lucide-react";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,6 +55,7 @@ interface NoteFormDialogProps {
   note?: any;
   folderId?: string | null;
   projectId?: string | null;
+  onSuccess?: (noteId: string) => void;
 }
 
 const colors = [
@@ -72,6 +74,7 @@ export function NoteFormDialog({
   note,
   folderId,
   projectId: initialProjectId,
+  onSuccess,
 }: NoteFormDialogProps) {
   const { activeCompanyId } = useActiveCompany();
   const { user } = useAuth();
@@ -131,21 +134,24 @@ export function NoteFormDialog({
           .update(noteData)
           .eq("id", note.id);
         if (error) throw error;
+        return note.id;
       } else {
-        const { error } = await supabase.from("notes").insert({
+        const { data, error } = await supabase.from("notes").insert({
           ...noteData,
           company_id: activeCompanyId,
           created_by: user.id,
-        });
+        }).select("id").single();
         if (error) throw error;
+        return data.id;
       }
     },
-    onSuccess: () => {
+    onSuccess: (noteId: string) => {
       queryClient.invalidateQueries({ queryKey: ["notes"] });
       queryClient.invalidateQueries({ queryKey: ["project-notes"] });
       toast.success(isEditing ? "Note updated" : "Note created");
       onOpenChange(false);
       form.reset();
+      onSuccess?.(noteId);
     },
     onError: (error) => {
       toast.error(error.message || "Something went wrong");
@@ -298,6 +304,13 @@ export function NoteFormDialog({
                 </FormItem>
               )}
             />
+
+            {!isEditing && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md p-3">
+                <Paperclip className="h-4 w-4 flex-shrink-0" />
+                <span>You can add file attachments after creating the note.</span>
+              </div>
+            )}
 
             <div className="flex justify-end gap-2 pt-4 sticky bottom-0 bg-background pb-1">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
