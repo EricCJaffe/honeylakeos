@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Paperclip } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
@@ -74,6 +74,7 @@ interface TaskFormDialogProps {
   projectId?: string;
   editMode?: "single" | "series"; // For recurring tasks
   templateToApply?: Template | null; // Template to apply on open
+  onSuccess?: (taskId: string) => void;
 }
 
 const statuses = [
@@ -98,6 +99,7 @@ export function TaskFormDialog({
   projectId,
   editMode = "series",
   templateToApply,
+  onSuccess,
 }: TaskFormDialogProps) {
   const { activeCompanyId } = useActiveCompany();
   const { user } = useAuth();
@@ -300,8 +302,10 @@ export function TaskFormDialog({
           if (assignError) throw assignError;
         }
       }
+
+      return taskId;
     },
-    onSuccess: () => {
+    onSuccess: (taskId: string) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["project-tasks"] });
@@ -313,6 +317,9 @@ export function TaskFormDialog({
       form.reset();
       setRecurrenceConfig(null);
       setAssignees([]);
+      if (taskId) {
+        onSuccess?.(taskId);
+      }
     },
     onError: (error) => {
       toast.error(error.message || "Something went wrong");
@@ -614,6 +621,13 @@ export function TaskFormDialog({
                   onChange={setRecurrenceConfig}
                   startDate={dueDate || undefined}
                 />
+              </div>
+            )}
+
+            {!isEditing && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md p-3">
+                <Paperclip className="h-4 w-4 flex-shrink-0" />
+                <span>You can add file attachments after creating the task.</span>
               </div>
             )}
 
