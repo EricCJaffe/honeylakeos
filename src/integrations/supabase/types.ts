@@ -4439,6 +4439,50 @@ export type Database = {
           },
         ]
       }
+      report_recent_runs: {
+        Row: {
+          company_id: string
+          config_hash: string
+          config_json: Json
+          created_at: string
+          id: string
+          last_run_at: string
+          report_type: string
+          run_count: number
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          config_hash: string
+          config_json?: Json
+          created_at?: string
+          id?: string
+          last_run_at?: string
+          report_type: string
+          run_count?: number
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          config_hash?: string
+          config_json?: Json
+          created_at?: string
+          id?: string
+          last_run_at?: string
+          report_type?: string
+          run_count?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_recent_runs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       report_runs: {
         Row: {
           created_by: string | null
@@ -4474,6 +4518,80 @@ export type Database = {
           },
         ]
       }
+      report_user_defaults: {
+        Row: {
+          company_id: string
+          defaults_json: Json
+          id: string
+          report_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          defaults_json?: Json
+          id?: string
+          report_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          defaults_json?: Json
+          id?: string
+          report_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_user_defaults_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_visibility_roles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          report_id: string
+          role_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          report_id: string
+          role_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          report_id?: string
+          role_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_visibility_roles_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_visibility_roles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
           company_id: string
@@ -4486,6 +4604,7 @@ export type Database = {
           owner_user_id: string | null
           report_type: Database["public"]["Enums"]["report_type"]
           updated_at: string
+          visibility: string
         }
         Insert: {
           company_id: string
@@ -4498,6 +4617,7 @@ export type Database = {
           owner_user_id?: string | null
           report_type: Database["public"]["Enums"]["report_type"]
           updated_at?: string
+          visibility?: string
         }
         Update: {
           company_id?: string
@@ -4510,6 +4630,7 @@ export type Database = {
           owner_user_id?: string | null
           report_type?: Database["public"]["Enums"]["report_type"]
           updated_at?: string
+          visibility?: string
         }
         Relationships: [
           {

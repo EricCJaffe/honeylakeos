@@ -12,6 +12,7 @@ import {
   CreditCard,
   Trash2,
   Play,
+  LayoutDashboard,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ import {
   getReportCategory,
   Report,
   ReportType,
+  ReportConfig,
 } from "@/hooks/useReports";
 import { useAuth } from "@/lib/auth";
 import { format } from "date-fns";
@@ -50,6 +52,7 @@ import { FINANCE_REPORT_TEMPLATES, FinanceReportTemplateCard } from "./FinanceRe
 import { QuickReportRunner } from "./QuickReportRunner";
 import { RelationshipsReportRunner } from "./RelationshipsReportRunner";
 import { FinanceReportRunner } from "./FinanceReportRunner";
+import { ReportsDashboard } from "./ReportsDashboard";
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
   work: CheckCircle2,
@@ -157,8 +160,8 @@ function ReportsContent() {
   const { data: reports = [], isLoading, refetch } = useReports();
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get("tab") || "templates";
-  const [runningReport, setRunningReport] = React.useState<ReportType | null>(null);
+  const activeTab = searchParams.get("tab") || "dashboard";
+  const [runningReport, setRunningReport] = React.useState<{ type: ReportType; config?: ReportConfig } | null>(null);
 
   const personalReports = reports.filter((r) => r.is_personal && r.owner_user_id === user?.id);
   const companyReports = reports.filter((r) => !r.is_personal);
@@ -169,22 +172,28 @@ function ReportsContent() {
   const isFinanceReport = (type: ReportType) =>
     type.startsWith("invoices") || type.startsWith("payments") || type.startsWith("receipts") || type === "ar_aging";
 
+  const handleRunReport = (type: ReportType, config?: ReportConfig) => {
+    setRunningReport({ type, config });
+  };
+
   if (runningReport) {
-    if (isFinanceReport(runningReport)) {
+    if (isFinanceReport(runningReport.type)) {
       return (
         <div className="p-6 lg:p-8">
           <FinanceReportRunner
-            reportType={runningReport}
+            reportType={runningReport.type}
+            initialConfig={runningReport.config}
             onBack={() => setRunningReport(null)}
           />
         </div>
       );
     }
-    if (isRelationshipsReport(runningReport)) {
+    if (isRelationshipsReport(runningReport.type)) {
       return (
         <div className="p-6 lg:p-8">
           <RelationshipsReportRunner
-            reportType={runningReport}
+            reportType={runningReport.type}
+            initialConfig={runningReport.config}
             onBack={() => setRunningReport(null)}
           />
         </div>
@@ -193,7 +202,8 @@ function ReportsContent() {
     return (
       <div className="p-6 lg:p-8">
         <QuickReportRunner
-          reportType={runningReport}
+          reportType={runningReport.type}
+          initialConfig={runningReport.config}
           onBack={() => setRunningReport(null)}
         />
       </div>
@@ -220,6 +230,10 @@ function ReportsContent() {
         className="space-y-6"
       >
         <TabsList>
+          <TabsTrigger value="dashboard" className="gap-2">
+            <LayoutDashboard className="h-4 w-4" />
+            Dashboard
+          </TabsTrigger>
           <TabsTrigger value="templates" className="gap-2">
             <BarChart3 className="h-4 w-4" />
             Quick Reports
@@ -236,6 +250,11 @@ function ReportsContent() {
           </TabsTrigger>
         </TabsList>
 
+        {/* Dashboard */}
+        <TabsContent value="dashboard" className="mt-6">
+          <ReportsDashboard onRunReport={handleRunReport} />
+        </TabsContent>
+
         {/* Quick Reports / Templates */}
         <TabsContent value="templates" className="mt-6 space-y-8">
           {/* Work Reports */}
@@ -249,8 +268,8 @@ function ReportsContent() {
                 <WorkReportTemplateCard
                   key={template.id}
                   template={template}
-                  onRun={() => setRunningReport(template.type)}
-                  onSave={() => setRunningReport(template.type)}
+                  onRun={() => handleRunReport(template.type)}
+                  onSave={() => handleRunReport(template.type)}
                 />
               ))}
             </div>
@@ -267,8 +286,8 @@ function ReportsContent() {
                 <RelationshipsReportTemplateCard
                   key={template.id}
                   template={template}
-                  onRun={() => setRunningReport(template.type)}
-                  onSave={() => setRunningReport(template.type)}
+                  onRun={() => handleRunReport(template.type)}
+                  onSave={() => handleRunReport(template.type)}
                 />
               ))}
             </div>
