@@ -261,12 +261,12 @@ export function useCoachProfiles(filters: CoachProfileFilters = {}) {
 }
 
 export function useCoachProfile(id: string | undefined) {
-  const { hasAccess, loading: moduleLoading } = useModuleAccess("coaches");
+  const { hasAccess, loading: moduleLoading, noAccessReason } = useModuleAccess("coaches");
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ["coach-profile", id],
     queryFn: async () => {
-      if (!id || !hasAccess) return null;
+      if (!id) return null;
 
       const { data, error } = await supabase
         .from("coach_profiles")
@@ -277,11 +277,24 @@ export function useCoachProfile(id: string | undefined) {
         .eq("id", id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // PGRST116 = no rows returned (RLS blocked or not found)
+        if (error.code === "PGRST116") return null;
+        throw error;
+      }
       return data as CoachProfile;
     },
     enabled: !!id && !moduleLoading && hasAccess,
   });
+
+  return {
+    ...query,
+    // Include module loading in overall loading state
+    isLoading: moduleLoading || query.isLoading,
+    // Provide access context for better error messaging
+    moduleAccessDenied: !moduleLoading && !hasAccess,
+    noAccessReason,
+  };
 }
 
 export function getProfileTypeLabel(type: CoachProfileType): string {
