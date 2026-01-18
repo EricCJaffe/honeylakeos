@@ -1,13 +1,21 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { GripVertical, User, DollarSign } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { GripVertical, User, DollarSign, Building2, MoreHorizontal, Pencil, ExternalLink } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { usePipelineStages } from "@/hooks/useSalesPipelines";
 import { useOpportunitiesByStage, useMoveOpportunityStage, SalesOpportunity } from "@/hooks/useSalesOpportunities";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { OpportunityFormDialog } from "@/pages/app/sales/OpportunityFormDialog";
 
 interface PipelineBoardProps {
   pipelineId: string;
@@ -20,6 +28,7 @@ export function PipelineBoard({ pipelineId }: PipelineBoardProps) {
   const moveStage = useMoveOpportunityStage();
   const [draggedOpp, setDraggedOpp] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
+  const [editingOpportunity, setEditingOpportunity] = useState<SalesOpportunity | null>(null);
 
   const handleDragStart = (e: React.DragEvent, oppId: string) => {
     e.dataTransfer.setData("text/plain", oppId);
@@ -99,6 +108,7 @@ export function PipelineBoard({ pipelineId }: PipelineBoardProps) {
                   onDragStart={(e) => handleDragStart(e, opp.id)}
                   onDragEnd={handleDragEnd}
                   onClick={() => navigate(`/app/sales/opportunities/${opp.id}`)}
+                  onEdit={() => setEditingOpportunity(opp)}
                 />
               ))}
             </div>
@@ -106,8 +116,26 @@ export function PipelineBoard({ pipelineId }: PipelineBoardProps) {
         ))}
       </div>
       <ScrollBar orientation="horizontal" />
+      
+      {/* Edit Dialog */}
+      <OpportunityFormDialog
+        open={!!editingOpportunity}
+        onOpenChange={(open) => !open && setEditingOpportunity(null)}
+        opportunity={editingOpportunity || undefined}
+        pipelineId={pipelineId}
+      />
     </ScrollArea>
   );
+}
+
+// Helper to get the best display name for a client
+function getClientDisplayName(client: SalesOpportunity["crm_client"]): string {
+  if (!client) return "No client linked";
+  // Prefer org name for organizations, person name for individuals
+  if (client.type === "organization" || client.type === "b2b") {
+    return client.org_name || client.person_full_name || "Unnamed";
+  }
+  return client.person_full_name || client.org_name || "Unnamed";
 }
 
 interface OpportunityCardProps {
@@ -116,13 +144,17 @@ interface OpportunityCardProps {
   onDragStart: (e: React.DragEvent) => void;
   onDragEnd: () => void;
   onClick: () => void;
+  onEdit: () => void;
 }
 
-function OpportunityCard({ opportunity, isDragging, onDragStart, onDragEnd, onClick }: OpportunityCardProps) {
-  const clientName =
-    opportunity.crm_client?.person_full_name ||
-    opportunity.crm_client?.org_name ||
-    "No client linked";
+function OpportunityCard({ opportunity, isDragging, onDragStart, onDragEnd, onClick, onEdit }: OpportunityCardProps) {
+  const clientName = getClientDisplayName(opportunity.crm_client);
+  const isOrg = opportunity.crm_client?.type === "organization" || opportunity.crm_client?.type === "b2b";
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEdit();
+  };
 
   return (
     <Card
@@ -131,7 +163,7 @@ function OpportunityCard({ opportunity, isDragging, onDragStart, onDragEnd, onCl
       onDragEnd={onDragEnd}
       onClick={onClick}
       className={cn(
-        "cursor-pointer transition-all hover:shadow-md",
+        "cursor-pointer transition-all hover:shadow-md group",
         isDragging && "opacity-50 rotate-2"
       )}
     >
@@ -139,9 +171,33 @@ function OpportunityCard({ opportunity, isDragging, onDragStart, onDragEnd, onCl
         <div className="flex items-start gap-2">
           <GripVertical className="h-4 w-4 mt-0.5 text-muted-foreground cursor-grab shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="font-medium truncate">{opportunity.name}</p>
+            <div className="flex items-start justify-between gap-1">
+              <p className="font-medium truncate flex-1">{opportunity.name}</p>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleEditClick}>
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={onClick}>
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View Details
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-              <User className="h-3 w-3" />
+              {isOrg ? <Building2 className="h-3 w-3" /> : <User className="h-3 w-3" />}
               <span className="truncate">{clientName}</span>
             </div>
             {opportunity.value_amount != null && (
