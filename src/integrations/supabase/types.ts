@@ -55,6 +55,63 @@ export type Database = {
           },
         ]
       }
+      coach_alerts: {
+        Row: {
+          alert_type: string
+          client_company_id: string
+          coach_company_id: string
+          created_at: string
+          data_snapshot: Json | null
+          id: string
+          message: string
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: Database["public"]["Enums"]["alert_severity"]
+          suggested_action: string | null
+        }
+        Insert: {
+          alert_type: string
+          client_company_id: string
+          coach_company_id: string
+          created_at?: string
+          data_snapshot?: Json | null
+          id?: string
+          message: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          suggested_action?: string | null
+        }
+        Update: {
+          alert_type?: string
+          client_company_id?: string
+          coach_company_id?: string
+          created_at?: string
+          data_snapshot?: Json | null
+          id?: string
+          message?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          suggested_action?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_alerts_client_company_id_fkey"
+            columns: ["client_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_alerts_coach_company_id_fkey"
+            columns: ["coach_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_assignments: {
         Row: {
           archived_at: string | null
@@ -2315,6 +2372,54 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "framework_health_metrics_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      framework_health_scores: {
+        Row: {
+          breakdown_json: Json
+          calculated_at: string
+          company_id: string
+          created_at: string
+          framework_id: string
+          id: string
+          score: number
+          status: string
+        }
+        Insert: {
+          breakdown_json?: Json
+          calculated_at?: string
+          company_id: string
+          created_at?: string
+          framework_id: string
+          id?: string
+          score: number
+          status: string
+        }
+        Update: {
+          breakdown_json?: Json
+          calculated_at?: string
+          company_id?: string
+          created_at?: string
+          framework_id?: string
+          id?: string
+          score?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "framework_health_scores_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "framework_health_scores_framework_id_fkey"
             columns: ["framework_id"]
             isOneToOne: false
             referencedRelation: "frameworks"
@@ -6214,6 +6319,10 @@ export type Database = {
         Args: { p_occurrence_start_at: string; p_series_task_id: string }
         Returns: Json
       }
+      compute_health_score: {
+        Args: { _company_id: string; _framework_id: string }
+        Returns: string
+      }
       create_employee_invite: {
         Args: { p_employee_id: string; p_role?: string }
         Returns: {
@@ -6343,6 +6452,10 @@ export type Database = {
       folder_reorder: {
         Args: { p_folder_id: string; p_new_index: number }
         Returns: undefined
+      }
+      generate_coach_alerts: {
+        Args: { _client_company_id: string }
+        Returns: number
       }
       get_acl_grantee_profile: {
         Args: {
@@ -6530,6 +6643,7 @@ export type Database = {
       }
     }
     Enums: {
+      alert_severity: "low" | "medium" | "high"
       campaign_type: "email" | "event" | "referral" | "content" | "other"
       coach_assignment_role: "primary_coach" | "support_coach"
       coaching_role: "coach" | "coach_manager" | "org_admin"
@@ -6790,6 +6904,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      alert_severity: ["low", "medium", "high"],
       campaign_type: ["email", "event", "referral", "content", "other"],
       coach_assignment_role: ["primary_coach", "support_coach"],
       coaching_role: ["coach", "coach_manager", "org_admin"],

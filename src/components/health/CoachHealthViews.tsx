@@ -3,9 +3,77 @@ import { useMyAssignedEngagements } from "@/hooks/useCoaching";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { HealthStatusBadge, TrendIndicator, HealthSummaryPill } from "./HealthIndicator";
-import { Users, Building2, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
+import { Users, Building2, TrendingUp, TrendingDown, AlertTriangle, Check, Bell } from "lucide-react";
 import type { HealthStatus, TrendDirection } from "@/hooks/useHealthScoring";
+import { formatDistanceToNow } from "date-fns";
+import { cn } from "@/lib/utils";
+
+// Alert severity badge
+export function AlertSeverityBadge({ severity }: { severity: "low" | "medium" | "high" }) {
+  const config = {
+    low: { label: "Low", className: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
+    medium: { label: "Medium", className: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20" },
+    high: { label: "High", className: "bg-red-500/10 text-red-600 border-red-500/20" },
+  };
+  return (
+    <Badge variant="outline" className={cn("text-xs", config[severity].className)}>
+      {config[severity].label}
+    </Badge>
+  );
+}
+
+// Alert card for coach dashboard
+export function AlertCard({ 
+  alert, 
+  showClient = true,
+}: { 
+  alert: { 
+    id: string; 
+    severity: "low" | "medium" | "high"; 
+    message: string; 
+    suggested_action?: string | null;
+    created_at: string;
+    resolved_at?: string | null;
+    client_company?: { name: string } | null;
+  }; 
+  showClient?: boolean;
+}) {
+  return (
+    <Card className={cn(
+      "border-l-4",
+      alert.severity === "high" && "border-l-red-500",
+      alert.severity === "medium" && "border-l-yellow-500",
+      alert.severity === "low" && "border-l-blue-500",
+    )}>
+      <CardContent className="py-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <AlertSeverityBadge severity={alert.severity} />
+              {showClient && alert.client_company && (
+                <span className="text-sm font-medium truncate">
+                  {alert.client_company.name}
+                </span>
+              )}
+            </div>
+            <p className="text-sm font-medium">{alert.message}</p>
+            {alert.suggested_action && (
+              <p className="text-xs text-muted-foreground mt-1">
+                💡 {alert.suggested_action}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground mt-2">
+              {formatDistanceToNow(new Date(alert.created_at), { addSuffix: true })}
+            </p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 // Coach's Client Health List
 export function CoachClientHealthList() {
