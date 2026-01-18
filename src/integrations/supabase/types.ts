@@ -3937,6 +3937,89 @@ export type Database = {
           },
         ]
       }
+      framework_finance_playbook_items: {
+        Row: {
+          condition_key: string
+          created_at: string
+          description: string | null
+          framework_id: string
+          id: string
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          condition_key: string
+          created_at?: string
+          description?: string | null
+          framework_id: string
+          id?: string
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          condition_key?: string
+          created_at?: string
+          description?: string | null
+          framework_id?: string
+          id?: string
+          sort_order?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "framework_finance_playbook_items_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      framework_finance_targets: {
+        Row: {
+          company_id: string
+          created_at: string
+          framework_id: string
+          id: string
+          targets_json: Json
+          updated_at: string
+          updated_by_user_id: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          framework_id: string
+          id?: string
+          targets_json?: Json
+          updated_at?: string
+          updated_by_user_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          framework_id?: string
+          id?: string
+          targets_json?: Json
+          updated_at?: string
+          updated_by_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "framework_finance_targets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "framework_finance_targets_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       framework_health_metrics: {
         Row: {
           calculation_key: string
