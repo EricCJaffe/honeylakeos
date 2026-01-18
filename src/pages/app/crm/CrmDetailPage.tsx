@@ -91,16 +91,16 @@ function InfoRow({
 }
 
 function CrmDetailContent() {
-  const { id } = useParams<{ id: string }>();
+  const { clientId } = useParams<{ clientId: string }>();
   const navigate = useNavigate();
   const { getSingular } = useCompanyTerminology();
   const clientTerm = getSingular("crm_client");
   const { isEnabled } = useCompanyModules();
   const lmsEnabled = isEnabled("lms");
 
-  const { data: client, isLoading, error } = useCrmClient(id);
+  const { data: client, isLoading, error } = useCrmClient(clientId);
   const { archiveClient, unarchiveClient, deleteClient } = useCrmClients();
-  const { linkedItems, timeline, counts, isLoading: hubLoading } = useCrmHubData(id);
+  const { linkedItems, timeline, counts, isLoading: hubLoading } = useCrmHubData(clientId);
 
   const [formOpen, setFormOpen] = React.useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);

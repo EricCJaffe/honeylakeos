@@ -62,7 +62,7 @@ import { format } from "date-fns";
 function CrmClientCard({
   client,
   clientTerm,
-  onView,
+  onClick,
   onEdit,
   onArchive,
   onUnarchive,
@@ -70,21 +70,31 @@ function CrmClientCard({
 }: {
   client: CrmClient;
   clientTerm: string;
-  onView: () => void;
+  onClick: () => void;
   onEdit: () => void;
   onArchive: () => void;
   onUnarchive: () => void;
   onDelete: () => void;
 }) {
   const isArchived = !!client.archived_at;
-  const displayName = getCrmClientDisplayName(client);
   const email = getCrmClientEmail(client);
+  const phone = client.person_phone || client.org_phone;
+  
+  // Determine display: org name first, then primary contact
+  const orgName = client.org_name;
+  const personName = client.person_full_name;
+  const primaryTitle = orgName || personName || "Unknown";
+  const secondaryTitle = orgName && personName ? personName : null;
 
   return (
-    <Card className={isArchived ? "opacity-60" : ""}>
+    <Card 
+      className={`cursor-pointer transition-colors hover:bg-muted/50 ${isArchived ? "opacity-60" : ""}`}
+      onClick={onClick}
+    >
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
+            {/* Primary: Org/Company Name */}
             <div className="flex items-center gap-2 mb-1">
               {client.type === "b2c" ? (
                 <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -93,24 +103,36 @@ function CrmClientCard({
               ) : (
                 <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               )}
-              <h3 className="font-medium truncate">{displayName}</h3>
+              <h3 className="font-medium truncate">{primaryTitle}</h3>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mb-2">
-              {email && (
-                <span className="flex items-center gap-1">
-                  <Mail className="h-3 w-3" />
-                  {email}
-                </span>
-              )}
-              {(client.person_phone || client.org_phone) && (
-                <span className="flex items-center gap-1">
-                  <Phone className="h-3 w-3" />
-                  {client.person_phone || client.org_phone}
-                </span>
-              )}
-            </div>
+            {/* Secondary: Primary Contact Name */}
+            {secondaryTitle && (
+              <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                <User className="h-3 w-3" />
+                {secondaryTitle}
+              </p>
+            )}
 
+            {/* Contact Info: Email • Phone */}
+            {(email || phone) && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground mb-2">
+                {email && (
+                  <span className="flex items-center gap-1 truncate max-w-[200px]">
+                    <Mail className="h-3 w-3 flex-shrink-0" />
+                    {email}
+                  </span>
+                )}
+                {phone && (
+                  <span className="flex items-center gap-1">
+                    <Phone className="h-3 w-3 flex-shrink-0" />
+                    {phone}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Badges */}
             <div className="flex items-center gap-2">
               <Badge
                 variant={client.lifecycle_status === "client" ? "default" : "secondary"}
@@ -125,33 +147,33 @@ function CrmClientCard({
           </div>
 
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
               <Button variant="ghost" size="icon" className="flex-shrink-0">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onView}>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onClick(); }}>
                 <Eye className="h-4 w-4 mr-2" />
                 View Details
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onEdit}>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(); }}>
                 <Pencil className="h-4 w-4 mr-2" />
                 Edit
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {isArchived ? (
-                <DropdownMenuItem onClick={onUnarchive}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onUnarchive(); }}>
                   <ArchiveRestore className="h-4 w-4 mr-2" />
                   Restore
                 </DropdownMenuItem>
               ) : (
-                <DropdownMenuItem onClick={onArchive}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchive(); }}>
                   <Archive className="h-4 w-4 mr-2" />
                   Archive
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem onClick={onDelete} className="text-destructive">
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(); }} className="text-destructive">
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete Permanently
               </DropdownMenuItem>
@@ -314,7 +336,7 @@ function CrmListContent() {
               key={client.id}
               client={client}
               clientTerm={clientTerm}
-              onView={() => navigate(`/app/crm/${client.id}`)}
+              onClick={() => navigate(`/app/crm/${client.id}`)}
               onEdit={() => handleEdit(client)}
               onArchive={() => archiveClient.mutate(client.id)}
               onUnarchive={() => unarchiveClient.mutate(client.id)}
