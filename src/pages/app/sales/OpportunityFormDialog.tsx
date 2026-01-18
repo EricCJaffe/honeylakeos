@@ -216,14 +216,17 @@ export function OpportunityFormDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Linked Client</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select 
+                    value={field.value || "__none__"} 
+                    onValueChange={(val) => field.onChange(val === "__none__" ? "" : val)}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select client (optional)" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">No client</SelectItem>
+                      <SelectItem value="__none__">No client</SelectItem>
                       {clients.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.person_full_name || c.org_name || "Unnamed"}
@@ -277,14 +280,17 @@ export function OpportunityFormDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Source Campaign</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select 
+                    value={field.value || "__none__"} 
+                    onValueChange={(val) => field.onChange(val === "__none__" ? "" : val)}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select campaign (optional)" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">No campaign</SelectItem>
+                      <SelectItem value="__none__">No campaign</SelectItem>
                       {campaigns.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.name}
