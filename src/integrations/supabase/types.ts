@@ -84,6 +84,62 @@ export type Database = {
           },
         ]
       }
+      attachments: {
+        Row: {
+          company_id: string
+          content_type: string | null
+          created_at: string
+          deleted_at: string | null
+          deleted_by_user_id: string | null
+          entity_id: string
+          entity_type: string
+          file_name: string
+          file_size: number | null
+          id: string
+          owner_user_id: string
+          storage_bucket: string
+          storage_path: string
+        }
+        Insert: {
+          company_id: string
+          content_type?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by_user_id?: string | null
+          entity_id: string
+          entity_type: string
+          file_name: string
+          file_size?: number | null
+          id?: string
+          owner_user_id: string
+          storage_bucket?: string
+          storage_path: string
+        }
+        Update: {
+          company_id?: string
+          content_type?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by_user_id?: string | null
+          entity_id?: string
+          entity_type?: string
+          file_name?: string
+          file_size?: number | null
+          id?: string
+          owner_user_id?: string
+          storage_bucket?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attachments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
