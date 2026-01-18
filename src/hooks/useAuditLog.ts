@@ -241,7 +241,11 @@ export type AuditAction =
   | "coa.account_updated"
   | "coa.account_deactivated"
   | "coa.template_applied"
-  | "coa.import_completed";
+  | "coa.import_completed"
+  | "journal_entry.created"
+  | "journal_entry.updated"
+  | "journal_entry.posted"
+  | "journal_entry.voided";
 
 export type EntityType =
   | "employee"
