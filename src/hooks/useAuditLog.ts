@@ -225,6 +225,8 @@ export type AuditAction =
   // Finance actions
   | "finance_mode_changed"
   | "finance_permission_changed"
+  | "finance_metrics.requested"
+  | "finance_metrics.viewed_in_framework"
   | "financial_import.created"
   | "financial_import.completed"
   | "financial_import.failed"
