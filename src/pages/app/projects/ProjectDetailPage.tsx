@@ -342,20 +342,13 @@ export default function ProjectDetailPage() {
         </Card>
       </div>
 
-      {/* Links */}
-      {projectId && (
-        <div className="mb-6">
-          <EntityLinksPanel entityType="project" entityId={projectId} />
-        </div>
-      )}
-
       {/* Tabs */}
-      <Tabs defaultValue="tasks" className="space-y-4">
-        <TabsList>
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList className="flex-wrap">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="tasks">
             Tasks ({tasks.length})
           </TabsTrigger>
-          <TabsTrigger value="phases">Phases</TabsTrigger>
           {isEnabled("notes") && (
             <TabsTrigger value="notes">Notes ({notes.length})</TabsTrigger>
           )}
@@ -369,6 +362,79 @@ export default function ProjectDetailPage() {
           )}
           <TabsTrigger value="members">Members ({members.length})</TabsTrigger>
         </TabsList>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview">
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Phases Section */}
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Project Phases</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <PhasesManager projectId={projectId!} />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Recent Notes Section */}
+            <div className="space-y-6">
+              {isEnabled("notes") && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base">Recent Notes</CardTitle>
+                      <Button variant="ghost" size="sm" onClick={() => setIsNoteDialogOpen(true)}>
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="py-0 pb-4">
+                    {notes.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No notes yet</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {notes.slice(0, 3).map((note: any) => (
+                          <Link
+                            key={note.id}
+                            to={`/app/notes/${note.id}`}
+                            className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 transition-colors"
+                          >
+                            {note.color && (
+                              <div
+                                className="w-2 h-2 rounded-full shrink-0"
+                                style={{ backgroundColor: note.color }}
+                              />
+                            )}
+                            <span className="text-sm truncate">{note.title}</span>
+                          </Link>
+                        ))}
+                        {notes.length > 3 && (
+                          <p className="text-xs text-muted-foreground pl-2">
+                            +{notes.length - 3} more
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Links Section (less prominent) */}
+              {projectId && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Related Items</CardTitle>
+                  </CardHeader>
+                  <CardContent className="py-0 pb-4">
+                    <EntityLinksPanel entityType="project" entityId={projectId} />
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        </TabsContent>
 
         <TabsContent value="tasks">
           <Card>
@@ -416,13 +482,6 @@ export default function ProjectDetailPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="phases">
-          <Card>
-            <CardContent className="py-6">
-              <PhasesManager projectId={projectId!} />
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="notes">
           <Card>

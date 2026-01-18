@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -9,7 +10,9 @@ import {
   Repeat, 
   MoreHorizontal, 
   FolderOpen,
-  GripVertical
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +38,9 @@ interface TaskBoardViewProps {
   onEditTask?: (task: any) => void;
 }
 
+type SortField = "due_date" | "created_at";
+type SortDirection = "asc" | "desc";
+
 export function TaskBoardView({
   tasks,
   projectId,
@@ -44,6 +50,14 @@ export function TaskBoardView({
   const { data: phases = [] } = useProjectPhases(projectId);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  // Sorting state
+  const [sortField, setSortField] = useState<SortField>("due_date");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
+  // Drag and drop state
+  const [draggedTask, setDraggedTask] = useState<string | null>(null);
+  const [dragOverPhase, setDragOverPhase] = useState<string | null>(null);
 
   const toggleStatus = useMutation({
     mutationFn: async ({ taskId, currentStatus }: { taskId: string; currentStatus: string }) => {
@@ -96,6 +110,66 @@ export function TaskBoardView({
     }
   };
 
+  // Sorting functions
+  const sortTasks = (tasksToSort: any[]) => {
+    return [...tasksToSort].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      if (sortField === "due_date") {
+        aValue = a.due_date ? new Date(a.due_date).getTime() : Infinity;
+        bValue = b.due_date ? new Date(b.due_date).getTime() : Infinity;
+      } else {
+        aValue = new Date(a.created_at).getTime();
+        bValue = new Date(b.created_at).getTime();
+      }
+
+      if (sortDirection === "asc") {
+        return aValue - bValue;
+      }
+      return bValue - aValue;
+    });
+  };
+
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, taskId: string) => {
+    e.dataTransfer.setData("text/plain", taskId);
+    setDraggedTask(taskId);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedTask(null);
+    setDragOverPhase(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, phaseId: string | null) => {
+    e.preventDefault();
+    setDragOverPhase(phaseId);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverPhase(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, phaseId: string | null) => {
+    e.preventDefault();
+    const taskId = e.dataTransfer.getData("text/plain");
+    if (taskId) {
+      moveToPhase.mutate({ taskId, phaseId });
+    }
+    setDraggedTask(null);
+    setDragOverPhase(null);
+  };
+
   if (tasks.length === 0) {
     return (
       <div className="py-12">
@@ -127,123 +201,143 @@ export function TaskBoardView({
   });
 
   const renderTaskCard = (task: any) => (
-    <Card
+    <div
       key={task.id}
+      draggable
+      onDragStart={(e) => handleDragStart(e, task.id)}
+      onDragEnd={handleDragEnd}
       className={cn(
-        "cursor-pointer transition-all hover:shadow-md group",
-        task.status === "done" && "opacity-60"
+        "cursor-grab active:cursor-grabbing transition-all",
+        draggedTask === task.id && "opacity-50"
       )}
-      onClick={() => navigate(`/app/tasks/${task.id}`)}
     >
-      <CardContent className="p-3">
-        <div className="flex items-start gap-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleStatus.mutate({ taskId: task.id, currentStatus: task.status });
-            }}
-            className="shrink-0 mt-0.5 text-muted-foreground hover:text-primary transition-colors"
-          >
-            {task.status === "done" ? (
-              <CheckCircle2 className="h-4 w-4 text-primary" />
-            ) : (
-              <Circle className="h-4 w-4" />
-            )}
-          </button>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span
-                className={cn(
-                  "text-sm font-medium line-clamp-2",
-                  task.status === "done" && "line-through text-muted-foreground"
-                )}
-              >
-                {task.title}
-              </span>
-              {task.is_recurring_template && (
-                <Repeat className="h-3 w-3 text-muted-foreground shrink-0" />
+      <Card
+        className={cn(
+          "cursor-pointer transition-all hover:shadow-md group",
+          task.status === "done" && "opacity-60"
+        )}
+        onClick={() => navigate(`/app/tasks/${task.id}`)}
+      >
+        <CardContent className="p-3">
+          <div className="flex items-start gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleStatus.mutate({ taskId: task.id, currentStatus: task.status });
+              }}
+              className="shrink-0 mt-0.5 text-muted-foreground hover:text-primary transition-colors"
+            >
+              {task.status === "done" ? (
+                <CheckCircle2 className="h-4 w-4 text-primary" />
+              ) : (
+                <Circle className="h-4 w-4" />
               )}
-            </div>
+            </button>
 
-            <div className="flex items-center gap-2 mt-2">
-              {task.due_date && (
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  {format(new Date(task.due_date), "MMM d")}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={cn(
+                    "text-sm font-medium line-clamp-2",
+                    task.status === "done" && "line-through text-muted-foreground"
+                  )}
+                >
+                  {task.title}
                 </span>
-              )}
-              <Badge
-                variant="secondary"
-                className={cn("text-[10px] px-1.5 py-0", getPriorityColor(task.priority))}
-              >
-                {task.priority}
-              </Badge>
-            </div>
-          </div>
+                {task.is_recurring_template && (
+                  <Repeat className="h-3 w-3 text-muted-foreground shrink-0" />
+                )}
+              </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreHorizontal className="h-3.5 w-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {onEditTask && (
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEditTask(task);
-                  }}
+              <div className="flex items-center gap-2 mt-2">
+                {task.due_date && (
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    {format(new Date(task.due_date), "MMM d")}
+                  </span>
+                )}
+                <Badge
+                  variant="secondary"
+                  className={cn("text-[10px] px-1.5 py-0", getPriorityColor(task.priority))}
                 >
-                  Edit
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem disabled className="text-xs text-muted-foreground">
-                Move to phase:
-              </DropdownMenuItem>
-              {activePhases.map((phase) => (
-                <DropdownMenuItem
-                  key={phase.id}
-                  disabled={task.phase_id === phase.id}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    moveToPhase.mutate({ taskId: task.id, phaseId: phase.id });
-                  }}
+                  {task.priority}
+                </Badge>
+              </div>
+            </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  {phase.name}
-                  {task.phase_id === phase.id && " ✓"}
+                  <MoreHorizontal className="h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {onEditTask && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditTask(task);
+                    }}
+                  >
+                    Edit
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem disabled className="text-xs text-muted-foreground">
+                  Move to phase:
                 </DropdownMenuItem>
-              ))}
-              {task.phase_id && (
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    moveToPhase.mutate({ taskId: task.id, phaseId: null });
-                  }}
-                >
-                  Remove from phase
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </CardContent>
-    </Card>
+                {activePhases.map((phase) => (
+                  <DropdownMenuItem
+                    key={phase.id}
+                    disabled={task.phase_id === phase.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      moveToPhase.mutate({ taskId: task.id, phaseId: phase.id });
+                    }}
+                  >
+                    {phase.name}
+                    {task.phase_id === phase.id && " ✓"}
+                  </DropdownMenuItem>
+                ))}
+                {task.phase_id && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      moveToPhase.mutate({ taskId: task.id, phaseId: null });
+                    }}
+                  >
+                    Remove from phase
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 
-  const renderColumn = (title: string, columnTasks: any[], phaseId?: string) => {
+  const renderColumn = (title: string, columnTasks: any[], phaseId: string | null) => {
     const completedCount = columnTasks.filter((t) => t.status === "done").length;
+    const sortedTasks = sortTasks(columnTasks);
+    const isDropTarget = dragOverPhase === phaseId;
     
     return (
-      <div className="flex-shrink-0 w-72">
-        <Card className="h-full">
+      <div 
+        className="flex-shrink-0 w-72"
+        onDragOver={(e) => handleDragOver(e, phaseId)}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => handleDrop(e, phaseId)}
+      >
+        <Card className={cn(
+          "h-full transition-all",
+          isDropTarget && "ring-2 ring-primary ring-offset-2"
+        )}>
           <CardHeader className="py-3 px-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -256,18 +350,47 @@ export function TaskBoardView({
             </div>
           </CardHeader>
           <CardContent className="p-2 pt-0 space-y-2">
-            {columnTasks.length === 0 ? (
+            {sortedTasks.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
-                No tasks
+                {isDropTarget ? "Drop here" : "No tasks"}
               </p>
             ) : (
-              columnTasks.map(renderTaskCard)
+              sortedTasks.map(renderTaskCard)
             )}
           </CardContent>
         </Card>
       </div>
     );
   };
+
+  // Sort controls
+  const SortControls = () => (
+    <div className="flex items-center gap-2 px-4 py-2 border-b bg-muted/30">
+      <span className="text-xs text-muted-foreground">Sort by:</span>
+      <Button
+        variant={sortField === "due_date" ? "secondary" : "ghost"}
+        size="sm"
+        className="h-7 text-xs"
+        onClick={() => toggleSort("due_date")}
+      >
+        Due Date
+        {sortField === "due_date" && (
+          sortDirection === "asc" ? <ArrowUp className="h-3 w-3 ml-1" /> : <ArrowDown className="h-3 w-3 ml-1" />
+        )}
+      </Button>
+      <Button
+        variant={sortField === "created_at" ? "secondary" : "ghost"}
+        size="sm"
+        className="h-7 text-xs"
+        onClick={() => toggleSort("created_at")}
+      >
+        Created
+        {sortField === "created_at" && (
+          sortDirection === "asc" ? <ArrowUp className="h-3 w-3 ml-1" /> : <ArrowDown className="h-3 w-3 ml-1" />
+        )}
+      </Button>
+    </div>
+  );
 
   // If no phases, show by status instead
   if (activePhases.length === 0) {
@@ -276,26 +399,32 @@ export function TaskBoardView({
     const doneTasks = tasks.filter((t) => t.status === "done");
 
     return (
-      <ScrollArea className="w-full">
-        <div className="flex gap-4 p-4 min-w-max">
-          {renderColumn("To Do", todoTasks)}
-          {renderColumn("In Progress", inProgressTasks)}
-          {renderColumn("Done", doneTasks)}
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+      <div>
+        <SortControls />
+        <ScrollArea className="w-full">
+          <div className="flex gap-4 p-4 min-w-max">
+            {renderColumn("To Do", todoTasks, "to_do")}
+            {renderColumn("In Progress", inProgressTasks, "in_progress")}
+            {renderColumn("Done", doneTasks, "done")}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      </div>
     );
   }
 
   return (
-    <ScrollArea className="w-full">
-      <div className="flex gap-4 p-4 min-w-max">
-        {activePhases.map((phase) => 
-          renderColumn(phase.name, tasksByPhase[phase.id] || [], phase.id)
-        )}
-        {unassignedTasks.length > 0 && renderColumn("Unassigned", unassignedTasks)}
-      </div>
-      <ScrollBar orientation="horizontal" />
-    </ScrollArea>
+    <div>
+      <SortControls />
+      <ScrollArea className="w-full">
+        <div className="flex gap-4 p-4 min-w-max">
+          {activePhases.map((phase) => 
+            renderColumn(phase.name, tasksByPhase[phase.id] || [], phase.id)
+          )}
+          {renderColumn("Unassigned", unassignedTasks, null)}
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+    </div>
   );
 }
