@@ -10,7 +10,8 @@ import {
   Phone,
   Building2,
   Globe,
-  Calendar
+  Calendar,
+  Lock
 } from "lucide-react";
 
 // Lazy load rich text display for consistent rendering
@@ -40,7 +41,7 @@ import { format } from "date-fns";
 function CoachDetailContent() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: profile, isLoading } = useCoachProfile(id);
+  const { data: profile, isLoading, moduleAccessDenied, noAccessReason } = useCoachProfile(id);
   const { archiveProfile, unarchiveProfile, deleteProfile } = useCoachProfiles();
 
   const [editDialogOpen, setEditDialogOpen] = React.useState(false);
@@ -67,6 +68,28 @@ function CoachDetailContent() {
     );
   }
 
+  // Module access denied - show friendly message
+  if (moduleAccessDenied) {
+    return (
+      <div className="space-y-6">
+        <Button variant="ghost" onClick={() => navigate("/app/coaches")}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Coaches & Partners
+        </Button>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Lock className="h-8 w-8 mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground">
+              {noAccessReason === "not_enabled" 
+                ? "The Coaches & Partners module is not enabled for this company."
+                : "You don't have permission to access coach profiles."}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!profile) {
     return (
       <div className="space-y-6">
@@ -76,7 +99,7 @@ function CoachDetailContent() {
         </Button>
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            Profile not found or you don't have access.
+            Coach profile not found. It may have been deleted or moved.
           </CardContent>
         </Card>
       </div>
