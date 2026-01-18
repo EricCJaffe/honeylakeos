@@ -116,6 +116,7 @@ import ExportsPage from "@/pages/app/reports/ExportsPage";
 import RunDetailPage from "@/pages/app/workflows/RunDetailPage";
 import ValidationDashboardPage from "@/pages/app/admin/ValidationDashboardPage";
 import PilotCompanyDetailPage from "@/pages/app/admin/PilotCompanyDetailPage";
+import IntegrationsPage from "@/pages/app/integrations/IntegrationsPage";
 
 const queryClient = new QueryClient();
 
@@ -236,6 +237,7 @@ function App() {
                     <Route path="reports/exports" element={<ExportsPage />} />
                     <Route path="reports/:reportId" element={<ReportDetailPage />} />
                     <Route path="settings" element={<SettingsPage />} />
+                    <Route path="integrations" element={<IntegrationsPage />} />
                     <Route path="framework" element={<FrameworksPage />} />
                     <Route path="framework/marketplace" element={<FrameworkMarketplacePage />} />
                     <Route path="admin/company-console" element={<CompanyConsolePage />} />

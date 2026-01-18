@@ -216,7 +216,12 @@ export type AuditAction =
   | "activation_score.calculated"
   // Attachment actions
   | "attachment.created"
-  | "attachment.deleted";
+  | "attachment.deleted"
+  // Integration actions
+  | "integration.enabled"
+  | "integration.disabled"
+  | "integration.configured"
+  | "integration.secrets_deleted";
 
 export type EntityType =
   | "employee"
@@ -263,7 +268,8 @@ export type EntityType =
   | "pilot_flag"
   | "activation_event"
   | "feedback"
-  | "attachment";
+  | "attachment"
+  | "integration";
 
 interface LogAuditEventParams {
   companyId: string;

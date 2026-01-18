@@ -233,6 +233,23 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
 
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive(adminNavItems.integrations.url)}
+                    tooltip={adminNavItems.integrations.title}
+                  >
+                    <NavLink
+                      to={adminNavItems.integrations.url}
+                      className="flex items-center gap-3"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    >
+                      <adminNavItems.integrations.icon className="h-4 w-4" />
+                      <span>{adminNavItems.integrations.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
                 {showSiteAdmin && (
                   <SidebarMenuItem>
                     <SidebarMenuButton
