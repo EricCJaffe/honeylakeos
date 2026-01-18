@@ -2485,6 +2485,87 @@ export type Database = {
           },
         ]
       }
+      invoices: {
+        Row: {
+          archived_at: string | null
+          balance_due: number
+          company_id: string
+          created_at: string
+          created_by: string | null
+          crm_client_id: string | null
+          currency: string
+          due_date: string | null
+          export_status: string
+          id: string
+          invoice_number: string
+          issue_date: string
+          notes: string | null
+          status: string
+          subtotal_amount: number
+          tags: string[] | null
+          tax_amount: number
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          balance_due?: number
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          crm_client_id?: string | null
+          currency?: string
+          due_date?: string | null
+          export_status?: string
+          id?: string
+          invoice_number: string
+          issue_date?: string
+          notes?: string | null
+          status?: string
+          subtotal_amount?: number
+          tags?: string[] | null
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          balance_due?: number
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          crm_client_id?: string | null
+          currency?: string
+          due_date?: string | null
+          export_status?: string
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          notes?: string | null
+          status?: string
+          subtotal_amount?: number
+          tags?: string[] | null
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_crm_client_id_fkey"
+            columns: ["crm_client_id"]
+            isOneToOne: false
+            referencedRelation: "crm_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kb_articles: {
         Row: {
           body_rich_text: string | null
@@ -3782,6 +3863,79 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          amount: number
+          company_id: string
+          created_at: string
+          created_by: string | null
+          crm_client_id: string | null
+          currency: string
+          export_status: string
+          id: string
+          invoice_id: string | null
+          notes: string | null
+          payment_date: string
+          payment_method: string
+          reference_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          crm_client_id?: string | null
+          currency?: string
+          export_status?: string
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          reference_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          crm_client_id?: string | null
+          currency?: string
+          export_status?: string
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          reference_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_crm_client_id_fkey"
+            columns: ["crm_client_id"]
+            isOneToOne: false
+            referencedRelation: "crm_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_entitlements: {
         Row: {
           created_at: string
@@ -4219,6 +4373,65 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "projects_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receipts: {
+        Row: {
+          amount: number
+          category: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          export_status: string
+          id: string
+          payment_method: string | null
+          receipt_date: string
+          tags: string[] | null
+          updated_at: string
+          vendor_name: string | null
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          export_status?: string
+          id?: string
+          payment_method?: string | null
+          receipt_date?: string
+          tags?: string[] | null
+          updated_at?: string
+          vendor_name?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          export_status?: string
+          id?: string
+          payment_method?: string | null
+          receipt_date?: string
+          tags?: string[] | null
+          updated_at?: string
+          vendor_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipts_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -6210,6 +6423,10 @@ export type Database = {
         | "donor_retention"
         | "invoices_by_status"
         | "receipts_by_tag"
+        | "invoices_summary"
+        | "payments_summary"
+        | "receipts_summary"
+        | "ar_aging"
       site_role: "super_admin" | "site_admin"
       ticket_author_type: "requester" | "agent"
       ticket_priority: "low" | "normal" | "high" | "urgent"
@@ -6472,6 +6689,10 @@ export const Constants = {
         "donor_retention",
         "invoices_by_status",
         "receipts_by_tag",
+        "invoices_summary",
+        "payments_summary",
+        "receipts_summary",
+        "ar_aging",
       ],
       site_role: ["super_admin", "site_admin"],
       ticket_author_type: ["requester", "agent"],

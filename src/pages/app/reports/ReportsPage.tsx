@@ -46,8 +46,10 @@ import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { WORK_REPORT_TEMPLATES, WorkReportTemplateCard } from "./WorkReportTemplates";
 import { RELATIONSHIPS_REPORT_TEMPLATES, RelationshipsReportTemplateCard } from "./RelationshipsReportTemplates";
+import { FINANCE_REPORT_TEMPLATES, FinanceReportTemplateCard } from "./FinanceReportTemplates";
 import { QuickReportRunner } from "./QuickReportRunner";
 import { RelationshipsReportRunner } from "./RelationshipsReportRunner";
+import { FinanceReportRunner } from "./FinanceReportRunner";
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
   work: CheckCircle2,
@@ -164,7 +166,20 @@ function ReportsContent() {
   const isRelationshipsReport = (type: ReportType) => 
     type.startsWith("crm") || type.startsWith("donor");
 
+  const isFinanceReport = (type: ReportType) =>
+    type.startsWith("invoices") || type.startsWith("payments") || type.startsWith("receipts") || type === "ar_aging";
+
   if (runningReport) {
+    if (isFinanceReport(runningReport)) {
+      return (
+        <div className="p-6 lg:p-8">
+          <FinanceReportRunner
+            reportType={runningReport}
+            onBack={() => setRunningReport(null)}
+          />
+        </div>
+      );
+    }
     if (isRelationshipsReport(runningReport)) {
       return (
         <div className="p-6 lg:p-8">

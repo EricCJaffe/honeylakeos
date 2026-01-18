@@ -18,7 +18,9 @@ export type ReportType =
   | "donors_by_campaign"
   | "donor_retention"
   | "invoices_by_status"
-  | "receipts_by_tag";
+  | "payments_summary"
+  | "receipts_by_tag"
+  | "ar_aging";
 
 export interface ReportConfig {
   dateRange?: {
@@ -85,7 +87,9 @@ export const REPORT_CATEGORIES: ReportCategory[] = [
     label: "Finance",
     types: [
       { value: "invoices_by_status", label: "Invoices by Status" },
+      { value: "payments_summary", label: "Payments Summary" },
       { value: "receipts_by_tag", label: "Receipts by Tag" },
+      { value: "ar_aging", label: "AR Aging" },
     ],
   },
 ];

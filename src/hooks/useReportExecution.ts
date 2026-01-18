@@ -124,10 +124,16 @@ export function useReportExecution(
           return executeDonorRetention(activeCompanyId, relationshipsFilters);
 
         case "invoices_by_status":
-          return executeInvoicesByStatus();
+          return executeInvoicesByStatus(activeCompanyId, validatedRange, filters);
+
+        case "payments_summary":
+          return executePaymentsSummary(activeCompanyId, validatedRange, filters);
 
         case "receipts_by_tag":
-          return executeReceiptsByTag();
+          return executeReceiptsByTag(activeCompanyId, validatedRange, filters);
+
+        case "ar_aging":
+          return executeArAging(activeCompanyId, filters);
 
         default:
           return { columns: [], rows: [], generatedAt: new Date().toISOString() };
@@ -900,22 +906,212 @@ async function executeDonorRetention(
 }
 
 // ==================== FINANCE REPORTS ====================
-// Note: invoices and receipts tables don't exist yet, return placeholder data
 
-async function executeInvoicesByStatus(): Promise<ReportResult> {
+async function executeInvoicesByStatus(
+  companyId: string,
+  dateRange: { start: string; end: string },
+  filters?: Record<string, unknown>
+): Promise<ReportResult> {
+  let query = supabase
+    .from("invoices")
+    .select("id, status, total_amount, balance_due, issue_date")
+    .eq("company_id", companyId)
+    .is("archived_at", null)
+    .gte("issue_date", dateRange.start)
+    .lte("issue_date", dateRange.end);
+
+  if (filters?.customerId) {
+    query = query.eq("crm_client_id", filters.customerId as string);
+  }
+  if (filters?.status) {
+    query = query.eq("status", filters.status as string);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  const statusTotals: Record<string, { count: number; total: number; balance: number }> = {};
+  (data || []).forEach((inv) => {
+    const status = inv.status || "unknown";
+    if (!statusTotals[status]) {
+      statusTotals[status] = { count: 0, total: 0, balance: 0 };
+    }
+    statusTotals[status].count++;
+    statusTotals[status].total += Number(inv.total_amount) || 0;
+    statusTotals[status].balance += Number(inv.balance_due) || 0;
+  });
+
+  const rows = Object.entries(statusTotals).map(([status, { count, total, balance }]) => ({
+    status,
+    count,
+    total_amount: total,
+    balance_due: balance,
+  }));
+
+  const totalAmount = rows.reduce((s, r) => s + (r.total_amount as number), 0);
+  const totalBalance = rows.reduce((s, r) => s + (r.balance_due as number), 0);
+  const paidAmount = statusTotals.paid?.total || 0;
+
   return {
-    columns: ["status", "count", "total_amount"],
-    rows: [],
-    summary: { totalInvoices: 0, totalValue: 0 },
+    columns: ["status", "count", "total_amount", "balance_due"],
+    rows,
+    summary: { totalInvoices: data?.length || 0, totalAmount, totalBalanceDue: totalBalance, paidAmount },
+    metadata: { dateRange, totalRows: rows.length },
     generatedAt: new Date().toISOString(),
   };
 }
 
-async function executeReceiptsByTag(): Promise<ReportResult> {
+async function executePaymentsSummary(
+  companyId: string,
+  dateRange: { start: string; end: string },
+  filters?: Record<string, unknown>
+): Promise<ReportResult> {
+  let query = supabase
+    .from("payments")
+    .select("id, amount, payment_date, payment_method")
+    .eq("company_id", companyId)
+    .gte("payment_date", dateRange.start)
+    .lte("payment_date", dateRange.end);
+
+  if (filters?.customerId) {
+    query = query.eq("crm_client_id", filters.customerId as string);
+  }
+  if (filters?.paymentMethod) {
+    query = query.eq("payment_method", filters.paymentMethod as string);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  const methodTotals: Record<string, { count: number; total: number }> = {};
+  (data || []).forEach((p) => {
+    const method = p.payment_method || "other";
+    if (!methodTotals[method]) methodTotals[method] = { count: 0, total: 0 };
+    methodTotals[method].count++;
+    methodTotals[method].total += Number(p.amount) || 0;
+  });
+
+  const rows = Object.entries(methodTotals).map(([method, { count, total }]) => ({
+    payment_method: method,
+    count,
+    total_amount: total,
+  }));
+
+  const totalAmount = rows.reduce((s, r) => s + (r.total_amount as number), 0);
+  const avgPayment = data?.length ? Math.round(totalAmount / data.length) : 0;
+
   return {
-    columns: ["tag", "count", "total_amount"],
-    rows: [],
-    summary: { totalReceipts: 0, totalValue: 0 },
+    columns: ["payment_method", "count", "total_amount"],
+    rows,
+    summary: { totalPayments: data?.length || 0, totalAmount, avgPayment },
+    metadata: { dateRange, totalRows: rows.length },
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+async function executeReceiptsByTag(
+  companyId: string,
+  dateRange: { start: string; end: string },
+  filters?: Record<string, unknown>
+): Promise<ReportResult> {
+  let query = supabase
+    .from("receipts")
+    .select("id, amount, category, receipt_date")
+    .eq("company_id", companyId)
+    .gte("receipt_date", dateRange.start)
+    .lte("receipt_date", dateRange.end);
+
+  if (filters?.tag) {
+    query = query.eq("category", filters.tag as string);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  const catTotals: Record<string, { count: number; total: number }> = {};
+  (data || []).forEach((r) => {
+    const cat = r.category || "Uncategorized";
+    if (!catTotals[cat]) catTotals[cat] = { count: 0, total: 0 };
+    catTotals[cat].count++;
+    catTotals[cat].total += Number(r.amount) || 0;
+  });
+
+  const rows = Object.entries(catTotals).map(([category, { count, total }]) => ({
+    category,
+    count,
+    total_amount: total,
+  }));
+
+  const totalAmount = rows.reduce((s, r) => s + (r.total_amount as number), 0);
+
+  return {
+    columns: ["category", "count", "total_amount"],
+    rows,
+    summary: { totalReceipts: data?.length || 0, totalAmount, totalCategories: rows.length },
+    metadata: { dateRange, totalRows: rows.length },
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+async function executeArAging(
+  companyId: string,
+  filters?: Record<string, unknown>
+): Promise<ReportResult> {
+  const asOfDate = (filters?.asOfDate as string) || new Date().toISOString().split("T")[0];
+  const asOf = new Date(asOfDate);
+
+  let query = supabase
+    .from("invoices")
+    .select("id, invoice_number, balance_due, due_date, crm_client_id")
+    .eq("company_id", companyId)
+    .is("archived_at", null)
+    .gt("balance_due", 0);
+
+  if (filters?.customerId) {
+    query = query.eq("crm_client_id", filters.customerId as string);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  const buckets = { current: 0, bucket31_60: 0, bucket61_90: 0, bucket90plus: 0 };
+  const bucketCounts = { current: 0, bucket31_60: 0, bucket61_90: 0, bucket90plus: 0 };
+
+  (data || []).forEach((inv) => {
+    if (!inv.due_date) return;
+    const dueDate = new Date(inv.due_date);
+    const daysOverdue = Math.floor((asOf.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+    const balance = Number(inv.balance_due) || 0;
+
+    if (daysOverdue <= 30) {
+      buckets.current += balance;
+      bucketCounts.current++;
+    } else if (daysOverdue <= 60) {
+      buckets.bucket31_60 += balance;
+      bucketCounts.bucket31_60++;
+    } else if (daysOverdue <= 90) {
+      buckets.bucket61_90 += balance;
+      bucketCounts.bucket61_90++;
+    } else {
+      buckets.bucket90plus += balance;
+      bucketCounts.bucket90plus++;
+    }
+  });
+
+  const rows = [
+    { bucket: "Current (0-30)", count: bucketCounts.current, balance_due: buckets.current },
+    { bucket: "31-60 Days", count: bucketCounts.bucket31_60, balance_due: buckets.bucket31_60 },
+    { bucket: "61-90 Days", count: bucketCounts.bucket61_90, balance_due: buckets.bucket61_90 },
+    { bucket: "90+ Days", count: bucketCounts.bucket90plus, balance_due: buckets.bucket90plus },
+  ];
+
+  const totalOutstanding = buckets.current + buckets.bucket31_60 + buckets.bucket61_90 + buckets.bucket90plus;
+
+  return {
+    columns: ["bucket", "count", "balance_due"],
+    rows,
+    summary: { totalOutstanding, currentAmount: buckets.current, bucket31_60: buckets.bucket31_60, bucket61_90: buckets.bucket61_90, bucket90plus: buckets.bucket90plus },
+    metadata: { totalRows: 4 },
     generatedAt: new Date().toISOString(),
   };
 }
