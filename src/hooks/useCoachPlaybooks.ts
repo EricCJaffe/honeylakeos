@@ -107,8 +107,6 @@ export function useFrameworkPlaybooks(frameworkId: string | undefined) {
         .order("sort_order");
       if (error) throw error;
       return (data || []) as unknown as FrameworkPlaybook[];
-      if (error) throw error;
-      return data as FrameworkPlaybook[];
     },
     enabled: !!frameworkId,
   });
