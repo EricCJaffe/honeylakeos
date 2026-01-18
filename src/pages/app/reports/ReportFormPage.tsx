@@ -50,7 +50,9 @@ const REPORT_MODULE_MAP: Record<ReportType, string[]> = {
   donors_by_campaign: ["donors"],
   donor_retention: ["donors"],
   invoices_by_status: ["finance"],
+  payments_summary: ["finance"],
   receipts_by_tag: ["finance"],
+  ar_aging: ["finance"],
 };
 
 type Step = "type" | "config" | "details";
