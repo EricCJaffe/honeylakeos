@@ -10,10 +10,12 @@ import { toast } from "sonner";
 
 export type CrmClientType = "b2c" | "b2b" | "mixed";
 export type CrmLifecycleStatus = "prospect" | "client";
+export type EntityKind = "organization" | "individual";
 
 export interface CrmClient {
   id: string;
   company_id: string;
+  entity_kind: EntityKind;
   type: CrmClientType;
   lifecycle_status: CrmLifecycleStatus;
   person_full_name: string | null;
@@ -29,6 +31,7 @@ export interface CrmClient {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  primary_contact_id: string | null;
 }
 
 export interface CrmClientFilters {
@@ -39,6 +42,7 @@ export interface CrmClientFilters {
 }
 
 export interface CreateCrmClientInput {
+  entity_kind: EntityKind;
   type: CrmClientType;
   lifecycle_status: CrmLifecycleStatus;
   person_full_name?: string | null;
@@ -54,6 +58,7 @@ export interface CreateCrmClientInput {
 export interface UpdateCrmClientInput extends Partial<CreateCrmClientInput> {
   id: string;
   is_active?: boolean;
+  primary_contact_id?: string | null;
 }
 
 export interface CrmListMeta {
@@ -140,11 +145,15 @@ export function useCrmClients(filters: CrmClientFilters = {}) {
       const { data: user } = await supabase.auth.getUser();
       const userId = user?.user?.id;
 
+      // Determine entity_kind based on input if not explicitly set
+      const entityKind = input.entity_kind || (input.org_name ? "organization" : "individual");
+
       const { data, error } = await supabase
         .from("crm_clients")
         .insert({
           company_id: activeCompanyId,
           created_by: userId,
+          entity_kind: entityKind,
           ...input,
         })
         .select()
@@ -205,6 +214,14 @@ export function useCrmClients(filters: CrmClientFilters = {}) {
               is_primary: true,
               created_by: userId,
             });
+
+            // Update primary_contact_id on client
+            await supabase
+              .from("crm_clients")
+              .update({ primary_contact_id: contactId })
+              .eq("id", client.id);
+
+            client.primary_contact_id = contactId;
           }
         } catch (linkError) {
           // Don't fail client creation if contact linking fails
@@ -410,10 +427,22 @@ export function useCrmClient(id: string | undefined) {
 
 // Helper to get display name for a CRM client
 export function getCrmClientDisplayName(client: CrmClient): string {
-  if (client.person_full_name && client.org_name) {
-    return `${client.person_full_name} (${client.org_name})`;
+  // For organizations: show org name
+  if (client.entity_kind === "organization") {
+    return client.org_name || client.person_full_name || "Unknown";
   }
+  // For individuals: show person name
   return client.person_full_name || client.org_name || "Unknown";
+}
+
+// Helper to get subtitle for a CRM client (used in cards/lists)
+export function getCrmClientSubtitle(client: CrmClient): string {
+  if (client.entity_kind === "organization") {
+    // For org: show primary contact name
+    return client.person_full_name || "";
+  }
+  // For individual: show email/phone
+  return client.person_email || client.person_phone || "";
 }
 
 // Helper to get primary email

@@ -1962,6 +1962,7 @@ export type Database = {
           company_id: string
           created_at: string
           created_by: string | null
+          entity_kind: Database["public"]["Enums"]["entity_kind"]
           external_contact_id: string | null
           id: string
           is_active: boolean
@@ -1975,6 +1976,7 @@ export type Database = {
           person_email: string | null
           person_full_name: string | null
           person_phone: string | null
+          primary_contact_id: string | null
           sample_batch_id: string | null
           type: string
           updated_at: string
@@ -1984,6 +1986,7 @@ export type Database = {
           company_id: string
           created_at?: string
           created_by?: string | null
+          entity_kind?: Database["public"]["Enums"]["entity_kind"]
           external_contact_id?: string | null
           id?: string
           is_active?: boolean
@@ -1997,6 +2000,7 @@ export type Database = {
           person_email?: string | null
           person_full_name?: string | null
           person_phone?: string | null
+          primary_contact_id?: string | null
           sample_batch_id?: string | null
           type?: string
           updated_at?: string
@@ -2006,6 +2010,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           created_by?: string | null
+          entity_kind?: Database["public"]["Enums"]["entity_kind"]
           external_contact_id?: string | null
           id?: string
           is_active?: boolean
@@ -2019,6 +2024,7 @@ export type Database = {
           person_email?: string | null
           person_full_name?: string | null
           person_phone?: string | null
+          primary_contact_id?: string | null
           sample_batch_id?: string | null
           type?: string
           updated_at?: string
@@ -2034,6 +2040,13 @@ export type Database = {
           {
             foreignKeyName: "crm_clients_external_contact_id_fkey"
             columns: ["external_contact_id"]
+            isOneToOne: false
+            referencedRelation: "external_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_clients_primary_contact_id_fkey"
+            columns: ["primary_contact_id"]
             isOneToOne: false
             referencedRelation: "external_contacts"
             referencedColumns: ["id"]
@@ -9637,6 +9650,7 @@ export type Database = {
       donor_status: "prospect" | "active" | "lapsed" | "major"
       engagement_status: "active" | "paused" | "ended"
       entity_contact_type: "client" | "donor" | "vendor"
+      entity_kind: "organization" | "individual"
       finance_mode: "builtin_books" | "external_reporting"
       financial_import_status: "pending" | "processing" | "completed" | "failed"
       financial_import_type:
@@ -9919,6 +9933,7 @@ export const Constants = {
       donor_status: ["prospect", "active", "lapsed", "major"],
       engagement_status: ["active", "paused", "ended"],
       entity_contact_type: ["client", "donor", "vendor"],
+      entity_kind: ["organization", "individual"],
       finance_mode: ["builtin_books", "external_reporting"],
       financial_import_status: ["pending", "processing", "completed", "failed"],
       financial_import_type: [
