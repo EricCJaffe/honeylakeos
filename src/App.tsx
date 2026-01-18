@@ -101,6 +101,7 @@ import FinancePage from "@/pages/app/finance/FinancePage";
 import InvoicesPage from "@/pages/app/finance/InvoicesPage";
 import PaymentsPage from "@/pages/app/finance/PaymentsPage";
 import ReceiptsPage from "@/pages/app/finance/ReceiptsPage";
+import DonorsPage from "@/pages/app/donors/DonorsPage";
 import NotFound from "@/pages/NotFound";
 import WorkflowsPage from "@/pages/app/workflows/WorkflowsPage";
 import WorkflowDetailPage from "@/pages/app/workflows/WorkflowDetailPage";
@@ -229,6 +230,7 @@ function App() {
                     <Route path="finance/invoices" element={<ModuleGuard moduleKey="finance" moduleName="Finance"><InvoicesPage /></ModuleGuard>} />
                     <Route path="finance/payments" element={<ModuleGuard moduleKey="finance" moduleName="Finance"><PaymentsPage /></ModuleGuard>} />
                     <Route path="finance/receipts" element={<ModuleGuard moduleKey="finance" moduleName="Finance"><ReceiptsPage /></ModuleGuard>} />
+                    <Route path="donors" element={<ModuleGuard moduleKey="donors" moduleName="Donors"><DonorsPage /></ModuleGuard>} />
                     <Route path="reports" element={<ReportsPage />} />
                     <Route path="reports/new" element={<ReportFormPage />} />
                     <Route path="reports/exports" element={<ExportsPage />} />
