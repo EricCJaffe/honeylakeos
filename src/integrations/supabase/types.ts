@@ -2552,6 +2552,57 @@ export type Database = {
         }
         Relationships: []
       }
+      entity_contacts: {
+        Row: {
+          company_id: string
+          contact_id: string
+          created_at: string
+          created_by: string | null
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["entity_contact_type"]
+          id: string
+          is_primary: boolean
+          role_title: string | null
+        }
+        Insert: {
+          company_id: string
+          contact_id: string
+          created_at?: string
+          created_by?: string | null
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["entity_contact_type"]
+          id?: string
+          is_primary?: boolean
+          role_title?: string | null
+        }
+        Update: {
+          company_id?: string
+          contact_id?: string
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string
+          entity_type?: Database["public"]["Enums"]["entity_contact_type"]
+          id?: string
+          is_primary?: boolean
+          role_title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entity_contacts_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "external_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entity_links: {
         Row: {
           company_id: string
@@ -9585,6 +9636,7 @@ export type Database = {
       donation_status: "recorded" | "receipted" | "refunded"
       donor_status: "prospect" | "active" | "lapsed" | "major"
       engagement_status: "active" | "paused" | "ended"
+      entity_contact_type: "client" | "donor" | "vendor"
       finance_mode: "builtin_books" | "external_reporting"
       financial_import_status: "pending" | "processing" | "completed" | "failed"
       financial_import_type:
@@ -9866,6 +9918,7 @@ export const Constants = {
       donation_status: ["recorded", "receipted", "refunded"],
       donor_status: ["prospect", "active", "lapsed", "major"],
       engagement_status: ["active", "paused", "ended"],
+      entity_contact_type: ["client", "donor", "vendor"],
       finance_mode: ["builtin_books", "external_reporting"],
       financial_import_status: ["pending", "processing", "completed", "failed"],
       financial_import_type: [

@@ -138,19 +138,81 @@ export function useCrmClients(filters: CrmClientFilters = {}) {
       permissions.assertCapability("canCreate", "create CRM record");
 
       const { data: user } = await supabase.auth.getUser();
+      const userId = user?.user?.id;
 
       const { data, error } = await supabase
         .from("crm_clients")
         .insert({
           company_id: activeCompanyId,
-          created_by: user?.user?.id,
+          created_by: userId,
           ...input,
         })
         .select()
         .single();
 
       if (error) throw error;
-      return data as CrmClient;
+      
+      const client = data as CrmClient;
+
+      // Auto-create/link primary contact if person details provided
+      if (input.person_full_name) {
+        try {
+          // Find or create contact by email
+          let contactId: string | null = null;
+
+          if (input.person_email) {
+            const { data: existingContact } = await supabase
+              .from("external_contacts")
+              .select("id")
+              .eq("company_id", activeCompanyId)
+              .eq("email", input.person_email)
+              .maybeSingle();
+
+            if (existingContact) {
+              contactId = existingContact.id;
+            }
+          }
+
+          if (!contactId) {
+            // Create new contact
+            const { data: newContact, error: contactError } = await supabase
+              .from("external_contacts")
+              .insert({
+                company_id: activeCompanyId,
+                full_name: input.person_full_name,
+                email: input.person_email || null,
+                phone: input.person_phone || null,
+                organization_name: input.org_name || null,
+                created_by: userId,
+                tags: [],
+              })
+              .select("id")
+              .single();
+
+            if (!contactError && newContact) {
+              contactId = newContact.id;
+            }
+          }
+
+          // Link contact to client as primary
+          if (contactId) {
+            await supabase.from("entity_contacts").insert({
+              company_id: activeCompanyId,
+              entity_type: "client",
+              entity_id: client.id,
+              contact_id: contactId,
+              role_title: "Primary",
+              is_primary: true,
+              created_by: userId,
+            });
+          }
+        } catch (linkError) {
+          // Don't fail client creation if contact linking fails
+          console.error("Failed to auto-link primary contact:", linkError);
+        }
+      }
+
+      return client;
     },
     onSuccess: async (data) => {
       await log("crm.client_created", "crm_client", data.id, {
@@ -160,6 +222,7 @@ export function useCrmClients(filters: CrmClientFilters = {}) {
         org_name: data.org_name,
       });
       queryClient.invalidateQueries({ queryKey: ["crm-clients"] });
+      queryClient.invalidateQueries({ queryKey: ["entity-contacts"] });
       toast.success("Record created successfully");
     },
     onError: (error) => {
