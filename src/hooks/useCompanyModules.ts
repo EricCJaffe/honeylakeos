@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMembership } from "@/lib/membership";
 import { ModuleKey, CORE_MODULES } from "./useModuleAccess";
+import { STALE_TIMES } from "@/lib/queryConfig";
 
 interface Module {
   id: string;
@@ -105,7 +106,8 @@ export function useCompanyModules(): UseCompanyModulesResult {
       if (error) throw error;
       return data as Module[];
     },
-    staleTime: 10 * 60 * 1000, // Cache for 10 minutes
+    staleTime: STALE_TIMES.STATIC, // 10 minutes - modules rarely change
+    gcTime: STALE_TIMES.STATIC * 2, // Keep in cache longer
   });
 
   // Fetch company's enabled modules with module details
@@ -136,7 +138,8 @@ export function useCompanyModules(): UseCompanyModulesResult {
       })) as CompanyModule[];
     },
     enabled: !!activeCompanyId && !membershipLoading,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: STALE_TIMES.SEMI_STATIC, // 5 minutes
+    gcTime: STALE_TIMES.SEMI_STATIC * 2,
   });
 
   const loading = membershipLoading || modulesLoading || companyModulesLoading;

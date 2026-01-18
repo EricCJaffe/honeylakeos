@@ -230,6 +230,7 @@ export function CrmFormDialog({ open, onOpenChange, client }: CrmFormDialogProps
                       <FormControl>
                         <Input
                           placeholder="John Doe"
+                          autoFocus
                           {...field}
                           value={field.value || ""}
                         />

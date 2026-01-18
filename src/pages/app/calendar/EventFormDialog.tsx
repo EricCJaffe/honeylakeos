@@ -357,7 +357,7 @@ export function EventFormDialog({
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="Event title" {...field} />
+                    <Input placeholder="Event title" autoFocus {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

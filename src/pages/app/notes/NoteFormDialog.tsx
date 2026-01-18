@@ -184,7 +184,7 @@ export function NoteFormDialog({
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="Note title" {...field} />
+                    <Input placeholder="Note title" autoFocus {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
