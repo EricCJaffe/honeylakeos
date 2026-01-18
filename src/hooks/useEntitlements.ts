@@ -46,11 +46,25 @@ export interface EntitlementOverride {
 
 // Entitlement keys for type safety
 export type EntitlementKey =
+  // Numeric limits
   | "max_users"
   | "max_companies"
   | "max_active_frameworks"
   | "max_published_frameworks"
   | "max_active_clients"
+  | "limits.users"
+  | "limits.projects"
+  | "limits.storage_mb"
+  // Module entitlements (v1)
+  | "modules.tasks"
+  | "modules.projects"
+  | "modules.crm"
+  | "modules.donors"
+  | "modules.finance"
+  | "modules.lms"
+  | "modules.reports"
+  | "coach.enabled"
+  // Feature flags (legacy + new)
   | "crm_enabled"
   | "lms_enabled"
   | "coaching_module_enabled"
@@ -72,6 +86,18 @@ export const PLAN_INFO: Record<PlanTier, { name: string; description: string; ty
   coaching_firm: { name: "Coaching Firm", description: "For large coaching organizations", type: "coach_org" },
 };
 
+// Plan metadata interface (from plans table)
+export interface Plan {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  plan_type: string;
+  is_default: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
 // Default entitlements for companies without a plan (full access / legacy)
 const DEFAULT_ENTITLEMENTS: Record<string, unknown> = {
   max_users: 999999,
@@ -79,6 +105,19 @@ const DEFAULT_ENTITLEMENTS: Record<string, unknown> = {
   max_active_frameworks: 999999,
   max_published_frameworks: 999999,
   max_active_clients: 999999,
+  // Module entitlements (v1)
+  "modules.tasks": true,
+  "modules.projects": true,
+  "modules.crm": true,
+  "modules.donors": true,
+  "modules.finance": true,
+  "modules.lms": true,
+  "modules.reports": true,
+  "limits.users": 999999,
+  "limits.projects": 999999,
+  "limits.storage_mb": 999999,
+  "coach.enabled": true,
+  // Legacy feature flags
   crm_enabled: true,
   lms_enabled: true,
   coaching_module_enabled: true,
@@ -90,6 +129,27 @@ const DEFAULT_ENTITLEMENTS: Record<string, unknown> = {
   private_coach_notes: true,
   advanced_reporting: true,
 };
+
+// ==========================================
+// PLAN HOOKS
+// ==========================================
+
+/**
+ * Fetch all available plans from the database
+ */
+export function usePlans() {
+  return useQuery({
+    queryKey: ["plans"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("plans")
+        .select("*")
+        .order("sort_order");
+      if (error) throw error;
+      return data as Plan[];
+    },
+  });
+}
 
 // ==========================================
 // COMPANY PLAN HOOKS
@@ -319,6 +379,8 @@ export function useEntitlements() {
 // PLAN MANAGEMENT (Admin)
 // ==========================================
 
+import { logAuditEvent } from "./useAuditLog";
+
 export function usePlanMutations() {
   const queryClient = useQueryClient();
 
@@ -348,6 +410,16 @@ export function usePlanMutations() {
         .single();
 
       if (error) throw error;
+      
+      // Audit log
+      await logAuditEvent({
+        companyId,
+        action: "plan.assigned",
+        entityType: "company_plan",
+        entityId: data.id,
+        metadata: { planTier, planType, expiresAt },
+      });
+      
       return data;
     },
     onSuccess: (_, variables) => {
@@ -362,10 +434,14 @@ export function usePlanMutations() {
   const updatePlanStatus = useMutation({
     mutationFn: async ({
       planId,
+      companyId,
       status,
+      previousStatus,
     }: {
       planId: string;
+      companyId: string;
       status: PlanStatus;
+      previousStatus?: PlanStatus;
     }) => {
       const { data, error } = await supabase
         .from("company_plans")
@@ -375,6 +451,17 @@ export function usePlanMutations() {
         .single();
 
       if (error) throw error;
+      
+      // Audit log
+      const action = status === "expired" ? "plan.expired" : "plan.changed";
+      await logAuditEvent({
+        companyId,
+        action,
+        entityType: "company_plan",
+        entityId: planId,
+        metadata: { newStatus: status, previousStatus },
+      });
+      
       return data;
     },
     onSuccess: () => {
@@ -416,6 +503,16 @@ export function usePlanMutations() {
         .single();
 
       if (error) throw error;
+      
+      // Audit log
+      await logAuditEvent({
+        companyId,
+        action: "entitlement.override_added",
+        entityType: "entitlement_override",
+        entityId: data.id,
+        metadata: { entitlementKey, entitlementValue, reason, expiresAt },
+      });
+      
       return data;
     },
     onSuccess: (_, variables) => {
@@ -428,13 +525,22 @@ export function usePlanMutations() {
   });
 
   const removeEntitlementOverride = useMutation({
-    mutationFn: async (overrideId: string) => {
+    mutationFn: async ({ overrideId, companyId, entitlementKey }: { overrideId: string; companyId: string; entitlementKey: string }) => {
       const { error } = await supabase
         .from("company_entitlement_overrides")
         .delete()
         .eq("id", overrideId);
 
       if (error) throw error;
+      
+      // Audit log
+      await logAuditEvent({
+        companyId,
+        action: "entitlement.override_removed",
+        entityType: "entitlement_override",
+        entityId: overrideId,
+        metadata: { entitlementKey },
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company-entitlement-overrides"] });
