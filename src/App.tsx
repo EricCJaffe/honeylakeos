@@ -113,6 +113,8 @@ import ReportFormPage from "@/pages/app/reports/ReportFormPage";
 import ReportDetailPage from "@/pages/app/reports/ReportDetailPage";
 import ExportsPage from "@/pages/app/reports/ExportsPage";
 import RunDetailPage from "@/pages/app/workflows/RunDetailPage";
+import ValidationDashboardPage from "@/pages/app/admin/ValidationDashboardPage";
+import PilotCompanyDetailPage from "@/pages/app/admin/PilotCompanyDetailPage";
 
 const queryClient = new QueryClient();
 
@@ -244,6 +246,8 @@ function App() {
                     <Route path="admin/templates" element={<TemplatesPage />} />
                     <Route path="admin/plans-usage" element={<PlansUsagePage />} />
                     <Route path="admin/site-console" element={<SiteConsolePage />} />
+                    <Route path="admin/validation" element={<ValidationDashboardPage />} />
+                    <Route path="admin/validation/:companyId" element={<PilotCompanyDetailPage />} />
                     <Route path="admin/sites" element={<SitesPage />} />
                     <Route path="admin/companies" element={<CompaniesPage />} />
                     <Route path="admin/users" element={<UsersPage />} />
