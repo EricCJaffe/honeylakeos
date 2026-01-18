@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   FolderKanban, 
   Users, 
@@ -11,35 +11,54 @@ import {
   LayoutList,
   LayoutGrid,
   Plus,
-  Upload
+  Upload,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  AlertCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompanyModules } from "@/hooks/useCompanyModules";
+import { useActiveCompany } from "@/hooks/useActiveCompany";
+import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { TaskFormDialog } from "../tasks/TaskFormDialog";
 import { NoteFormDialog } from "../notes/NoteFormDialog";
 import { EventFormDialog } from "../calendar/EventFormDialog";
+import { ProjectFormDialog } from "./ProjectFormDialog";
 import { EntityLinksPanel } from "@/components/EntityLinksPanel";
 import { PhasesManager } from "@/components/projects/PhasesManager";
 import { PhaseGroupedTaskList } from "@/components/projects/PhaseGroupedTaskList";
 import { TaskBoardView } from "@/components/projects/TaskBoardView";
 import { QuickAddButtons } from "@/components/projects/QuickAddButtons";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { isEnabled } = useCompanyModules();
+  const { isCompanyAdmin } = useActiveCompany();
+  const { user } = useAuth();
   
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [taskViewMode, setTaskViewMode] = useState<"list" | "board">("list");
   const [editingTask, setEditingTask] = useState<any>(null);
 
@@ -152,6 +171,23 @@ export default function ProjectDetailPage() {
     if (!open) setEditingTask(null);
   };
 
+  const deleteProject = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("projects").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      toast.success("Project deleted");
+      navigate("/app/projects");
+    },
+    onError: () => {
+      toast.error("Failed to delete project");
+    },
+  });
+
+  const canEdit = project && (isCompanyAdmin || project.owner_user_id === user?.id);
+
   if (isLoading) {
     return (
       <div className="p-6">
@@ -178,17 +214,69 @@ export default function ProjectDetailPage() {
   const completedTasks = tasks.filter((t) => t.status === "done").length;
   const totalTasks = tasks.length;
   const calculatedProgress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+  const now = new Date();
+  const overdueTasks = tasks.filter((t) => 
+    t.status !== "done" && t.due_date && new Date(t.due_date) < now
+  ).length;
 
   // Calculate upcoming events count
   const upcomingEventsCount = events.length;
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "active":
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
+      case "completed":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
+      case "on_hold":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
+      default:
+        return "bg-muted text-muted-foreground";
+    }
+  };
+
   return (
     <div className="p-6">
-      <PageHeader
-        title={`${project.emoji} ${project.name}`}
-        description={project.description || undefined}
-        backHref="/app/projects"
-      />
+      <div className="flex items-start justify-between mb-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <Link to="/app/projects" className="text-muted-foreground hover:text-foreground">
+              ← Back
+            </Link>
+          </div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold">{project.emoji} {project.name}</h1>
+            <Badge variant="secondary" className={getStatusColor(project.status || "active")}>
+              {(project.status || "active").replace("_", " ")}
+            </Badge>
+          </div>
+          {project.description && (
+            <p className="text-muted-foreground">{project.description}</p>
+          )}
+        </div>
+        {canEdit && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit Project
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => deleteProject.mutate(projectId!)}
+                className="text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Project
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
 
       {/* Quick Add Buttons */}
       <div className="mb-6">
@@ -201,7 +289,7 @@ export default function ProjectDetailPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-3 mb-6">
+      <div className="grid gap-4 sm:grid-cols-4 mb-6">
         <Card>
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center gap-3">
@@ -211,6 +299,19 @@ export default function ProjectDetailPage() {
               <div>
                 <p className="text-2xl font-bold">{completedTasks}/{totalTasks}</p>
                 <p className="text-xs text-muted-foreground">Tasks completed</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+                <AlertCircle className="h-5 w-5 text-destructive" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{overdueTasks}</p>
+                <p className="text-xs text-muted-foreground">Overdue tasks</p>
               </div>
             </div>
           </CardContent>
@@ -512,6 +613,12 @@ export default function ProjectDetailPage() {
         onOpenChange={setIsEventDialogOpen}
         defaultDate={new Date()}
         projectId={projectId}
+      />
+
+      <ProjectFormDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        project={project}
       />
     </div>
   );
