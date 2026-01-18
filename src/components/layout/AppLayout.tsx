@@ -12,33 +12,44 @@ export function AppLayout() {
   const location = useLocation();
   const { user } = useAuth();
   const { memberships, activeCompanyId, loading } = useMembership();
+  const [isRedirectResolved, setIsRedirectResolved] = React.useState(false);
 
   // Redirect logic based on memberships and active company
   React.useEffect(() => {
-    if (loading || !user) return;
+    if (loading || !user) {
+      setIsRedirectResolved(false);
+      return;
+    }
 
     const isOnboardingRoute = location.pathname === "/app/onboarding";
     const isDevRoute = location.pathname.startsWith("/app/dev");
     const isSelectCompanyRoute = location.pathname === "/app/select-company";
 
-    // Skip redirect for special routes
-    if (isOnboardingRoute || isDevRoute || isSelectCompanyRoute) return;
+    // Skip redirect for special routes - mark as resolved
+    if (isOnboardingRoute || isDevRoute || isSelectCompanyRoute) {
+      setIsRedirectResolved(true);
+      return;
+    }
 
     // If no memberships, redirect to onboarding
     if (memberships.length === 0) {
-      navigate("/app/onboarding");
+      navigate("/app/onboarding", { replace: true });
       return;
     }
 
     // If user has multiple companies but no active company selected, redirect to selector
     if (memberships.length > 1 && !activeCompanyId) {
-      navigate("/app/select-company");
+      navigate("/app/select-company", { replace: true });
       return;
     }
+
+    // All checks passed, user can view the current route
+    setIsRedirectResolved(true);
   }, [loading, user, memberships, activeCompanyId, navigate, location.pathname]);
 
-  // Show loading state while checking memberships
-  if (loading) {
+  // Show loading state while checking memberships OR while redirect decision is pending
+  // This prevents the flash of onboarding UI for returning users
+  if (loading || !isRedirectResolved) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
