@@ -122,16 +122,22 @@ export default function SubmitTicketPage() {
   const handleSubmit = async () => {
     if (!siteId || !subject) return;
 
-    await createTicket.mutateAsync({
-      site_id: siteId,
-      subject,
-      description,
-      category,
-      priority,
-      company_id: activeCompanyId || undefined,
-    });
+    try {
+      const ticket = await createTicket.mutateAsync({
+        site_id: siteId,
+        subject,
+        description,
+        category,
+        priority,
+        company_id: activeCompanyId || undefined,
+      });
 
-    navigate("/app/support/tickets");
+      // Navigate to the newly created ticket's detail page
+      navigate(`/app/support/tickets/${ticket.id}`);
+    } catch (error) {
+      // Error is already handled by the mutation's onError callback
+      console.error("Failed to submit ticket:", error);
+    }
   };
 
   return (

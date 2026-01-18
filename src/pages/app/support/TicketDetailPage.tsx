@@ -18,6 +18,7 @@ import {
 import { useMembership } from "@/lib/membership";
 import { format } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
+import { AttachmentsPanel } from "@/components/attachments/AttachmentsPanel";
 
 // Lazy load rich text display for consistent rendering
 const RichTextDisplay = React.lazy(() => 
@@ -274,6 +275,13 @@ export default function TicketDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Attachments */}
+          <AttachmentsPanel 
+            entityType="ticket" 
+            entityId={ticket.id} 
+            title="Screenshots & Attachments"
+          />
 
           {/* Timeline */}
           {events && events.length > 0 && (
