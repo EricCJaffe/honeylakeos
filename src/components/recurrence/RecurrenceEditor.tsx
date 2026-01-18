@@ -89,10 +89,21 @@ export function RecurrenceEditor({
       return;
     }
 
+    // Default weekday to the day of the start date if weekly
+    let defaultWeekdays: string[] = [];
+    if (frequency === "weekly") {
+      if (startDate) {
+        const days = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+        defaultWeekdays = [days[startDate.getDay()]];
+      } else {
+        defaultWeekdays = ["MO"];
+      }
+    }
+
     const newConfig: RecurrenceConfig = {
       ...config,
       frequency,
-      weekdays: frequency === "weekly" ? ["MO"] : [],
+      weekdays: defaultWeekdays,
     };
     onChange(newConfig);
   };
