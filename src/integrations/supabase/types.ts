@@ -4619,6 +4619,60 @@ export type Database = {
           },
         ]
       }
+      ledger_postings: {
+        Row: {
+          account_id: string
+          company_id: string
+          created_at: string
+          credit_amount: number
+          debit_amount: number
+          id: string
+          memo: string | null
+          posting_date: string
+          source_id: string
+          source_type: string
+        }
+        Insert: {
+          account_id: string
+          company_id: string
+          created_at?: string
+          credit_amount?: number
+          debit_amount?: number
+          id?: string
+          memo?: string | null
+          posting_date: string
+          source_id: string
+          source_type: string
+        }
+        Update: {
+          account_id?: string
+          company_id?: string
+          created_at?: string
+          credit_amount?: number
+          debit_amount?: number
+          id?: string
+          memo?: string | null
+          posting_date?: string
+          source_id?: string
+          source_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_postings_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_postings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lms_assignments: {
         Row: {
           archived_at: string | null
