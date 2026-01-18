@@ -51,6 +51,8 @@ import { useTaskLists } from "@/hooks/useTaskLists";
 import { TemplateSelector } from "@/components/templates/TemplateSelector";
 import { applyTemplateToForm, Template } from "@/hooks/useTemplates";
 import { LinkPicker } from "@/components/LinkPicker";
+import { AssigneePicker } from "@/components/tasks/AssigneePicker";
+import { useTaskAssignees } from "@/hooks/useCompanyMembers";
 
 const taskSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -104,6 +106,20 @@ export function TaskFormDialog({
 
   // Recurrence state
   const [recurrenceConfig, setRecurrenceConfig] = React.useState<RecurrenceConfig | null>(null);
+
+  // Assignees state
+  const [assignees, setAssignees] = React.useState<string[]>([]);
+  const { data: existingAssignees = [] } = useTaskAssignees(task?.id);
+
+  // Set initial assignees when editing
+  React.useEffect(() => {
+    if (task && existingAssignees.length > 0) {
+      setAssignees(existingAssignees);
+    } else if (!task && user) {
+      // Default to current user when creating
+      setAssignees([user.id]);
+    }
+  }, [task, existingAssignees, user]);
 
   // Fetch task lists
   const { taskLists, personalLists, companyLists } = useTaskLists();
@@ -221,6 +237,8 @@ export function TaskFormDialog({
         recurrence_count: recurrenceConfig?.endCount || null,
       };
 
+      let taskId = task?.id;
+
       if (isEditing && task) {
         // If editing a single occurrence, create an override
         if (editMode === "single" && task.is_recurring_template) {
@@ -242,13 +260,45 @@ export function TaskFormDialog({
             .eq("id", task.id);
           if (error) throw error;
         }
+
+        // Update assignees for existing task
+        // First, remove existing assignees
+        await supabase.from("task_assignees").delete().eq("task_id", task.id);
+        
+        // Then add new assignees
+        if (assignees.length > 0) {
+          const { error: assignError } = await supabase.from("task_assignees").insert(
+            assignees.map((userId) => ({
+              task_id: task.id,
+              user_id: userId,
+            }))
+          );
+          if (assignError) throw assignError;
+        }
       } else {
-        const { error } = await supabase.from("tasks").insert({
-          ...taskData,
-          company_id: activeCompanyId,
-          created_by: user.id,
-        });
+        // Create new task
+        const { data: newTask, error } = await supabase
+          .from("tasks")
+          .insert({
+            ...taskData,
+            company_id: activeCompanyId,
+            created_by: user.id,
+          })
+          .select("id")
+          .single();
         if (error) throw error;
+        taskId = newTask.id;
+
+        // Add assignees for new task
+        if (assignees.length > 0 && taskId) {
+          const { error: assignError } = await supabase.from("task_assignees").insert(
+            assignees.map((userId) => ({
+              task_id: taskId,
+              user_id: userId,
+            }))
+          );
+          if (assignError) throw assignError;
+        }
       }
     },
     onSuccess: () => {
@@ -257,10 +307,12 @@ export function TaskFormDialog({
       queryClient.invalidateQueries({ queryKey: ["project-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["recurring-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["task-occurrences"] });
+      queryClient.invalidateQueries({ queryKey: ["task-assignees"] });
       toast.success(isEditing ? "Task updated" : "Task created");
       onOpenChange(false);
       form.reset();
       setRecurrenceConfig(null);
+      setAssignees([]);
     },
     onError: (error) => {
       toast.error(error.message || "Something went wrong");
@@ -450,6 +502,17 @@ export function TaskFormDialog({
                 )}
               />
             )}
+
+            {/* Assignee picker */}
+            <div className="space-y-2">
+              <FormLabel>Assignee</FormLabel>
+              <AssigneePicker
+                value={assignees}
+                onChange={setAssignees}
+                placeholder="Assign to..."
+                defaultToCurrentUser={!isEditing}
+              />
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <FormField
