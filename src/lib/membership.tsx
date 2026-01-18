@@ -21,6 +21,7 @@ export interface Membership {
     name: string;
     logo_url: string | null;
     status: string;
+    finance_mode: "builtin_books" | "external_reporting" | null;
   };
 }
 
@@ -81,7 +82,8 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
             id,
             name,
             logo_url,
-            status
+            status,
+            finance_mode
           )
         `)
         .eq("user_id", user.id)
@@ -107,6 +109,7 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
               name: (m.company as any).name,
               logo_url: (m.company as any).logo_url,
               status: (m.company as any).status,
+              finance_mode: (m.company as any).finance_mode,
             }
           }));
         setMemberships(validMemberships);
