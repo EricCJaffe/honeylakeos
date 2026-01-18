@@ -22,6 +22,7 @@ import {
   Download,
   Building2,
   Shield,
+  Plug,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ModuleKey } from "@/hooks/useModuleAccess";
@@ -141,6 +142,12 @@ export const adminNavItems = {
     title: "Plans & Usage",
     url: "/app/admin/plans-usage",
     icon: CreditCard,
+  },
+  integrations: {
+    key: "integrations",
+    title: "Integrations",
+    url: "/app/integrations",
+    icon: Plug,
   },
   siteConsole: {
     key: "site-console",

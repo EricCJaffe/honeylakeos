@@ -1148,6 +1148,50 @@ export type Database = {
           },
         ]
       }
+      company_integrations: {
+        Row: {
+          company_id: string
+          config_json: Json
+          created_at: string
+          id: string
+          is_enabled: boolean
+          provider_key: string
+          secret_configured_at: string | null
+          secret_ref: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          config_json?: Json
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          provider_key: string
+          secret_configured_at?: string | null
+          secret_ref?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          config_json?: Json
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          provider_key?: string
+          secret_configured_at?: string | null
+          secret_ref?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_integrations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_modules: {
         Row: {
           company_id: string
@@ -3302,6 +3346,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      integration_providers: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_enabled_platform_wide: boolean
+          key: string
+          name: string
+          scope_supported: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_enabled_platform_wide?: boolean
+          key: string
+          name: string
+          scope_supported: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_enabled_platform_wide?: boolean
+          key?: string
+          name?: string
+          scope_supported?: string
+        }
+        Relationships: []
+      }
+      integration_secrets: {
+        Row: {
+          created_at: string
+          encrypted_value: string
+          id: string
+          provider_key: string
+          scope: string
+          scope_id: string
+          secret_key: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          encrypted_value: string
+          id?: string
+          provider_key: string
+          scope: string
+          scope_id: string
+          secret_key: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          encrypted_value?: string
+          id?: string
+          provider_key?: string
+          scope?: string
+          scope_id?: string
+          secret_key?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       invoices: {
         Row: {
@@ -6054,6 +6161,50 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_integrations: {
+        Row: {
+          config_json: Json
+          created_at: string
+          id: string
+          is_enabled: boolean
+          provider_key: string
+          secret_configured_at: string | null
+          secret_ref: string | null
+          site_id: string
+          updated_at: string
+        }
+        Insert: {
+          config_json?: Json
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          provider_key: string
+          secret_configured_at?: string | null
+          secret_ref?: string | null
+          site_id: string
+          updated_at?: string
+        }
+        Update: {
+          config_json?: Json
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          provider_key?: string
+          secret_configured_at?: string | null
+          secret_ref?: string | null
+          site_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_integrations_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
             referencedColumns: ["id"]
           },
         ]
