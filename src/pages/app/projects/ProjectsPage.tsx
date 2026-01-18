@@ -13,7 +13,10 @@ import {
   Search,
   CheckCircle2,
   AlertCircle,
-  Clock
+  Clock,
+  Plus,
+  ChevronDown,
+  FileText
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
@@ -47,14 +50,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { ProjectFormDialog } from "./ProjectFormDialog";
 import { ProjectTemplateList } from "@/components/projects/ProjectTemplateList";
 import { ProjectTemplateFormDialog } from "@/components/projects/ProjectTemplateFormDialog";
 import { CreateFromTemplateDialog } from "@/components/projects/CreateFromTemplateDialog";
+import { TemplatePickerDialog } from "@/components/projects/TemplatePickerDialog";
+import { useProjectTemplates, type ProjectTemplate } from "@/hooks/useProjectTemplates";
 import type { Tables } from "@/integrations/supabase/types";
-import type { ProjectTemplate } from "@/hooks/useProjectTemplates";
 import { format } from "date-fns";
 
 type Project = Tables<"projects">;
@@ -69,11 +72,15 @@ export default function ProjectsPage() {
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<ProjectTemplate | null>(null);
   const [templateToUse, setTemplateToUse] = useState<ProjectTemplate | null>(null);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   
   // View and filter state
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Fetch templates for "New from Template"
+  const { data: templates = [] } = useProjectTemplates();
 
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ["projects", activeCompanyId],
@@ -258,12 +265,34 @@ export default function ProjectsPage() {
 
   return (
     <div className="p-6">
-      <PageHeader
-        title="Projects"
-        description="Manage your team's projects"
-        actionLabel="New Project"
-        onAction={handleCreate}
-      />
+      {/* Header with Dropdown Create Button */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Projects</h1>
+          <p className="text-muted-foreground">Manage your team's projects</p>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              New Project
+              <ChevronDown className="h-4 w-4 ml-2" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleCreate}>
+              <FolderKanban className="h-4 w-4 mr-2" />
+              Blank Project
+            </DropdownMenuItem>
+            {templates.length > 0 && (
+              <DropdownMenuItem onClick={() => setShowTemplatePicker(true)}>
+                <FileText className="h-4 w-4 mr-2" />
+                From Template
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       {/* KPI Summary Row */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
@@ -577,6 +606,15 @@ export default function ProjectsPage() {
         onOpenChange={(open) => !open && setTemplateToUse(null)}
         template={templateToUse}
         onSuccess={(projectId) => navigate(`/app/projects/${projectId}`)}
+      />
+
+      <TemplatePickerDialog
+        open={showTemplatePicker}
+        onOpenChange={setShowTemplatePicker}
+        onSelectTemplate={(template) => {
+          setShowTemplatePicker(false);
+          setTemplateToUse(template);
+        }}
       />
     </div>
   );
