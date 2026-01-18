@@ -647,6 +647,94 @@ export type Database = {
           },
         ]
       }
+      coa_import_jobs: {
+        Row: {
+          company_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          id: string
+          mapping_json: Json | null
+          row_count: number | null
+          source_filename: string | null
+          status: string
+        }
+        Insert: {
+          company_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          mapping_json?: Json | null
+          row_count?: number | null
+          source_filename?: string | null
+          status?: string
+        }
+        Update: {
+          company_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          mapping_json?: Json | null
+          row_count?: number | null
+          source_filename?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coa_import_jobs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coa_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_default: boolean
+          name: string
+          site_id: string | null
+          template_json: Json
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          name: string
+          site_id?: string | null
+          template_json?: Json
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          name?: string
+          site_id?: string | null
+          template_json?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coa_templates_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_alerts: {
         Row: {
           alert_type: string
