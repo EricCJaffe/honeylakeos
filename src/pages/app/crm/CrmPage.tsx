@@ -54,6 +54,7 @@ import {
   CrmClient,
   CrmClientFilters,
   getCrmClientDisplayName,
+  getCrmClientSubtitle,
   getCrmClientEmail,
 } from "@/hooks/useCrmClients";
 import { CrmFormDialog } from "./CrmFormDialog";
@@ -80,11 +81,10 @@ function CrmClientCard({
   const email = getCrmClientEmail(client);
   const phone = client.person_phone || client.org_phone;
   
-  // Determine display: org name first, then primary contact
-  const orgName = client.org_name;
-  const personName = client.person_full_name;
-  const primaryTitle = orgName || personName || "Unknown";
-  const secondaryTitle = orgName && personName ? personName : null;
+  // Use entity_kind aware helpers
+  const primaryTitle = getCrmClientDisplayName(client);
+  const subtitle = getCrmClientSubtitle(client);
+  const isOrg = client.entity_kind === "organization";
 
   return (
     <Card 
@@ -94,23 +94,21 @@ function CrmClientCard({
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            {/* Primary: Org/Company Name */}
+            {/* Primary: Title based on entity_kind */}
             <div className="flex items-center gap-2 mb-1">
-              {client.type === "b2c" ? (
-                <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              ) : client.type === "b2b" ? (
+              {isOrg ? (
                 <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               ) : (
-                <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               )}
               <h3 className="font-medium truncate">{primaryTitle}</h3>
             </div>
 
-            {/* Secondary: Primary Contact Name */}
-            {secondaryTitle && (
+            {/* Secondary: Subtitle (contact for org, email for individual) */}
+            {subtitle && (
               <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
-                <User className="h-3 w-3" />
-                {secondaryTitle}
+                {isOrg ? <User className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
+                {subtitle}
               </p>
             )}
 

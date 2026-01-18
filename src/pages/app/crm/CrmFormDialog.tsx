@@ -13,7 +13,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -29,7 +28,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Label } from "@/components/ui/label";
 import { Loader2, User, Building2 } from "lucide-react";
 import { useCompanyTerminology } from "@/hooks/useCompanyTerminology";
 import {
@@ -37,9 +37,11 @@ import {
   CrmClient,
   CrmClientType,
   CrmLifecycleStatus,
+  EntityKind,
 } from "@/hooks/useCrmClients";
 
 const crmFormSchema = z.object({
+  entity_kind: z.enum(["organization", "individual"]),
   type: z.enum(["b2c", "b2b", "mixed"]),
   lifecycle_status: z.enum(["prospect", "client"]),
   person_full_name: z.string().optional().nullable(),
@@ -51,10 +53,15 @@ const crmFormSchema = z.object({
   org_website: z.string().url().optional().or(z.literal("")).nullable(),
   notes: z.string().optional().nullable(),
 }).refine(
-  (data) => data.person_full_name || data.org_name,
+  (data) => {
+    if (data.entity_kind === "organization") {
+      return !!data.org_name;
+    }
+    return !!data.person_full_name;
+  },
   {
-    message: "Either person name or organization name is required",
-    path: ["person_full_name"],
+    message: "Required field is missing",
+    path: ["org_name"],
   }
 );
 
@@ -75,6 +82,7 @@ export function CrmFormDialog({ open, onOpenChange, client }: CrmFormDialogProps
   const form = useForm<CrmFormValues>({
     resolver: zodResolver(crmFormSchema),
     defaultValues: {
+      entity_kind: "organization",
       type: "mixed",
       lifecycle_status: "prospect",
       person_full_name: "",
@@ -88,10 +96,13 @@ export function CrmFormDialog({ open, onOpenChange, client }: CrmFormDialogProps
     },
   });
 
+  const entityKind = form.watch("entity_kind");
+
   // Reset form when client changes
   React.useEffect(() => {
     if (client) {
       form.reset({
+        entity_kind: client.entity_kind as EntityKind,
         type: client.type as CrmClientType,
         lifecycle_status: client.lifecycle_status as CrmLifecycleStatus,
         person_full_name: client.person_full_name || "",
@@ -105,6 +116,7 @@ export function CrmFormDialog({ open, onOpenChange, client }: CrmFormDialogProps
       });
     } else {
       form.reset({
+        entity_kind: "organization",
         type: "mixed",
         lifecycle_status: "prospect",
         person_full_name: "",
@@ -121,15 +133,16 @@ export function CrmFormDialog({ open, onOpenChange, client }: CrmFormDialogProps
 
   const onSubmit = async (values: CrmFormValues) => {
     const cleanValues = {
-      type: values.type,
-      lifecycle_status: values.lifecycle_status,
+      entity_kind: values.entity_kind as EntityKind,
+      type: values.type as CrmClientType,
+      lifecycle_status: values.lifecycle_status as CrmLifecycleStatus,
       person_full_name: values.person_full_name || null,
       person_email: values.person_email || null,
       person_phone: values.person_phone || null,
-      org_name: values.org_name || null,
-      org_email: values.org_email || null,
-      org_phone: values.org_phone || null,
-      org_website: values.org_website || null,
+      org_name: values.entity_kind === "organization" ? (values.org_name || null) : null,
+      org_email: values.entity_kind === "organization" ? (values.org_email || null) : null,
+      org_phone: values.entity_kind === "organization" ? (values.org_phone || null) : null,
+      org_website: values.entity_kind === "organization" ? (values.org_website || null) : null,
       notes: values.notes || null,
     };
 
@@ -159,6 +172,37 @@ export function CrmFormDialog({ open, onOpenChange, client }: CrmFormDialogProps
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Entity Kind Toggle */}
+            <div className="space-y-2">
+              <Label>Record Type</Label>
+              <FormField
+                control={form.control}
+                name="entity_kind"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <ToggleGroup
+                        type="single"
+                        value={field.value}
+                        onValueChange={(value) => value && field.onChange(value)}
+                        className="justify-start"
+                      >
+                        <ToggleGroupItem value="organization" className="gap-2">
+                          <Building2 className="h-4 w-4" />
+                          Organization
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="individual" className="gap-2">
+                          <User className="h-4 w-4" />
+                          Individual
+                        </ToggleGroupItem>
+                      </ToggleGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             {/* Type and Status */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
@@ -166,7 +210,7 @@ export function CrmFormDialog({ open, onOpenChange, client }: CrmFormDialogProps
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type</FormLabel>
+                    <FormLabel>Business Type</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -174,7 +218,7 @@ export function CrmFormDialog({ open, onOpenChange, client }: CrmFormDialogProps
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="b2c">B2C (Individual)</SelectItem>
+                        <SelectItem value="b2c">B2C (Consumer)</SelectItem>
                         <SelectItem value="b2b">B2B (Business)</SelectItem>
                         <SelectItem value="mixed">Mixed</SelectItem>
                       </SelectContent>
@@ -207,89 +251,24 @@ export function CrmFormDialog({ open, onOpenChange, client }: CrmFormDialogProps
               />
             </div>
 
-            {/* Person and Org Tabs */}
-            <Tabs defaultValue="person" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="person" className="gap-2">
-                  <User className="h-4 w-4" />
-                  Person
-                </TabsTrigger>
-                <TabsTrigger value="organization" className="gap-2">
+            {/* Organization Fields */}
+            {entityKind === "organization" && (
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                   <Building2 className="h-4 w-4" />
-                  Organization
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="person" className="space-y-4 mt-4">
-                <FormField
-                  control={form.control}
-                  name="person_full_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Full Name</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="John Doe"
-                          autoFocus
-                          {...field}
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="person_email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="email"
-                            placeholder="john@example.com"
-                            {...field}
-                            value={field.value || ""}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="person_phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="+1 234 567 8900"
-                            {...field}
-                            value={field.value || ""}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  Organization Details
                 </div>
-              </TabsContent>
 
-              <TabsContent value="organization" className="space-y-4 mt-4">
                 <FormField
                   control={form.control}
                   name="org_name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Organization Name</FormLabel>
+                      <FormLabel>Organization Name *</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="Acme Inc."
+                          autoFocus
                           {...field}
                           value={field.value || ""}
                         />
@@ -355,8 +334,76 @@ export function CrmFormDialog({ open, onOpenChange, client }: CrmFormDialogProps
                     </FormItem>
                   )}
                 />
-              </TabsContent>
-            </Tabs>
+              </div>
+            )}
+
+            {/* Primary Contact / Individual Fields */}
+            <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <User className="h-4 w-4" />
+                {entityKind === "organization" ? "Primary Contact" : "Person Details"}
+              </div>
+
+              <FormField
+                control={form.control}
+                name="person_full_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Full Name {entityKind === "individual" && "*"}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="John Doe"
+                        autoFocus={entityKind === "individual"}
+                        {...field}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="person_email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="john@example.com"
+                          {...field}
+                          value={field.value || ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="person_phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="+1 234 567 8900"
+                          {...field}
+                          value={field.value || ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
             {/* Notes */}
             <FormField
