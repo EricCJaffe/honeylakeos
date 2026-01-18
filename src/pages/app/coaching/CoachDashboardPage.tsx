@@ -10,21 +10,35 @@ import {
   Eye,
   Activity,
   Briefcase,
+  Bell,
+  Filter,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
-import { ModuleGuard } from "@/components/ModuleGuard";
 import {
   useCoachClients,
   useCoachClientMetrics,
   CoachOrganization,
 } from "@/hooks/useCoachOrganizations";
+import { useCoachAlerts, useAlertCounts } from "@/hooks/useCoachAlerts";
+import { useLatestHealthScore } from "@/hooks/useCoachAlerts";
+import { HealthStatusBadge } from "@/components/health/HealthIndicator";
+import { AlertCard, AlertSeverityBadge } from "@/components/health/CoachHealthViews";
 import { formatDistanceToNow } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface ClientCardProps {
   relationship: CoachOrganization;
