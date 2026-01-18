@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { useAuditLog } from "./useAuditLog";
 import { toast } from "sonner";
 
-export type EntityType = "task" | "project" | "note" | "document" | "event" | "bill";
+export type EntityType = "task" | "project" | "note" | "document" | "event" | "bill" | "ticket";
 
 // Attachment limits and validation
 export const ATTACHMENT_LIMITS = {

@@ -332,7 +332,8 @@ export type EntityType =
   | "bank_account"
   | "bank_transaction"
   | "department"
-  | "resource";
+  | "resource"
+  | "ticket";
 
 interface LogAuditEventParams {
   companyId: string;
