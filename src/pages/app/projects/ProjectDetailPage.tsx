@@ -15,7 +15,9 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  Copy,
+  FileDown
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompanyModules } from "@/hooks/useCompanyModules";
@@ -44,6 +46,8 @@ import { PhasesManager } from "@/components/projects/PhasesManager";
 import { PhaseGroupedTaskList } from "@/components/projects/PhaseGroupedTaskList";
 import { TaskBoardView } from "@/components/projects/TaskBoardView";
 import { QuickAddButtons } from "@/components/projects/QuickAddButtons";
+import { SaveAsTemplateDialog } from "@/components/projects/SaveAsTemplateDialog";
+import { DuplicateProjectDialog } from "@/components/projects/DuplicateProjectDialog";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -59,6 +63,8 @@ export default function ProjectDetailPage() {
   const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isSaveTemplateOpen, setIsSaveTemplateOpen] = useState(false);
+  const [isDuplicateOpen, setIsDuplicateOpen] = useState(false);
   const [taskViewMode, setTaskViewMode] = useState<"list" | "board">("list");
   const [editingTask, setEditingTask] = useState<any>(null);
 
@@ -265,6 +271,14 @@ export default function ProjectDetailPage() {
               <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
                 <Pencil className="h-4 w-4 mr-2" />
                 Edit Project
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setIsSaveTemplateOpen(true)}>
+                <FileDown className="h-4 w-4 mr-2" />
+                Save as Template
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setIsDuplicateOpen(true)}>
+                <Copy className="h-4 w-4 mr-2" />
+                Duplicate Project
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => deleteProject.mutate(projectId!)}
@@ -677,6 +691,18 @@ export default function ProjectDetailPage() {
       <ProjectFormDialog
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
+        project={project}
+      />
+
+      <SaveAsTemplateDialog
+        open={isSaveTemplateOpen}
+        onOpenChange={setIsSaveTemplateOpen}
+        project={project}
+      />
+
+      <DuplicateProjectDialog
+        open={isDuplicateOpen}
+        onOpenChange={setIsDuplicateOpen}
         project={project}
       />
     </div>
