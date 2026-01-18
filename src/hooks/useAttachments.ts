@@ -47,12 +47,49 @@ export function useAttachments(entityType: EntityType, entityId: string | undefi
   });
 }
 
+export interface UploadFileState {
+  id: string;
+  file: File;
+  status: "pending" | "uploading" | "success" | "error";
+  progress: number;
+  error?: string;
+  attachment?: Attachment;
+}
+
+// Utility to run promises with concurrency limit
+async function runWithConcurrency<T>(
+  tasks: (() => Promise<T>)[],
+  limit: number
+): Promise<T[]> {
+  const results: T[] = [];
+  const executing: Promise<void>[] = [];
+
+  for (const task of tasks) {
+    const p = task().then((result) => {
+      results.push(result);
+    });
+    executing.push(p as Promise<void>);
+
+    if (executing.length >= limit) {
+      await Promise.race(executing);
+      executing.splice(
+        executing.findIndex((e) => e === p),
+        1
+      );
+    }
+  }
+
+  await Promise.all(executing);
+  return results;
+}
+
 export function useAttachmentMutations(entityType: EntityType, entityId: string) {
   const { activeCompanyId } = useActiveCompany();
   const { user } = useAuth();
   const { log } = useAuditLog();
   const queryClient = useQueryClient();
 
+  // Single file upload (existing)
   const uploadAttachment = useMutation({
     mutationFn: async (file: File) => {
       if (!activeCompanyId || !user) throw new Error("Not authenticated");
@@ -111,6 +148,105 @@ export function useAttachmentMutations(entityType: EntityType, entityId: string)
     },
   });
 
+  // Multi-file upload with parallel limit
+  const uploadMultipleFiles = async (
+    files: File[],
+    onProgress: (updates: Map<string, Partial<UploadFileState>>) => void,
+    concurrencyLimit = 4
+  ): Promise<{ successful: Attachment[]; failed: string[] }> => {
+    if (!activeCompanyId || !user) throw new Error("Not authenticated");
+
+    const fileStates = new Map<string, UploadFileState>();
+    files.forEach((file) => {
+      const id = crypto.randomUUID();
+      fileStates.set(id, {
+        id,
+        file,
+        status: "pending",
+        progress: 0,
+      });
+    });
+
+    // Notify initial state
+    onProgress(new Map([...fileStates.entries()].map(([id, state]) => [id, state])));
+
+    const successful: Attachment[] = [];
+    const failed: string[] = [];
+
+    const uploadTasks = [...fileStates.entries()].map(([id, state]) => async () => {
+      const file = state.file;
+      const attachmentId = crypto.randomUUID();
+      const storagePath = `company/${activeCompanyId}/${entityType}/${entityId}/${attachmentId}/${file.name}`;
+
+      // Update to uploading
+      onProgress(new Map([[id, { status: "uploading", progress: 10 }]]));
+
+      try {
+        // Create attachment record
+        const { data: attachment, error: insertError } = await supabase
+          .from("attachments")
+          .insert({
+            id: attachmentId,
+            company_id: activeCompanyId,
+            owner_user_id: user.id,
+            entity_type: entityType,
+            entity_id: entityId,
+            storage_bucket: "attachments",
+            storage_path: storagePath,
+            file_name: file.name,
+            content_type: file.type || "application/octet-stream",
+            file_size: file.size,
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          throw new Error(insertError.message);
+        }
+
+        onProgress(new Map([[id, { progress: 40 }]]));
+
+        // Upload to storage
+        const { error: uploadError } = await supabase.storage
+          .from("attachments")
+          .upload(storagePath, file, {
+            contentType: file.type || "application/octet-stream",
+            upsert: false,
+          });
+
+        if (uploadError) {
+          // Rollback: delete attachment record
+          await supabase.from("attachments").delete().eq("id", attachmentId);
+          throw new Error(uploadError.message);
+        }
+
+        onProgress(new Map([[id, { status: "success", progress: 100, attachment: attachment as Attachment }]]));
+
+        // Log audit event
+        log("attachment.created", entityType, entityId, {
+          attachment_id: attachment.id,
+          file_name: attachment.file_name,
+          file_size: attachment.file_size,
+        });
+
+        successful.push(attachment as Attachment);
+        return attachment;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Upload failed";
+        onProgress(new Map([[id, { status: "error", progress: 0, error: errorMessage }]]));
+        failed.push(file.name);
+        return null;
+      }
+    });
+
+    await runWithConcurrency(uploadTasks, concurrencyLimit);
+
+    // Invalidate cache once after all uploads
+    queryClient.invalidateQueries({ queryKey: ["attachments", entityType, entityId] });
+
+    return { successful, failed };
+  };
+
   const deleteAttachment = useMutation({
     mutationFn: async (attachmentId: string) => {
       if (!user) throw new Error("Not authenticated");
@@ -165,6 +301,7 @@ export function useAttachmentMutations(entityType: EntityType, entityId: string)
 
   return {
     uploadAttachment,
+    uploadMultipleFiles,
     deleteAttachment,
     getDownloadUrl,
   };
