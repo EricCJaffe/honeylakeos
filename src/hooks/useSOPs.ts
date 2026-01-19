@@ -251,7 +251,6 @@ export function useSearchSOPs(
 export function useSOPMutations() {
   const queryClient = useQueryClient();
   const { activeCompanyId } = useActiveCompany();
-  const { log } = useAuditLog();
 
   const createSOP = useMutation({
     mutationFn: async (input: CreateSOPInput) => {
@@ -270,7 +269,7 @@ export function useSOPMutations() {
           scope: input.scope || null,
           owner_role: input.owner_role || null,
           tools_systems: input.tools_systems || [],
-          procedure_steps: input.procedure_steps || [],
+          procedure_steps: (input.procedure_steps || []) as unknown as Json,
           exceptions_notes: input.exceptions_notes || null,
           related_sop_ids: input.related_sop_ids || [],
           visibility: input.visibility || "department_only",
@@ -300,12 +299,13 @@ export function useSOPMutations() {
         revised_by: user.user.id,
       });
 
-      await log("sop.created", "sop", data.id, {
-        title: input.title,
-        department_id: input.department_id,
-      });
-
-      return data as SOP;
+      return {
+        ...data,
+        procedure_steps: parseProcedureSteps(data.procedure_steps),
+        tools_systems: data.tools_systems || [],
+        tags: data.tags || [],
+        related_sop_ids: data.related_sop_ids || [],
+      } as SOP;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sops"] });
@@ -332,13 +332,19 @@ export function useSOPMutations() {
 
       const newVersion = currentSOP.current_version + 1;
 
+      // Prepare update payload with proper type casting for procedure_steps
+      const updatePayload: Record<string, unknown> = {
+        ...input,
+        current_version: newVersion,
+      };
+      if (input.procedure_steps) {
+        updatePayload.procedure_steps = input.procedure_steps as unknown as Json;
+      }
+
       // Update the SOP
       const { data, error } = await supabase
         .from("sops")
-        .update({
-          ...input,
-          current_version: newVersion,
-        })
+        .update(updatePayload)
         .eq("id", id)
         .select()
         .single();
@@ -361,11 +367,9 @@ export function useSOPMutations() {
         revised_by: user.user.id,
       });
 
-      await log("sop.updated", "sop", id, { ...input, version: newVersion });
-
       return {
         ...data,
-        procedure_steps: (data.procedure_steps || []) as ProcedureStep[],
+        procedure_steps: parseProcedureSteps(data.procedure_steps),
         tools_systems: data.tools_systems || [],
         tags: data.tags || [],
         related_sop_ids: data.related_sop_ids || [],
@@ -390,8 +394,6 @@ export function useSOPMutations() {
         .eq("id", id);
 
       if (error) throw error;
-
-      await log("sop.deleted", "sop", id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sops"] });
@@ -413,9 +415,13 @@ export function useSOPMutations() {
 
       if (error) throw error;
 
-      await log("sop.archived", "sop", id);
-
-      return data as SOP;
+      return {
+        ...data,
+        procedure_steps: parseProcedureSteps(data.procedure_steps),
+        tools_systems: data.tools_systems || [],
+        tags: data.tags || [],
+        related_sop_ids: data.related_sop_ids || [],
+      } as SOP;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sops"] });
