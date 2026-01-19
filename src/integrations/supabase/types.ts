@@ -8107,6 +8107,149 @@ export type Database = {
         }
         Relationships: []
       }
+      sop_revisions: {
+        Row: {
+          change_summary: string | null
+          exceptions_notes: string | null
+          id: string
+          owner_role: string | null
+          procedure_steps: Json | null
+          purpose: string | null
+          related_sop_ids: string[] | null
+          revised_at: string
+          revised_by: string | null
+          scope: string | null
+          sop_id: string
+          title: string
+          tools_systems: string[] | null
+          version: number
+        }
+        Insert: {
+          change_summary?: string | null
+          exceptions_notes?: string | null
+          id?: string
+          owner_role?: string | null
+          procedure_steps?: Json | null
+          purpose?: string | null
+          related_sop_ids?: string[] | null
+          revised_at?: string
+          revised_by?: string | null
+          scope?: string | null
+          sop_id: string
+          title: string
+          tools_systems?: string[] | null
+          version: number
+        }
+        Update: {
+          change_summary?: string | null
+          exceptions_notes?: string | null
+          id?: string
+          owner_role?: string | null
+          procedure_steps?: Json | null
+          purpose?: string | null
+          related_sop_ids?: string[] | null
+          revised_at?: string
+          revised_by?: string | null
+          scope?: string | null
+          sop_id?: string
+          title?: string
+          tools_systems?: string[] | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sop_revisions_sop_id_fkey"
+            columns: ["sop_id"]
+            isOneToOne: false
+            referencedRelation: "sops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sops: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          current_version: number
+          department_id: string
+          exceptions_notes: string | null
+          id: string
+          is_archived: boolean
+          last_reviewed_at: string | null
+          next_review_at: string | null
+          owner_role: string | null
+          procedure_steps: Json | null
+          purpose: string | null
+          related_sop_ids: string[] | null
+          scope: string | null
+          tags: string[] | null
+          title: string
+          tools_systems: string[] | null
+          updated_at: string
+          visibility: Database["public"]["Enums"]["sop_visibility"]
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          current_version?: number
+          department_id: string
+          exceptions_notes?: string | null
+          id?: string
+          is_archived?: boolean
+          last_reviewed_at?: string | null
+          next_review_at?: string | null
+          owner_role?: string | null
+          procedure_steps?: Json | null
+          purpose?: string | null
+          related_sop_ids?: string[] | null
+          scope?: string | null
+          tags?: string[] | null
+          title: string
+          tools_systems?: string[] | null
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["sop_visibility"]
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          current_version?: number
+          department_id?: string
+          exceptions_notes?: string | null
+          id?: string
+          is_archived?: boolean
+          last_reviewed_at?: string | null
+          next_review_at?: string | null
+          owner_role?: string | null
+          procedure_steps?: Json | null
+          purpose?: string | null
+          related_sop_ids?: string[] | null
+          scope?: string | null
+          tags?: string[] | null
+          title?: string
+          tools_systems?: string[] | null
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["sop_visibility"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sops_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sops_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suggested_tasks: {
         Row: {
           client_company_id: string
@@ -10028,6 +10171,7 @@ export type Database = {
       resource_type: "document" | "link" | "file" | "video"
       share_request_type: "report" | "document" | "note"
       site_role: "super_admin" | "site_admin"
+      sop_visibility: "department_only" | "company_public"
       suggestion_status: "pending" | "accepted" | "rejected"
       ticket_author_type: "requester" | "agent"
       ticket_priority: "low" | "normal" | "high" | "urgent"
@@ -10322,6 +10466,7 @@ export const Constants = {
       resource_type: ["document", "link", "file", "video"],
       share_request_type: ["report", "document", "note"],
       site_role: ["super_admin", "site_admin"],
+      sop_visibility: ["department_only", "company_public"],
       suggestion_status: ["pending", "accepted", "rejected"],
       ticket_author_type: ["requester", "agent"],
       ticket_priority: ["low", "normal", "high", "urgent"],
