@@ -17,6 +17,7 @@ import {
   Languages,
   Boxes,
   Shield,
+  FolderTree,
 } from "lucide-react";
 
 // Import embedded panel components
@@ -30,6 +31,7 @@ import CompanyModulesPanel from "./company-console/ModulesPanel";
 import ModuleChecklistPanel from "./company-console/ModuleChecklistPanel";
 import TerminologyPanel from "./company-console/TerminologyPanel";
 import { CapabilitySettingsPanel } from "./company-console/CapabilitySettingsPanel";
+import DepartmentsPanel from "./company-console/DepartmentsPanel";
 
 const adminSections = [
   {
@@ -49,6 +51,12 @@ const adminSections = [
     label: "Employees",
     icon: Briefcase,
     description: "Manage employee records, send invitations, and track onboarding status.",
+  },
+  {
+    id: "departments",
+    label: "Departments",
+    icon: FolderTree,
+    description: "Create and manage departments with dedicated resources and workflows.",
   },
   {
     id: "groups",
@@ -183,6 +191,7 @@ export default function CompanyConsolePage() {
             {section.id === "company" && <CompanySettingsPanel />}
             {section.id === "members" && <MembersPanel />}
             {section.id === "employees" && <EmployeesPanel />}
+            {section.id === "departments" && <DepartmentsPanel />}
             {section.id === "groups" && <GroupsPanel />}
             {section.id === "locations" && <LocationsPanel />}
             {section.id === "modules" && (
