@@ -20,6 +20,7 @@ import {
   Clock,
   Wrench,
   User,
+  ClipboardCheck,
 } from "lucide-react";
 import { format, isBefore, isAfter, subDays } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,7 @@ import { ListSkeleton } from "@/components/ui/list-skeleton";
 import { CreateSOPFormDialog } from "@/components/forms/CreateSOPFormDialog";
 import { SOPDetailDialog } from "./SOPDetailDialog";
 import { ResourceFormDialog } from "../resources/ResourceFormDialog";
+import { CompleteReviewDialog } from "@/components/sop/CompleteReviewDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -77,10 +79,13 @@ type SOPStatus = "draft" | "active" | "review_due" | "archived";
 
 const getSOPStatus = (sop: SOP): SOPStatus => {
   if (sop.is_archived) return "archived";
+  // Use database status if set to review_due
+  if (sop.status === "review_due") return "review_due";
+  // Also check next_review_at for overdue SOPs
   if (sop.next_review_at && isBefore(new Date(sop.next_review_at), new Date())) {
     return "review_due";
   }
-  if (sop.current_version > 0 && sop.visibility === "company_public") {
+  if (sop.status === "active" || (sop.current_version > 0 && sop.visibility === "company_public")) {
     return "active";
   }
   return "draft";
@@ -255,6 +260,7 @@ export function DepartmentResourcesTab({ departmentId }: DepartmentResourcesTabP
   const [editingSOP, setEditingSOP] = useState<SOP | null>(null);
   const [viewingSOP, setViewingSOP] = useState<string | null>(null);
   const [deletingSOPId, setDeletingSOPId] = useState<string | null>(null);
+  const [reviewingSOP, setReviewingSOP] = useState<SOP | null>(null);
 
   const [resourceFormOpen, setResourceFormOpen] = useState(false);
   const [editingResource, setEditingResource] = useState<Resource | null>(null);
@@ -378,27 +384,47 @@ export function DepartmentResourcesTab({ departmentId }: DepartmentResourcesTabP
             </Button>
 
             {canManage && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleEditSOP(sop)}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => setDeletingSOPId(sop.id)}
-                    className="text-destructive"
+              <>
+                {status === "review_due" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setReviewingSOP(sop);
+                    }}
                   >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <ClipboardCheck className="mr-1 h-3 w-3" />
+                    Complete Review
+                  </Button>
+                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setReviewingSOP(sop)}>
+                      <ClipboardCheck className="mr-2 h-4 w-4" />
+                      Complete Review
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleEditSOP(sop)}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setDeletingSOPId(sop.id)}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             )}
           </div>
         </CardContent>
@@ -786,6 +812,21 @@ export function DepartmentResourcesTab({ departmentId }: DepartmentResourcesTabP
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Complete Review Dialog */}
+      {reviewingSOP && (
+        <CompleteReviewDialog
+          open={!!reviewingSOP}
+          onOpenChange={(open) => !open && setReviewingSOP(null)}
+          sop={reviewingSOP}
+          onSuccess={() => setReviewingSOP(null)}
+          onEditAndPublish={() => {
+            const sopToEdit = reviewingSOP;
+            setReviewingSOP(null);
+            handleEditSOP(sopToEdit);
+          }}
+        />
+      )}
     </div>
   );
 }

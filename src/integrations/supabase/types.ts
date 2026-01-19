@@ -4628,6 +4628,56 @@ export type Database = {
           },
         ]
       }
+      in_app_notifications: {
+        Row: {
+          company_id: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          message: string
+          metadata: Json | null
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          message: string
+          metadata?: Json | null
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          message?: string
+          metadata?: Json | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "in_app_notifications_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integration_providers: {
         Row: {
           created_at: string
@@ -8116,6 +8166,7 @@ export type Database = {
           procedure_steps: Json | null
           purpose: string | null
           related_sop_ids: string[] | null
+          review_action: string | null
           revised_at: string
           revised_by: string | null
           scope: string | null
@@ -8132,6 +8183,7 @@ export type Database = {
           procedure_steps?: Json | null
           purpose?: string | null
           related_sop_ids?: string[] | null
+          review_action?: string | null
           revised_at?: string
           revised_by?: string | null
           scope?: string | null
@@ -8148,6 +8200,7 @@ export type Database = {
           procedure_steps?: Json | null
           purpose?: string | null
           related_sop_ids?: string[] | null
+          review_action?: string | null
           revised_at?: string
           revised_by?: string | null
           scope?: string | null
@@ -8178,11 +8231,14 @@ export type Database = {
           is_archived: boolean
           last_reviewed_at: string | null
           next_review_at: string | null
+          overdue_reminder_sent_at: string | null
           owner_role: string | null
           procedure_steps: Json | null
           purpose: string | null
           related_sop_ids: string[] | null
+          review_reminder_sent_at: string | null
           scope: string | null
+          status: string
           tags: string[] | null
           title: string
           tools_systems: string[] | null
@@ -8200,11 +8256,14 @@ export type Database = {
           is_archived?: boolean
           last_reviewed_at?: string | null
           next_review_at?: string | null
+          overdue_reminder_sent_at?: string | null
           owner_role?: string | null
           procedure_steps?: Json | null
           purpose?: string | null
           related_sop_ids?: string[] | null
+          review_reminder_sent_at?: string | null
           scope?: string | null
+          status?: string
           tags?: string[] | null
           title: string
           tools_systems?: string[] | null
@@ -8222,11 +8281,14 @@ export type Database = {
           is_archived?: boolean
           last_reviewed_at?: string | null
           next_review_at?: string | null
+          overdue_reminder_sent_at?: string | null
           owner_role?: string | null
           procedure_steps?: Json | null
           purpose?: string | null
           related_sop_ids?: string[] | null
+          review_reminder_sent_at?: string | null
           scope?: string | null
+          status?: string
           tags?: string[] | null
           title?: string
           tools_systems?: string[] | null
