@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Building2, Pencil, Users, FileText, FolderKanban, CheckCircle2, StickyNote, ClipboardList } from "lucide-react";
+import { ArrowLeft, Building2, Pencil, Users, FileText, FolderKanban, CheckCircle2, StickyNote, ClipboardList, BookOpen } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,11 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDepartment, useDepartmentMembers } from "@/hooks/useDepartments";
 import { useDepartmentResources } from "@/hooks/useResources";
+import { useDepartmentSOPs } from "@/hooks/useSOPs";
 import { useMembership } from "@/lib/membership";
 import { useCompanyModules } from "@/hooks/useCompanyModules";
 import { DepartmentFormDialog } from "./DepartmentFormDialog";
 import { DepartmentMembersTab } from "./DepartmentMembersTab";
 import { ResourcesTab } from "./ResourcesTab";
+import { SOPsTab } from "./SOPsTab";
 import { DepartmentProjectsTab } from "./DepartmentProjectsTab";
 import { DepartmentTasksTab } from "./DepartmentTasksTab";
 import { DepartmentNotesTab } from "./DepartmentNotesTab";
@@ -31,6 +33,7 @@ export default function DepartmentDetailPage() {
   const { data: department, isLoading } = useDepartment(departmentId);
   const { data: members } = useDepartmentMembers(departmentId);
   const { data: resources } = useDepartmentResources(departmentId);
+  const { data: sops } = useDepartmentSOPs(departmentId);
 
   // Get counts for entity tabs
   const { data: projectsCount } = useQuery({
@@ -124,6 +127,7 @@ export default function DepartmentDetailPage() {
   const managerCount = members?.filter((m) => m.role === "manager").length || 0;
   const memberCount = members?.length || 0;
   const resourceCount = resources?.length || 0;
+  const sopCount = sops?.length || 0;
 
   return (
     <div className="space-y-6">
@@ -160,6 +164,10 @@ export default function DepartmentDetailPage() {
           <TabsTrigger value="resources">
             <FileText className="mr-1 h-4 w-4" />
             Resources ({resourceCount})
+          </TabsTrigger>
+          <TabsTrigger value="sops">
+            <BookOpen className="mr-1 h-4 w-4" />
+            SOPs ({sopCount})
           </TabsTrigger>
           {isEnabled("projects") && (
             <TabsTrigger value="projects">
@@ -273,6 +281,10 @@ export default function DepartmentDetailPage() {
 
         <TabsContent value="resources" className="pt-4">
           <ResourcesTab departmentId={departmentId!} />
+        </TabsContent>
+
+        <TabsContent value="sops" className="pt-4">
+          <SOPsTab departmentId={departmentId!} />
         </TabsContent>
 
         <TabsContent value="projects" className="pt-4">

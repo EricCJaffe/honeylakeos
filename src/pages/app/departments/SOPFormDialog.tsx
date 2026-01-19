@@ -155,7 +155,9 @@ export function SOPFormDialog({
       : [];
 
     const procedureSteps: ProcedureStep[] = values.procedure_steps.map((step, idx) => ({
-      ...step,
+      id: step.id,
+      title: step.title,
+      description: step.description,
       order: idx + 1,
     }));
 
