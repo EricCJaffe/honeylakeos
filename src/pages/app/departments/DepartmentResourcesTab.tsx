@@ -491,24 +491,26 @@ export function DepartmentResourcesTab({ departmentId }: DepartmentResourcesTabP
           </TabsList>
 
           {canManage && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Resource
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setSOPFormOpen(true)}>
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  Create SOP
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setResourceFormOpen(true)}>
-                  <FileText className="mr-2 h-4 w-4" />
-                  Add Other Resource
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center gap-2">
+              <Button onClick={() => setSOPFormOpen(true)}>
+                <BookOpen className="mr-2 h-4 w-4" />
+                Create SOP
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Resource
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setResourceFormOpen(true)}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Add Document/Link
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           )}
         </div>
 

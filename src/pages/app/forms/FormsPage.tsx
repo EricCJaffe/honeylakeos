@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, FileText, MoreHorizontal, Pencil, Trash2, Eye, Archive, Send } from "lucide-react";
+import { Plus, Search, FileText, MoreHorizontal, Pencil, Trash2, Eye, Archive, Send, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +43,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { ModuleGuard } from "@/components/ModuleGuard";
 import { useForms, Form, FormStatus, getStatusBadgeVariant } from "@/hooks/useForms";
+import { useMembership } from "@/lib/membership";
+import { CreateSOPFormDialog } from "@/components/forms/CreateSOPFormDialog";
 import { format } from "date-fns";
 
 function FormCard({
@@ -197,11 +199,16 @@ function CreateFormDialog({
 
 function FormsListContent() {
   const navigate = useNavigate();
+  const { isCompanyAdmin } = useMembership();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<FormStatus | "all">("all");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createSOPDialogOpen, setCreateSOPDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [formToDelete, setFormToDelete] = useState<Form | null>(null);
+  
+  // Permission check for SOP creation (company admins or users with forms management)
+  const canCreateSOP = isCompanyAdmin;
 
   const {
     forms,
@@ -258,11 +265,21 @@ function FormsListContent() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Forms"
-        actionLabel="Create Form"
-        onAction={() => setCreateDialogOpen(true)}
-      />
+      <div className="flex items-center justify-between">
+        <PageHeader title="Forms" />
+        <div className="flex items-center gap-2">
+          {canCreateSOP && (
+            <Button variant="outline" onClick={() => setCreateSOPDialogOpen(true)}>
+              <BookOpen className="mr-2 h-4 w-4" />
+              Create SOP
+            </Button>
+          )}
+          <Button onClick={() => setCreateDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Form
+          </Button>
+        </div>
+      </div>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -324,6 +341,14 @@ function FormsListContent() {
         onOpenChange={setCreateDialogOpen}
         onCreate={handleCreate}
       />
+
+      {canCreateSOP && (
+        <CreateSOPFormDialog
+          open={createSOPDialogOpen}
+          onOpenChange={setCreateSOPDialogOpen}
+          onSuccess={() => setCreateSOPDialogOpen(false)}
+        />
+      )}
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
