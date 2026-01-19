@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, MoreHorizontal, Trash2, Pencil, Eye, Search, FileText, Tag, Filter } from "lucide-react";
+import { Plus, MoreHorizontal, Trash2, Pencil, Eye, Search, FileText, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,7 +16,7 @@ import { useDepartmentMembers } from "@/hooks/useDepartments";
 import { useMembership } from "@/lib/membership";
 import { EmptyState } from "@/components/EmptyState";
 import { ListSkeleton } from "@/components/ui/list-skeleton";
-import { SOPFormDialog } from "./SOPFormDialog";
+import { CreateSOPFormDialog } from "@/components/forms/CreateSOPFormDialog";
 import { SOPDetailDialog } from "./SOPDetailDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -255,7 +255,7 @@ export function SOPsTab({ departmentId }: SOPsTabProps) {
       )}
 
       {/* Form Dialog */}
-      <SOPFormDialog
+      <CreateSOPFormDialog
         open={formOpen}
         onOpenChange={handleFormClose}
         departmentId={departmentId}
