@@ -14,8 +14,7 @@ import { useMembership } from "@/lib/membership";
 import { useCompanyModules } from "@/hooks/useCompanyModules";
 import { DepartmentFormDialog } from "./DepartmentFormDialog";
 import { DepartmentMembersTab } from "./DepartmentMembersTab";
-import { ResourcesTab } from "./ResourcesTab";
-import { SOPsTab } from "./SOPsTab";
+import { DepartmentResourcesTab } from "./DepartmentResourcesTab";
 import { DepartmentProjectsTab } from "./DepartmentProjectsTab";
 import { DepartmentTasksTab } from "./DepartmentTasksTab";
 import { DepartmentNotesTab } from "./DepartmentNotesTab";
@@ -162,12 +161,8 @@ export default function DepartmentDetailPage() {
             Members ({memberCount})
           </TabsTrigger>
           <TabsTrigger value="resources">
-            <FileText className="mr-1 h-4 w-4" />
-            Resources ({resourceCount})
-          </TabsTrigger>
-          <TabsTrigger value="sops">
             <BookOpen className="mr-1 h-4 w-4" />
-            SOPs ({sopCount})
+            Resources ({resourceCount + sopCount})
           </TabsTrigger>
           {isEnabled("projects") && (
             <TabsTrigger value="projects">
@@ -280,11 +275,7 @@ export default function DepartmentDetailPage() {
         </TabsContent>
 
         <TabsContent value="resources" className="pt-4">
-          <ResourcesTab departmentId={departmentId!} />
-        </TabsContent>
-
-        <TabsContent value="sops" className="pt-4">
-          <SOPsTab departmentId={departmentId!} />
+          <DepartmentResourcesTab departmentId={departmentId!} />
         </TabsContent>
 
         <TabsContent value="projects" className="pt-4">
