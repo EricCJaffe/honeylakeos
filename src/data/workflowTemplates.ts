@@ -5,7 +5,8 @@ export type TemplateCategory =
   | "employee_lifecycle" 
   | "requests" 
   | "surveys" 
-  | "coaching";
+  | "coaching"
+  | "knowledge_management";
 
 export type RequiredModule = 
   | "employees" 
@@ -345,6 +346,71 @@ export const meetingEffectivenessSurvey: FormTemplate = {
 };
 
 // =============================================
+// KNOWLEDGE MANAGEMENT TEMPLATES
+// =============================================
+
+export const sopLifecycleWorkflow: WorkflowTemplate = {
+  id: "tpl-sop-lifecycle",
+  type: "workflow",
+  category: "knowledge_management",
+  title: "SOP Lifecycle Management",
+  description: "Manage the complete lifecycle of Standard Operating Procedures from draft creation through publication, review cycles, and archival. Ensures SOPs stay current with configurable review periods and approval gates.",
+  summary: "Automate SOP creation, review, approval, and archival",
+  trigger_type: "manual",
+  required_modules: [],
+  tags: ["sop", "documentation", "compliance", "knowledge", "review"],
+  steps: [
+    { 
+      step_type: "form_step", 
+      title: "Draft Created", 
+      instructions: "Create or edit the SOP content. Fill in all required sections including purpose, scope, procedure steps, and ownership details.", 
+      assignee_type: "workflow_initiator", 
+      sort_order: 0 
+    },
+    { 
+      step_type: "approval_step", 
+      title: "Review & Approval", 
+      instructions: "Review the SOP for accuracy, completeness, and compliance. Approve to publish or request revisions.\n\nNote: This step can be skipped if department policy allows direct publishing.", 
+      assignee_type: "company_admin", 
+      due_offset_days: 5,
+      sort_order: 1,
+      config: { optional: true, configurable_per_department: true }
+    },
+    { 
+      step_type: "notify_step", 
+      title: "Published", 
+      instructions: "SOP has been approved and is now published. Notify relevant stakeholders that the SOP is now active and available.", 
+      assignee_type: "workflow_initiator", 
+      sort_order: 2 
+    },
+    { 
+      step_type: "note_step", 
+      title: "Active", 
+      instructions: "SOP is now active and visible to authorized users. The SOP will remain in this state until a review is due or manual revision is initiated.", 
+      assignee_type: "workflow_initiator", 
+      sort_order: 3 
+    },
+    { 
+      step_type: "task_step", 
+      title: "Review Due", 
+      instructions: "This SOP is due for periodic review. Please:\n- Verify all information is still accurate\n- Update any outdated procedures\n- Confirm tools and systems references are current\n- Document any changes in revision history\n\nComplete review to keep the SOP active, or archive if obsolete.", 
+      assignee_type: "company_admin", 
+      due_offset_days: 7,
+      sort_order: 4,
+      config: { triggered_by: "next_review_date", notify_owner: true, escalate_if_overdue: true }
+    },
+    { 
+      step_type: "note_step", 
+      title: "Archived", 
+      instructions: "This version of the SOP has been archived. Previous versions are locked and read-only for historical reference. A new version may be created to replace this SOP.", 
+      assignee_type: "company_admin", 
+      sort_order: 5,
+      config: { applies_to: "previous_versions_only" }
+    },
+  ],
+};
+
+// =============================================
 // ALL TEMPLATES COLLECTION
 // =============================================
 
@@ -365,6 +431,8 @@ export const allTemplates: StarterTemplate[] = [
   pulseSurveyForm,
   trainingFeedbackForm,
   meetingEffectivenessSurvey,
+  // Knowledge Management
+  sopLifecycleWorkflow,
 ];
 
 export const templatesByCategory: Record<TemplateCategory, StarterTemplate[]> = {
@@ -372,6 +440,7 @@ export const templatesByCategory: Record<TemplateCategory, StarterTemplate[]> = 
   requests: [itSupportRequestForm, itSupportWorkflow, facilitiesRequestForm, facilitiesWorkflow, hrRequestForm, hrRequestWorkflow],
   surveys: [pulseSurveyForm, trainingFeedbackForm, meetingEffectivenessSurvey],
   coaching: [],
+  knowledge_management: [sopLifecycleWorkflow],
 };
 
 export const categoryLabels: Record<TemplateCategory, { label: string; description: string }> = {
@@ -390,5 +459,9 @@ export const categoryLabels: Record<TemplateCategory, { label: string; descripti
   coaching: { 
     label: "Coaching", 
     description: "Coaching and development workflow templates" 
+  },
+  knowledge_management: { 
+    label: "Knowledge Management", 
+    description: "SOP lifecycle, documentation, and compliance workflows" 
   },
 };
