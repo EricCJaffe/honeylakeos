@@ -37,6 +37,9 @@ export interface SOP {
   last_reviewed_at: string | null;
   next_review_at: string | null;
   is_archived: boolean;
+  status: string;
+  review_reminder_sent_at: string | null;
+  overdue_reminder_sent_at: string | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;
