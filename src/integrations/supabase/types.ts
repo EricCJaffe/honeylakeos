@@ -8157,6 +8157,122 @@ export type Database = {
         }
         Relationships: []
       }
+      sop_ingestion_audit_logs: {
+        Row: {
+          action: string
+          actor_user_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          ingestion_id: string
+          new_status: string | null
+          old_status: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ingestion_id: string
+          new_status?: string | null
+          old_status?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ingestion_id?: string
+          new_status?: string | null
+          old_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sop_ingestion_audit_logs_ingestion_id_fkey"
+            columns: ["ingestion_id"]
+            isOneToOne: false
+            referencedRelation: "sop_ingestions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sop_ingestions: {
+        Row: {
+          ai_output_json: Json | null
+          company_id: string
+          created_at: string
+          created_by: string
+          department_id: string
+          id: string
+          processed_at: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_file_name: string | null
+          source_file_path: string | null
+          source_file_size: number | null
+          source_text: string | null
+          source_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ai_output_json?: Json | null
+          company_id: string
+          created_at?: string
+          created_by: string
+          department_id: string
+          id?: string
+          processed_at?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_file_name?: string | null
+          source_file_path?: string | null
+          source_file_size?: number | null
+          source_text?: string | null
+          source_type: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_output_json?: Json | null
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          department_id?: string
+          id?: string
+          processed_at?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_file_name?: string | null
+          source_file_path?: string | null
+          source_file_size?: number | null
+          source_text?: string | null
+          source_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sop_ingestions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sop_ingestions_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sop_revisions: {
         Row: {
           change_summary: string | null
@@ -8221,9 +8337,13 @@ export type Database = {
       }
       sops: {
         Row: {
+          ai_confidence_by_field: Json | null
+          ai_confidence_overall: number | null
+          ai_generated: boolean | null
           company_id: string
           created_at: string
           created_by: string | null
+          created_from_ingestion_id: string | null
           current_version: number
           department_id: string
           exceptions_notes: string | null
@@ -8246,9 +8366,13 @@ export type Database = {
           visibility: Database["public"]["Enums"]["sop_visibility"]
         }
         Insert: {
+          ai_confidence_by_field?: Json | null
+          ai_confidence_overall?: number | null
+          ai_generated?: boolean | null
           company_id: string
           created_at?: string
           created_by?: string | null
+          created_from_ingestion_id?: string | null
           current_version?: number
           department_id: string
           exceptions_notes?: string | null
@@ -8271,9 +8395,13 @@ export type Database = {
           visibility?: Database["public"]["Enums"]["sop_visibility"]
         }
         Update: {
+          ai_confidence_by_field?: Json | null
+          ai_confidence_overall?: number | null
+          ai_generated?: boolean | null
           company_id?: string
           created_at?: string
           created_by?: string | null
+          created_from_ingestion_id?: string | null
           current_version?: number
           department_id?: string
           exceptions_notes?: string | null
@@ -8301,6 +8429,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sops_created_from_ingestion_id_fkey"
+            columns: ["created_from_ingestion_id"]
+            isOneToOne: false
+            referencedRelation: "sop_ingestions"
             referencedColumns: ["id"]
           },
           {

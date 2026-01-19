@@ -43,6 +43,11 @@ export interface SOP {
   created_at: string;
   updated_at: string;
   created_by: string | null;
+  // AI Import fields
+  created_from_ingestion_id: string | null;
+  ai_generated: boolean | null;
+  ai_confidence_overall: number | null;
+  ai_confidence_by_field: Record<string, number> | null;
   // Joined
   department?: {
     id: string;
