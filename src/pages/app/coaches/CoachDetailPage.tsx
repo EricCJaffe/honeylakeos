@@ -39,9 +39,9 @@ import { useCoachProfile, useCoachProfiles, CoachProfileType, getProfileTypeLabe
 import { format } from "date-fns";
 
 function CoachDetailContent() {
-  const { id } = useParams<{ id: string }>();
+  const { coachId } = useParams<{ coachId: string }>();
   const navigate = useNavigate();
-  const { data: profile, isLoading, moduleAccessDenied, noAccessReason } = useCoachProfile(id);
+  const { data: profile, isLoading, moduleAccessDenied, noAccessReason } = useCoachProfile(coachId);
   const { archiveProfile, unarchiveProfile, deleteProfile } = useCoachProfiles();
 
   const [editDialogOpen, setEditDialogOpen] = React.useState(false);
