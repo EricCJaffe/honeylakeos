@@ -9520,15 +9520,28 @@ export type Database = {
         Args: { _company_id: string; _framework_id: string }
         Returns: string
       }
-      create_employee_invite: {
-        Args: { p_employee_id: string; p_role?: string }
-        Returns: {
-          email: string
-          expires_at: string
-          invite_id: string
-          token: string
-        }[]
-      }
+      create_employee_invite:
+        | {
+            Args: {
+              p_employee_id: string
+              p_invited_by: string
+              p_role?: string
+            }
+            Returns: {
+              expires_at: string
+              invite_id: string
+              token: string
+            }[]
+          }
+        | {
+            Args: { p_employee_id: string; p_role?: string }
+            Returns: {
+              email: string
+              expires_at: string
+              invite_id: string
+              token: string
+            }[]
+          }
       create_entity_link: {
         Args: {
           p_company_id: string
