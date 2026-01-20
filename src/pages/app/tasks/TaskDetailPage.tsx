@@ -2,7 +2,7 @@ import { useState, Suspense, lazy } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CheckCircle2, Pencil, Trash2, Calendar, Clock, User, Repeat, Layers, ChevronDown, ChevronUp } from "lucide-react";
+import { CheckCircle2, Pencil, Trash2, Calendar, Clock, User, Repeat, Layers, ChevronDown, ChevronUp, Tag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
@@ -22,6 +22,7 @@ import { TaskLinkedNotes } from "@/components/tasks/TaskLinkedNotes";
 import { AttachmentsPanel } from "@/components/attachments";
 import { useTaskOccurrenceActions } from "@/hooks/useTaskOccurrenceCompletions";
 import { configToRRule, rruleToConfig } from "@/components/tasks/RecurrenceSelector";
+import { TaskTagsDisplay } from "@/components/tasks/TaskTagInput";
 
 // Lazy load rich text display
 const RichTextDisplay = lazy(() => import("@/components/ui/rich-text-editor").then(m => ({ default: m.RichTextDisplay })));
@@ -211,6 +212,10 @@ export default function TaskDetailPage() {
             <Layers className="h-3 w-3" />
             {task.phase.name}
           </Badge>
+        )}
+        {/* Tags display */}
+        {task.tags && Array.isArray(task.tags) && task.tags.length > 0 && (
+          <TaskTagsDisplay tags={task.tags as string[]} maxDisplay={5} />
         )}
       </div>
 

@@ -53,6 +53,7 @@ import { applyTemplateToForm, Template } from "@/hooks/useTemplates";
 import { LinkPicker } from "@/components/LinkPicker";
 import { AssigneePicker } from "@/components/tasks/AssigneePicker";
 import { useTaskAssignees } from "@/hooks/useCompanyMembers";
+import { TaskTagInput } from "@/components/tasks/TaskTagInput";
 
 const taskSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -113,13 +114,23 @@ export function TaskFormDialog({
   const [assignees, setAssignees] = React.useState<string[]>([]);
   const { data: existingAssignees = [] } = useTaskAssignees(task?.id);
 
-  // Set initial assignees when editing
+  // Tags state
+  const [tags, setTags] = React.useState<string[]>([]);
+
+  // Set initial assignees and tags when editing
   React.useEffect(() => {
     if (task && existingAssignees.length > 0) {
       setAssignees(existingAssignees);
     } else if (!task && user) {
       // Default to current user when creating
       setAssignees([user.id]);
+    }
+    // Set tags from task
+    if (task?.tags) {
+      const taskTags = Array.isArray(task.tags) ? task.tags : [];
+      setTags(taskTags.filter((t: unknown): t is string => typeof t === "string"));
+    } else {
+      setTags([]);
     }
   }, [task, existingAssignees, user]);
 
@@ -227,6 +238,7 @@ export function TaskFormDialog({
         project_id: values.project_id || null,
         phase_id: values.phase_id || null,
         list_id: values.list_id || null,
+        tags: tags,
         recurrence_rules: rrule,
         recurrence_timezone: recurrenceConfig?.timezone || "America/New_York",
         is_recurring_template: isRecurring,
@@ -317,6 +329,7 @@ export function TaskFormDialog({
       form.reset();
       setRecurrenceConfig(null);
       setAssignees([]);
+      setTags([]);
       if (taskId) {
         onSuccess?.(taskId);
       }
@@ -518,6 +531,16 @@ export function TaskFormDialog({
                 onChange={setAssignees}
                 placeholder="Assign to..."
                 defaultToCurrentUser={!isEditing}
+              />
+            </div>
+
+            {/* Tags */}
+            <div className="space-y-2">
+              <FormLabel>Tags</FormLabel>
+              <TaskTagInput
+                value={tags}
+                onChange={setTags}
+                placeholder="Add tags (press Enter)"
               />
             </div>
 
