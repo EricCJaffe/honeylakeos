@@ -12,6 +12,9 @@ import {
   Archive,
   RotateCcw,
   RefreshCw,
+  Trash2,
+  Link,
+  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -278,6 +281,67 @@ export default function EmployeesPanel() {
     },
   });
 
+  const deleteEmployeeMutation = useMutation({
+    mutationFn: async (employee: Employee) => {
+      const { error } = await supabase
+        .from("employees")
+        .delete()
+        .eq("id", employee.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Employee deleted permanently");
+      queryClient.invalidateQueries({ queryKey: ["employees", activeCompanyId] });
+      queryClient.invalidateQueries({ queryKey: ["employees-archived", activeCompanyId] });
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to delete employee: ${error.message}`);
+    },
+  });
+
+  const deleteInviteMutation = useMutation({
+    mutationFn: async (invite: InviteWithEmployee) => {
+      const { error } = await supabase
+        .from("employee_invites")
+        .delete()
+        .eq("id", invite.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Invite deleted");
+      refetchInvites();
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to delete invite: ${error.message}`);
+    },
+  });
+
+  const resendInviteMutation = useMutation({
+    mutationFn: async (invite: InviteWithEmployee) => {
+      const { data, error } = await supabase.functions.invoke(
+        "send-employee-invite-email",
+        { body: { invite_id: invite.id } }
+      );
+      if (error) throw error;
+      const result = data as { success: boolean; error?: string };
+      if (!result.success) throw new Error(result.error || "Failed to send email");
+      return result;
+    },
+    onSuccess: () => {
+      toast.success("Invite email resent successfully");
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to resend invite: ${error.message}`);
+    },
+  });
+
+  const copyInviteLink = (invite: InviteWithEmployee) => {
+    const baseUrl = window.location.origin;
+    const inviteUrl = `${baseUrl}/accept-invite?token=${invite.token}`;
+    navigator.clipboard.writeText(inviteUrl);
+    toast.success("Invite link copied to clipboard");
+  };
+
   const closeFormDialog = () => {
     setFormDialogOpen(false);
     setEditingEmployee(null);
@@ -415,6 +479,17 @@ export default function EmployeesPanel() {
                                   <Archive className="h-4 w-4 mr-2" />
                                   Archive
                                 </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    if (confirm(`Are you sure you want to permanently delete ${employee.full_name}? This cannot be undone.`)) {
+                                      deleteEmployeeMutation.mutate(employee);
+                                    }
+                                  }}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
@@ -445,6 +520,7 @@ export default function EmployeesPanel() {
                         <TableHead>Email</TableHead>
                         <TableHead>Role</TableHead>
                         <TableHead>Expires</TableHead>
+                        <TableHead className="w-12"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -459,6 +535,40 @@ export default function EmployeesPanel() {
                           </TableCell>
                           <TableCell className="text-muted-foreground">
                             {format(new Date(invite.expires_at), "MMM d, yyyy")}
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => copyInviteLink(invite)}>
+                                  <Copy className="h-4 w-4 mr-2" />
+                                  Copy Invite Link
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => resendInviteMutation.mutate(invite)}
+                                  disabled={resendInviteMutation.isPending}
+                                >
+                                  <Send className="h-4 w-4 mr-2" />
+                                  Resend Email
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    if (confirm("Are you sure you want to delete this invite?")) {
+                                      deleteInviteMutation.mutate(invite);
+                                    }
+                                  }}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete Invite
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </TableCell>
                         </TableRow>
                       ))}
