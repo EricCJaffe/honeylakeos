@@ -29,8 +29,8 @@ interface TestResult {
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const { isSuperAdmin, isSiteAdmin, memberships, loading, refreshMemberships, siteMemberships } = useMembership();
+  const { user, loading: authLoading } = useAuth();
+  const { isSuperAdmin, isSiteAdmin, memberships, loading: membershipsLoading, refreshMemberships, siteMemberships } = useMembership();
 
   const [companyName, setCompanyName] = useState("");
   const [description, setDescription] = useState("");
@@ -44,13 +44,17 @@ export default function OnboardingPage() {
 
   const isDev = import.meta.env.DEV;
   const forceMode = isDev && new URLSearchParams(window.location.search).get("force") === "1";
+  
+  // Combined loading: wait for both auth AND memberships to be resolved
+  const isLoading = authLoading || membershipsLoading;
 
   // If user already has memberships, redirect to dashboard (unless force mode)
+  // CRITICAL: Only redirect after loading is complete to prevent flash
   React.useEffect(() => {
-    if (!loading && memberships.length > 0 && !forceMode) {
+    if (!isLoading && memberships.length > 0 && !forceMode) {
       navigate("/app");
     }
-  }, [loading, memberships, navigate, forceMode]);
+  }, [isLoading, memberships, navigate, forceMode]);
 
   // Log debug info to console
   React.useEffect(() => {
@@ -62,9 +66,10 @@ export default function OnboardingPage() {
         siteMembershipsCount: siteMemberships.length,
         isSuperAdmin,
         isSiteAdmin,
+        isLoading,
       });
     }
-  }, [isDev, user, memberships, siteMemberships, isSuperAdmin, isSiteAdmin]);
+  }, [isDev, user, memberships, siteMemberships, isSuperAdmin, isSiteAdmin, isLoading]);
 
   const runPlatformTests = async () => {
     if (!user) return;
@@ -410,9 +415,11 @@ export default function OnboardingPage() {
     }
   };
 
-  if (loading) {
+  // Show loading state until both auth and memberships are fully resolved
+  // This prevents the "Create Company" form from flashing before we know the user's state
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
