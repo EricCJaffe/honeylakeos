@@ -19,6 +19,7 @@ import { EntityLinksPanel } from "@/components/EntityLinksPanel";
 import { RecurringTaskOccurrences } from "@/components/tasks/RecurringTaskOccurrences";
 import { TaskComments } from "@/components/tasks/TaskComments";
 import { TaskLinkedNotes } from "@/components/tasks/TaskLinkedNotes";
+import { SubtasksList } from "@/components/tasks/SubtasksList";
 import { AttachmentsPanel } from "@/components/attachments";
 import { useTaskOccurrenceActions } from "@/hooks/useTaskOccurrenceCompletions";
 import { configToRRule, rruleToConfig } from "@/components/tasks/RecurrenceSelector";
@@ -233,6 +234,11 @@ export default function TaskDetailPage() {
           />
         </div>
       )}
+
+      {/* Subtasks */}
+      <div className="mb-6">
+        <SubtasksList taskId={task.id} taskStatus={task.status} />
+      </div>
 
       {/* Links */}
       <div className="mb-6">

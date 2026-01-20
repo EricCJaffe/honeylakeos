@@ -9017,6 +9017,66 @@ export type Database = {
           },
         ]
       }
+      task_subtasks: {
+        Row: {
+          company_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          description_rich_text: string | null
+          due_date: string | null
+          id: string
+          parent_task_id: string
+          sort_order: number
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description_rich_text?: string | null
+          due_date?: string | null
+          id?: string
+          parent_task_id: string
+          sort_order?: number
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description_rich_text?: string | null
+          due_date?: string | null
+          id?: string
+          parent_task_id?: string
+          sort_order?: number
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_subtasks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_subtasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assigned_by: string | null
@@ -9911,6 +9971,14 @@ export type Database = {
         Args: { _company_id: string; _framework_id: string }
         Returns: string
       }
+      copy_subtasks_for_recurring_task: {
+        Args: {
+          p_source_task_id: string
+          p_target_company_id: string
+          p_target_task_id: string
+        }
+        Returns: number
+      }
       create_employee_invite:
         | {
             Args: {
@@ -10137,6 +10205,14 @@ export type Database = {
           is_nullable: string
           ordinal_position: number
           table_name: string
+        }[]
+      }
+      get_task_subtask_counts: {
+        Args: { p_task_ids: string[] }
+        Returns: {
+          completed_count: number
+          task_id: string
+          total_count: number
         }[]
       }
       get_user_site_id: { Args: never; Returns: string }
