@@ -12,6 +12,7 @@ export interface SalesOpportunity {
   pipeline_id: string;
   stage_id: string;
   name: string;
+  description_rich_text: string | null;
   crm_client_id: string | null;
   owner_user_id: string | null;
   value_amount: number | null;
@@ -126,6 +127,7 @@ export function useCreateOpportunity() {
       pipeline_id: string;
       stage_id: string;
       name: string;
+      description_rich_text?: string;
       crm_client_id?: string;
       owner_user_id?: string;
       value_amount?: number;
@@ -141,6 +143,7 @@ export function useCreateOpportunity() {
           pipeline_id: data.pipeline_id,
           stage_id: data.stage_id,
           name: data.name,
+          description_rich_text: data.description_rich_text || null,
           crm_client_id: data.crm_client_id || null,
           owner_user_id: data.owner_user_id || null,
           value_amount: data.value_amount || null,
@@ -171,6 +174,7 @@ export function useUpdateOpportunity() {
       id: string;
       stage_id?: string;
       name?: string;
+      description_rich_text?: string | null;
       crm_client_id?: string | null;
       owner_user_id?: string | null;
       value_amount?: number | null;
