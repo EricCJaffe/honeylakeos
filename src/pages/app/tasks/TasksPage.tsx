@@ -1,8 +1,8 @@
 import * as React from "react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, Repeat, Filter, FileText, Layers, List, Settings } from "lucide-react";
+import { CheckCircle2, Repeat, Filter, FileText, Layers, List, Settings, Tag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { TaskList } from "./TaskList";
@@ -37,6 +38,8 @@ export default function TasksPage() {
   const [projectFilter, setProjectFilter] = useState<string>("all");
   const [phaseFilter, setPhaseFilter] = useState<string>("all");
   const [listFilter, setListFilter] = useState<string>("all");
+  const [tagFilter, setTagFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [templateToApply, setTemplateToApply] = useState<Template | null>(null);
@@ -188,9 +191,46 @@ export default function TasksPage() {
     setProjectFilter("all");
     setPhaseFilter("all");
     setListFilter("all");
+    setTagFilter("all");
+    setSearchQuery("");
   };
 
-  const hasFilters = projectFilter !== "all" || phaseFilter !== "all" || listFilter !== "all";
+  const hasFilters = projectFilter !== "all" || phaseFilter !== "all" || listFilter !== "all" || tagFilter !== "all" || searchQuery !== "";
+
+  // Extract unique tags from all tasks
+  const uniqueTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    [...allTasks, ...myTasks, ...recurringTasks].forEach((task) => {
+      if (task.tags && Array.isArray(task.tags)) {
+        task.tags.forEach((tag: string) => tagSet.add(tag));
+      }
+    });
+    return Array.from(tagSet).sort();
+  }, [allTasks, myTasks, recurringTasks]);
+
+  // Filter function for tags and search
+  const filterTasks = (tasks: any[]) => {
+    return tasks.filter((task) => {
+      // Tag filter
+      if (tagFilter !== "all") {
+        const taskTags = Array.isArray(task.tags) ? task.tags : [];
+        if (!taskTags.includes(tagFilter)) return false;
+      }
+      // Search filter (searches title and tags)
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const titleMatch = task.title?.toLowerCase().includes(query);
+        const taskTags = Array.isArray(task.tags) ? task.tags : [];
+        const tagMatch = taskTags.some((t: string) => t.toLowerCase().includes(query));
+        if (!titleMatch && !tagMatch) return false;
+      }
+      return true;
+    });
+  };
+
+  const filteredAllTasks = useMemo(() => filterTasks(allTasks), [allTasks, tagFilter, searchQuery]);
+  const filteredMyTasks = useMemo(() => filterTasks(myTasks), [myTasks, tagFilter, searchQuery]);
+  const filteredRecurringTasks = useMemo(() => filterTasks(recurringTasks), [recurringTasks, tagFilter, searchQuery]);
 
   if (membershipLoading || loadingAll) {
     return <div className="p-6"><div className="animate-pulse space-y-4"><div className="h-8 bg-muted rounded w-48" /><div className="h-64 bg-muted rounded-lg" /></div></div>;
@@ -282,6 +322,35 @@ export default function TasksPage() {
           </Select>
         )}
 
+        {/* Tag filter */}
+        {uniqueTags.length > 0 && (
+          <Select value={tagFilter} onValueChange={setTagFilter}>
+            <SelectTrigger className="w-[160px]">
+              <Tag className="h-4 w-4 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Filter by tag" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Tags</SelectItem>
+              {uniqueTags.map((tag) => (
+                <SelectItem key={tag} value={tag}>
+                  {tag}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {/* Search */}
+        <div className="relative">
+          <Input
+            type="text"
+            placeholder="Search tasks..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-[180px] pl-3"
+          />
+        </div>
+
         {hasFilters && (
           <Badge variant="secondary" className="cursor-pointer" onClick={clearFilters}>
             Clear filters
@@ -299,26 +368,26 @@ export default function TasksPage() {
 
       <Tabs defaultValue="my" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="my">My Tasks ({myTasks.length})</TabsTrigger>
-          <TabsTrigger value="all">All Tasks ({allTasks.length})</TabsTrigger>
-          <TabsTrigger value="recurring" className="gap-1"><Repeat className="h-3.5 w-3.5" />Recurring ({recurringTasks.length})</TabsTrigger>
+          <TabsTrigger value="my">My Tasks ({filteredMyTasks.length})</TabsTrigger>
+          <TabsTrigger value="all">All Tasks ({filteredAllTasks.length})</TabsTrigger>
+          <TabsTrigger value="recurring" className="gap-1"><Repeat className="h-3.5 w-3.5" />Recurring ({filteredRecurringTasks.length})</TabsTrigger>
           <TabsTrigger value="templates" className="gap-1"><FileText className="h-3.5 w-3.5" />Templates</TabsTrigger>
         </TabsList>
         <TabsContent value="my">
           <Card>
             <CardContent className="p-0">
-              {myTasks.length === 0 ? (
+              {filteredMyTasks.length === 0 ? (
                 <div className="py-12">
                   <EmptyState 
                     icon={CheckCircle2} 
-                    title="No tasks assigned" 
-                    description="Tasks assigned to you will appear here."
-                    actionLabel="Create Task"
-                    onAction={handleCreate}
+                    title={hasFilters ? "No matching tasks" : "No tasks assigned"}
+                    description={hasFilters ? "Try adjusting your filters." : "Tasks assigned to you will appear here."}
+                    actionLabel={!hasFilters ? "Create Task" : undefined}
+                    onAction={!hasFilters ? handleCreate : undefined}
                   />
                 </div>
               ) : (
-                <TaskList tasks={myTasks} onEditTask={handleEdit} showProject showPhase showList />
+                <TaskList tasks={filteredMyTasks} onEditTask={handleEdit} showProject showPhase showList />
               )}
             </CardContent>
           </Card>
@@ -326,18 +395,18 @@ export default function TasksPage() {
         <TabsContent value="all">
           <Card>
             <CardContent className="p-0">
-              {allTasks.length === 0 ? (
+              {filteredAllTasks.length === 0 ? (
                 <div className="py-12">
                   <EmptyState 
                     icon={CheckCircle2} 
-                    title="No tasks yet" 
-                    description="Create your first task to get started."
-                    actionLabel="Create Task"
-                    onAction={handleCreate}
+                    title={hasFilters ? "No matching tasks" : "No tasks yet"}
+                    description={hasFilters ? "Try adjusting your filters." : "Create your first task to get started."}
+                    actionLabel={!hasFilters ? "Create Task" : undefined}
+                    onAction={!hasFilters ? handleCreate : undefined}
                   />
                 </div>
               ) : (
-                <TaskList tasks={allTasks} onEditTask={handleEdit} showProject showPhase showList />
+                <TaskList tasks={filteredAllTasks} onEditTask={handleEdit} showProject showPhase showList />
               )}
             </CardContent>
           </Card>
@@ -345,18 +414,18 @@ export default function TasksPage() {
         <TabsContent value="recurring">
           <Card>
             <CardContent className="p-0">
-              {recurringTasks.length === 0 ? (
+              {filteredRecurringTasks.length === 0 ? (
                 <div className="py-12">
                   <EmptyState 
                     icon={Repeat} 
-                    title="No recurring tasks" 
-                    description="Create a recurring task to automate repetitive work."
-                    actionLabel="Create Recurring Task"
-                    onAction={handleCreate}
+                    title={hasFilters ? "No matching recurring tasks" : "No recurring tasks"}
+                    description={hasFilters ? "Try adjusting your filters." : "Create a recurring task to automate repetitive work."}
+                    actionLabel={!hasFilters ? "Create Recurring Task" : undefined}
+                    onAction={!hasFilters ? handleCreate : undefined}
                   />
                 </div>
               ) : (
-                <TaskList tasks={recurringTasks} onEditTask={handleEdit} showProject showPhase showRecurrence showList />
+                <TaskList tasks={filteredRecurringTasks} onEditTask={handleEdit} showProject showPhase showRecurrence showList />
               )}
             </CardContent>
           </Card>

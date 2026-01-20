@@ -33,6 +33,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { rruleToConfig } from "@/components/tasks/RecurrenceSelector";
 import { useAuth } from "@/lib/auth";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
+import { TaskTagsDisplay } from "@/components/tasks/TaskTagInput";
 
 interface TaskListProps {
   tasks: any[];
@@ -321,6 +322,10 @@ export function TaskList({
                         <Repeat className="h-3 w-3 mr-1" />
                         {getRecurrenceLabel(task)}
                       </Badge>
+                    )}
+                    {/* Tags display */}
+                    {task.tags && Array.isArray(task.tags) && task.tags.length > 0 && (
+                      <TaskTagsDisplay tags={task.tags as string[]} maxDisplay={2} />
                     )}
                   </div>
                 </div>
