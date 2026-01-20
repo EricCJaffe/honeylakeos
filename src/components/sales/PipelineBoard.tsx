@@ -132,7 +132,7 @@ export function PipelineBoard({ pipelineId }: PipelineBoardProps) {
 function getClientDisplayName(client: SalesOpportunity["crm_client"]): string {
   if (!client) return "No client linked";
   // Prefer org name for organizations, person name for individuals
-  if (client.type === "organization" || client.type === "b2b") {
+  if (client.entity_kind === "organization") {
     return client.org_name || client.person_full_name || "Unnamed";
   }
   return client.person_full_name || client.org_name || "Unnamed";
@@ -149,7 +149,7 @@ interface OpportunityCardProps {
 
 function OpportunityCard({ opportunity, isDragging, onDragStart, onDragEnd, onClick, onEdit }: OpportunityCardProps) {
   const clientName = getClientDisplayName(opportunity.crm_client);
-  const isOrg = opportunity.crm_client?.type === "organization" || opportunity.crm_client?.type === "b2b";
+  const isOrg = opportunity.crm_client?.entity_kind === "organization";
 
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();

@@ -29,6 +29,7 @@ export interface SalesOpportunity {
     id: string;
     person_full_name: string | null;
     org_name: string | null;
+    entity_kind: string;
     type: string;
   } | null;
 }
@@ -57,7 +58,7 @@ export function useSalesOpportunities(pipelineId?: string) {
         .select(`
           *,
           stage:sales_pipeline_stages(*),
-          crm_client:crm_clients(id, person_full_name, org_name, type)
+          crm_client:crm_clients(id, person_full_name, org_name, entity_kind, type)
         `)
         .eq("company_id", activeCompany.id)
         .order("updated_at", { ascending: false });
@@ -84,7 +85,7 @@ export function useSalesOpportunity(opportunityId: string | undefined) {
         .select(`
           *,
           stage:sales_pipeline_stages(*),
-          crm_client:crm_clients(id, person_full_name, org_name, type)
+          crm_client:crm_clients(id, person_full_name, org_name, entity_kind, type)
         `)
         .eq("id", opportunityId)
         .single();

@@ -29,7 +29,7 @@ interface OpportunityListViewProps {
 
 function getClientDisplayName(client: SalesOpportunity["crm_client"]): string {
   if (!client) return "—";
-  if (client.type === "organization" || client.type === "b2b") {
+  if (client.entity_kind === "organization") {
     return client.org_name || client.person_full_name || "Unnamed";
   }
   return client.person_full_name || client.org_name || "Unnamed";
@@ -79,8 +79,8 @@ export function OpportunityListView({ opportunities, pipelineId, filter = "all" 
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredOpps.map((opp) => {
-              const isOrg = opp.crm_client?.type === "organization" || opp.crm_client?.type === "b2b";
+          {filteredOpps.map((opp) => {
+              const isOrg = opp.crm_client?.entity_kind === "organization";
               return (
                 <TableRow
                   key={opp.id}
