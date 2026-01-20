@@ -7742,6 +7742,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           crm_client_id: string | null
+          description_rich_text: string | null
           expected_close_date: string | null
           id: string
           is_sample: boolean
@@ -7762,6 +7763,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           crm_client_id?: string | null
+          description_rich_text?: string | null
           expected_close_date?: string | null
           id?: string
           is_sample?: boolean
@@ -7782,6 +7784,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           crm_client_id?: string | null
+          description_rich_text?: string | null
           expected_close_date?: string | null
           id?: string
           is_sample?: boolean
@@ -7837,6 +7840,48 @@ export type Database = {
             columns: ["stage_id"]
             isOneToOne: false
             referencedRelation: "sales_pipeline_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_opportunity_comments: {
+        Row: {
+          author_user_id: string
+          body_rich_text: string
+          company_id: string
+          created_at: string
+          id: string
+          opportunity_id: string
+        }
+        Insert: {
+          author_user_id: string
+          body_rich_text: string
+          company_id: string
+          created_at?: string
+          id?: string
+          opportunity_id: string
+        }
+        Update: {
+          author_user_id?: string
+          body_rich_text?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          opportunity_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_opportunity_comments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_opportunity_comments_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "sales_opportunities"
             referencedColumns: ["id"]
           },
         ]
