@@ -338,7 +338,7 @@ export default function EmployeesPanel() {
 
   const copyInviteLink = (invite: InviteWithEmployee) => {
     const baseUrl = window.location.origin;
-    const inviteUrl = `${baseUrl}/accept-invite?token=${invite.token}`;
+    const inviteUrl = `${baseUrl}/invite?token=${invite.token}`;
     navigator.clipboard.writeText(inviteUrl);
     toast.success("Invite link copied to clipboard");
   };
