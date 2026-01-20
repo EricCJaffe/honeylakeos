@@ -21,23 +21,31 @@ serve(async (req: Request): Promise<Response> => {
   try {
     // 1. Validate required environment variables
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    const emailFrom = Deno.env.get("EMAIL_FROM");
     const appUrl = Deno.env.get("APP_URL");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    if (!resendApiKey) {
-      console.error("RESEND_API_KEY is not set");
+    // Get EMAIL_FROM from environment only - never from user input
+    // Default to Resend's test address if not configured
+    const emailFrom = Deno.env.get("EMAIL_FROM") || "BusinessOS <onboarding@resend.dev>";
+
+    // Validate EMAIL_FROM format: either "email@domain.com" or "Name <email@domain.com>"
+    const emailFormatRegex = /^(?:[^<]+<)?[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}>?$/;
+    if (!emailFormatRegex.test(emailFrom)) {
+      console.error("EMAIL_FROM has invalid format:", emailFrom.substring(0, 20) + "...");
       return new Response(
-        JSON.stringify({ success: false, error: "RESEND_API_KEY is not configured" }),
+        JSON.stringify({ 
+          success: false, 
+          error: "Email sender configuration is invalid. Please contact support." 
+        }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    if (!emailFrom) {
-      console.error("EMAIL_FROM is not set");
+    if (!resendApiKey) {
+      console.error("RESEND_API_KEY is not set");
       return new Response(
-        JSON.stringify({ success: false, error: "EMAIL_FROM is not configured" }),
+        JSON.stringify({ success: false, error: "Email service is not configured. Please contact support." }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
@@ -45,7 +53,7 @@ serve(async (req: Request): Promise<Response> => {
     if (!appUrl) {
       console.error("APP_URL is not set");
       return new Response(
-        JSON.stringify({ success: false, error: "APP_URL is not configured" }),
+        JSON.stringify({ success: false, error: "Application URL is not configured. Please contact support." }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
@@ -53,7 +61,7 @@ serve(async (req: Request): Promise<Response> => {
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error("Missing Supabase environment variables");
       return new Response(
-        JSON.stringify({ success: false, error: "Missing Supabase configuration" }),
+        JSON.stringify({ success: false, error: "Backend configuration is incomplete. Please contact support." }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
