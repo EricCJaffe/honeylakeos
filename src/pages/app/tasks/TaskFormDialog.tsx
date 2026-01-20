@@ -13,6 +13,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogBody,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -358,7 +360,8 @@ export function TaskFormDialog({
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <DialogBody className="space-y-4 py-2">
             {/* Template Selector - only for new tasks */}
             {!isEditing && (
               <TemplateSelector
@@ -653,8 +656,9 @@ export function TaskFormDialog({
                 <span>You can add file attachments after creating the task.</span>
               </div>
             )}
+            </DialogBody>
 
-            <div className="flex justify-end gap-2 pt-4">
+            <DialogFooter className="border-t border-border -mx-4 px-4 sm:-mx-6 sm:px-6">
               <Button
                 type="button"
                 variant="outline"
@@ -669,7 +673,7 @@ export function TaskFormDialog({
                   ? "Save Changes"
                   : "Create Task"}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>
