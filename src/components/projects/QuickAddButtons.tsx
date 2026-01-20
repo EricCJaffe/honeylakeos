@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Plus, CheckCircle2, Calendar, StickyNote, FileText, Upload } from "lucide-react";
+import { Plus, CheckCircle2, Calendar, StickyNote, FileText, Upload, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,6 +15,7 @@ interface QuickAddButtonsProps {
   onAddEvent?: () => void;
   onAddNote?: () => void;
   onUploadDocument?: () => void;
+  onAddPhase?: () => void;
   className?: string;
   variant?: "default" | "compact";
 }
@@ -24,6 +25,7 @@ export function QuickAddButtons({
   onAddEvent,
   onAddNote,
   onUploadDocument,
+  onAddPhase,
   className,
   variant = "default",
 }: QuickAddButtonsProps) {
@@ -35,8 +37,9 @@ export function QuickAddButtons({
   const showEvents = onAddEvent && isEnabled("calendar");
   const showNotes = onAddNote && isEnabled("notes");
   const showDocuments = onUploadDocument && isEnabled("documents");
+  const showPhase = !!onAddPhase;
 
-  const hasAnyAction = showTasks || showEvents || showNotes || showDocuments;
+  const hasAnyAction = showTasks || showEvents || showNotes || showDocuments || showPhase;
 
   if (!hasAnyAction) return null;
 
@@ -74,6 +77,12 @@ export function QuickAddButtons({
               Upload Document
             </DropdownMenuItem>
           )}
+          {showPhase && (
+            <DropdownMenuItem onClick={onAddPhase}>
+              <Layers className="h-4 w-4 mr-2" />
+              Add Phase
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     );
@@ -103,6 +112,12 @@ export function QuickAddButtons({
         <Button variant="outline" size="sm" onClick={onUploadDocument}>
           <Upload className="h-4 w-4 mr-1.5" />
           Upload Doc
+        </Button>
+      )}
+      {showPhase && (
+        <Button variant="outline" size="sm" onClick={onAddPhase}>
+          <Layers className="h-4 w-4 mr-1.5" />
+          Add Phase
         </Button>
       )}
     </div>
