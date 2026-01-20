@@ -134,12 +134,19 @@ export default function ProjectsPage() {
 
   const deleteProject = useMutation({
     mutationFn: async (projectId: string) => {
-      const { error } = await supabase.from("projects").delete().eq("id", projectId);
+      // Soft delete - set deleted_at timestamp
+      const { error } = await supabase
+        .from("projects")
+        .update({ 
+          deleted_at: new Date().toISOString(),
+          deleted_by: user?.id 
+        })
+        .eq("id", projectId);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast.success("Project deleted");
+      toast.success("Project moved to trash");
     },
     onError: () => {
       toast.error("Failed to delete project");
@@ -174,6 +181,8 @@ export default function ProjectsPage() {
         return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
       case "on_hold":
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
+      case "archived":
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
       default:
         return "bg-muted text-muted-foreground";
     }

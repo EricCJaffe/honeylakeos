@@ -17,7 +17,9 @@ import {
   Trash2,
   AlertCircle,
   Copy,
-  FileDown
+  FileDown,
+  Archive,
+  ArchiveRestore
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompanyModules } from "@/hooks/useCompanyModules";
@@ -33,8 +35,19 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { TaskFormDialog } from "../tasks/TaskFormDialog";
@@ -66,6 +79,7 @@ export default function ProjectDetailPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isSaveTemplateOpen, setIsSaveTemplateOpen] = useState(false);
   const [isDuplicateOpen, setIsDuplicateOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [taskViewMode, setTaskViewMode] = useState<"list" | "board">("list");
   const [editingTask, setEditingTask] = useState<any>(null);
 
@@ -180,16 +194,59 @@ export default function ProjectDetailPage() {
 
   const deleteProject = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("projects").delete().eq("id", id);
+      // Soft delete - set deleted_at timestamp
+      const { error } = await supabase
+        .from("projects")
+        .update({ 
+          deleted_at: new Date().toISOString(),
+          deleted_by: user?.id 
+        })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast.success("Project deleted");
+      toast.success("Project moved to trash");
       navigate("/app/projects");
     },
     onError: () => {
       toast.error("Failed to delete project");
+    },
+  });
+
+  const archiveProject = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("projects")
+        .update({ status: "archived" })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+      toast.success("Project archived");
+    },
+    onError: () => {
+      toast.error("Failed to archive project");
+    },
+  });
+
+  const unarchiveProject = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("projects")
+        .update({ status: "active" })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+      toast.success("Project restored to active");
+    },
+    onError: () => {
+      toast.error("Failed to restore project");
     },
   });
 
@@ -237,10 +294,14 @@ export default function ProjectDetailPage() {
         return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
       case "on_hold":
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
+      case "archived":
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
       default:
         return "bg-muted text-muted-foreground";
     }
   };
+
+  const isArchived = project?.status === "archived";
 
   return (
     <div className="p-6">
@@ -281,8 +342,20 @@ export default function ProjectDetailPage() {
                 <Copy className="h-4 w-4 mr-2" />
                 Duplicate Project
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {isArchived ? (
+                <DropdownMenuItem onClick={() => unarchiveProject.mutate(projectId!)}>
+                  <ArchiveRestore className="h-4 w-4 mr-2" />
+                  Restore from Archive
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={() => archiveProject.mutate(projectId!)}>
+                  <Archive className="h-4 w-4 mr-2" />
+                  Archive Project
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
-                onClick={() => deleteProject.mutate(projectId!)}
+                onClick={() => setIsDeleteDialogOpen(true)}
                 className="text-destructive"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
@@ -713,6 +786,26 @@ export default function ProjectDetailPage() {
         onOpenChange={setIsDuplicateOpen}
         project={project}
       />
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Project</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{project.name}"? This project will be moved to trash and can be recovered within 30 days.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteProject.mutate(projectId!)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
