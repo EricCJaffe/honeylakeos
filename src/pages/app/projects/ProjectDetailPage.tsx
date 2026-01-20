@@ -80,6 +80,7 @@ export default function ProjectDetailPage() {
   const [isSaveTemplateOpen, setIsSaveTemplateOpen] = useState(false);
   const [isDuplicateOpen, setIsDuplicateOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isAddingPhase, setIsAddingPhase] = useState(false);
   const [taskViewMode, setTaskViewMode] = useState<"list" | "board">("list");
   const [editingTask, setEditingTask] = useState<any>(null);
 
@@ -373,6 +374,7 @@ export default function ProjectDetailPage() {
           onAddEvent={isEnabled("calendar") ? () => setIsEventDialogOpen(true) : undefined}
           onAddNote={isEnabled("notes") ? () => setIsNoteDialogOpen(true) : undefined}
           onUploadDocument={isEnabled("documents") ? () => window.location.href = "/app/documents" : undefined}
+          onAddPhase={() => setIsAddingPhase(true)}
         />
       </div>
 
@@ -454,20 +456,36 @@ export default function ProjectDetailPage() {
         {/* Overview Tab */}
         <TabsContent value="overview">
           <div className="grid gap-6 lg:grid-cols-3">
-            {/* Phases Section */}
+            {/* Tasks by Phase Section */}
             <div className="lg:col-span-2">
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Project Phases</CardTitle>
+                  <CardTitle className="text-base">Tasks by Phase</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <PhaseGroupedTaskList
+                    tasks={tasks}
+                    projectId={projectId!}
+                    onAddTask={() => setIsTaskDialogOpen(true)}
+                    onEditTask={handleEditTask}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Phases Management */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Manage Phases</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <PhasesManager projectId={projectId!} />
                 </CardContent>
               </Card>
-            </div>
 
-            {/* Recent Notes Section */}
-            <div className="space-y-6">
+              {/* Recent Notes Section */}
               {isEnabled("notes") && (
                 <Card>
                   <CardHeader className="pb-3">
@@ -509,7 +527,7 @@ export default function ProjectDetailPage() {
                 </Card>
               )}
 
-              {/* Links Section (less prominent) */}
+              {/* Links Section */}
               {projectId && (
                 <Card>
                   <CardHeader className="pb-3">
