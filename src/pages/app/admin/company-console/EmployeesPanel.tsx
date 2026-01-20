@@ -15,6 +15,7 @@ import {
   Trash2,
   Link,
   Copy,
+  KeyRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -342,6 +343,22 @@ export default function EmployeesPanel() {
     toast.success("Invite link copied to clipboard");
   };
 
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (employee: Employee) => {
+      if (!employee.email) throw new Error("Employee has no email address");
+      const { error } = await supabase.auth.resetPasswordForEmail(employee.email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_, employee) => {
+      toast.success(`Password reset email sent to ${employee.email}`);
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to send password reset: ${error.message}`);
+    },
+  });
+
   const closeFormDialog = () => {
     setFormDialogOpen(false);
     setEditingEmployee(null);
@@ -472,6 +489,19 @@ export default function EmployeesPanel() {
                                   <DropdownMenuItem onClick={() => handleSendInvite(employee)}>
                                     <Send className="h-4 w-4 mr-2" />
                                     Send Invite
+                                  </DropdownMenuItem>
+                                )}
+                                {employee.email && employee.user_id && (
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      if (confirm(`Send password reset email to ${employee.email}?`)) {
+                                        resetPasswordMutation.mutate(employee);
+                                      }
+                                    }}
+                                    disabled={resetPasswordMutation.isPending}
+                                  >
+                                    <KeyRound className="h-4 w-4 mr-2" />
+                                    Reset Password
                                   </DropdownMenuItem>
                                 )}
                                 <DropdownMenuSeparator />
