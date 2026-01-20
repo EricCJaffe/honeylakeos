@@ -26,13 +26,13 @@ import { OpportunityFormDialog } from "./OpportunityFormDialog";
 import { format } from "date-fns";
 
 function OpportunityDetailContent() {
-  const { id } = useParams<{ id: string }>();
+  const { opportunityId } = useParams<{ opportunityId: string }>();
   const navigate = useNavigate();
   const [showEditForm, setShowEditForm] = useState(false);
 
-  const { data: opportunity, isLoading } = useSalesOpportunity(id);
+  const { data: opportunity, isLoading } = useSalesOpportunity(opportunityId);
   const { data: stages = [] } = usePipelineStages(opportunity?.pipeline_id);
-  const { data: stageHistory = [] } = useOpportunityStageHistory(id);
+  const { data: stageHistory = [] } = useOpportunityStageHistory(opportunityId);
 
   if (isLoading) {
     return (
