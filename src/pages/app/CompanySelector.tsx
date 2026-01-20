@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 export default function CompanySelector() {
   const navigate = useNavigate();
-  const { memberships, activeCompanyId, setActiveCompany, loading, isSiteAdmin } = useMembership();
+  const { memberships, activeCompanyId, setActiveCompany, loading: membershipsLoading, isSiteAdmin } = useMembership();
   const [selecting, setSelecting] = React.useState<string | null>(null);
 
   const handleSelectCompany = async (companyId: string) => {
@@ -26,7 +26,9 @@ export default function CompanySelector() {
     }
   };
 
-  if (loading) {
+  // Show loading until memberships query is complete
+  // This prevents flashing "No Companies Yet" for users who have memberships
+  if (membershipsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

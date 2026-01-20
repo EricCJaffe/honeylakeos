@@ -7,16 +7,21 @@ import { useMembership } from "@/lib/membership";
 import { useAuth } from "@/lib/auth";
 import { Loader2 } from "lucide-react";
 import { APP_VERSION } from "@/lib/version";
+
 export function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
-  const { memberships, activeCompanyId, loading } = useMembership();
+  const { user, loading: authLoading } = useAuth();
+  const { memberships, activeCompanyId, loading: membershipsLoading } = useMembership();
   const [isRedirectResolved, setIsRedirectResolved] = React.useState(false);
+
+  // Combined loading state: true until both auth AND memberships are resolved
+  const isLoading = authLoading || membershipsLoading;
 
   // Redirect logic based on memberships and active company
   React.useEffect(() => {
-    if (loading || !user) {
+    // CRITICAL: Do not make any routing decisions until loading is complete
+    if (isLoading || !user) {
       setIsRedirectResolved(false);
       return;
     }
@@ -31,7 +36,8 @@ export function AppLayout() {
       return;
     }
 
-    // If no memberships, redirect to onboarding
+    // Only redirect to onboarding when we have CONFIRMED zero memberships
+    // (isLoading is false at this point, so memberships query is complete)
     if (memberships.length === 0) {
       navigate("/app/onboarding", { replace: true });
       return;
@@ -45,11 +51,11 @@ export function AppLayout() {
 
     // All checks passed, user can view the current route
     setIsRedirectResolved(true);
-  }, [loading, user, memberships, activeCompanyId, navigate, location.pathname]);
+  }, [isLoading, user, memberships, activeCompanyId, navigate, location.pathname]);
 
-  // Show loading state while checking memberships OR while redirect decision is pending
+  // Show loading state while auth OR memberships are loading, OR while redirect decision is pending
   // This prevents the flash of onboarding UI for returning users
-  if (loading || !isRedirectResolved) {
+  if (isLoading || !isRedirectResolved) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
