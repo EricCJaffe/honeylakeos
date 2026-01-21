@@ -56,6 +56,7 @@ import { LinkPicker } from "@/components/LinkPicker";
 import { AssigneePicker } from "@/components/tasks/AssigneePicker";
 import { useTaskAssignees } from "@/hooks/useCompanyMembers";
 import { TaskTagInput } from "@/components/tasks/TaskTagInput";
+import { SubtasksDialogSection, DraftSubtask } from "@/components/tasks/SubtasksDialogSection";
 
 const taskSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -119,7 +120,10 @@ export function TaskFormDialog({
   // Tags state
   const [tags, setTags] = React.useState<string[]>([]);
 
-  // Set initial assignees and tags when editing
+  // Draft subtasks state (for new tasks only - persisted after task creation)
+  const [draftSubtasks, setDraftSubtasks] = React.useState<DraftSubtask[]>([]);
+
+  // Set initial assignees, tags, and reset subtasks when editing or dialog opens
   React.useEffect(() => {
     if (task && existingAssignees.length > 0) {
       setAssignees(existingAssignees);
@@ -133,6 +137,10 @@ export function TaskFormDialog({
       setTags(taskTags.filter((t: unknown): t is string => typeof t === "string"));
     } else {
       setTags([]);
+    }
+    // Reset draft subtasks when opening for new task
+    if (!task) {
+      setDraftSubtasks([]);
     }
   }, [task, existingAssignees, user]);
 
@@ -315,6 +323,28 @@ export function TaskFormDialog({
           );
           if (assignError) throw assignError;
         }
+
+        // Batch create draft subtasks for new task
+        if (draftSubtasks.length > 0 && taskId) {
+          const subtasksToInsert = draftSubtasks.map((subtask, index) => ({
+            company_id: activeCompanyId,
+            parent_task_id: taskId,
+            title: subtask.title,
+            due_date: subtask.dueDate || null,
+            status: subtask.status,
+            sort_order: index,
+            created_by: user.id,
+          }));
+
+          const { error: subtaskError } = await supabase
+            .from("task_subtasks")
+            .insert(subtasksToInsert);
+
+          if (subtaskError) {
+            console.error("Failed to create subtasks:", subtaskError);
+            // Don't throw - task was created successfully, subtasks are non-critical
+          }
+        }
       }
 
       return taskId;
@@ -326,12 +356,15 @@ export function TaskFormDialog({
       queryClient.invalidateQueries({ queryKey: ["recurring-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["task-occurrences"] });
       queryClient.invalidateQueries({ queryKey: ["task-assignees"] });
+      queryClient.invalidateQueries({ queryKey: ["task-subtasks"] });
+      queryClient.invalidateQueries({ queryKey: ["task-subtask-counts"] });
       toast.success(isEditing ? "Task updated" : "Task created");
       onOpenChange(false);
       form.reset();
       setRecurrenceConfig(null);
       setAssignees([]);
       setTags([]);
+      setDraftSubtasks([]);
       if (taskId) {
         onSuccess?.(taskId);
       }
@@ -546,6 +579,13 @@ export function TaskFormDialog({
                 placeholder="Add tags (press Enter)"
               />
             </div>
+
+            {/* Subtasks section */}
+            <SubtasksDialogSection
+              taskId={isEditing ? task?.id : undefined}
+              draftSubtasks={isEditing ? undefined : draftSubtasks}
+              onDraftSubtasksChange={isEditing ? undefined : setDraftSubtasks}
+            />
 
             <div className="grid grid-cols-2 gap-4">
               <FormField
