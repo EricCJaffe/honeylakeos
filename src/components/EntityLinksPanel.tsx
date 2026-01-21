@@ -41,6 +41,7 @@ const ENTITY_TYPES: { value: EntityType; label: string; icon: string }[] = [
   { value: "crm_client", label: "Client", icon: "🤝" },
   { value: "external_contact", label: "Contact", icon: "👤" },
   { value: "coach_profile", label: "Coach/Partner", icon: "🎓" },
+  { value: "sales_opportunity", label: "Opportunity", icon: "💰" },
 ];
 
 const LINK_TYPES: { value: LinkType; label: string; color: string }[] = [
@@ -156,6 +157,21 @@ function LinkedEntityItem({
             subtitle: `${typeLabel}${contact?.email ? ` • ${contact.email}` : ""}`,
             isArchived: !!data.archived_at,
             type: data.profile_type,
+          };
+        }
+        case "sales_opportunity": {
+          const { data } = await supabase
+            .from("sales_opportunities")
+            .select("id, name, status, value_amount")
+            .eq("id", targetId)
+            .single();
+          if (!data) return null;
+          const valueStr = data.value_amount ? `$${data.value_amount.toLocaleString()}` : null;
+          return {
+            id: data.id,
+            name: data.name,
+            subtitle: [data.status, valueStr].filter(Boolean).join(" • "),
+            status: data.status,
           };
         }
         default:
@@ -444,7 +460,7 @@ function GroupedLinks({
   // Define order for groups
   const groupOrder: EntityType[] = [
     "project", "task", "event", "note", "document", 
-    "crm_client", "external_contact", "coach_profile"
+    "crm_client", "external_contact", "coach_profile", "sales_opportunity"
   ];
 
   const sortedGroups = Object.keys(groupedLinks).sort((a, b) => {

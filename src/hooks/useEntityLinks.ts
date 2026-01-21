@@ -180,6 +180,7 @@ export function useEntitySearch(entityType: EntityType, searchQuery: string) {
             .from("tasks")
             .select("id, title")
             .eq("company_id", activeCompanyId)
+            .is("deleted_at", null)
             .ilike("title", `%${searchQuery}%`)
             .limit(10);
           break;
@@ -188,6 +189,7 @@ export function useEntitySearch(entityType: EntityType, searchQuery: string) {
             .from("projects")
             .select("id, name")
             .eq("company_id", activeCompanyId)
+            .is("deleted_at", null)
             .ilike("name", `%${searchQuery}%`)
             .limit(10);
           break;
@@ -196,6 +198,7 @@ export function useEntitySearch(entityType: EntityType, searchQuery: string) {
             .from("notes")
             .select("id, title")
             .eq("company_id", activeCompanyId)
+            .is("deleted_at", null)
             .ilike("title", `%${searchQuery}%`)
             .limit(10);
           break;
@@ -204,6 +207,7 @@ export function useEntitySearch(entityType: EntityType, searchQuery: string) {
             .from("documents")
             .select("id, name")
             .eq("company_id", activeCompanyId)
+            .is("deleted_at", null)
             .ilike("name", `%${searchQuery}%`)
             .limit(10);
           break;
@@ -215,6 +219,40 @@ export function useEntitySearch(entityType: EntityType, searchQuery: string) {
             .ilike("title", `%${searchQuery}%`)
             .limit(10);
           break;
+        case "crm_client":
+          query = supabase
+            .from("crm_clients")
+            .select("id, person_full_name, org_name, type")
+            .eq("company_id", activeCompanyId)
+            .is("archived_at", null)
+            .or(`person_full_name.ilike.%${searchQuery}%,org_name.ilike.%${searchQuery}%`)
+            .limit(10);
+          break;
+        case "external_contact":
+          query = supabase
+            .from("external_contacts")
+            .select("id, full_name")
+            .eq("company_id", activeCompanyId)
+            .is("archived_at", null)
+            .ilike("full_name", `%${searchQuery}%`)
+            .limit(10);
+          break;
+        case "coach_profile":
+          query = supabase
+            .from("coach_profiles")
+            .select("id, external_contacts(full_name)")
+            .eq("company_id", activeCompanyId)
+            .is("archived_at", null)
+            .limit(10);
+          break;
+        case "sales_opportunity":
+          query = supabase
+            .from("sales_opportunities")
+            .select("id, name")
+            .eq("company_id", activeCompanyId)
+            .ilike("name", `%${searchQuery}%`)
+            .limit(10);
+          break;
         default:
           return [];
       }
@@ -222,10 +260,24 @@ export function useEntitySearch(entityType: EntityType, searchQuery: string) {
       const { data, error } = await query;
       if (error) throw error;
 
-      return (data || []).map((item: Record<string, unknown>) => ({
-        id: item.id as string,
-        name: (item.title || item.name) as string,
-      }));
+      return (data || []).map((item: Record<string, unknown>) => {
+        // Handle different name fields for different entity types
+        let name: string;
+        if (entityType === "crm_client") {
+          const type = item.type as string;
+          name = type === "organization" 
+            ? (item.org_name as string) || "Unnamed"
+            : (item.person_full_name as string) || "Unnamed";
+        } else if (entityType === "external_contact") {
+          name = (item.full_name as string) || "Unnamed";
+        } else if (entityType === "coach_profile") {
+          const contact = item.external_contacts as { full_name: string } | null;
+          name = contact?.full_name || "Unknown";
+        } else {
+          name = (item.title || item.name) as string;
+        }
+        return { id: item.id as string, name };
+      });
     },
     enabled: !!activeCompanyId && searchQuery.length >= 2,
   });
@@ -253,6 +305,7 @@ export function useModuleAwareEntitySearch(entityType: EntityType, searchQuery: 
             .from("tasks")
             .select("id, title")
             .eq("company_id", activeCompanyId)
+            .is("deleted_at", null)
             .ilike("title", `%${searchQuery}%`)
             .limit(10);
           break;
@@ -261,6 +314,7 @@ export function useModuleAwareEntitySearch(entityType: EntityType, searchQuery: 
             .from("projects")
             .select("id, name")
             .eq("company_id", activeCompanyId)
+            .is("deleted_at", null)
             .ilike("name", `%${searchQuery}%`)
             .limit(10);
           break;
@@ -269,6 +323,7 @@ export function useModuleAwareEntitySearch(entityType: EntityType, searchQuery: 
             .from("notes")
             .select("id, title")
             .eq("company_id", activeCompanyId)
+            .is("deleted_at", null)
             .ilike("title", `%${searchQuery}%`)
             .limit(10);
           break;
@@ -277,6 +332,7 @@ export function useModuleAwareEntitySearch(entityType: EntityType, searchQuery: 
             .from("documents")
             .select("id, name")
             .eq("company_id", activeCompanyId)
+            .is("deleted_at", null)
             .ilike("name", `%${searchQuery}%`)
             .limit(10);
           break;
@@ -288,6 +344,40 @@ export function useModuleAwareEntitySearch(entityType: EntityType, searchQuery: 
             .ilike("title", `%${searchQuery}%`)
             .limit(10);
           break;
+        case "crm_client":
+          query = supabase
+            .from("crm_clients")
+            .select("id, person_full_name, org_name, type")
+            .eq("company_id", activeCompanyId)
+            .is("archived_at", null)
+            .or(`person_full_name.ilike.%${searchQuery}%,org_name.ilike.%${searchQuery}%`)
+            .limit(10);
+          break;
+        case "external_contact":
+          query = supabase
+            .from("external_contacts")
+            .select("id, full_name")
+            .eq("company_id", activeCompanyId)
+            .is("archived_at", null)
+            .ilike("full_name", `%${searchQuery}%`)
+            .limit(10);
+          break;
+        case "coach_profile":
+          query = supabase
+            .from("coach_profiles")
+            .select("id, external_contacts(full_name)")
+            .eq("company_id", activeCompanyId)
+            .is("archived_at", null)
+            .limit(10);
+          break;
+        case "sales_opportunity":
+          query = supabase
+            .from("sales_opportunities")
+            .select("id, name")
+            .eq("company_id", activeCompanyId)
+            .ilike("name", `%${searchQuery}%`)
+            .limit(10);
+          break;
         default:
           return [];
       }
@@ -295,10 +385,24 @@ export function useModuleAwareEntitySearch(entityType: EntityType, searchQuery: 
       const { data, error } = await query;
       if (error) throw error;
 
-      return (data || []).map((item: Record<string, unknown>) => ({
-        id: item.id as string,
-        name: (item.title || item.name) as string,
-      }));
+      return (data || []).map((item: Record<string, unknown>) => {
+        // Handle different name fields for different entity types
+        let name: string;
+        if (entityType === "crm_client") {
+          const type = item.type as string;
+          name = type === "organization" 
+            ? (item.org_name as string) || "Unnamed"
+            : (item.person_full_name as string) || "Unnamed";
+        } else if (entityType === "external_contact") {
+          name = (item.full_name as string) || "Unnamed";
+        } else if (entityType === "coach_profile") {
+          const contact = item.external_contacts as { full_name: string } | null;
+          name = contact?.full_name || "Unknown";
+        } else {
+          name = (item.title || item.name) as string;
+        }
+        return { id: item.id as string, name };
+      });
     },
     // Only run search if module is enabled
     enabled: !!activeCompanyId && searchQuery.length >= 2 && isModuleEnabled && !modulesLoading,
