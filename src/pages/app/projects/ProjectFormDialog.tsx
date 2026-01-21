@@ -95,7 +95,25 @@ export function ProjectFormDialog({
     },
   });
 
+  // Fetch existing CRM client link when editing
   React.useEffect(() => {
+    const fetchLinkedClient = async () => {
+      if (!project || !activeCompanyId) return;
+      
+      const { data } = await supabase
+        .from("entity_links")
+        .select("to_id")
+        .eq("company_id", activeCompanyId)
+        .eq("from_type", "project")
+        .eq("from_id", project.id)
+        .eq("to_type", "crm_client")
+        .maybeSingle();
+      
+      if (data?.to_id) {
+        form.setValue("linked_crm_client_id", data.to_id);
+      }
+    };
+    
     if (project) {
       form.reset({
         name: project.name,
@@ -106,6 +124,7 @@ export function ProjectFormDialog({
         phase_template_id: null,
         linked_crm_client_id: null,
       });
+      fetchLinkedClient();
     } else {
       form.reset({
         name: "",
@@ -117,7 +136,7 @@ export function ProjectFormDialog({
         linked_crm_client_id: null,
       });
     }
-  }, [project, form]);
+  }, [project, form, activeCompanyId]);
 
   const mutation = useMutation({
     mutationFn: async (values: ProjectFormValues) => {
@@ -135,6 +154,32 @@ export function ProjectFormDialog({
           })
           .eq("id", project.id);
         if (error) throw error;
+
+        // Handle CRM client link update
+        // First, remove any existing link
+        await supabase
+          .from("entity_links")
+          .delete()
+          .eq("company_id", activeCompanyId)
+          .eq("from_type", "project")
+          .eq("from_id", project.id)
+          .eq("to_type", "crm_client");
+
+        // Then create new link if a client is selected
+        if (values.linked_crm_client_id) {
+          const { error: linkError } = await supabase.rpc("create_entity_link", {
+            p_company_id: activeCompanyId,
+            p_from_type: "project",
+            p_from_id: project.id,
+            p_to_type: "crm_client",
+            p_to_id: values.linked_crm_client_id,
+            p_link_type: "related",
+          });
+          if (linkError) {
+            console.error("Failed to link CRM client:", linkError);
+          }
+        }
+
         return project.id;
       } else {
         // Create project
@@ -354,29 +399,27 @@ export function ProjectFormDialog({
               />
             )}
 
-            {/* Link to CRM Client - only for new projects */}
-            {!isEditing && (
-              <FormField
-                control={form.control}
-                name="linked_crm_client_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Link to Client</FormLabel>
-                    <FormControl>
-                      <CrmClientPicker
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Select client (optional)"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Associate this project with a CRM client
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+            {/* Link to CRM Client */}
+            <FormField
+              control={form.control}
+              name="linked_crm_client_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Link to Client</FormLabel>
+                  <FormControl>
+                    <CrmClientPicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Select client (optional)"
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Associate this project with a CRM client
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             </DialogBody>
 
