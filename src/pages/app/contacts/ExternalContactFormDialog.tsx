@@ -6,6 +6,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogBody,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -132,7 +134,8 @@ export function ExternalContactFormDialog({
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <DialogBody className="space-y-6 py-2">
             {/* Person Information Section */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">
@@ -253,8 +256,9 @@ export function ExternalContactFormDialog({
                 )}
               />
             </div>
+            </DialogBody>
 
-            <div className="flex justify-end gap-2 pt-2">
+            <DialogFooter className="border-t pt-4">
               <Button
                 type="button"
                 variant="outline"
@@ -272,7 +276,7 @@ export function ExternalContactFormDialog({
                     ? "Update"
                     : "Create"}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>

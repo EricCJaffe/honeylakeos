@@ -8,6 +8,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogBody,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -79,7 +80,8 @@ export function WorkflowFormDialog({ open, onOpenChange, companyId }: WorkflowFo
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <DialogBody className="space-y-4 py-2">
             <FormField
               control={form.control}
               name="title"
@@ -138,7 +140,9 @@ export function WorkflowFormDialog({ open, onOpenChange, companyId }: WorkflowFo
               )}
             />
 
-            <DialogFooter>
+            </DialogBody>
+
+            <DialogFooter className="border-t pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>

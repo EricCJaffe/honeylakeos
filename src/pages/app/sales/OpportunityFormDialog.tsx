@@ -9,6 +9,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogBody,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -257,7 +259,7 @@ export function OpportunityFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
             {isEdit ? "Edit Pipeline Opportunity" : "New Pipeline Opportunity"}
@@ -265,7 +267,8 @@ export function OpportunityFormDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <DialogBody className="space-y-4 py-2">
             <FormField
               control={form.control}
               name="name"
@@ -528,15 +531,16 @@ export function OpportunityFormDialog({
                 />
               </div>
             )}
+            </DialogBody>
 
-            <div className="flex justify-end gap-2 pt-4">
+            <DialogFooter className="border-t pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending ? "Saving..." : isEdit ? "Update" : "Create"}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>

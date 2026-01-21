@@ -9,6 +9,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogBody,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -121,7 +123,8 @@ export function CourseFormDialog({ open, onOpenChange, courseId }: CourseFormDia
           <div className="py-8 text-center text-muted-foreground">Loading...</div>
         ) : (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+              <DialogBody className="space-y-4 py-2">
               <FormField
                 control={form.control}
                 name="title"
@@ -203,14 +206,16 @@ export function CourseFormDialog({ open, onOpenChange, courseId }: CourseFormDia
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4">
+              </DialogBody>
+
+              <DialogFooter className="border-t pt-4">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                   Cancel
                 </Button>
                 <Button type="submit" disabled={isPending}>
                   {isPending ? "Saving..." : isEditing ? "Update" : "Create"}
                 </Button>
-              </div>
+              </DialogFooter>
             </form>
           </Form>
         )}
