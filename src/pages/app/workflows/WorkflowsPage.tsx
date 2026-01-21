@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Plus,
   FileText,
@@ -87,13 +87,20 @@ const sopStatusConfig: Record<SOPStatus, { label: string; icon: typeof CheckCirc
 
 export default function WorkflowsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { activeCompanyId } = useActiveCompany();
   const { isCompanyAdmin, isSiteAdmin } = useMembership();
   const { log } = useAuditLog();
   const [showWorkflowDialog, setShowWorkflowDialog] = useState(false);
   const [showFormDialog, setShowFormDialog] = useState(false);
   const [showSOPDialog, setShowSOPDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState<"workflows" | "forms" | "sops">("workflows");
+  
+  // Default to "forms" tab when on /app/forms route
+  const getDefaultTab = (): "workflows" | "forms" | "sops" => {
+    if (location.pathname.includes("/forms")) return "forms";
+    return "workflows";
+  };
+  const [activeTab, setActiveTab] = useState<"workflows" | "forms" | "sops">(getDefaultTab);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<WfStatus | "all">("all");
   const [scopeFilter, setScopeFilter] = useState<WfScopeType | "all">("all");
