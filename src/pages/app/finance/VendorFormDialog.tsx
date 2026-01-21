@@ -9,6 +9,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogBody,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -137,7 +138,7 @@ export function VendorFormDialog({ open, onOpenChange, vendor }: VendorFormDialo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Edit Vendor" : "Add Vendor"}</DialogTitle>
           <DialogDescription>
@@ -146,7 +147,8 @@ export function VendorFormDialog({ open, onOpenChange, vendor }: VendorFormDialo
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <DialogBody className="space-y-4 py-2">
             <FormField
               control={form.control}
               name="name"
@@ -293,8 +295,9 @@ export function VendorFormDialog({ open, onOpenChange, vendor }: VendorFormDialo
                 </FormItem>
               )}
             />
+            </DialogBody>
 
-            <DialogFooter>
+            <DialogFooter className="border-t pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>

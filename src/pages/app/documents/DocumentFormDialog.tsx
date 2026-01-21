@@ -10,6 +10,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogBody,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -130,7 +132,8 @@ export function DocumentFormDialog({
           <DialogTitle>Edit Document</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <DialogBody className="space-y-4 py-2">
             <FormField
               control={form.control}
               name="name"
@@ -225,7 +228,9 @@ export function DocumentFormDialog({
               )}
             />
 
-            <div className="flex justify-end gap-2 pt-4">
+            </DialogBody>
+
+            <DialogFooter className="border-t pt-4">
               <Button
                 type="button"
                 variant="outline"
@@ -236,7 +241,7 @@ export function DocumentFormDialog({
               <Button type="submit" disabled={mutation.isPending}>
                 {mutation.isPending ? "Saving..." : "Save Changes"}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>

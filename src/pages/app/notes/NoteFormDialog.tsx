@@ -12,6 +12,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogBody,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -164,12 +166,13 @@ export function NoteFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
           <DialogTitle>{isEditing ? "Edit Note" : "New Note"}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto space-y-4 pr-1">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <DialogBody className="space-y-4 py-2">
             {!isEditing && (
               <TemplateSelector
                 templateType="note"
@@ -311,15 +314,16 @@ export function NoteFormDialog({
                 <span>You can add file attachments after creating the note.</span>
               </div>
             )}
+            </DialogBody>
 
-            <div className="flex justify-end gap-2 pt-4 sticky bottom-0 bg-background pb-1">
+            <DialogFooter className="border-t pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={mutation.isPending}>
                 {mutation.isPending ? "Saving..." : isEditing ? "Save Changes" : "Create Note"}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>

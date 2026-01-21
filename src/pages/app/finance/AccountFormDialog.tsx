@@ -9,6 +9,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogBody,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -127,7 +128,8 @@ export function AccountFormDialog({ open, onOpenChange, account }: AccountFormDi
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <DialogBody className="space-y-4 py-2">
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -215,8 +217,9 @@ export function AccountFormDialog({ open, onOpenChange, account }: AccountFormDi
                 )}
               />
             )}
+            </DialogBody>
 
-            <DialogFooter>
+            <DialogFooter className="border-t pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>

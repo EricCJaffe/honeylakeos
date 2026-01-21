@@ -9,6 +9,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogBody,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -158,7 +159,7 @@ export function CrmFormDialog({ open, onOpenChange, client }: CrmFormDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? `Edit ${clientTerm}` : `New ${clientTerm}`}
@@ -171,7 +172,8 @@ export function CrmFormDialog({ open, onOpenChange, client }: CrmFormDialogProps
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <DialogBody className="space-y-6 py-2">
             {/* Entity Kind Toggle */}
             <div className="space-y-2">
               <Label>Record Type</Label>
@@ -424,9 +426,10 @@ export function CrmFormDialog({ open, onOpenChange, client }: CrmFormDialogProps
                   <FormMessage />
                 </FormItem>
               )}
-            />
+              />
+            </DialogBody>
 
-            <DialogFooter>
+            <DialogFooter className="border-t pt-4">
               <Button
                 type="button"
                 variant="outline"

@@ -11,6 +11,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogBody,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -197,7 +199,8 @@ export function ProjectFormDialog({
           <DialogTitle>{isEditing ? "Edit Project" : "New Project"}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <DialogBody className="space-y-4 py-2">
             {/* Template Selector - only for new projects */}
             {!isEditing && (
               <TemplateSelector
@@ -329,7 +332,9 @@ export function ProjectFormDialog({
               />
             )}
 
-            <div className="flex justify-end gap-2 pt-4">
+            </DialogBody>
+
+            <DialogFooter className="border-t pt-4">
               <Button
                 type="button"
                 variant="outline"
@@ -344,7 +349,7 @@ export function ProjectFormDialog({
                   ? "Save Changes"
                   : "Create Project"}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>

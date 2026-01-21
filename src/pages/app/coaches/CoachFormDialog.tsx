@@ -7,6 +7,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogBody,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -199,7 +201,8 @@ export function CoachFormDialog({ open, onOpenChange, profile }: CoachFormDialog
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <DialogBody className="space-y-4 py-2">
             <FormField
               control={form.control}
               name="profile_type"
@@ -375,7 +378,9 @@ export function CoachFormDialog({ open, onOpenChange, profile }: CoachFormDialog
               )}
             />
 
-            <div className="flex justify-end gap-2 pt-4">
+            </DialogBody>
+
+            <DialogFooter className="border-t pt-4">
               <Button
                 type="button"
                 variant="outline"
@@ -386,7 +391,7 @@ export function CoachFormDialog({ open, onOpenChange, profile }: CoachFormDialog
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Saving..." : isEditing ? "Save Changes" : "Create"}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>
