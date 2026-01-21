@@ -38,6 +38,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { usePhaseTemplates } from "@/hooks/useProjectPhases";
 import { TemplateSelector } from "@/components/templates/TemplateSelector";
 import { applyTemplateToForm, Template } from "@/hooks/useTemplates";
+import { CrmClientPicker } from "@/components/crm/CrmClientPicker";
 
 const projectSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -46,6 +47,7 @@ const projectSchema = z.object({
   emoji: z.string().default("📋"),
   color: z.string().default("#2563eb"),
   phase_template_id: z.string().optional().nullable(),
+  linked_crm_client_id: z.string().optional().nullable(),
 });
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
@@ -89,6 +91,7 @@ export function ProjectFormDialog({
       emoji: "📋",
       color: "#2563eb",
       phase_template_id: null,
+      linked_crm_client_id: null,
     },
   });
 
@@ -101,6 +104,7 @@ export function ProjectFormDialog({
         emoji: project.emoji,
         color: project.color,
         phase_template_id: null,
+        linked_crm_client_id: null,
       });
     } else {
       form.reset({
@@ -110,6 +114,7 @@ export function ProjectFormDialog({
         emoji: "📋",
         color: "#2563eb",
         phase_template_id: null,
+        linked_crm_client_id: null,
       });
     }
   }, [project, form]);
@@ -170,6 +175,23 @@ export function ProjectFormDialog({
             }
           }
         }
+
+        // If a CRM client is selected, create entity link
+        if (values.linked_crm_client_id && newProject) {
+          const { error: linkError } = await supabase.rpc("create_entity_link", {
+            p_company_id: activeCompanyId,
+            p_from_type: "project",
+            p_from_id: newProject.id,
+            p_to_type: "crm_client",
+            p_to_id: values.linked_crm_client_id,
+            p_link_type: "related",
+          });
+          if (linkError) {
+            console.error("Failed to link CRM client:", linkError);
+            // Don't throw - project is already created
+          }
+        }
+
         return newProject.id;
       }
     },
@@ -325,6 +347,30 @@ export function ProjectFormDialog({
                     </Select>
                     <FormDescription>
                       Pre-populate project with phases from a template
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Link to CRM Client - only for new projects */}
+            {!isEditing && (
+              <FormField
+                control={form.control}
+                name="linked_crm_client_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Link to Client</FormLabel>
+                    <FormControl>
+                      <CrmClientPicker
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select client (optional)"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Associate this project with a CRM client
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
