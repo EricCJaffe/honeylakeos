@@ -16,6 +16,7 @@ import FeaturesPage from "@/pages/public/FeaturesPage";
 import PricingPage from "@/pages/public/PricingPage";
 import AboutPage from "@/pages/public/AboutPage";
 import ContactPage from "@/pages/public/ContactPage";
+import PublicFormPage from "@/pages/public/PublicFormPage";
 import LoginPage from "@/pages/auth/LoginPage";
 import SignUpPage from "@/pages/auth/SignUpPage";
 import AppDashboard from "@/pages/app/AppDashboard";
@@ -142,6 +143,9 @@ function App() {
                     <Route path="/about" element={<AboutPage />} />
                     <Route path="/contact" element={<ContactPage />} />
                   </Route>
+                  
+                  {/* Public Form Route (no auth required) */}
+                  <Route path="/f/:token" element={<PublicFormPage />} />
                   
                   {/* Auth Routes */}
                   <Route path="/login" element={<LoginPage />} />

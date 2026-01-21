@@ -9454,6 +9454,67 @@ export type Database = {
           },
         ]
       }
+      wf_form_logic_rules: {
+        Row: {
+          action: string
+          created_at: string
+          form_id: string
+          id: string
+          operator: string
+          sort_order: number
+          source_field_id: string
+          target_field_id: string | null
+          updated_at: string
+          value: Json | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          form_id: string
+          id?: string
+          operator: string
+          sort_order?: number
+          source_field_id: string
+          target_field_id?: string | null
+          updated_at?: string
+          value?: Json | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          form_id?: string
+          id?: string
+          operator?: string
+          sort_order?: number
+          source_field_id?: string
+          target_field_id?: string | null
+          updated_at?: string
+          value?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wf_form_logic_rules_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "wf_forms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wf_form_logic_rules_source_field_id_fkey"
+            columns: ["source_field_id"]
+            isOneToOne: false
+            referencedRelation: "wf_form_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wf_form_logic_rules_target_field_id_fkey"
+            columns: ["target_field_id"]
+            isOneToOne: false
+            referencedRelation: "wf_form_fields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wf_form_submission_values: {
         Row: {
           created_at: string
