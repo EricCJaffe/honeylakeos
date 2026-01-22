@@ -56,6 +56,7 @@ interface ProjectFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   project?: Tables<"projects"> | null;
+  crmClientId?: string | null; // Pre-fill CRM client link
   onSuccess?: (projectId: string) => void;
 }
 
@@ -71,6 +72,7 @@ export function ProjectFormDialog({
   open,
   onOpenChange,
   project,
+  crmClientId,
   onSuccess,
 }: ProjectFormDialogProps) {
   const { activeCompanyId } = useActiveCompany();
@@ -91,7 +93,7 @@ export function ProjectFormDialog({
       emoji: "📋",
       color: "#2563eb",
       phase_template_id: null,
-      linked_crm_client_id: null,
+      linked_crm_client_id: crmClientId || null,
     },
   });
 
@@ -133,10 +135,10 @@ export function ProjectFormDialog({
         emoji: "📋",
         color: "#2563eb",
         phase_template_id: null,
-        linked_crm_client_id: null,
+        linked_crm_client_id: crmClientId || null,
       });
     }
-  }, [project, form, activeCompanyId]);
+  }, [project, form, activeCompanyId, crmClientId, open]);
 
   const mutation = useMutation({
     mutationFn: async (values: ProjectFormValues) => {

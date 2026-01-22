@@ -39,6 +39,7 @@ import { TemplateSelector } from "@/components/templates/TemplateSelector";
 import { applyTemplateToForm } from "@/hooks/useTemplates";
 import { LinkPicker } from "@/components/LinkPicker";
 import { FolderPicker } from "@/components/folders";
+import { CrmClientPicker } from "@/components/crm/CrmClientPicker";
 
 const noteSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -57,6 +58,7 @@ interface NoteFormDialogProps {
   note?: any;
   folderId?: string | null;
   projectId?: string | null;
+  crmClientId?: string | null;
   onSuccess?: (noteId: string) => void;
 }
 
@@ -76,12 +78,16 @@ export function NoteFormDialog({
   note,
   folderId,
   projectId: initialProjectId,
+  crmClientId,
   onSuccess,
 }: NoteFormDialogProps) {
   const { activeCompanyId } = useActiveCompany();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const isEditing = !!note;
+
+  // CRM client link state
+  const [linkedCrmClientId, setLinkedCrmClientId] = React.useState<string | null>(crmClientId || null);
 
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(noteSchema),
@@ -114,8 +120,9 @@ export function NoteFormDialog({
         color: null,
         project_id: initialProjectId || null,
       });
+      setLinkedCrmClientId(crmClientId || null);
     }
-  }, [note, folderId, form, initialProjectId, open]);
+  }, [note, folderId, form, initialProjectId, crmClientId, open]);
 
   const mutation = useMutation({
     mutationFn: async (values: NoteFormValues) => {
@@ -130,13 +137,15 @@ export function NoteFormDialog({
         project_id: values.project_id || null,
       };
 
+      let noteId: string;
+
       if (isEditing && note) {
         const { error } = await supabase
           .from("notes")
           .update(noteData)
           .eq("id", note.id);
         if (error) throw error;
-        return note.id;
+        noteId = note.id;
       } else {
         const { data, error } = await supabase.from("notes").insert({
           ...noteData,
@@ -144,15 +153,37 @@ export function NoteFormDialog({
           created_by: user.id,
         }).select("id").single();
         if (error) throw error;
-        return data.id;
+        noteId = data.id;
+
+        // Create CRM client link if specified
+        if (linkedCrmClientId) {
+          try {
+            await supabase.rpc("create_entity_link", {
+              p_company_id: activeCompanyId,
+              p_from_type: "crm_client",
+              p_from_id: linkedCrmClientId,
+              p_to_type: "note",
+              p_to_id: noteId,
+              p_link_type: "related",
+            });
+          } catch (linkError) {
+            console.error("Failed to link note to client:", linkError);
+          }
+        }
       }
+
+      return noteId;
     },
     onSuccess: (noteId: string) => {
       queryClient.invalidateQueries({ queryKey: ["notes"] });
       queryClient.invalidateQueries({ queryKey: ["project-notes"] });
+      queryClient.invalidateQueries({ queryKey: ["entity-links"] });
+      queryClient.invalidateQueries({ queryKey: ["crm-hub-links"] });
+      queryClient.invalidateQueries({ queryKey: ["crm-hub-notes"] });
       toast.success(isEditing ? "Note updated" : "Note created");
       onOpenChange(false);
       form.reset();
+      setLinkedCrmClientId(null);
       onSuccess?.(noteId);
     },
     onError: (error) => {
@@ -280,6 +311,16 @@ export function NoteFormDialog({
                 </FormItem>
               )}
             />
+
+            {/* CRM Client Link */}
+            <div className="space-y-2">
+              <FormLabel>Client</FormLabel>
+              <CrmClientPicker
+                value={linkedCrmClientId}
+                onChange={setLinkedCrmClientId}
+                placeholder="Link to client (optional)"
+              />
+            </div>
 
             <FormField
               control={form.control}
