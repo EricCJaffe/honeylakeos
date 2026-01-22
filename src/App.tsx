@@ -121,6 +121,10 @@ import PilotCompanyDetailPage from "@/pages/app/admin/PilotCompanyDetailPage";
 import IntegrationsPage from "@/pages/app/integrations/IntegrationsPage";
 import DepartmentsPage from "@/pages/app/departments/DepartmentsPage";
 import DepartmentDetailPage from "@/pages/app/departments/DepartmentDetailPage";
+import CoachingInspectorPage from "@/pages/app/admin/CoachingInspectorPage";
+import OrgAdminDashboard from "@/pages/app/coaching/OrgAdminDashboard";
+import ManagerDashboard from "@/pages/app/coaching/ManagerDashboard";
+import MemberDashboard from "@/pages/app/coaching/MemberDashboard";
 
 const queryClient = new QueryClient();
 
@@ -223,6 +227,9 @@ function App() {
                     <Route path="coaching/recommendations/new" element={<RecommendationFormPage />} />
                     <Route path="coaching/playbooks" element={<PlaybooksPage />} />
                     <Route path="coaching/requests" element={<CoachRequestsInbox />} />
+                    <Route path="coaching/org" element={<OrgAdminDashboard />} />
+                    <Route path="coaching/manager" element={<ManagerDashboard />} />
+                    <Route path="coaching/member" element={<MemberDashboard />} />
                     <Route path="support/kb" element={<KnowledgeBasePage />} />
                     <Route path="support/kb/:articleId" element={<ArticleDetailPage />} />
                     <Route path="support/kb/admin" element={<KbAdminPage />} />
@@ -262,6 +269,7 @@ function App() {
                     <Route path="admin/site-console" element={<SiteConsolePage />} />
                     <Route path="admin/validation" element={<ValidationDashboardPage />} />
                     <Route path="admin/validation/:companyId" element={<PilotCompanyDetailPage />} />
+                    <Route path="admin/coaching-inspector" element={<CoachingInspectorPage />} />
                     <Route path="admin/sites" element={<SitesPage />} />
                     <Route path="admin/companies" element={<CompaniesPage />} />
                     <Route path="admin/users" element={<UsersPage />} />
