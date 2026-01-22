@@ -57,6 +57,7 @@ import { AssigneePicker } from "@/components/tasks/AssigneePicker";
 import { useTaskAssignees } from "@/hooks/useCompanyMembers";
 import { TaskTagInput } from "@/components/tasks/TaskTagInput";
 import { SubtasksDialogSection, DraftSubtask } from "@/components/tasks/SubtasksDialogSection";
+import { CrmClientPicker } from "@/components/crm/CrmClientPicker";
 
 const taskSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -76,6 +77,7 @@ interface TaskFormDialogProps {
   onOpenChange: (open: boolean) => void;
   task?: any;
   projectId?: string;
+  crmClientId?: string; // Pre-fill CRM client link
   editMode?: "single" | "series"; // For recurring tasks
   templateToApply?: Template | null; // Template to apply on open
   onSuccess?: (taskId: string) => void;
@@ -101,6 +103,7 @@ export function TaskFormDialog({
   onOpenChange,
   task,
   projectId,
+  crmClientId,
   editMode = "series",
   templateToApply,
   onSuccess,
@@ -109,6 +112,9 @@ export function TaskFormDialog({
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const isEditing = !!task;
+
+  // CRM client link state
+  const [linkedCrmClientId, setLinkedCrmClientId] = React.useState<string | null>(crmClientId || null);
 
   // Recurrence state
   const [recurrenceConfig, setRecurrenceConfig] = React.useState<RecurrenceConfig | null>(null);
@@ -347,6 +353,23 @@ export function TaskFormDialog({
         }
       }
 
+      // Create CRM client link if specified (for new tasks only)
+      if (!isEditing && linkedCrmClientId && taskId) {
+        try {
+          await supabase.rpc("create_entity_link", {
+            p_company_id: activeCompanyId,
+            p_from_type: "crm_client",
+            p_from_id: linkedCrmClientId,
+            p_to_type: "task",
+            p_to_id: taskId,
+            p_link_type: "related",
+          });
+        } catch (linkError) {
+          console.error("Failed to link task to client:", linkError);
+          // Don't throw - task was created successfully
+        }
+      }
+
       return taskId;
     },
     onSuccess: (taskId: string) => {
@@ -358,6 +381,9 @@ export function TaskFormDialog({
       queryClient.invalidateQueries({ queryKey: ["task-assignees"] });
       queryClient.invalidateQueries({ queryKey: ["task-subtasks"] });
       queryClient.invalidateQueries({ queryKey: ["task-subtask-counts"] });
+      queryClient.invalidateQueries({ queryKey: ["entity-links"] });
+      queryClient.invalidateQueries({ queryKey: ["crm-hub-links"] });
+      queryClient.invalidateQueries({ queryKey: ["crm-hub-tasks"] });
       toast.success(isEditing ? "Task updated" : "Task created");
       onOpenChange(false);
       form.reset();
@@ -365,6 +391,7 @@ export function TaskFormDialog({
       setAssignees([]);
       setTags([]);
       setDraftSubtasks([]);
+      setLinkedCrmClientId(null);
       if (taskId) {
         onSuccess?.(taskId);
       }
@@ -577,6 +604,16 @@ export function TaskFormDialog({
                 value={tags}
                 onChange={setTags}
                 placeholder="Add tags (press Enter)"
+              />
+            </div>
+
+            {/* CRM Client Link */}
+            <div className="space-y-2">
+              <FormLabel>Client</FormLabel>
+              <CrmClientPicker
+                value={linkedCrmClientId}
+                onChange={setLinkedCrmClientId}
+                placeholder="Link to client (optional)"
               />
             </div>
 

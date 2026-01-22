@@ -48,7 +48,6 @@ export function CrmCreateActionsMenu({
   const { createLink } = useEntityLinks("crm_client", crmClientId);
 
   const [createMode, setCreateMode] = React.useState<CreateMode>(null);
-  const [pendingLinkId, setPendingLinkId] = React.useState<string | null>(null);
 
   // Check module enablement
   const tasksEnabled = isEnabled("tasks");
@@ -56,161 +55,27 @@ export function CrmCreateActionsMenu({
   const calendarEnabled = isEnabled("calendar");
   const projectsEnabled = isEnabled("projects");
 
-  // Track created entity to auto-link after form closes
-  const linkCreatedEntity = async (entityType: string, entityId: string) => {
-    try {
-      await createLink.mutateAsync({
-        toType: entityType as any,
-        toId: entityId,
-        linkType: "related",
-      });
-    } catch (error) {
-      console.error("Failed to auto-link entity:", error);
-    }
+  // Handle successful entity creation with auto-linking
+  const handleTaskSuccess = async (taskId: string) => {
+    // Link is created in TaskFormDialog
+    queryClient.invalidateQueries({ queryKey: ["crm-hub-links"] });
+    queryClient.invalidateQueries({ queryKey: ["crm-hub-tasks"] });
+    setCreateMode(null);
   };
 
-  // Create task with auto-link
-  const createTaskMutation = useMutation({
-    mutationFn: async () => {
-      if (!activeCompanyId || !user) throw new Error("Missing context");
+  const handleNoteSuccess = async (noteId: string) => {
+    // Link is created in NoteFormDialog
+    queryClient.invalidateQueries({ queryKey: ["crm-hub-links"] });
+    queryClient.invalidateQueries({ queryKey: ["crm-hub-notes"] });
+    setCreateMode(null);
+  };
 
-      const { data, error } = await supabase
-        .from("tasks")
-        .insert({
-          company_id: activeCompanyId,
-          created_by: user.id,
-          title: `Follow up with ${clientName}`,
-          status: "to_do",
-          priority: "medium",
-        })
-        .select("id")
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: async (data) => {
-      await linkCreatedEntity("task", data.id);
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["crm-hub-links"] });
-      queryClient.invalidateQueries({ queryKey: ["crm-hub-tasks"] });
-      toast.success("Task created and linked");
-    },
-    onError: (error) => {
-      toast.error(error.message || "Failed to create task");
-    },
-  });
-
-  // Create note with auto-link
-  const createNoteMutation = useMutation({
-    mutationFn: async () => {
-      if (!activeCompanyId || !user) throw new Error("Missing context");
-
-      const { data, error } = await supabase
-        .from("notes")
-        .insert({
-          company_id: activeCompanyId,
-          created_by: user.id,
-          title: `Notes - ${clientName}`,
-          content: "",
-          access_level: "company",
-        })
-        .select("id")
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: async (data) => {
-      await linkCreatedEntity("note", data.id);
-      queryClient.invalidateQueries({ queryKey: ["notes"] });
-      queryClient.invalidateQueries({ queryKey: ["crm-hub-links"] });
-      queryClient.invalidateQueries({ queryKey: ["crm-hub-notes"] });
-      toast.success("Note created and linked");
-    },
-    onError: (error) => {
-      toast.error(error.message || "Failed to create note");
-    },
-  });
-
-  // Create event with auto-link
-  const createEventMutation = useMutation({
-    mutationFn: async () => {
-      if (!activeCompanyId || !user) throw new Error("Missing context");
-
-      const startAt = new Date();
-      startAt.setHours(startAt.getHours() + 1, 0, 0, 0);
-      const endAt = new Date(startAt);
-      endAt.setHours(endAt.getHours() + 1);
-
-      const { data, error } = await supabase
-        .from("events")
-        .insert({
-          company_id: activeCompanyId,
-          created_by: user.id,
-          title: `Meeting with ${clientName}`,
-          start_at: startAt.toISOString(),
-          end_at: endAt.toISOString(),
-          all_day: false,
-          timezone: "America/New_York",
-        })
-        .select("id")
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: async (data) => {
-      await linkCreatedEntity("event", data.id);
-      queryClient.invalidateQueries({ queryKey: ["events"] });
-      queryClient.invalidateQueries({ queryKey: ["crm-hub-links"] });
-      queryClient.invalidateQueries({ queryKey: ["crm-hub-events"] });
-      toast.success("Event created and linked");
-    },
-    onError: (error) => {
-      toast.error(error.message || "Failed to create event");
-    },
-  });
-
-  // Create project with auto-link
-  const createProjectMutation = useMutation({
-    mutationFn: async () => {
-      if (!activeCompanyId || !user) throw new Error("Missing context");
-
-      const { data, error } = await supabase
-        .from("projects")
-        .insert({
-          company_id: activeCompanyId,
-          created_by: user.id,
-          owner_user_id: user.id,
-          name: `Project for ${clientName}`,
-          status: "active",
-          emoji: "📋",
-          color: "#2563eb",
-        })
-        .select("id")
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: async (data) => {
-      await linkCreatedEntity("project", data.id);
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["crm-hub-links"] });
-      queryClient.invalidateQueries({ queryKey: ["crm-hub-projects"] });
-      toast.success("Project created and linked");
-    },
-    onError: (error) => {
-      toast.error(error.message || "Failed to create project");
-    },
-  });
-
-  const isPending =
-    createTaskMutation.isPending ||
-    createNoteMutation.isPending ||
-    createEventMutation.isPending ||
-    createProjectMutation.isPending;
+  const handleProjectSuccess = async (projectId: string) => {
+    // Link is created in ProjectFormDialog
+    queryClient.invalidateQueries({ queryKey: ["crm-hub-links"] });
+    queryClient.invalidateQueries({ queryKey: ["crm-hub-projects"] });
+    setCreateMode(null);
+  };
 
   // No modules enabled - hide the menu
   if (!tasksEnabled && !notesEnabled && !calendarEnabled && !projectsEnabled) {
@@ -221,9 +86,9 @@ export function CrmCreateActionsMenu({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="default" size="sm" disabled={isPending}>
+          <Button variant="default" size="sm">
             <Plus className="h-4 w-4 mr-2" />
-            {isPending ? "Creating..." : "Create & Link"}
+            Create & Link
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
@@ -231,7 +96,7 @@ export function CrmCreateActionsMenu({
           <DropdownMenuSeparator />
 
           {tasksEnabled ? (
-            <DropdownMenuItem onClick={() => createTaskMutation.mutate()}>
+            <DropdownMenuItem onClick={() => setCreateMode("task")}>
               <CheckSquare className="h-4 w-4 mr-2" />
               Task
             </DropdownMenuItem>
@@ -243,7 +108,7 @@ export function CrmCreateActionsMenu({
           )}
 
           {notesEnabled ? (
-            <DropdownMenuItem onClick={() => createNoteMutation.mutate()}>
+            <DropdownMenuItem onClick={() => setCreateMode("note")}>
               <FileText className="h-4 w-4 mr-2" />
               Note
             </DropdownMenuItem>
@@ -255,7 +120,7 @@ export function CrmCreateActionsMenu({
           )}
 
           {calendarEnabled ? (
-            <DropdownMenuItem onClick={() => createEventMutation.mutate()}>
+            <DropdownMenuItem onClick={() => setCreateMode("event")}>
               <CalendarDays className="h-4 w-4 mr-2" />
               Calendar Event
             </DropdownMenuItem>
@@ -267,7 +132,7 @@ export function CrmCreateActionsMenu({
           )}
 
           {projectsEnabled ? (
-            <DropdownMenuItem onClick={() => createProjectMutation.mutate()}>
+            <DropdownMenuItem onClick={() => setCreateMode("project")}>
               <FolderKanban className="h-4 w-4 mr-2" />
               Project
             </DropdownMenuItem>
@@ -279,6 +144,30 @@ export function CrmCreateActionsMenu({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Task Form Dialog with pre-filled client */}
+      <TaskFormDialog
+        open={createMode === "task"}
+        onOpenChange={(open) => !open && setCreateMode(null)}
+        crmClientId={crmClientId}
+        onSuccess={handleTaskSuccess}
+      />
+
+      {/* Note Form Dialog with pre-filled client */}
+      <NoteFormDialog
+        open={createMode === "note"}
+        onOpenChange={(open) => !open && setCreateMode(null)}
+        crmClientId={crmClientId}
+        onSuccess={handleNoteSuccess}
+      />
+
+      {/* Project Form Dialog with pre-filled client */}
+      <ProjectFormDialog
+        open={createMode === "project"}
+        onOpenChange={(open) => !open && setCreateMode(null)}
+        crmClientId={crmClientId}
+        onSuccess={handleProjectSuccess}
+      />
     </>
   );
 }
