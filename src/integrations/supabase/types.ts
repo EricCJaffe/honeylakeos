@@ -970,6 +970,13 @@ export type Database = {
             referencedRelation: "coaching_engagements"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "coach_assignments_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "v_pending_coaching_invitations"
+            referencedColumns: ["id"]
+          },
         ]
       }
       coach_organizations: {
@@ -1215,6 +1222,13 @@ export type Database = {
             columns: ["engagement_id"]
             isOneToOne: false
             referencedRelation: "coaching_engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_recommendations_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "v_pending_coaching_invitations"
             referencedColumns: ["id"]
           },
           {
@@ -1670,14 +1684,22 @@ export type Database = {
       }
       coaching_engagements: {
         Row: {
+          accepted_at: string | null
           archived_at: string | null
           client_company_id: string
           coaching_org_company_id: string
           created_at: string
           created_by: string | null
+          declined_at: string | null
+          declined_reason: string | null
           end_date: string | null
           engagement_status: Database["public"]["Enums"]["engagement_status"]
           id: string
+          invited_at: string | null
+          invited_by_type:
+            | Database["public"]["Enums"]["invitation_initiated_by"]
+            | null
+          invited_by_user_id: string | null
           notes: string | null
           primary_framework_id: string | null
           program_key_snapshot: string | null
@@ -1686,14 +1708,22 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accepted_at?: string | null
           archived_at?: string | null
           client_company_id: string
           coaching_org_company_id: string
           created_at?: string
           created_by?: string | null
+          declined_at?: string | null
+          declined_reason?: string | null
           end_date?: string | null
           engagement_status?: Database["public"]["Enums"]["engagement_status"]
           id?: string
+          invited_at?: string | null
+          invited_by_type?:
+            | Database["public"]["Enums"]["invitation_initiated_by"]
+            | null
+          invited_by_user_id?: string | null
           notes?: string | null
           primary_framework_id?: string | null
           program_key_snapshot?: string | null
@@ -1702,14 +1732,22 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accepted_at?: string | null
           archived_at?: string | null
           client_company_id?: string
           coaching_org_company_id?: string
           created_at?: string
           created_by?: string | null
+          declined_at?: string | null
+          declined_reason?: string | null
           end_date?: string | null
           engagement_status?: Database["public"]["Enums"]["engagement_status"]
           id?: string
+          invited_at?: string | null
+          invited_by_type?:
+            | Database["public"]["Enums"]["invitation_initiated_by"]
+            | null
+          invited_by_user_id?: string | null
           notes?: string | null
           primary_framework_id?: string | null
           program_key_snapshot?: string | null
@@ -4290,6 +4328,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "company_onboarding_state_coach_engagement_id_fkey"
+            columns: ["coach_engagement_id"]
+            isOneToOne: false
+            referencedRelation: "v_pending_coaching_invitations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "company_onboarding_state_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: true
@@ -4310,45 +4355,57 @@ export type Database = {
           company_id: string
           created_at: string
           expires_at: string | null
+          grace_ends_at: string | null
           grace_period_days: number | null
           id: string
           metadata: Json | null
           plan_tier: Database["public"]["Enums"]["plan_tier"]
           plan_type: Database["public"]["Enums"]["plan_type"]
+          provisioned_by_coaching_org_id: string | null
+          source: Database["public"]["Enums"]["subscription_source"] | null
           started_at: string
           status: Database["public"]["Enums"]["plan_status"]
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
+          trial_ends_at: string | null
           updated_at: string
         }
         Insert: {
           company_id: string
           created_at?: string
           expires_at?: string | null
+          grace_ends_at?: string | null
           grace_period_days?: number | null
           id?: string
           metadata?: Json | null
           plan_tier: Database["public"]["Enums"]["plan_tier"]
           plan_type: Database["public"]["Enums"]["plan_type"]
+          provisioned_by_coaching_org_id?: string | null
+          source?: Database["public"]["Enums"]["subscription_source"] | null
           started_at?: string
           status?: Database["public"]["Enums"]["plan_status"]
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Update: {
           company_id?: string
           created_at?: string
           expires_at?: string | null
+          grace_ends_at?: string | null
           grace_period_days?: number | null
           id?: string
           metadata?: Json | null
           plan_tier?: Database["public"]["Enums"]["plan_tier"]
           plan_type?: Database["public"]["Enums"]["plan_type"]
+          provisioned_by_coaching_org_id?: string | null
+          source?: Database["public"]["Enums"]["subscription_source"] | null
           started_at?: string
           status?: Database["public"]["Enums"]["plan_status"]
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -9114,32 +9171,38 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          entitlements: Json | null
           id: string
           is_default: boolean
           name: string
           plan_type: string
           slug: string
           sort_order: number
+          status: string | null
         }
         Insert: {
           created_at?: string
           description?: string | null
+          entitlements?: Json | null
           id?: string
           is_default?: boolean
           name: string
           plan_type?: string
           slug: string
           sort_order?: number
+          status?: string | null
         }
         Update: {
           created_at?: string
           description?: string | null
+          entitlements?: Json | null
           id?: string
           is_default?: boolean
           name?: string
           plan_type?: string
           slug?: string
           sort_order?: number
+          status?: string | null
         }
         Relationships: []
       }
@@ -10957,6 +11020,50 @@ export type Database = {
           },
         ]
       }
+      subscription_events: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by_user_id: string | null
+          event_type: string
+          from_value: string | null
+          id: string
+          metadata: Json | null
+          reason: string | null
+          to_value: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by_user_id?: string | null
+          event_type: string
+          from_value?: string | null
+          id?: string
+          metadata?: Json | null
+          reason?: string | null
+          to_value?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by_user_id?: string | null
+          event_type?: string
+          from_value?: string | null
+          id?: string
+          metadata?: Json | null
+          reason?: string | null
+          to_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suggested_tasks: {
         Row: {
           client_company_id: string
@@ -12563,6 +12670,37 @@ export type Database = {
         }
         Relationships: []
       }
+      v_pending_coaching_invitations: {
+        Row: {
+          client_company_id: string | null
+          client_company_name: string | null
+          coaching_org_company_id: string | null
+          coaching_org_name: string | null
+          id: string | null
+          invited_at: string | null
+          invited_by_type:
+            | Database["public"]["Enums"]["invitation_initiated_by"]
+            | null
+          invited_by_user_id: string | null
+          program_name_snapshot: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_engagements_client_company_id_fkey"
+            columns: ["client_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_engagements_coaching_org_company_id_fkey"
+            columns: ["coaching_org_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_employee_invite: { Args: { p_token: string }; Returns: Json }
@@ -12822,6 +12960,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      fn_company_entitlements: { Args: { p_company_id: string }; Returns: Json }
       fn_current_user_id: { Args: never; Returns: string }
       fn_get_coaching_org_id: { Args: { _company_id: string }; Returns: string }
       fn_get_coaching_term: {
@@ -12893,6 +13032,10 @@ export type Database = {
           p_pack_key: string
         }
         Returns: Json
+      }
+      fn_user_active_engagement_ids: {
+        Args: { p_user_id: string }
+        Returns: string[]
       }
       fn_user_coach_ids: {
         Args: { _coaching_org_id: string; _user_id: string }
@@ -13289,7 +13432,7 @@ export type Database = {
         | "provisioned_by_coaching_org"
         | "invited"
         | "self_linked"
-      engagement_status: "active" | "paused" | "ended"
+      engagement_status: "active" | "paused" | "ended" | "pending_acceptance"
       entity_contact_type: "client" | "donor" | "vendor"
       entity_kind: "organization" | "individual"
       finance_mode: "builtin_books" | "external_reporting"
@@ -13335,6 +13478,7 @@ export type Database = {
         | "yes_no"
         | "text"
         | "number"
+      invitation_initiated_by: "coaching_org" | "member_company"
       journal_entry_status: "draft" | "posted" | "voided"
       kb_article_status: "draft" | "published" | "archived"
       manager_assignment_status: "active" | "inactive"
@@ -13349,7 +13493,13 @@ export type Database = {
       notification_status: "unread" | "read" | "dismissed"
       opportunity_status: "open" | "won" | "lost"
       payment_method: "cash" | "check" | "credit_card" | "online" | "other"
-      plan_status: "active" | "grace" | "expired" | "cancelled"
+      plan_status:
+        | "active"
+        | "grace"
+        | "expired"
+        | "cancelled"
+        | "requires_action"
+        | "trial"
       plan_tier:
         | "starter"
         | "growth"
@@ -13399,6 +13549,11 @@ export type Database = {
       share_request_type: "report" | "document" | "note"
       site_role: "super_admin" | "site_admin"
       sop_visibility: "department_only" | "company_public"
+      subscription_source:
+        | "self"
+        | "provisioned_by_coaching_org"
+        | "imported"
+        | "site_admin"
       suggestion_status: "pending" | "accepted" | "rejected"
       template_status: "active" | "inactive"
       ticket_author_type: "requester" | "agent"
@@ -13702,7 +13857,7 @@ export const Constants = {
         "invited",
         "self_linked",
       ],
-      engagement_status: ["active", "paused", "ended"],
+      engagement_status: ["active", "paused", "ended", "pending_acceptance"],
       entity_contact_type: ["client", "donor", "vendor"],
       entity_kind: ["organization", "individual"],
       finance_mode: ["builtin_books", "external_reporting"],
@@ -13753,6 +13908,7 @@ export const Constants = {
         "text",
         "number",
       ],
+      invitation_initiated_by: ["coaching_org", "member_company"],
       journal_entry_status: ["draft", "posted", "voided"],
       kb_article_status: ["draft", "published", "archived"],
       manager_assignment_status: ["active", "inactive"],
@@ -13768,7 +13924,14 @@ export const Constants = {
       notification_status: ["unread", "read", "dismissed"],
       opportunity_status: ["open", "won", "lost"],
       payment_method: ["cash", "check", "credit_card", "online", "other"],
-      plan_status: ["active", "grace", "expired", "cancelled"],
+      plan_status: [
+        "active",
+        "grace",
+        "expired",
+        "cancelled",
+        "requires_action",
+        "trial",
+      ],
       plan_tier: [
         "starter",
         "growth",
@@ -13822,6 +13985,12 @@ export const Constants = {
       share_request_type: ["report", "document", "note"],
       site_role: ["super_admin", "site_admin"],
       sop_visibility: ["department_only", "company_public"],
+      subscription_source: [
+        "self",
+        "provisioned_by_coaching_org",
+        "imported",
+        "site_admin",
+      ],
       suggestion_status: ["pending", "accepted", "rejected"],
       template_status: ["active", "inactive"],
       ticket_author_type: ["requester", "agent"],
