@@ -1665,6 +1665,8 @@ export type Database = {
       coaching_goals: {
         Row: {
           coaching_plan_id: string
+          completed_at: string | null
+          completed_by_user_id: string | null
           created_at: string
           description: string | null
           due_date: string | null
@@ -1677,6 +1679,8 @@ export type Database = {
         }
         Insert: {
           coaching_plan_id: string
+          completed_at?: string | null
+          completed_by_user_id?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null
@@ -1689,6 +1693,8 @@ export type Database = {
         }
         Update: {
           coaching_plan_id?: string
+          completed_at?: string | null
+          completed_by_user_id?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null
@@ -1711,33 +1717,45 @@ export type Database = {
       }
       coaching_health_check_responses: {
         Row: {
+          bool_value: boolean | null
           coaching_health_check_id: string
           created_at: string
           id: string
+          numeric_value: number | null
           question: string
           responded_by_user_id: string | null
           response: string | null
           score: number | null
+          template_question_id: string | null
+          text_value: string | null
           updated_at: string
         }
         Insert: {
+          bool_value?: boolean | null
           coaching_health_check_id: string
           created_at?: string
           id?: string
+          numeric_value?: number | null
           question: string
           responded_by_user_id?: string | null
           response?: string | null
           score?: number | null
+          template_question_id?: string | null
+          text_value?: string | null
           updated_at?: string
         }
         Update: {
+          bool_value?: boolean | null
           coaching_health_check_id?: string
           created_at?: string
           id?: string
+          numeric_value?: number | null
           question?: string
           responded_by_user_id?: string | null
           response?: string | null
           score?: number | null
+          template_question_id?: string | null
+          text_value?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1748,6 +1766,102 @@ export type Database = {
             referencedRelation: "coaching_health_checks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "coaching_health_check_responses_coaching_health_check_id_fkey"
+            columns: ["coaching_health_check_id"]
+            isOneToOne: false
+            referencedRelation: "v_health_check_subject_overall_score"
+            referencedColumns: ["coaching_health_check_id"]
+          },
+          {
+            foreignKeyName: "coaching_health_check_responses_template_question_id_fkey"
+            columns: ["template_question_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_health_check_template_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_health_check_template_questions: {
+        Row: {
+          created_at: string
+          id: string
+          is_required: boolean
+          question_order: number
+          question_text: string
+          response_type: Database["public"]["Enums"]["health_check_response_type"]
+          template_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          question_order: number
+          question_text: string
+          response_type?: Database["public"]["Enums"]["health_check_response_type"]
+          template_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          question_order?: number
+          question_text?: string
+          response_type?: Database["public"]["Enums"]["health_check_response_type"]
+          template_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_health_check_template_questions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_health_check_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_health_check_templates: {
+        Row: {
+          cadence: Database["public"]["Enums"]["health_check_cadence"]
+          coaching_org_id: string
+          created_at: string
+          id: string
+          name: string
+          status: Database["public"]["Enums"]["template_status"]
+          subject_type: Database["public"]["Enums"]["coaching_health_subject_type"]
+          updated_at: string
+        }
+        Insert: {
+          cadence?: Database["public"]["Enums"]["health_check_cadence"]
+          coaching_org_id: string
+          created_at?: string
+          id?: string
+          name: string
+          status?: Database["public"]["Enums"]["template_status"]
+          subject_type?: Database["public"]["Enums"]["coaching_health_subject_type"]
+          updated_at?: string
+        }
+        Update: {
+          cadence?: Database["public"]["Enums"]["health_check_cadence"]
+          coaching_org_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          status?: Database["public"]["Enums"]["template_status"]
+          subject_type?: Database["public"]["Enums"]["coaching_health_subject_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_health_check_templates_coaching_org_id_fkey"
+            columns: ["coaching_org_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_orgs"
+            referencedColumns: ["id"]
+          },
         ]
       }
       coaching_health_checks: {
@@ -1756,10 +1870,16 @@ export type Database = {
           coaching_engagement_id: string
           created_at: string
           id: string
+          overall_score: number | null
+          period_end: string | null
+          period_start: string | null
           reviewed_at: string | null
           reviewed_by_user_id: string | null
           status: Database["public"]["Enums"]["coaching_health_status"]
           subject_type: Database["public"]["Enums"]["coaching_health_subject_type"]
+          submitted_at: string | null
+          submitted_by_user_id: string | null
+          template_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1767,10 +1887,16 @@ export type Database = {
           coaching_engagement_id: string
           created_at?: string
           id?: string
+          overall_score?: number | null
+          period_end?: string | null
+          period_start?: string | null
           reviewed_at?: string | null
           reviewed_by_user_id?: string | null
           status?: Database["public"]["Enums"]["coaching_health_status"]
           subject_type: Database["public"]["Enums"]["coaching_health_subject_type"]
+          submitted_at?: string | null
+          submitted_by_user_id?: string | null
+          template_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1778,10 +1904,16 @@ export type Database = {
           coaching_engagement_id?: string
           created_at?: string
           id?: string
+          overall_score?: number | null
+          period_end?: string | null
+          period_start?: string | null
           reviewed_at?: string | null
           reviewed_by_user_id?: string | null
           status?: Database["public"]["Enums"]["coaching_health_status"]
           subject_type?: Database["public"]["Enums"]["coaching_health_subject_type"]
+          submitted_at?: string | null
+          submitted_by_user_id?: string | null
+          template_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1790,6 +1922,13 @@ export type Database = {
             columns: ["coaching_engagement_id"]
             isOneToOne: false
             referencedRelation: "coaching_org_engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_health_checks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_health_check_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -2694,6 +2833,85 @@ export type Database = {
           version?: string
         }
         Relationships: []
+      }
+      coaching_scorecard_metrics: {
+        Row: {
+          created_at: string
+          id: string
+          metric_key: string
+          metric_label: string | null
+          scorecard_id: string
+          source: Database["public"]["Enums"]["scorecard_metric_source"]
+          subject_type: Database["public"]["Enums"]["scorecard_subject_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metric_key: string
+          metric_label?: string | null
+          scorecard_id: string
+          source?: Database["public"]["Enums"]["scorecard_metric_source"]
+          subject_type?: Database["public"]["Enums"]["scorecard_subject_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metric_key?: string
+          metric_label?: string | null
+          scorecard_id?: string
+          source?: Database["public"]["Enums"]["scorecard_metric_source"]
+          subject_type?: Database["public"]["Enums"]["scorecard_subject_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_scorecard_metrics_scorecard_id_fkey"
+            columns: ["scorecard_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_scorecards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_scorecards: {
+        Row: {
+          coaching_org_id: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          status: Database["public"]["Enums"]["template_status"]
+          updated_at: string
+        }
+        Insert: {
+          coaching_org_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          status?: Database["public"]["Enums"]["template_status"]
+          updated_at?: string
+        }
+        Update: {
+          coaching_org_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          status?: Database["public"]["Enums"]["template_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_scorecards_coaching_org_id_fkey"
+            columns: ["coaching_org_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       coaching_sessions: {
         Row: {
@@ -11667,7 +11885,139 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_goal_completion_rate: {
+        Row: {
+          coaching_engagement_id: string | null
+          coaching_plan_id: string | null
+          completion_rate: number | null
+          goals_completed: number | null
+          goals_created: number | null
+          period_start: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_goals_coaching_plan_id_fkey"
+            columns: ["coaching_plan_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_plans_coaching_engagement_id_fkey"
+            columns: ["coaching_engagement_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_org_engagements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_health_check_question_timeseries: {
+        Row: {
+          coaching_engagement_id: string | null
+          numeric_value_avg: number | null
+          period_start: string | null
+          submission_count: number | null
+          template_id: string | null
+          template_question_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_health_check_responses_template_question_id_fkey"
+            columns: ["template_question_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_health_check_template_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_health_checks_coaching_engagement_id_fkey"
+            columns: ["coaching_engagement_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_org_engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_health_checks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_health_check_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_health_check_subject_overall_score: {
+        Row: {
+          coaching_engagement_id: string | null
+          coaching_health_check_id: string | null
+          overall_score: number | null
+          period_start: string | null
+          subject_type:
+            | Database["public"]["Enums"]["coaching_health_subject_type"]
+            | null
+          submitted_at: string | null
+        }
+        Insert: {
+          coaching_engagement_id?: string | null
+          coaching_health_check_id?: string | null
+          overall_score?: number | null
+          period_start?: string | null
+          subject_type?:
+            | Database["public"]["Enums"]["coaching_health_subject_type"]
+            | null
+          submitted_at?: string | null
+        }
+        Update: {
+          coaching_engagement_id?: string | null
+          coaching_health_check_id?: string | null
+          overall_score?: number | null
+          period_start?: string | null
+          subject_type?:
+            | Database["public"]["Enums"]["coaching_health_subject_type"]
+            | null
+          submitted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_health_checks_coaching_engagement_id_fkey"
+            columns: ["coaching_engagement_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_org_engagements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_health_check_trend_delta: {
+        Row: {
+          coaching_engagement_id: string | null
+          delta: number | null
+          overall_score: number | null
+          period_start: string | null
+          prior_overall_score: number | null
+          subject_type:
+            | Database["public"]["Enums"]["coaching_health_subject_type"]
+            | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_health_checks_coaching_engagement_id_fkey"
+            columns: ["coaching_engagement_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_org_engagements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_org_scorecard_rollup: {
+        Row: {
+          avg_value: number | null
+          coaching_org_id: string | null
+          engagement_count: number | null
+          max_value: number | null
+          metric_key: string | null
+          min_value: number | null
+          period_start: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_employee_invite: { Args: { p_token: string }; Returns: Json }
@@ -12393,6 +12743,13 @@ export type Database = {
       grant_role: "none" | "read" | "comment" | "write" | "admin"
       grant_source_type: "coaching_engagement" | "external_advisor" | "other"
       grant_status: "active" | "suspended" | "revoked"
+      health_check_cadence: "ad_hoc" | "monthly" | "quarterly" | "annually"
+      health_check_response_type:
+        | "scale_1_5"
+        | "scale_1_10"
+        | "yes_no"
+        | "text"
+        | "number"
       journal_entry_status: "draft" | "posted" | "voided"
       kb_article_status: "draft" | "published" | "archived"
       manager_assignment_status: "active" | "inactive"
@@ -12452,6 +12809,8 @@ export type Database = {
         | "receipts_summary"
         | "ar_aging"
       resource_type: "document" | "link" | "file" | "video"
+      scorecard_metric_source: "health_check" | "goals" | "tasks"
+      scorecard_subject_type: "leader" | "organization" | "team" | "none"
       share_request_type: "report" | "document" | "note"
       site_role: "super_admin" | "site_admin"
       sop_visibility: "department_only" | "company_public"
@@ -12769,6 +13128,14 @@ export const Constants = {
       grant_role: ["none", "read", "comment", "write", "admin"],
       grant_source_type: ["coaching_engagement", "external_advisor", "other"],
       grant_status: ["active", "suspended", "revoked"],
+      health_check_cadence: ["ad_hoc", "monthly", "quarterly", "annually"],
+      health_check_response_type: [
+        "scale_1_5",
+        "scale_1_10",
+        "yes_no",
+        "text",
+        "number",
+      ],
       journal_entry_status: ["draft", "posted", "voided"],
       kb_article_status: ["draft", "published", "archived"],
       manager_assignment_status: ["active", "inactive"],
@@ -12833,6 +13200,8 @@ export const Constants = {
         "ar_aging",
       ],
       resource_type: ["document", "link", "file", "video"],
+      scorecard_metric_source: ["health_check", "goals", "tasks"],
+      scorecard_subject_type: ["leader", "organization", "team", "none"],
       share_request_type: ["report", "document", "note"],
       site_role: ["super_admin", "site_admin"],
       sop_visibility: ["department_only", "company_public"],
