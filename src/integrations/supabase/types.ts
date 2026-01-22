@@ -12537,6 +12537,38 @@ export type Database = {
       }
     }
     Views: {
+      v_coaching_audit_events: {
+        Row: {
+          action: string | null
+          actor_name: string | null
+          actor_user_id: string | null
+          coaching_org_id: string | null
+          coaching_org_name: string | null
+          company_id: string | null
+          company_name: string | null
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string | null
+          metadata: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_org_engagements_coaching_org_id_fkey"
+            columns: ["coaching_org_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_goal_completion_rate: {
         Row: {
           coaching_engagement_id: string | null
