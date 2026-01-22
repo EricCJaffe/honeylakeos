@@ -12151,6 +12151,7 @@ export type Database = {
       }
       wf_form_submissions: {
         Row: {
+          coaching_engagement_id: string | null
           company_context_id: string | null
           form_id: string
           id: string
@@ -12160,6 +12161,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          coaching_engagement_id?: string | null
           company_context_id?: string | null
           form_id: string
           id?: string
@@ -12169,6 +12171,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          coaching_engagement_id?: string | null
           company_context_id?: string | null
           form_id?: string
           id?: string
@@ -12178,6 +12181,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "wf_form_submissions_coaching_engagement_id_fkey"
+            columns: ["coaching_engagement_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_org_engagements"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "wf_form_submissions_company_context_id_fkey"
             columns: ["company_context_id"]
@@ -12209,6 +12219,7 @@ export type Database = {
           site_id: string | null
           status: Database["public"]["Enums"]["wf_status"]
           tags: string[] | null
+          template_key: string | null
           title: string
           updated_at: string
         }
@@ -12226,6 +12237,7 @@ export type Database = {
           site_id?: string | null
           status?: Database["public"]["Enums"]["wf_status"]
           tags?: string[] | null
+          template_key?: string | null
           title: string
           updated_at?: string
         }
@@ -12243,6 +12255,7 @@ export type Database = {
           site_id?: string | null
           status?: Database["public"]["Enums"]["wf_status"]
           tags?: string[] | null
+          template_key?: string | null
           title?: string
           updated_at?: string
         }

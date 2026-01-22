@@ -411,6 +411,49 @@ export const sopLifecycleWorkflow: WorkflowTemplate = {
 };
 
 // =============================================
+// COACHING TEMPLATES
+// =============================================
+
+export const annualGoalsPortfolioForm: FormTemplate = {
+  id: "generic_annual_goals_portfolio",
+  type: "form",
+  category: "coaching",
+  title: "Life & Leadership Portfolio — Annual Goals",
+  description: "Comprehensive annual goals form covering life stewardship areas and business strategic initiatives. Designed for coaching engagements and personal development planning.",
+  summary: "Set annual goals across life and business areas",
+  required_modules: [],
+  tags: ["coaching", "goals", "annual", "portfolio", "strategic", "life stewardship"],
+  fields: [
+    // Header Fields
+    { label: "Year", field_type: "number", is_required: true, helper_text: "Enter the goal year (e.g., 2024)", sort_order: 0 },
+    { label: "Participant Name", field_type: "short_text", is_required: false, helper_text: "Optional — your name", sort_order: 1 },
+    
+    // Section: Life Stewardship Goals
+    { label: "Abiding", field_type: "long_text", is_required: false, helper_text: "Goals for abiding in Christ, spiritual growth, prayer life", sort_order: 10 },
+    { label: "Bible Study", field_type: "long_text", is_required: false, helper_text: "Goals for Scripture reading, study plans, memorization", sort_order: 11 },
+    { label: "Making Disciples", field_type: "long_text", is_required: false, helper_text: "Goals for discipleship, mentoring, evangelism", sort_order: 12 },
+    { label: "Fellowship", field_type: "long_text", is_required: false, helper_text: "Goals for community, church involvement, relationships", sort_order: 13 },
+    { label: "Sabbath", field_type: "long_text", is_required: false, helper_text: "Goals for rest, renewal, work-life rhythm", sort_order: 14 },
+    { label: "Marriage", field_type: "long_text", is_required: false, helper_text: "Goals for your marriage relationship", sort_order: 15 },
+    { label: "Family", field_type: "long_text", is_required: false, helper_text: "Goals for parenting, family time, extended family", sort_order: 16 },
+    { label: "Our Body", field_type: "long_text", is_required: false, helper_text: "Goals for physical health, exercise, nutrition, rest", sort_order: 17 },
+    { label: "Money", field_type: "long_text", is_required: false, helper_text: "Goals for stewardship, budgeting, giving, saving", sort_order: 18 },
+    { label: "Time", field_type: "long_text", is_required: false, helper_text: "Goals for time management, priorities, schedule", sort_order: 19 },
+    { label: "Gifts & Talents", field_type: "long_text", is_required: false, helper_text: "Goals for developing and using your gifts and talents", sort_order: 20 },
+    
+    // Section: Business Strategic Initiatives
+    { label: "Financial", field_type: "long_text", is_required: false, helper_text: "Business financial goals — revenue, profitability, cash flow", sort_order: 30 },
+    { label: "Customers", field_type: "long_text", is_required: false, helper_text: "Customer-focused goals — acquisition, retention, satisfaction", sort_order: 31 },
+    { label: "Operations", field_type: "long_text", is_required: false, helper_text: "Operational goals — processes, efficiency, quality", sort_order: 32 },
+    { label: "Capacity", field_type: "long_text", is_required: false, helper_text: "Capacity goals — team, infrastructure, systems", sort_order: 33 },
+    { label: "Redemption", field_type: "long_text", is_required: false, helper_text: "Redemptive business goals — impact, mission, kingdom work", sort_order: 34 },
+    
+    // Section: Annual Primary Initiative
+    { label: "Annual Primary Initiative", field_type: "long_text", is_required: false, helper_text: "Your single most important initiative for the year", sort_order: 40 },
+  ],
+};
+
+// =============================================
 // ALL TEMPLATES COLLECTION
 // =============================================
 
@@ -433,13 +476,15 @@ export const allTemplates: StarterTemplate[] = [
   meetingEffectivenessSurvey,
   // Knowledge Management
   sopLifecycleWorkflow,
+  // Coaching
+  annualGoalsPortfolioForm,
 ];
 
 export const templatesByCategory: Record<TemplateCategory, StarterTemplate[]> = {
   employee_lifecycle: [onboardingIntakeForm, onboardingWorkflow, exitSurveyForm, offboardingWorkflow],
   requests: [itSupportRequestForm, itSupportWorkflow, facilitiesRequestForm, facilitiesWorkflow, hrRequestForm, hrRequestWorkflow],
   surveys: [pulseSurveyForm, trainingFeedbackForm, meetingEffectivenessSurvey],
-  coaching: [],
+  coaching: [annualGoalsPortfolioForm],
   knowledge_management: [sopLifecycleWorkflow],
 };
 
@@ -465,3 +510,30 @@ export const categoryLabels: Record<TemplateCategory, { label: string; descripti
     description: "SOP lifecycle, documentation, and compliance workflows" 
   },
 };
+
+// Field key mapping for automation reference
+export const annualGoalsFieldKeys = {
+  // Header
+  year: "year",
+  participant_name: "participant_name",
+  // Life Stewardship
+  life_abiding: "abiding",
+  life_bible_study: "bible_study",
+  life_making_disciples: "making_disciples",
+  life_fellowship: "fellowship",
+  life_sabbath: "sabbath",
+  life_marriage: "marriage",
+  life_family: "family",
+  life_body: "our_body",
+  life_money: "money",
+  life_time: "time",
+  life_gifts_talents: "gifts_talents",
+  // Business Strategic
+  biz_financial: "financial",
+  biz_customers: "customers",
+  biz_operations: "operations",
+  biz_capacity: "capacity",
+  biz_redemption: "redemption",
+  // Primary Initiative
+  annual_primary_initiative: "annual_primary_initiative",
+} as const;
