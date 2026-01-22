@@ -235,6 +235,45 @@ export const businessPlanOrganizerForm: FormTemplate = {
   ],
 };
 
+// Briefing Questionnaire – Team
+export const briefingQuestionnaireTeamForm: FormTemplate = {
+  id: "generic_briefing_questionnaire_team",
+  type: "form",
+  category: "coaching",
+  title: "Briefing Questionnaire – Team",
+  description: "Team member input to support executive leadership review and coaching. Gathers feedback on leader strengths, company culture, and recommendations.",
+  summary: "Team feedback for executive coaching prep",
+  required_modules: [],
+  tags: ["coaching", "briefing", "team", "feedback", "leadership", "360"],
+  fields: [
+    // Section: Participant Information
+    { label: "Your Name", field_type: "short_text", is_required: true, helper_text: "Enter your full name", sort_order: 0 },
+    { label: "Leader Being Evaluated", field_type: "short_text", is_required: true, helper_text: "Name of the executive/leader you're providing feedback on", sort_order: 1 },
+    
+    // Section: Role & Tenure
+    { label: "Briefly describe your role and responsibilities within the company and how long you've been there", field_type: "long_text", is_required: true, sort_order: 10 },
+    
+    // Section: Company Culture
+    { label: "How would you define the company's culture and work environment?", field_type: "long_text", is_required: true, sort_order: 20 },
+    
+    // Section: Leader Strengths & Growth
+    { label: "What do you see as the primary strengths of this leader?", field_type: "long_text", is_required: true, sort_order: 30 },
+    { label: "Where have you seen this leader make improvements?", field_type: "long_text", is_required: false, sort_order: 31 },
+    
+    // Section: Company Concerns
+    { label: "What concerns do you have about the company? Are there repeated issues not being addressed?", field_type: "long_text", is_required: true, sort_order: 40 },
+    
+    // Section: Opportunities
+    { label: "What's going well? What immediate opportunities should the company pursue?", field_type: "long_text", is_required: true, sort_order: 50 },
+    
+    // Section: Leader Recommendations
+    { label: "What changes would you recommend for the CEO personally or as a leader?", field_type: "long_text", is_required: true, sort_order: 60 },
+    
+    // Section: Faith & Values
+    { label: "How have you seen this leader's faith expressed in the company?", field_type: "long_text", is_required: false, sort_order: 70 },
+  ],
+};
+
 export const offboardingWorkflow: WorkflowTemplate = {
   id: "tpl-offboarding-workflow",
   type: "workflow",
@@ -618,13 +657,14 @@ export const allTemplates: StarterTemplate[] = [
   keyLeaderMemberCovenantForm,
   executiveMembershipApplicationForm,
   businessPlanOrganizerForm,
+  briefingQuestionnaireTeamForm,
 ];
 
 export const templatesByCategory: Record<TemplateCategory, StarterTemplate[]> = {
   employee_lifecycle: [onboardingIntakeForm, onboardingWorkflow, exitSurveyForm, offboardingWorkflow],
   requests: [itSupportRequestForm, itSupportWorkflow, facilitiesRequestForm, facilitiesWorkflow, hrRequestForm, hrRequestWorkflow],
   surveys: [pulseSurveyForm, trainingFeedbackForm, meetingEffectivenessSurvey],
-  coaching: [annualGoalsPortfolioForm, keyLeaderMemberCovenantForm, executiveMembershipApplicationForm, businessPlanOrganizerForm],
+  coaching: [annualGoalsPortfolioForm, keyLeaderMemberCovenantForm, executiveMembershipApplicationForm, businessPlanOrganizerForm, briefingQuestionnaireTeamForm],
   knowledge_management: [sopLifecycleWorkflow],
 };
 
