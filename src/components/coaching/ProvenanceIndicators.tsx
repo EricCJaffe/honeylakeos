@@ -18,7 +18,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useDetachFromCoaching } from "@/hooks/useCoachingAssignmentsUnified";
-import { useActiveCompany } from "@/hooks/useActiveCompany";
 
 type SourceType = "internal" | "coaching_template" | "coaching_manual";
 
@@ -80,6 +79,7 @@ interface DetachButtonProps {
   id: string;
   sourceType?: SourceType | null;
   coachingEngagementId?: string | null;
+  isAdmin?: boolean;
 }
 
 export function DetachFromCoachingButton({
@@ -88,89 +88,11 @@ export function DetachFromCoachingButton({
   sourceType,
   coachingEngagementId,
   isAdmin = false,
-}: DetachButtonProps & { isAdmin?: boolean }) {
+}: DetachButtonProps) {
   const detachMutation = useDetachFromCoaching();
 
   // Only show for coaching-scoped items to admins
   if (!isAdmin) return null;
-  if (!sourceType || sourceType === "internal") return null;
-  if (!coachingEngagementId) return null;
-
-  return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="sm">
-          <Unlink className="h-4 w-4 mr-1" />
-          Convert to Internal
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Convert to Internal Item?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This will detach the item from coaching. The coach will no longer have
-            visibility unless they have broader access grants.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={() => detachMutation.mutate({ table, id })}
-            disabled={detachMutation.isPending}
-          >
-            Convert to Internal
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-}
-
-interface SourceFilterProps {
-  value: "all" | "internal" | "coaching";
-  onChange: (value: "all" | "internal" | "coaching") => void;
-}
-
-export function SourceFilter({ value, onChange }: SourceFilterProps) {
-  return (
-    <div className="flex items-center gap-1 rounded-md border p-1">
-      <Button
-        variant={value === "all" ? "secondary" : "ghost"}
-        size="sm"
-        className="h-7 px-2 text-xs"
-        onClick={() => onChange("all")}
-      >
-        All
-      </Button>
-      <Button
-        variant={value === "internal" ? "secondary" : "ghost"}
-        size="sm"
-        className="h-7 px-2 text-xs"
-        onClick={() => onChange("internal")}
-      >
-        Internal
-      </Button>
-      <Button
-        variant={value === "coaching" ? "secondary" : "ghost"}
-        size="sm"
-        className="h-7 px-2 text-xs"
-        onClick={() => onChange("coaching")}
-      >
-        <UserCheck className="h-3 w-3 mr-1" />
-        Coaching
-      </Button>
-    </div>
-  );
-}
-  id,
-  sourceType,
-  coachingEngagementId,
-}: DetachButtonProps) {
-  const { isCompanyAdmin } = useMembership();
-  const detachMutation = useDetachFromCoaching();
-
-  // Only show for coaching-scoped items to company admins
-  if (!isCompanyAdmin) return null;
   if (!sourceType || sourceType === "internal") return null;
   if (!coachingEngagementId) return null;
 
