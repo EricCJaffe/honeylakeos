@@ -6,9 +6,31 @@ import { TypeformRunner, FormSettings } from "@/components/forms/TypeformRunner"
 import { useFormByTemplateKey, useCreateFormFromTemplate, getFormTemplate } from "@/hooks/useFormByTemplateKey";
 import { useWfSubmissionMutations } from "@/hooks/useWorkflowForms";
 import type { WfFormField } from "@/hooks/useWorkflowForms";
+import BusinessPlanOrganizerForm from "./BusinessPlanOrganizerForm";
+
+// Templates that use custom form components instead of TypeformRunner
+const CUSTOM_FORM_TEMPLATES: Record<string, React.ComponentType> = {
+  "generic_business_plan_organizer_v25_07": BusinessPlanOrganizerForm,
+};
 
 export default function TemplateFormPage() {
   const { templateKey } = useParams<{ templateKey: string }>();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
+  // Check if this template has a custom form component
+  const CustomFormComponent = templateKey ? CUSTOM_FORM_TEMPLATES[templateKey] : undefined;
+  
+  // If custom component exists, render it directly
+  if (CustomFormComponent) {
+    return <CustomFormComponent />;
+  }
+  
+  // Otherwise, continue with standard TypeformRunner
+  return <StandardTemplateForm templateKey={templateKey} />;
+}
+
+function StandardTemplateForm({ templateKey }: { templateKey: string | undefined }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
