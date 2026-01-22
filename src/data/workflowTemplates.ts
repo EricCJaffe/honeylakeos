@@ -190,6 +190,51 @@ export const executiveMembershipApplicationForm: FormTemplate = {
   ],
 };
 
+// Business Plan Organizer (Annual Plan + Quarterly Rocks + Scorecard)
+export const businessPlanOrganizerForm: FormTemplate = {
+  id: "generic_business_plan_organizer_v25_07",
+  type: "form",
+  category: "coaching",
+  title: "Business Plan Organizer",
+  description: "Comprehensive annual business planning form with strategic plan, quarterly rocks, and scorecard. Perfect for EOS-style planning and coaching engagements.",
+  summary: "Annual plan, quarterly rocks, and scorecard in one form",
+  required_modules: [],
+  tags: ["coaching", "business plan", "rocks", "scorecard", "strategic", "EOS", "annual planning"],
+  fields: [
+    // Header
+    { label: "Plan Year", field_type: "number", is_required: true, helper_text: "Enter the plan year", sort_order: 0 },
+    { label: "Company Name", field_type: "short_text", is_required: true, sort_order: 1 },
+    { label: "Last Updated", field_type: "date", is_required: false, sort_order: 2 },
+    
+    // Core Principles
+    { label: "Mission Statement", field_type: "long_text", is_required: false, sort_order: 10 },
+    { label: "Vision Statement", field_type: "long_text", is_required: false, sort_order: 11 },
+    { label: "Core Values", field_type: "long_text", is_required: false, sort_order: 12 },
+    { label: "Statement of Faith", field_type: "long_text", is_required: false, sort_order: 13 },
+    
+    // Revenue Generation
+    { label: "Ideal Customer Profile", field_type: "long_text", is_required: false, sort_order: 20 },
+    { label: "Dominant Selling Idea", field_type: "long_text", is_required: false, sort_order: 21 },
+    { label: "Three Uniques #1", field_type: "short_text", is_required: false, sort_order: 22 },
+    { label: "Three Uniques #2", field_type: "short_text", is_required: false, sort_order: 23 },
+    { label: "Three Uniques #3", field_type: "short_text", is_required: false, sort_order: 24 },
+    { label: "Promise", field_type: "long_text", is_required: false, sort_order: 25 },
+    
+    // SWOT
+    { label: "SWOT - Strengths", field_type: "long_text", is_required: false, sort_order: 30 },
+    { label: "SWOT - Weaknesses", field_type: "long_text", is_required: false, sort_order: 31 },
+    { label: "SWOT - Opportunities", field_type: "long_text", is_required: false, sort_order: 32 },
+    { label: "SWOT - Threats", field_type: "long_text", is_required: false, sort_order: 33 },
+    
+    // Long-term Planning
+    { label: "Issues List", field_type: "long_text", is_required: false, sort_order: 40 },
+    { label: "10-Year BHAG", field_type: "long_text", is_required: false, sort_order: 41 },
+    { label: "3-Year Outlook", field_type: "long_text", is_required: false, sort_order: 42 },
+    { label: "Primary Initiative (Year)", field_type: "long_text", is_required: false, sort_order: 43 },
+    { label: "High-Level Strategic Plan", field_type: "long_text", is_required: false, sort_order: 44 },
+  ],
+};
+
 export const offboardingWorkflow: WorkflowTemplate = {
   id: "tpl-offboarding-workflow",
   type: "workflow",
@@ -572,13 +617,14 @@ export const allTemplates: StarterTemplate[] = [
   annualGoalsPortfolioForm,
   keyLeaderMemberCovenantForm,
   executiveMembershipApplicationForm,
+  businessPlanOrganizerForm,
 ];
 
 export const templatesByCategory: Record<TemplateCategory, StarterTemplate[]> = {
   employee_lifecycle: [onboardingIntakeForm, onboardingWorkflow, exitSurveyForm, offboardingWorkflow],
   requests: [itSupportRequestForm, itSupportWorkflow, facilitiesRequestForm, facilitiesWorkflow, hrRequestForm, hrRequestWorkflow],
   surveys: [pulseSurveyForm, trainingFeedbackForm, meetingEffectivenessSurvey],
-  coaching: [annualGoalsPortfolioForm, keyLeaderMemberCovenantForm, executiveMembershipApplicationForm],
+  coaching: [annualGoalsPortfolioForm, keyLeaderMemberCovenantForm, executiveMembershipApplicationForm, businessPlanOrganizerForm],
   knowledge_management: [sopLifecycleWorkflow],
 };
 
