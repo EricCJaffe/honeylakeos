@@ -246,6 +246,12 @@ export const adminNavItems = {
     url: "/app/admin/site-console",
     icon: Shield,
   },
+  coachingInspector: {
+    key: "coaching-inspector",
+    title: "Coaching Inspector",
+    url: "/app/admin/coaching-inspector",
+    icon: Users,
+  },
 };
 
 /**

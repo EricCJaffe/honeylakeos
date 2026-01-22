@@ -255,22 +255,40 @@ export function AppSidebar() {
                 </SidebarMenuItem>
 
                 {showSiteAdmin && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive(adminNavItems.siteConsole.url)}
-                      tooltip={adminNavItems.siteConsole.title}
-                    >
-                      <NavLink
-                        to={adminNavItems.siteConsole.url}
-                        className="flex items-center gap-3"
-                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                  <>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive(adminNavItems.siteConsole.url)}
+                        tooltip={adminNavItems.siteConsole.title}
                       >
-                        <adminNavItems.siteConsole.icon className="h-4 w-4" />
-                        <span>{adminNavItems.siteConsole.title}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+                        <NavLink
+                          to={adminNavItems.siteConsole.url}
+                          className="flex items-center gap-3"
+                          activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                        >
+                          <adminNavItems.siteConsole.icon className="h-4 w-4" />
+                          <span>{adminNavItems.siteConsole.title}</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive(adminNavItems.coachingInspector.url)}
+                        tooltip={adminNavItems.coachingInspector.title}
+                      >
+                        <NavLink
+                          to={adminNavItems.coachingInspector.url}
+                          className="flex items-center gap-3"
+                          activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                        >
+                          <adminNavItems.coachingInspector.icon className="h-4 w-4" />
+                          <span>{adminNavItems.coachingInspector.title}</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </>
                 )}
               </SidebarMenu>
             </SidebarGroupContent>
