@@ -670,6 +670,54 @@ export const keyLeaderMemberCovenantForm: FormTemplate = {
   ],
 };
 
+export const keyLeaderBriefingForm: FormTemplate = {
+  id: "generic_key_leader_briefing",
+  type: "form",
+  category: "coaching",
+  title: "Key Leader Briefing – Life & Business Stewardship",
+  description: "Executive briefing covering life stewardship and business stewardship categories. Use for coaching reviews, annual/quarterly prep, and development planning.",
+  summary: "Executive briefing across life and business stewardship areas",
+  required_modules: [],
+  tags: ["coaching", "briefing", "stewardship", "executive", "key leader", "review"],
+  fields: [
+    // Section 1: Header
+    { label: "Briefing Name", field_type: "short_text", is_required: false, helper_text: "Optional title for this briefing", sort_order: 0 },
+    { label: "Leader Name", field_type: "short_text", is_required: true, helper_text: "Name of the leader being briefed", sort_order: 1 },
+    { label: "Leader Title", field_type: "short_text", is_required: false, helper_text: "Role or title", sort_order: 2 },
+    { label: "Briefing Date", field_type: "date", is_required: true, helper_text: "Date of this briefing", sort_order: 3 },
+
+    // Section 2: Life Stewardship
+    { label: "Life Stewardship Overview", field_type: "long_text", is_required: false, helper_text: "Overall summary of life stewardship areas", sort_order: 10 },
+    { label: "Abiding", field_type: "long_text", is_required: false, helper_text: "Spiritual growth, prayer life, abiding in Christ", sort_order: 11 },
+    { label: "Bible Study", field_type: "long_text", is_required: false, helper_text: "Scripture reading, study, memorization", sort_order: 12 },
+    { label: "Marriage", field_type: "long_text", is_required: false, helper_text: "Marriage relationship health and goals", sort_order: 13 },
+    { label: "Family", field_type: "long_text", is_required: false, helper_text: "Family relationships, parenting, extended family", sort_order: 14 },
+    { label: "Health", field_type: "long_text", is_required: false, helper_text: "Physical health, exercise, rest, nutrition", sort_order: 15 },
+    { label: "Time", field_type: "long_text", is_required: false, helper_text: "Time management, priorities, schedule", sort_order: 16 },
+    { label: "Finances", field_type: "long_text", is_required: false, helper_text: "Personal financial stewardship, giving, saving", sort_order: 17 },
+    { label: "Gifts & Talents", field_type: "long_text", is_required: false, helper_text: "Developing and using your gifts and talents", sort_order: 18 },
+
+    // Section 3: Business Stewardship
+    { label: "Business Overview", field_type: "long_text", is_required: false, helper_text: "Overall summary of business stewardship", sort_order: 30 },
+    { label: "Financial", field_type: "long_text", is_required: false, helper_text: "Revenue, profitability, cash flow, financial health", sort_order: 31 },
+    { label: "Customers", field_type: "long_text", is_required: false, helper_text: "Customer acquisition, retention, satisfaction", sort_order: 32 },
+    { label: "Operations", field_type: "long_text", is_required: false, helper_text: "Processes, efficiency, quality, systems", sort_order: 33 },
+    { label: "Capacity", field_type: "long_text", is_required: false, helper_text: "Team, infrastructure, resources, growth capacity", sort_order: 34 },
+    { label: "Redemption", field_type: "long_text", is_required: false, helper_text: "Kingdom impact, mission, redemptive business purpose", sort_order: 35 },
+
+    // Section 4: Development Plan
+    { label: "Development Plan Summary", field_type: "long_text", is_required: false, helper_text: "Key development priorities and action items", sort_order: 40 },
+
+    // Section 5: Briefing Questions (as separate fields - dynamic rows handled at runtime)
+    { label: "Key Issue / Question 1", field_type: "long_text", is_required: false, helper_text: "First key issue or question for discussion", sort_order: 50 },
+    { label: "Response 1", field_type: "long_text", is_required: false, helper_text: "Response or notes for question 1", sort_order: 51 },
+    { label: "Key Issue / Question 2", field_type: "long_text", is_required: false, helper_text: "Second key issue or question for discussion", sort_order: 52 },
+    { label: "Response 2", field_type: "long_text", is_required: false, helper_text: "Response or notes for question 2", sort_order: 53 },
+    { label: "Key Issue / Question 3", field_type: "long_text", is_required: false, helper_text: "Additional key issue or question (optional)", sort_order: 54 },
+    { label: "Response 3", field_type: "long_text", is_required: false, helper_text: "Response or notes for question 3", sort_order: 55 },
+  ],
+};
+
 // =============================================
 // ALL TEMPLATES COLLECTION
 // =============================================
@@ -700,13 +748,14 @@ export const allTemplates: StarterTemplate[] = [
   businessPlanOrganizerForm,
   briefingQuestionnaireTeamForm,
   briefingQuestionnaireSpouseForm,
+  keyLeaderBriefingForm,
 ];
 
 export const templatesByCategory: Record<TemplateCategory, StarterTemplate[]> = {
   employee_lifecycle: [onboardingIntakeForm, onboardingWorkflow, exitSurveyForm, offboardingWorkflow],
   requests: [itSupportRequestForm, itSupportWorkflow, facilitiesRequestForm, facilitiesWorkflow, hrRequestForm, hrRequestWorkflow],
   surveys: [pulseSurveyForm, trainingFeedbackForm, meetingEffectivenessSurvey],
-  coaching: [annualGoalsPortfolioForm, keyLeaderMemberCovenantForm, executiveMembershipApplicationForm, businessPlanOrganizerForm, briefingQuestionnaireTeamForm, briefingQuestionnaireSpouseForm],
+  coaching: [annualGoalsPortfolioForm, keyLeaderMemberCovenantForm, executiveMembershipApplicationForm, businessPlanOrganizerForm, briefingQuestionnaireTeamForm, briefingQuestionnaireSpouseForm, keyLeaderBriefingForm],
   knowledge_management: [sopLifecycleWorkflow],
 };
 
