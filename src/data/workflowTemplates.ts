@@ -770,6 +770,31 @@ export const executiveBriefingForm: FormTemplate = {
   ],
 };
 
+export const briefingExecutiveSummaryForm: FormTemplate = {
+  id: "generic_briefing_executive_summary",
+  type: "form",
+  category: "coaching",
+  title: "Briefing Executive Summary",
+  description: "Executive summary reflection for leadership and company review. Captures personal background, family overview, and company state for annual reviews and planning.",
+  summary: "Executive reflection covering personal, family, and company overview",
+  required_modules: [],
+  tags: ["coaching", "executive", "summary", "reflection", "annual", "review"],
+  fields: [
+    // Section 1: Header
+    { label: "Member Name", field_type: "short_text", is_required: true, helper_text: "Your full name", sort_order: 0 },
+    { label: "Briefing Date", field_type: "date", is_required: true, helper_text: "Date of this briefing", sort_order: 1 },
+
+    // Section 2: Personal Background
+    { label: "Personal Background", field_type: "long_text", is_required: true, helper_text: "Please help us know you better (education, experience, assessment results, personal wins)", sort_order: 10 },
+
+    // Section 3: Family Overview
+    { label: "Family Overview", field_type: "long_text", is_required: true, helper_text: "Please help us know your family better (marital status, children, grandchildren, significant details)", sort_order: 20 },
+
+    // Section 4: Company State
+    { label: "Company State Summary", field_type: "long_text", is_required: true, helper_text: "Reflecting over the past year, please provide a high-level state of the company (as if reporting to your board of directors)", sort_order: 30 },
+  ],
+};
+
 // =============================================
 // ALL TEMPLATES COLLECTION
 // =============================================
@@ -802,13 +827,14 @@ export const allTemplates: StarterTemplate[] = [
   briefingQuestionnaireSpouseForm,
   keyLeaderBriefingForm,
   executiveBriefingForm,
+  briefingExecutiveSummaryForm,
 ];
 
 export const templatesByCategory: Record<TemplateCategory, StarterTemplate[]> = {
   employee_lifecycle: [onboardingIntakeForm, onboardingWorkflow, exitSurveyForm, offboardingWorkflow],
   requests: [itSupportRequestForm, itSupportWorkflow, facilitiesRequestForm, facilitiesWorkflow, hrRequestForm, hrRequestWorkflow],
   surveys: [pulseSurveyForm, trainingFeedbackForm, meetingEffectivenessSurvey],
-  coaching: [annualGoalsPortfolioForm, keyLeaderMemberCovenantForm, executiveMembershipApplicationForm, businessPlanOrganizerForm, briefingQuestionnaireTeamForm, briefingQuestionnaireSpouseForm, keyLeaderBriefingForm, executiveBriefingForm],
+  coaching: [annualGoalsPortfolioForm, keyLeaderMemberCovenantForm, executiveMembershipApplicationForm, businessPlanOrganizerForm, briefingQuestionnaireTeamForm, briefingQuestionnaireSpouseForm, keyLeaderBriefingForm, executiveBriefingForm, briefingExecutiveSummaryForm],
   knowledge_management: [sopLifecycleWorkflow],
 };
 
