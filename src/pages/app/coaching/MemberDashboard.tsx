@@ -99,8 +99,10 @@ export default function MemberDashboard() {
     );
   }
 
-  // Get assigned coach info
-  const primaryCoach = engagement.assignments?.find((a: any) => a.role === "primary")?.coach;
+  // Get assigned coach info - coach data comes from coaching_coaches table
+  const primaryAssignment = engagement.assignments?.find((a: any) => a.role === "primary");
+  const primaryCoach = primaryAssignment?.coach as { id: string; user_id: string; profile?: { full_name?: string; email?: string; avatar_url?: string } } | undefined;
+  // Profile is attached via separate query in useCoachingData
   const coachName = primaryCoach?.profile?.full_name || "Your Coach";
   const coachEmail = primaryCoach?.profile?.email || "";
   const coachInitial = coachName?.[0] || "C";
