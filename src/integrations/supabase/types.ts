@@ -10774,6 +10774,88 @@ export type Database = {
               override_task_id: string
             }[]
           }
+      fn_active_company_id: { Args: never; Returns: string }
+      fn_can_access_engagement: {
+        Args: { _engagement_id: string; _user_id: string }
+        Returns: boolean
+      }
+      fn_coaching_scoped_only: {
+        Args: {
+          _company_id: string
+          _module: string
+          _source_engagement_id: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      fn_current_user_id: { Args: never; Returns: string }
+      fn_get_coaching_org_id: { Args: { _company_id: string }; Returns: string }
+      fn_grant_constraints: {
+        Args: {
+          _company_id: string
+          _module: string
+          _source_engagement_id: string
+          _user_id: string
+        }
+        Returns: Json
+      }
+      fn_has_coaching_access: {
+        Args: {
+          _company_id: string
+          _engagement_id: string
+          _min_role: string
+          _module: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      fn_has_grant: {
+        Args: {
+          _company_id: string
+          _min_role: string
+          _module: string
+          _source_engagement_id?: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      fn_is_coach: {
+        Args: { _coaching_org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      fn_is_coaching_manager: {
+        Args: { _coaching_org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      fn_is_coaching_org_admin: {
+        Args: { _coaching_org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      fn_is_company_admin: {
+        Args: { _company_id: string; _user_id: string }
+        Returns: boolean
+      }
+      fn_is_company_member: {
+        Args: { _company_id: string; _user_id: string }
+        Returns: boolean
+      }
+      fn_is_site_admin: { Args: { _user_id: string }; Returns: boolean }
+      fn_manager_coach_ids: {
+        Args: { _coaching_org_id: string; _user_id: string }
+        Returns: string[]
+      }
+      fn_user_coach_ids: {
+        Args: { _coaching_org_id: string; _user_id: string }
+        Returns: string[]
+      }
+      fn_user_coaching_org_ids: {
+        Args: { _user_id: string }
+        Returns: string[]
+      }
+      fn_user_engagement_ids: {
+        Args: { _coaching_org_id: string; _user_id: string }
+        Returns: string[]
+      }
       folder_create: {
         Args: {
           p_company_id?: string
