@@ -274,6 +274,47 @@ export const briefingQuestionnaireTeamForm: FormTemplate = {
   ],
 };
 
+// Briefing Questionnaire – Spouse
+export const briefingQuestionnaireSpouseForm: FormTemplate = {
+  id: "generic_briefing_questionnaire_spouse",
+  type: "form",
+  category: "coaching",
+  title: "Briefing Questionnaire – Spouse",
+  description: "Spousal perspective to support executive leadership and life balance coaching. Gathers feedback on growth, concerns, work-life balance, and accountability.",
+  summary: "Spouse feedback for executive coaching prep",
+  required_modules: [],
+  tags: ["coaching", "briefing", "spouse", "feedback", "leadership", "360", "confidential"],
+  fields: [
+    // Section: Participant Information
+    { label: "Member Name", field_type: "short_text", is_required: true, helper_text: "Name of the executive/leader", sort_order: 0 },
+    { label: "Spouse Name", field_type: "short_text", is_required: true, helper_text: "Your name", sort_order: 1 },
+    
+    // Section: Observed Growth
+    { label: "In what areas have you observed growth in your spouse over the past year?", field_type: "long_text", is_required: true, sort_order: 10 },
+    
+    // Section: Concerns & Worries
+    { label: "What specific concerns or worries do you have about your spouse and the business right now?", field_type: "long_text", is_required: true, sort_order: 20 },
+    
+    // Section: Work / Life Balance
+    { label: "How's your spouse's work/life balance? Is your spouse present when he/she is at home?", field_type: "long_text", is_required: true, sort_order: 30 },
+    
+    // Section: Ongoing Issues
+    { label: "Is there an ongoing issue or topic you would like to share that could enhance the personal aspects of your spouse's life?", field_type: "long_text", is_required: false, sort_order: 40 },
+    
+    // Section: Unsaid Thoughts
+    { label: "If you could express one thing to your spouse that often goes unsaid, what would it be?", field_type: "long_text", is_required: true, sort_order: 50 },
+    
+    // Section: Dreams & Desires
+    { label: "What dreams or desires do you have during this season of your marriage?", field_type: "long_text", is_required: false, sort_order: 60 },
+    
+    // Section: Ways to Love Better
+    { label: "What ways can your spouse love you more during this season of your marriage?", field_type: "long_text", is_required: false, sort_order: 70 },
+    
+    // Section: Accountability
+    { label: "How can we, as a forum, add healthy accountability to your spouse's life?", field_type: "long_text", is_required: false, sort_order: 80 },
+  ],
+};
+
 export const offboardingWorkflow: WorkflowTemplate = {
   id: "tpl-offboarding-workflow",
   type: "workflow",
@@ -658,13 +699,14 @@ export const allTemplates: StarterTemplate[] = [
   executiveMembershipApplicationForm,
   businessPlanOrganizerForm,
   briefingQuestionnaireTeamForm,
+  briefingQuestionnaireSpouseForm,
 ];
 
 export const templatesByCategory: Record<TemplateCategory, StarterTemplate[]> = {
   employee_lifecycle: [onboardingIntakeForm, onboardingWorkflow, exitSurveyForm, offboardingWorkflow],
   requests: [itSupportRequestForm, itSupportWorkflow, facilitiesRequestForm, facilitiesWorkflow, hrRequestForm, hrRequestWorkflow],
   surveys: [pulseSurveyForm, trainingFeedbackForm, meetingEffectivenessSurvey],
-  coaching: [annualGoalsPortfolioForm, keyLeaderMemberCovenantForm, executiveMembershipApplicationForm, businessPlanOrganizerForm, briefingQuestionnaireTeamForm],
+  coaching: [annualGoalsPortfolioForm, keyLeaderMemberCovenantForm, executiveMembershipApplicationForm, businessPlanOrganizerForm, briefingQuestionnaireTeamForm, briefingQuestionnaireSpouseForm],
   knowledge_management: [sopLifecycleWorkflow],
 };
 
