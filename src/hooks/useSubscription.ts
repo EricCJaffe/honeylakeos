@@ -119,15 +119,15 @@ export function useLogSubscriptionEvent() {
       metadata?: Record<string, unknown>;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await supabase.from("subscription_events").insert({
+      const { error } = await supabase.from("subscription_events").insert([{
         company_id: companyId,
         event_type: eventType,
         from_value: fromValue,
         to_value: toValue,
         reason,
-        metadata: metadata || {},
+        metadata: (metadata || {}) as Record<string, never>,
         created_by_user_id: user?.id,
-      });
+      }]);
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
