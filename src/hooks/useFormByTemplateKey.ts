@@ -3,18 +3,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "./useActiveCompany";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
-import { annualGoalsPortfolioForm } from "@/data/workflowTemplates";
+import { annualGoalsPortfolioForm, keyLeaderMemberCovenantForm } from "@/data/workflowTemplates";
 import type { FormTemplate, FormFieldTemplate } from "@/data/workflowTemplates";
 
 type WfForm = Database["public"]["Tables"]["wf_forms"]["Row"];
 type WfFormField = Database["public"]["Tables"]["wf_form_fields"]["Row"];
 
+// Map of all available form templates
+const FORM_TEMPLATES: Record<string, FormTemplate> = {
+  "generic_annual_goals_portfolio": annualGoalsPortfolioForm,
+  "generic_key_leader_member_covenant": keyLeaderMemberCovenantForm,
+};
+
 // Get template by key
 export function getFormTemplate(templateKey: string): FormTemplate | undefined {
-  if (templateKey === "generic_annual_goals_portfolio") {
-    return annualGoalsPortfolioForm;
-  }
-  return undefined;
+  return FORM_TEMPLATES[templateKey];
 }
 
 // Check if a form with this template_key exists for the company

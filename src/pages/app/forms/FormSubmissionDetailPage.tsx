@@ -1,30 +1,69 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar, User, Loader2, FileText } from "lucide-react";
+import { ArrowLeft, Calendar, Loader2, FileText, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { PageHeader } from "@/components/PageHeader";
 import { useWfFormSubmission } from "@/hooks/useWorkflowForms";
 import { format } from "date-fns";
 
-// Field sections for the Annual Goals Portfolio form
-const LIFE_STEWARDSHIP_FIELDS = [
-  "abiding", "bible_study", "making_disciples", "fellowship", "sabbath",
-  "marriage", "family", "our_body", "money", "time", "gifts_talents"
-];
+// Section configuration for different form templates
+const FORM_SECTIONS: Record<string, { sections: { key: string; title: string; fieldPatterns: string[] }[] }> = {
+  // Annual Goals Portfolio
+  "generic_annual_goals_portfolio": {
+    sections: [
+      { key: "header", title: "General Information", fieldPatterns: ["year", "participant_name"] },
+      { key: "life_stewardship", title: "Life Stewardship Goals", fieldPatterns: ["abiding", "bible_study", "making_disciples", "fellowship", "sabbath", "marriage", "family", "our_body", "money", "time", "gifts_talents"] },
+      { key: "business_strategic", title: "Business Strategic Initiatives", fieldPatterns: ["financial", "customers", "operations", "capacity", "redemption"] },
+      { key: "primary_initiative", title: "Annual Primary Initiative", fieldPatterns: ["annual_primary", "primary_initiative"] },
+    ],
+  },
+  // Key Leader Member Covenant
+  "generic_key_leader_member_covenant": {
+    sections: [
+      { key: "member_info", title: "Member Information", fieldPatterns: ["member_name", "title", "company_name", "home_address", "spouse_name", "anniversary_date", "birthdate", "place_of_worship", "children", "cell_phone", "email", "business_address", "website", "industry", "annual_gross_revenue", "number_of_employees"] },
+      { key: "fees", title: "Fees", fieldPatterns: ["registration_fee", "monthly_dues"] },
+      { key: "covenant", title: "Covenant Commitments", fieldPatterns: ["attendance_commitment", "confidentiality_commitment", "no_soliciting", "doctrine_agreement"] },
+      { key: "signature", title: "Signature", fieldPatterns: ["signature", "signature_date"] },
+    ],
+  },
+};
 
-const BUSINESS_STRATEGIC_FIELDS = [
-  "financial", "customers", "operations", "capacity", "redemption"
-];
-
-function getSectionForField(fieldKey: string): string {
+function getSectionForField(fieldKey: string, templateKey: string | undefined): string {
   const key = fieldKey.toLowerCase().replace(/[^a-z0-9]+/g, "_");
-  if (key === "year" || key === "participant_name") return "header";
-  if (LIFE_STEWARDSHIP_FIELDS.some(f => key.includes(f))) return "life_stewardship";
-  if (BUSINESS_STRATEGIC_FIELDS.some(f => key.includes(f))) return "business_strategic";
-  if (key.includes("annual_primary") || key.includes("primary_initiative")) return "primary_initiative";
+  const config = templateKey ? FORM_SECTIONS[templateKey] : undefined;
+  
+  if (config) {
+    for (const section of config.sections) {
+      if (section.fieldPatterns.some(pattern => key.includes(pattern))) {
+        return section.key;
+      }
+    }
+  }
+  
   return "other";
+}
+
+function getSectionTitle(sectionKey: string, templateKey: string | undefined): string {
+  const config = templateKey ? FORM_SECTIONS[templateKey] : undefined;
+  if (config) {
+    const section = config.sections.find(s => s.key === sectionKey);
+    if (section) return section.title;
+  }
+  
+  // Fallback titles
+  const fallbacks: Record<string, string> = {
+    header: "General Information",
+    member_info: "Member Information",
+    fees: "Fees",
+    covenant: "Covenant Commitments",
+    signature: "Signature",
+    life_stewardship: "Life Stewardship Goals",
+    business_strategic: "Business Strategic Initiatives",
+    primary_initiative: "Annual Primary Initiative",
+    other: "Additional Information",
+  };
+  return fallbacks[sectionKey] ?? "Information";
 }
 
 export default function FormSubmissionDetailPage() {
@@ -56,21 +95,28 @@ export default function FormSubmissionDetailPage() {
   }
 
   const form = submission.form as any;
+  const templateKey = form?.template_key as string | undefined;
   const values = (submission.values as any[]) ?? [];
 
+  // Build section keys from config or derive from field keys
+  const configSectionKeys = templateKey && FORM_SECTIONS[templateKey] 
+    ? FORM_SECTIONS[templateKey].sections.map(s => s.key)
+    : [];
+  
+  const allSectionKeys = new Set<string>([...configSectionKeys, "other"]);
+
   // Group values by section
-  const groupedValues: Record<string, typeof values> = {
-    header: [],
-    life_stewardship: [],
-    business_strategic: [],
-    primary_initiative: [],
-    other: [],
-  };
+  const groupedValues: Record<string, typeof values> = {};
+  allSectionKeys.forEach(key => { groupedValues[key] = []; });
 
   values.forEach((v) => {
     const field = v.field;
     if (!field) return;
-    const section = getSectionForField(field.key);
+    const section = getSectionForField(field.key, templateKey);
+    if (!groupedValues[section]) {
+      groupedValues[section] = [];
+      allSectionKeys.add(section);
+    }
     groupedValues[section].push(v);
   });
 
@@ -80,20 +126,58 @@ export default function FormSubmissionDetailPage() {
   });
 
   const renderValue = (v: any) => {
+    const fieldType = v.field?.field_type;
     const value = v.value_text ?? v.value_number ?? v.value_json ?? v.value_date;
+    
     if (value === null || value === undefined || value === "") {
       return <span className="text-muted-foreground italic">Not provided</span>;
     }
+    
+    // Handle checkbox fields
+    if (fieldType === "checkbox") {
+      const isChecked = value === "yes" || value === true || value === "true";
+      return (
+        <div className="flex items-center gap-2">
+          {isChecked ? (
+            <Check className="h-5 w-5 text-primary" />
+          ) : (
+            <X className="h-5 w-5 text-destructive" />
+          )}
+          <span>{isChecked ? "Agreed" : "Not agreed"}</span>
+        </div>
+      );
+    }
+    
+    // Handle yes/no fields
+    if (fieldType === "yes_no") {
+      const isYes = value === "yes" || value === true;
+      return isYes ? "Yes" : "No";
+    }
+    
+    // Handle date fields
+    if (fieldType === "date" && value) {
+      try {
+        return format(new Date(value), "MMM d, yyyy");
+      } catch {
+        return String(value);
+      }
+    }
+    
+    // Handle object values
     if (typeof value === "object") {
       if (value.items) return value.items.join(", ");
       return JSON.stringify(value);
     }
+    
     return String(value);
   };
 
-  const renderSection = (sectionKey: string, title: string) => {
+  const renderSection = (sectionKey: string) => {
     const sectionValues = groupedValues[sectionKey];
-    if (sectionValues.length === 0) return null;
+    if (!sectionValues || sectionValues.length === 0) return null;
+
+    const title = getSectionTitle(sectionKey, templateKey);
+    const isCovenantSection = sectionKey === "covenant";
 
     return (
       <Card key={sectionKey}>
@@ -102,17 +186,36 @@ export default function FormSubmissionDetailPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {sectionValues.map((v) => (
-            <div key={v.id} className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">
-                {v.field?.label}
-              </p>
-              <p className="whitespace-pre-wrap">{renderValue(v)}</p>
+            <div key={v.id} className={isCovenantSection ? "flex items-start gap-3 p-3 bg-muted rounded-lg" : "space-y-1"}>
+              {isCovenantSection ? (
+                <>
+                  <div className="flex-shrink-0 mt-0.5">
+                    {renderValue(v)}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {v.field?.help_text || v.field?.label}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {v.field?.label}
+                  </p>
+                  <p className="whitespace-pre-wrap">{renderValue(v)}</p>
+                </>
+              )}
             </div>
           ))}
         </CardContent>
       </Card>
     );
   };
+
+  // Get ordered section keys (configured sections first, then "other")
+  const orderedSectionKeys = [...configSectionKeys];
+  if (groupedValues["other"]?.length > 0) {
+    orderedSectionKeys.push("other");
+  }
 
   return (
     <div className="space-y-6">
@@ -152,20 +255,8 @@ export default function FormSubmissionDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Header Fields */}
-      {renderSection("header", "General Information")}
-
-      {/* Life Stewardship Section */}
-      {renderSection("life_stewardship", "Life Stewardship Goals")}
-
-      {/* Business Strategic Section */}
-      {renderSection("business_strategic", "Business Strategic Initiatives")}
-
-      {/* Primary Initiative */}
-      {renderSection("primary_initiative", "Annual Primary Initiative")}
-
-      {/* Other Fields */}
-      {renderSection("other", "Additional Information")}
+      {/* Render all sections in order */}
+      {orderedSectionKeys.map(sectionKey => renderSection(sectionKey))}
     </div>
   );
 }

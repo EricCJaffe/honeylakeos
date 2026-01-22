@@ -453,6 +453,50 @@ export const annualGoalsPortfolioForm: FormTemplate = {
   ],
 };
 
+export const keyLeaderMemberCovenantForm: FormTemplate = {
+  id: "generic_key_leader_member_covenant",
+  type: "form",
+  category: "coaching",
+  title: "Key Leader Member Info & Covenant",
+  description: "New member information and covenant commitments for Key Leader groups. Captures member details, contact information, and covenant agreements.",
+  summary: "Collect member info and covenant commitments",
+  required_modules: [],
+  tags: ["coaching", "membership", "covenant", "onboarding", "key leader"],
+  fields: [
+    // Section: Member Information
+    { label: "Member Name", field_type: "short_text", is_required: true, helper_text: "Your full name", sort_order: 0 },
+    { label: "Title", field_type: "short_text", is_required: false, helper_text: "Your role or title", sort_order: 1 },
+    { label: "Company Name", field_type: "short_text", is_required: true, helper_text: "Your company or organization", sort_order: 2 },
+    { label: "Home Address", field_type: "long_text", is_required: false, helper_text: "Street, City, State, ZIP", sort_order: 3 },
+    { label: "Spouse Name", field_type: "short_text", is_required: false, sort_order: 4 },
+    { label: "Anniversary Date", field_type: "date", is_required: false, helper_text: "Wedding anniversary", sort_order: 5 },
+    { label: "Birthdate", field_type: "date", is_required: false, sort_order: 6 },
+    { label: "Place of Worship", field_type: "short_text", is_required: false, helper_text: "Church or faith community", sort_order: 7 },
+    { label: "Children Names & Ages", field_type: "long_text", is_required: false, helper_text: "List children with their ages", sort_order: 8 },
+    { label: "Cell Phone", field_type: "phone", is_required: false, sort_order: 9 },
+    { label: "Email", field_type: "email", is_required: false, sort_order: 10 },
+    { label: "Business Address", field_type: "long_text", is_required: false, helper_text: "Street, City, State, ZIP", sort_order: 11 },
+    { label: "Website", field_type: "short_text", is_required: false, helper_text: "Company website URL", sort_order: 12 },
+    { label: "Industry", field_type: "short_text", is_required: false, helper_text: "Primary industry or sector", sort_order: 13 },
+    { label: "Annual Gross Revenue", field_type: "short_text", is_required: false, helper_text: "Approximate annual revenue", sort_order: 14 },
+    { label: "Number of Employees", field_type: "number", is_required: false, sort_order: 15 },
+
+    // Section: Fees (optional capture)
+    { label: "Registration Fee", field_type: "short_text", is_required: false, helper_text: "One-time registration fee amount", sort_order: 20 },
+    { label: "Monthly Dues", field_type: "short_text", is_required: false, helper_text: "Monthly membership dues", sort_order: 21 },
+
+    // Section: Covenant Agreements (required checkboxes)
+    { label: "Attendance Commitment", field_type: "checkbox", is_required: true, helper_text: "I agree to make every effort to not miss more than 2 retreats per year nor two in a row.", sort_order: 30 },
+    { label: "Confidentiality Commitment", field_type: "checkbox", is_required: true, helper_text: "I agree to maintain strict confidentiality regarding all discussions and member information shared within the group.", sort_order: 31 },
+    { label: "No Soliciting Agreement", field_type: "checkbox", is_required: true, helper_text: "I understand that soliciting other members for business, investment, or personal gain is not permitted.", sort_order: 32 },
+    { label: "Doctrine Agreement", field_type: "checkbox", is_required: true, helper_text: "I will honor the group's doctrine statement and refrain from divisive behavior regarding theological differences.", sort_order: 33 },
+
+    // Section: Signature
+    { label: "Signature (Type Your Name)", field_type: "short_text", is_required: true, helper_text: "Type your full name as your digital signature", sort_order: 40 },
+    { label: "Signature Date", field_type: "date", is_required: true, helper_text: "Date of signature", sort_order: 41 },
+  ],
+};
+
 // =============================================
 // ALL TEMPLATES COLLECTION
 // =============================================
@@ -478,13 +522,14 @@ export const allTemplates: StarterTemplate[] = [
   sopLifecycleWorkflow,
   // Coaching
   annualGoalsPortfolioForm,
+  keyLeaderMemberCovenantForm,
 ];
 
 export const templatesByCategory: Record<TemplateCategory, StarterTemplate[]> = {
   employee_lifecycle: [onboardingIntakeForm, onboardingWorkflow, exitSurveyForm, offboardingWorkflow],
   requests: [itSupportRequestForm, itSupportWorkflow, facilitiesRequestForm, facilitiesWorkflow, hrRequestForm, hrRequestWorkflow],
   surveys: [pulseSurveyForm, trainingFeedbackForm, meetingEffectivenessSurvey],
-  coaching: [annualGoalsPortfolioForm],
+  coaching: [annualGoalsPortfolioForm, keyLeaderMemberCovenantForm],
   knowledge_management: [sopLifecycleWorkflow],
 };
 
@@ -536,4 +581,36 @@ export const annualGoalsFieldKeys = {
   biz_redemption: "redemption",
   // Primary Initiative
   annual_primary_initiative: "annual_primary_initiative",
+} as const;
+
+// Field key mapping for Key Leader Member Covenant
+export const keyLeaderCovenantFieldKeys = {
+  // Member Info
+  member_name: "member_name",
+  member_title: "title",
+  member_company: "company_name",
+  home_address: "home_address",
+  spouse_name: "spouse_name",
+  anniversary_date: "anniversary_date",
+  birthdate: "birthdate",
+  place_of_worship: "place_of_worship",
+  children_names: "children_names_ages",
+  phone_cell: "cell_phone",
+  email: "email",
+  business_address: "business_address",
+  website: "website",
+  industry: "industry",
+  annual_gross_revenue: "annual_gross_revenue",
+  number_of_employees: "number_of_employees",
+  // Fees
+  registration_fee: "registration_fee",
+  monthly_dues: "monthly_dues",
+  // Covenant
+  covenant_attendance: "attendance_commitment",
+  covenant_confidentiality: "confidentiality_commitment",
+  covenant_no_soliciting: "no_soliciting_agreement",
+  covenant_doctrine: "doctrine_agreement",
+  // Signature
+  signature_name: "signature_type_your_name_",
+  signature_date: "signature_date",
 } as const;
