@@ -13,30 +13,75 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
+interface WorkflowRunData {
+  id: string;
+  coaching_workflow_assignment_id: string;
+  run_for_period_start: string;
+  status: string;
+  created_at: string;
+  _templateName: string;
+  _memberCompanyName: string;
+}
+
 export function InspectorWorkflowRunsTab() {
   const { data: runs, isLoading } = useQuery({
     queryKey: ["inspector-all-workflow-runs"],
-    queryFn: async () => {
+    queryFn: async (): Promise<WorkflowRunData[]> => {
       const { data, error } = await supabase
         .from("coaching_workflow_runs")
-        .select(`
-          id,
-          workflow_assignment_id,
-          run_for_period_start,
-          status,
-          created_at,
-          assignment:coaching_workflow_assignments!coaching_workflow_runs_workflow_assignment_id_fkey(
-            template:coaching_workflow_templates!coaching_workflow_assignments_template_id_fkey(name),
-            engagement:coaching_org_engagements!coaching_workflow_assignments_engagement_id_fkey(
-              member_company:companies!coaching_org_engagements_member_company_id_fkey(name)
-            )
-          )
-        `)
+        .select("id, coaching_workflow_assignment_id, run_for_period_start, status, created_at")
         .order("created_at", { ascending: false })
         .limit(100);
 
       if (error) throw error;
-      return data;
+
+      const runsWithDetails = await Promise.all(
+        (data || []).map(async (r) => {
+          // Get assignment info
+          const { data: assignment } = await supabase
+            .from("coaching_workflow_assignments")
+            .select("coaching_workflow_template_id, coaching_engagement_id")
+            .eq("id", r.coaching_workflow_assignment_id)
+            .maybeSingle();
+
+          let templateName = "Unknown";
+          let memberCompanyName = "Unknown";
+
+          if (assignment) {
+            // Get template name
+            const { data: template } = await supabase
+              .from("coaching_workflow_templates")
+              .select("name")
+              .eq("id", assignment.coaching_workflow_template_id)
+              .maybeSingle();
+            templateName = template?.name || "Unknown";
+
+            // Get engagement member company name
+            const { data: engagement } = await supabase
+              .from("coaching_org_engagements")
+              .select("member_company_id")
+              .eq("id", assignment.coaching_engagement_id)
+              .maybeSingle();
+
+            if (engagement?.member_company_id) {
+              const { data: company } = await supabase
+                .from("companies")
+                .select("name")
+                .eq("id", engagement.member_company_id)
+                .maybeSingle();
+              memberCompanyName = company?.name || "Unknown";
+            }
+          }
+
+          return {
+            ...r,
+            _templateName: templateName,
+            _memberCompanyName: memberCompanyName
+          };
+        })
+      );
+
+      return runsWithDetails;
     }
   });
 
@@ -64,8 +109,8 @@ export function InspectorWorkflowRunsTab() {
             <TableBody>
               {runs.map((r) => (
                 <TableRow key={r.id}>
-                  <TableCell>{r.assignment?.template?.name || "Unknown"}</TableCell>
-                  <TableCell>{r.assignment?.engagement?.member_company?.name || "Unknown"}</TableCell>
+                  <TableCell>{r._templateName}</TableCell>
+                  <TableCell>{r._memberCompanyName}</TableCell>
                   <TableCell>
                     {r.run_for_period_start 
                       ? format(new Date(r.run_for_period_start), "MMM d, yyyy")

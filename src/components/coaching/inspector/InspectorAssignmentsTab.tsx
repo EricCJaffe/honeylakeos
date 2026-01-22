@@ -15,51 +15,75 @@ import { Button } from "@/components/ui/button";
 import { ChevronRight, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 
+interface AssignmentData {
+  id: string;
+  assignment_type: string;
+  title_override: string | null;
+  status: string;
+  coaching_engagement_id: string | null;
+  member_user_id: string | null;
+  created_at: string;
+  _targetDisplay: string;
+  _instanceCount: number;
+}
+
 export function InspectorAssignmentsTab() {
   const [selectedAssignmentId, setSelectedAssignmentId] = React.useState<string | null>(null);
 
   const { data: assignments, isLoading } = useQuery({
     queryKey: ["inspector-all-coaching-assignments"],
-    queryFn: async () => {
+    queryFn: async (): Promise<AssignmentData[]> => {
       const { data, error } = await supabase
         .from("coaching_assignments")
-        .select(`
-          id,
-          assignment_type,
-          template_id,
-          title_override,
-          status,
-          coaching_org_id,
-          coaching_engagement_id,
-          member_user_id,
-          created_at,
-          coaching_org:coaching_orgs!coaching_assignments_coaching_org_id_fkey(
-            company:companies!coaching_orgs_company_id_fkey(name)
-          ),
-          engagement:coaching_org_engagements!coaching_assignments_coaching_engagement_id_fkey(
-            member_company:companies!coaching_org_engagements_member_company_id_fkey(name)
-          )
-        `)
+        .select("id, assignment_type, title_override, status, coaching_org_id, coaching_engagement_id, member_user_id, created_at")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      // Get instance counts
-      const assignmentsWithCounts = await Promise.all(
+      const assignmentsWithDetails = await Promise.all(
         (data || []).map(async (a) => {
+          // Get instance count
           const { count } = await supabase
             .from("coaching_assignment_instances")
             .select("id", { count: "exact", head: true })
             .eq("coaching_assignment_id", a.id);
 
+          // Get target display
+          let targetDisplay = "Org-wide";
+          if (a.coaching_engagement_id) {
+            const { data: engagement } = await supabase
+              .from("coaching_org_engagements")
+              .select("member_company_id")
+              .eq("id", a.coaching_engagement_id)
+              .maybeSingle();
+            
+            if (engagement?.member_company_id) {
+              const { data: company } = await supabase
+                .from("companies")
+                .select("name")
+                .eq("id", engagement.member_company_id)
+                .maybeSingle();
+              targetDisplay = `Engagement: ${company?.name || "Unknown"}`;
+            }
+          } else if (a.member_user_id) {
+            targetDisplay = `User: ${a.member_user_id.substring(0, 8)}...`;
+          }
+
           return {
-            ...a,
+            id: a.id,
+            assignment_type: a.assignment_type,
+            title_override: a.title_override,
+            status: a.status,
+            coaching_engagement_id: a.coaching_engagement_id,
+            member_user_id: a.member_user_id,
+            created_at: a.created_at,
+            _targetDisplay: targetDisplay,
             _instanceCount: count || 0
           };
         })
       );
 
-      return assignmentsWithCounts;
+      return assignmentsWithDetails;
     }
   });
 
@@ -71,16 +95,6 @@ export function InspectorAssignmentsTab() {
       />
     );
   }
-
-  const getTargetDisplay = (a: NonNullable<typeof assignments>[0]) => {
-    if (a.engagement?.member_company?.name) {
-      return `Engagement: ${a.engagement.member_company.name}`;
-    }
-    if (a.member_user_id) {
-      return `User: ${a.member_user_id.substring(0, 8)}...`;
-    }
-    return "Org-wide";
-  };
 
   return (
     <Card>
@@ -116,7 +130,7 @@ export function InspectorAssignmentsTab() {
                     <Badge variant="outline">{a.assignment_type}</Badge>
                   </TableCell>
                   <TableCell>{a.title_override || "From Template"}</TableCell>
-                  <TableCell>{getTargetDisplay(a)}</TableCell>
+                  <TableCell>{a._targetDisplay}</TableCell>
                   <TableCell>
                     <Badge variant={a.status === "assigned" ? "default" : "secondary"}>
                       {a.status}
@@ -142,27 +156,23 @@ interface InspectorAssignmentDetailProps {
   onBack: () => void;
 }
 
+interface AssignmentDetailData {
+  id: string;
+  assignment_type: string;
+  template_id: string | null;
+  title_override: string | null;
+  status: string;
+  due_at: string | null;
+  created_at: string;
+}
+
 function InspectorAssignmentDetail({ assignmentId, onBack }: InspectorAssignmentDetailProps) {
   const { data: assignment, isLoading } = useQuery({
     queryKey: ["inspector-coaching-assignment-detail", assignmentId],
-    queryFn: async () => {
+    queryFn: async (): Promise<AssignmentDetailData | null> => {
       const { data, error } = await supabase
         .from("coaching_assignments")
-        .select(`
-          id,
-          assignment_type,
-          template_id,
-          title_override,
-          status,
-          due_at,
-          created_at,
-          coaching_org:coaching_orgs!coaching_assignments_coaching_org_id_fkey(
-            company:companies!coaching_orgs_company_id_fkey(name)
-          ),
-          engagement:coaching_org_engagements!coaching_assignments_coaching_engagement_id_fkey(
-            member_company:companies!coaching_org_engagements_member_company_id_fkey(name)
-          )
-        `)
+        .select("id, assignment_type, template_id, title_override, status, due_at, created_at")
         .eq("id", assignmentId)
         .single();
 

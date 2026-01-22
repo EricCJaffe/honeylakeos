@@ -11,24 +11,18 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ExternalLink, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { InspectorOrgDetail } from "./InspectorOrgDetail";
 
-interface CoachingOrg {
+interface CoachingOrgData {
   id: string;
   company_id: string;
-  program_pack_id: string | null;
-  program_snapshot_version: number | null;
+  program_name: string;
+  program_version: string | null;
   created_at: string;
-  company?: {
-    name: string;
-  };
-  program_pack?: {
-    name: string;
-  };
-  _counts?: {
+  _companyName: string;
+  _counts: {
     managers: number;
     coaches: number;
     activeEngagements: number;
@@ -40,25 +34,25 @@ export function InspectorOrgsTab() {
 
   const { data: orgs, isLoading } = useQuery({
     queryKey: ["inspector-coaching-orgs"],
-    queryFn: async () => {
+    queryFn: async (): Promise<CoachingOrgData[]> => {
       const { data, error } = await supabase
         .from("coaching_orgs")
-        .select(`
-          id,
-          company_id,
-          program_pack_id,
-          program_snapshot_version,
-          created_at,
-          company:companies!coaching_orgs_company_id_fkey(name),
-          program_pack:coaching_program_packs(name)
-        `)
+        .select("id, company_id, program_name, program_version, created_at")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      // Fetch counts for each org
-      const orgsWithCounts = await Promise.all(
+      // Fetch company names and counts for each org
+      const orgsWithDetails = await Promise.all(
         (data || []).map(async (org) => {
+          // Get company name
+          const { data: company } = await supabase
+            .from("companies")
+            .select("name")
+            .eq("id", org.company_id)
+            .maybeSingle();
+
+          // Fetch counts
           const [managersResult, coachesResult, engagementsResult] = await Promise.all([
             supabase.from("coaching_managers").select("id", { count: "exact", head: true }).eq("coaching_org_id", org.id).eq("status", "active"),
             supabase.from("coaching_coaches").select("id", { count: "exact", head: true }).eq("coaching_org_id", org.id).eq("status", "active"),
@@ -66,7 +60,12 @@ export function InspectorOrgsTab() {
           ]);
 
           return {
-            ...org,
+            id: org.id,
+            company_id: org.company_id,
+            program_name: org.program_name,
+            program_version: org.program_version,
+            created_at: org.created_at,
+            _companyName: company?.name || "Unknown",
             _counts: {
               managers: managersResult.count || 0,
               coaches: coachesResult.count || 0,
@@ -76,7 +75,7 @@ export function InspectorOrgsTab() {
         })
       );
 
-      return orgsWithCounts as CoachingOrg[];
+      return orgsWithDetails;
     }
   });
 
@@ -120,17 +119,17 @@ export function InspectorOrgsTab() {
                   onClick={() => setSelectedOrgId(org.id)}
                 >
                   <TableCell className="font-medium">
-                    {org.company?.name || "Unknown"}
+                    {org._companyName}
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">
-                      {org.program_pack?.name || "No Program"}
-                      {org.program_snapshot_version && ` v${org.program_snapshot_version}`}
+                      {org.program_name || "No Program"}
+                      {org.program_version && ` v${org.program_version}`}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-center">{org._counts?.managers || 0}</TableCell>
-                  <TableCell className="text-center">{org._counts?.coaches || 0}</TableCell>
-                  <TableCell className="text-center">{org._counts?.activeEngagements || 0}</TableCell>
+                  <TableCell className="text-center">{org._counts.managers}</TableCell>
+                  <TableCell className="text-center">{org._counts.coaches}</TableCell>
+                  <TableCell className="text-center">{org._counts.activeEngagements}</TableCell>
                   <TableCell>{format(new Date(org.created_at), "MMM d, yyyy")}</TableCell>
                   <TableCell>
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,34 +21,81 @@ interface InspectorEngagementDetailProps {
   onBack: () => void;
 }
 
+interface EngagementData {
+  id: string;
+  coaching_org_id: string;
+  member_company_id: string;
+  status: string;
+  created_at: string;
+  _memberCompanyName: string;
+  _orgName: string;
+}
+
+interface CoachAssignmentData {
+  id: string;
+  coach_user_id: string;
+  assignment_role: string;
+  created_at: string;
+  _coachName: string;
+  _coachEmail: string;
+}
+
+interface CoachingAssignmentData {
+  id: string;
+  assignment_type: string;
+  title_override: string | null;
+  status: string;
+  created_at: string;
+  _instanceCount: number;
+}
+
 export function InspectorEngagementDetail({ engagementId, onBack }: InspectorEngagementDetailProps) {
   const { data: engagement, isLoading } = useQuery({
     queryKey: ["inspector-engagement-detail", engagementId],
-    queryFn: async () => {
+    queryFn: async (): Promise<EngagementData | null> => {
       const { data, error } = await supabase
         .from("coaching_org_engagements")
-        .select(`
-          id,
-          coaching_org_id,
-          member_company_id,
-          status,
-          created_at,
-          member_company:companies!coaching_org_engagements_member_company_id_fkey(id, name),
-          coaching_org:coaching_orgs!coaching_org_engagements_coaching_org_id_fkey(
-            company:companies!coaching_orgs_company_id_fkey(name)
-          )
-        `)
+        .select("id, coaching_org_id, member_company_id, status, created_at")
         .eq("id", engagementId)
         .single();
 
       if (error) throw error;
-      return data;
+
+      // Get member company name
+      const { data: memberCompany } = await supabase
+        .from("companies")
+        .select("name")
+        .eq("id", data.member_company_id)
+        .maybeSingle();
+
+      // Get coaching org company name
+      const { data: org } = await supabase
+        .from("coaching_orgs")
+        .select("company_id")
+        .eq("id", data.coaching_org_id)
+        .maybeSingle();
+
+      let orgName = "Unknown Org";
+      if (org?.company_id) {
+        const { data: orgCompany } = await supabase
+          .from("companies")
+          .select("name")
+          .eq("id", org.company_id)
+          .maybeSingle();
+        orgName = orgCompany?.name || "Unknown Org";
+      }
+
+      return {
+        ...data,
+        _memberCompanyName: memberCompany?.name || "Unknown",
+        _orgName: orgName
+      };
     }
   });
 
   const { data: coachAssignments } = useQuery({
     queryKey: ["inspector-engagement-coaches", engagementId],
-    queryFn: async () => {
+    queryFn: async (): Promise<CoachAssignmentData[]> => {
       const { data, error } = await supabase
         .from("coach_assignments")
         .select("id, coach_user_id, assignment_role, created_at")
@@ -57,13 +104,12 @@ export function InspectorEngagementDetail({ engagementId, onBack }: InspectorEng
 
       if (error) throw error;
 
-      // Get coach names
       const assignmentsWithNames = await Promise.all(
         (data || []).map(async (a) => {
           const { data: profile } = await supabase
             .from("profiles")
             .select("full_name, email")
-            .eq("id", a.coach_user_id)
+            .eq("user_id", a.coach_user_id)
             .maybeSingle();
 
           return {
@@ -81,16 +127,15 @@ export function InspectorEngagementDetail({ engagementId, onBack }: InspectorEng
 
   const { data: coachingAssignments } = useQuery({
     queryKey: ["inspector-engagement-coaching-assignments", engagementId],
-    queryFn: async () => {
+    queryFn: async (): Promise<CoachingAssignmentData[]> => {
       const { data, error } = await supabase
         .from("coaching_assignments")
-        .select("id, assignment_type, template_id, title_override, status, created_at")
+        .select("id, assignment_type, title_override, status, created_at")
         .eq("coaching_engagement_id", engagementId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      // Get instance counts
       const assignmentsWithCounts = await Promise.all(
         (data || []).map(async (a) => {
           const { count } = await supabase
@@ -111,7 +156,7 @@ export function InspectorEngagementDetail({ engagementId, onBack }: InspectorEng
   });
 
   const { data: accessGrants } = useQuery({
-    queryKey: ["inspector-engagement-access-grants", engagementId],
+    queryKey: ["inspector-engagement-access-grants", engagementId, engagement?.member_company_id],
     queryFn: async () => {
       if (!engagement?.member_company_id) return [];
 
@@ -141,7 +186,7 @@ export function InspectorEngagementDetail({ engagementId, onBack }: InspectorEng
         </Button>
         <div className="flex-1">
           <h2 className="text-xl font-semibold">
-            {engagement?.member_company?.name || "Unknown"} ↔ {engagement?.coaching_org?.company?.name || "Unknown"}
+            {engagement?._memberCompanyName || "Unknown"} ↔ {engagement?._orgName || "Unknown"}
           </h2>
           <div className="flex items-center gap-2 mt-1">
             <Badge variant={engagement?.status === "active" ? "default" : "secondary"}>
@@ -177,11 +222,11 @@ export function InspectorEngagementDetail({ engagementId, onBack }: InspectorEng
                 </div>
                 <div>
                   <dt className="text-sm text-muted-foreground">Member Company</dt>
-                  <dd>{engagement?.member_company?.name}</dd>
+                  <dd>{engagement?._memberCompanyName}</dd>
                 </div>
                 <div>
                   <dt className="text-sm text-muted-foreground">Coaching Org</dt>
-                  <dd>{engagement?.coaching_org?.company?.name}</dd>
+                  <dd>{engagement?._orgName}</dd>
                 </div>
                 <div>
                   <dt className="text-sm text-muted-foreground">Created</dt>

@@ -30,7 +30,7 @@ interface InspectorStats {
   managers: number;
   coaches: number;
   activeEngagements: number;
-  pendingEngagements: number;
+  suspendedEngagements: number;
   endedEngagements: number;
   activeWorkflowAssignments: number;
   recentWorkflowRuns: number;
@@ -57,12 +57,12 @@ function useInspectorStats() {
         supabase.from("coaching_org_engagements").select("id, status"),
         supabase.from("coaching_workflow_assignments").select("id", { count: "exact", head: true }).eq("status", "active"),
         supabase.from("coaching_workflow_runs").select("id", { count: "exact", head: true }).gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
-        supabase.from("coaching_assignments").select("id", { count: "exact", head: true }).eq("status", "active")
+        supabase.from("coaching_assignments").select("id", { count: "exact", head: true }).eq("status", "assigned")
       ]);
 
       const engagements = engagementsResult.data || [];
       const activeEngagements = engagements.filter(e => e.status === "active").length;
-      const pendingEngagements = engagements.filter(e => e.status === "pending_acceptance").length;
+      const suspendedEngagements = engagements.filter(e => e.status === "suspended").length;
       const endedEngagements = engagements.filter(e => e.status === "ended").length;
 
       return {
@@ -70,7 +70,7 @@ function useInspectorStats() {
         managers: managersResult.count || 0,
         coaches: coachesResult.count || 0,
         activeEngagements,
-        pendingEngagements,
+        suspendedEngagements,
         endedEngagements,
         activeWorkflowAssignments: workflowAssignmentsResult.count || 0,
         recentWorkflowRuns: workflowRunsResult.count || 0,
@@ -107,7 +107,7 @@ function StatCard({ title, value, icon, onClick }: StatCardProps) {
 export default function CoachingInspectorPage() {
   const { isSiteAdmin, isSuperAdmin } = useMembership();
   const [activeTab, setActiveTab] = React.useState("overview");
-  const { data: stats, isLoading } = useInspectorStats();
+  const { data: stats } = useInspectorStats();
 
   // Access check
   if (!isSiteAdmin && !isSuperAdmin) {
@@ -189,8 +189,8 @@ export default function CoachingInspectorPage() {
               onClick={() => setActiveTab("engagements")}
             />
             <StatCard
-              title="Pending Engagements"
-              value={stats?.pendingEngagements || 0}
+              title="Suspended Engagements"
+              value={stats?.suspendedEngagements || 0}
               icon={<Clock className="h-4 w-4 text-amber-500" />}
               onClick={() => setActiveTab("engagements")}
             />
