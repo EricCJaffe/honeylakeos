@@ -1557,6 +1557,8 @@ export type Database = {
           id: string
           notes: string | null
           primary_framework_id: string | null
+          program_key_snapshot: string | null
+          program_name_snapshot: string | null
           start_date: string | null
           updated_at: string
         }
@@ -1571,6 +1573,8 @@ export type Database = {
           id?: string
           notes?: string | null
           primary_framework_id?: string | null
+          program_key_snapshot?: string | null
+          program_name_snapshot?: string | null
           start_date?: string | null
           updated_at?: string
         }
@@ -1585,6 +1589,8 @@ export type Database = {
           id?: string
           notes?: string | null
           primary_framework_id?: string | null
+          program_key_snapshot?: string | null
+          program_name_snapshot?: string | null
           start_date?: string | null
           updated_at?: string
         }
@@ -1928,6 +1934,66 @@ export type Database = {
           },
         ]
       }
+      coaching_org_dashboard_widgets: {
+        Row: {
+          coaching_org_id: string
+          config_json: Json | null
+          created_at: string
+          dashboard_type: Database["public"]["Enums"]["coaching_dashboard_type"]
+          data_source: string | null
+          description: string | null
+          id: string
+          is_enabled: boolean
+          seeded_from_pack_widget_id: string | null
+          updated_at: string
+          widget_key: string
+          widget_order: number
+        }
+        Insert: {
+          coaching_org_id: string
+          config_json?: Json | null
+          created_at?: string
+          dashboard_type: Database["public"]["Enums"]["coaching_dashboard_type"]
+          data_source?: string | null
+          description?: string | null
+          id?: string
+          is_enabled?: boolean
+          seeded_from_pack_widget_id?: string | null
+          updated_at?: string
+          widget_key: string
+          widget_order?: number
+        }
+        Update: {
+          coaching_org_id?: string
+          config_json?: Json | null
+          created_at?: string
+          dashboard_type?: Database["public"]["Enums"]["coaching_dashboard_type"]
+          data_source?: string | null
+          description?: string | null
+          id?: string
+          is_enabled?: boolean
+          seeded_from_pack_widget_id?: string | null
+          updated_at?: string
+          widget_key?: string
+          widget_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_org_dashboard_widgets_coaching_org_id_fkey"
+            columns: ["coaching_org_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_org_dashboard_widgets_seeded_from_pack_widget_id_fkey"
+            columns: ["seeded_from_pack_widget_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_program_pack_dashboard_widgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coaching_org_engagement_assignments: {
         Row: {
           coach_id: string
@@ -1987,6 +2053,8 @@ export type Database = {
           linked_at: string
           linked_by_user_id: string
           member_company_id: string
+          program_key_snapshot: string | null
+          program_name_snapshot: string | null
           status: Database["public"]["Enums"]["coaching_engagement_status"]
           updated_at: string
         }
@@ -2003,6 +2071,8 @@ export type Database = {
           linked_at?: string
           linked_by_user_id: string
           member_company_id: string
+          program_key_snapshot?: string | null
+          program_name_snapshot?: string | null
           status?: Database["public"]["Enums"]["coaching_engagement_status"]
           updated_at?: string
         }
@@ -2019,6 +2089,8 @@ export type Database = {
           linked_at?: string
           linked_by_user_id?: string
           member_company_id?: string
+          program_key_snapshot?: string | null
+          program_name_snapshot?: string | null
           status?: Database["public"]["Enums"]["coaching_engagement_status"]
           updated_at?: string
         }
@@ -2218,6 +2290,11 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          program_key: string
+          program_name: string
+          program_version: string | null
+          seeded_at: string | null
+          seeded_from_pack_id: string | null
           slug: string | null
           status: Database["public"]["Enums"]["coaching_org_status"]
           updated_at: string
@@ -2227,6 +2304,11 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          program_key?: string
+          program_name?: string
+          program_version?: string | null
+          seeded_at?: string | null
+          seeded_from_pack_id?: string | null
           slug?: string | null
           status?: Database["public"]["Enums"]["coaching_org_status"]
           updated_at?: string
@@ -2236,6 +2318,11 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          program_key?: string
+          program_name?: string
+          program_version?: string | null
+          seeded_at?: string | null
+          seeded_from_pack_id?: string | null
           slug?: string | null
           status?: Database["public"]["Enums"]["coaching_org_status"]
           updated_at?: string
@@ -2246,6 +2333,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: true
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_coaching_orgs_seeded_from_pack"
+            columns: ["seeded_from_pack_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_program_packs"
             referencedColumns: ["id"]
           },
         ]
@@ -2345,6 +2439,203 @@ export type Database = {
           },
         ]
       }
+      coaching_program_pack_dashboard_widgets: {
+        Row: {
+          config_json: Json | null
+          created_at: string
+          dashboard_type: Database["public"]["Enums"]["coaching_dashboard_type"]
+          data_source: string | null
+          description: string | null
+          id: string
+          pack_id: string
+          updated_at: string
+          widget_key: string
+          widget_order: number
+        }
+        Insert: {
+          config_json?: Json | null
+          created_at?: string
+          dashboard_type: Database["public"]["Enums"]["coaching_dashboard_type"]
+          data_source?: string | null
+          description?: string | null
+          id?: string
+          pack_id: string
+          updated_at?: string
+          widget_key: string
+          widget_order?: number
+        }
+        Update: {
+          config_json?: Json | null
+          created_at?: string
+          dashboard_type?: Database["public"]["Enums"]["coaching_dashboard_type"]
+          data_source?: string | null
+          description?: string | null
+          id?: string
+          pack_id?: string
+          updated_at?: string
+          widget_key?: string
+          widget_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_program_pack_dashboard_widgets_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_program_packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_program_pack_terms: {
+        Row: {
+          created_at: string
+          id: string
+          pack_id: string
+          term_key: string
+          term_value: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pack_id: string
+          term_key: string
+          term_value: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pack_id?: string
+          term_key?: string
+          term_value?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_program_pack_terms_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_program_packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_program_pack_workflow_steps: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          pack_workflow_template_id: string
+          step_order: number
+          step_type: Database["public"]["Enums"]["coaching_step_type"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          pack_workflow_template_id: string
+          step_order: number
+          step_type: Database["public"]["Enums"]["coaching_step_type"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          pack_workflow_template_id?: string
+          step_order?: number
+          step_type?: Database["public"]["Enums"]["coaching_step_type"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_program_pack_workflow_s_pack_workflow_template_id_fkey"
+            columns: ["pack_workflow_template_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_program_pack_workflow_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_program_pack_workflow_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          pack_id: string
+          status: Database["public"]["Enums"]["template_status"]
+          updated_at: string
+          workflow_type: Database["public"]["Enums"]["coaching_workflow_type"]
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          pack_id: string
+          status?: Database["public"]["Enums"]["template_status"]
+          updated_at?: string
+          workflow_type: Database["public"]["Enums"]["coaching_workflow_type"]
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          pack_id?: string
+          status?: Database["public"]["Enums"]["template_status"]
+          updated_at?: string
+          workflow_type?: Database["public"]["Enums"]["coaching_workflow_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_program_pack_workflow_templates_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_program_packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_program_packs: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          key: string
+          name: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key: string
+          name: string
+          updated_at?: string
+          version?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key?: string
+          name?: string
+          updated_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       coaching_sessions: {
         Row: {
           agenda_rte: string | null
@@ -2412,6 +2703,41 @@ export type Database = {
           },
         ]
       }
+      coaching_terms: {
+        Row: {
+          coaching_org_id: string
+          created_at: string
+          id: string
+          term_key: string
+          term_value: string
+          updated_at: string
+        }
+        Insert: {
+          coaching_org_id: string
+          created_at?: string
+          id?: string
+          term_key: string
+          term_value: string
+          updated_at?: string
+        }
+        Update: {
+          coaching_org_id?: string
+          created_at?: string
+          id?: string
+          term_key?: string
+          term_value?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_terms_coaching_org_id_fkey"
+            columns: ["coaching_org_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coaching_workflow_steps: {
         Row: {
           coaching_workflow_template_id: string
@@ -2419,6 +2745,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          seeded_from_pack_step_id: string | null
           step_order: number
           step_type: Database["public"]["Enums"]["coaching_step_type"]
           title: string
@@ -2430,6 +2757,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          seeded_from_pack_step_id?: string | null
           step_order: number
           step_type: Database["public"]["Enums"]["coaching_step_type"]
           title: string
@@ -2441,6 +2769,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          seeded_from_pack_step_id?: string | null
           step_order?: number
           step_type?: Database["public"]["Enums"]["coaching_step_type"]
           title?: string
@@ -2454,6 +2783,13 @@ export type Database = {
             referencedRelation: "coaching_workflow_templates"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_wf_steps_pack_step"
+            columns: ["seeded_from_pack_step_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_program_pack_workflow_steps"
+            referencedColumns: ["id"]
+          },
         ]
       }
       coaching_workflow_templates: {
@@ -2463,6 +2799,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          seeded_from_pack_workflow_template_id: string | null
           status: Database["public"]["Enums"]["template_status"]
           updated_at: string
           workflow_type: Database["public"]["Enums"]["coaching_workflow_type"]
@@ -2473,6 +2810,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          seeded_from_pack_workflow_template_id?: string | null
           status?: Database["public"]["Enums"]["template_status"]
           updated_at?: string
           workflow_type: Database["public"]["Enums"]["coaching_workflow_type"]
@@ -2483,6 +2821,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          seeded_from_pack_workflow_template_id?: string | null
           status?: Database["public"]["Enums"]["template_status"]
           updated_at?: string
           workflow_type?: Database["public"]["Enums"]["coaching_workflow_type"]
@@ -2493,6 +2832,13 @@ export type Database = {
             columns: ["coaching_org_id"]
             isOneToOne: false
             referencedRelation: "coaching_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_wf_templates_pack_template"
+            columns: ["seeded_from_pack_workflow_template_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_program_pack_workflow_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -11236,6 +11582,14 @@ export type Database = {
       }
       fn_current_user_id: { Args: never; Returns: string }
       fn_get_coaching_org_id: { Args: { _company_id: string }; Returns: string }
+      fn_get_coaching_term: {
+        Args: {
+          p_coaching_org_id: string
+          p_default_value?: string
+          p_term_key: string
+        }
+        Returns: string
+      }
       fn_grant_constraints: {
         Args: {
           _company_id: string
@@ -11289,6 +11643,14 @@ export type Database = {
       fn_manager_coach_ids: {
         Args: { _coaching_org_id: string; _user_id: string }
         Returns: string[]
+      }
+      fn_seed_coaching_org_from_pack: {
+        Args: {
+          p_coaching_org_id: string
+          p_force_overwrite?: boolean
+          p_pack_key: string
+        }
+        Returns: Json
       }
       fn_user_coach_ids: {
         Args: { _coaching_org_id: string; _user_id: string }
