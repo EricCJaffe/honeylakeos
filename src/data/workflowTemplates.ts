@@ -718,6 +718,58 @@ export const keyLeaderBriefingForm: FormTemplate = {
   ],
 };
 
+export const executiveBriefingForm: FormTemplate = {
+  id: "generic_executive_briefing",
+  type: "form",
+  category: "coaching",
+  title: "Executive Briefing – Life & Business Review",
+  description: "Integrated executive briefing incorporating life stewardship, business review, and strategic planning. Designed for comprehensive executive coaching reviews.",
+  summary: "Executive briefing across life stewardship, business review, and strategic planning",
+  required_modules: [],
+  tags: ["coaching", "executive", "briefing", "stewardship", "strategic planning", "review"],
+  fields: [
+    // Section 1: Header
+    { label: "Briefing Name", field_type: "short_text", is_required: false, helper_text: "Optional title for this briefing", sort_order: 0 },
+    { label: "Executive Name", field_type: "short_text", is_required: true, helper_text: "Name of the executive", sort_order: 1 },
+    { label: "Executive Title", field_type: "short_text", is_required: false, helper_text: "Role or title", sort_order: 2 },
+    { label: "Briefing Date", field_type: "date", is_required: true, helper_text: "Date of this briefing", sort_order: 3 },
+
+    // Section 2: Life Stewardship
+    { label: "Life Stewardship Summary", field_type: "long_text", is_required: false, helper_text: "Overall summary of life stewardship areas. 'If everything's important, nothing is important.' – Patrick Lencioni", sort_order: 10 },
+    { label: "Abiding", field_type: "long_text", is_required: false, helper_text: "Spiritual growth, prayer life, abiding in Christ", sort_order: 11 },
+    { label: "Marriage", field_type: "long_text", is_required: false, helper_text: "Marriage relationship health and priorities", sort_order: 12 },
+    { label: "Family", field_type: "long_text", is_required: false, helper_text: "Family relationships, parenting, extended family", sort_order: 13 },
+    { label: "Health", field_type: "long_text", is_required: false, helper_text: "Physical health, exercise, rest, nutrition", sort_order: 14 },
+    { label: "Time", field_type: "long_text", is_required: false, helper_text: "Time management, priorities, schedule", sort_order: 15 },
+    { label: "Finances", field_type: "long_text", is_required: false, helper_text: "Personal financial stewardship, giving, saving", sort_order: 16 },
+    { label: "Gifts & Talents", field_type: "long_text", is_required: false, helper_text: "Developing and using your gifts and talents", sort_order: 17 },
+
+    // Section 3: Questionnaire Awareness (placeholder fields for future workflow integration)
+    { label: "Spouse Questionnaire Notes", field_type: "long_text", is_required: false, helper_text: "Notes from spouse questionnaire responses (future: auto-populated from generic_briefing_questionnaire_spouse)", sort_order: 20 },
+    { label: "Team Questionnaire Notes", field_type: "long_text", is_required: false, helper_text: "Notes from team questionnaire responses (future: auto-populated from generic_briefing_questionnaire_team)", sort_order: 21 },
+
+    // Section 4: Business Stewardship
+    { label: "Business Overview", field_type: "long_text", is_required: false, helper_text: "Overall summary of business stewardship", sort_order: 30 },
+    { label: "Financial", field_type: "long_text", is_required: false, helper_text: "Revenue, profitability, cash flow, financial health", sort_order: 31 },
+    { label: "Customers", field_type: "long_text", is_required: false, helper_text: "Customer acquisition, retention, satisfaction", sort_order: 32 },
+    { label: "Operations", field_type: "long_text", is_required: false, helper_text: "Processes, efficiency, quality, systems", sort_order: 33 },
+    { label: "Capacity", field_type: "long_text", is_required: false, helper_text: "Team, infrastructure, resources, growth capacity", sort_order: 34 },
+    { label: "Redemption", field_type: "long_text", is_required: false, helper_text: "Kingdom impact, mission, redemptive business purpose", sort_order: 35 },
+
+    // Section 5: Strategic Plan
+    { label: "Strategic Plan Year", field_type: "number", is_required: false, helper_text: "Year for strategic planning (e.g., next year)", sort_order: 40 },
+    { label: "Strategic Plan Summary", field_type: "long_text", is_required: false, helper_text: "Key strategic priorities and initiatives", sort_order: 41 },
+
+    // Section 6: Briefing Questions
+    { label: "Key Issue / Question 1", field_type: "long_text", is_required: false, helper_text: "First key issue or question for discussion", sort_order: 50 },
+    { label: "Response 1", field_type: "long_text", is_required: false, helper_text: "Response or notes for question 1", sort_order: 51 },
+    { label: "Key Issue / Question 2", field_type: "long_text", is_required: false, helper_text: "Second key issue or question for discussion", sort_order: 52 },
+    { label: "Response 2", field_type: "long_text", is_required: false, helper_text: "Response or notes for question 2", sort_order: 53 },
+    { label: "Key Issue / Question 3", field_type: "long_text", is_required: false, helper_text: "Additional key issue or question (optional)", sort_order: 54 },
+    { label: "Response 3", field_type: "long_text", is_required: false, helper_text: "Response or notes for question 3", sort_order: 55 },
+  ],
+};
+
 // =============================================
 // ALL TEMPLATES COLLECTION
 // =============================================
@@ -749,13 +801,14 @@ export const allTemplates: StarterTemplate[] = [
   briefingQuestionnaireTeamForm,
   briefingQuestionnaireSpouseForm,
   keyLeaderBriefingForm,
+  executiveBriefingForm,
 ];
 
 export const templatesByCategory: Record<TemplateCategory, StarterTemplate[]> = {
   employee_lifecycle: [onboardingIntakeForm, onboardingWorkflow, exitSurveyForm, offboardingWorkflow],
   requests: [itSupportRequestForm, itSupportWorkflow, facilitiesRequestForm, facilitiesWorkflow, hrRequestForm, hrRequestWorkflow],
   surveys: [pulseSurveyForm, trainingFeedbackForm, meetingEffectivenessSurvey],
-  coaching: [annualGoalsPortfolioForm, keyLeaderMemberCovenantForm, executiveMembershipApplicationForm, businessPlanOrganizerForm, briefingQuestionnaireTeamForm, briefingQuestionnaireSpouseForm, keyLeaderBriefingForm],
+  coaching: [annualGoalsPortfolioForm, keyLeaderMemberCovenantForm, executiveMembershipApplicationForm, businessPlanOrganizerForm, briefingQuestionnaireTeamForm, briefingQuestionnaireSpouseForm, keyLeaderBriefingForm, executiveBriefingForm],
   knowledge_management: [sopLifecycleWorkflow],
 };
 
