@@ -142,6 +142,54 @@ export const exitSurveyForm: FormTemplate = {
   ],
 };
 
+// Executive Membership Application & Commitment
+export const executiveMembershipApplicationForm: FormTemplate = {
+  id: "generic_executive_membership_application",
+  type: "form",
+  category: "coaching",
+  title: "Executive Membership Application & Commitment",
+  description: "Application and commitment form for executive retreat membership. Captures company profile, member information, and membership commitments.",
+  summary: "Executive membership application with commitments",
+  required_modules: [],
+  tags: ["coaching", "membership", "application", "executive", "commitment"],
+  fields: [
+    // Section: Company / Business Profile
+    { label: "Company Name", field_type: "short_text", is_required: true, helper_text: "Your company or organization name", sort_order: 0 },
+    { label: "Ownership", field_type: "short_text", is_required: false, helper_text: "e.g., Owner / Partner / Executive", sort_order: 1 },
+    { label: "Anniversary Date", field_type: "date", is_required: false, helper_text: "Business or founding anniversary", sort_order: 2 },
+    { label: "Place of Worship", field_type: "short_text", is_required: false, helper_text: "Church or faith community", sort_order: 3 },
+    { label: "Email", field_type: "email", is_required: false, sort_order: 4 },
+    { label: "Industry", field_type: "short_text", is_required: false, helper_text: "Primary industry or sector", sort_order: 5 },
+    { label: "Number of Employees", field_type: "number", is_required: false, sort_order: 6 },
+    { label: "Monthly Membership Dues", field_type: "short_text", is_required: false, helper_text: "Monthly dues amount", sort_order: 7 },
+    { label: "Annual Gross Revenue", field_type: "short_text", is_required: false, helper_text: "Approximate annual revenue", sort_order: 8 },
+    
+    // Section: Member Information
+    { label: "Member Name", field_type: "short_text", is_required: true, helper_text: "Your full name", sort_order: 10 },
+    { label: "Member Title", field_type: "short_text", is_required: false, helper_text: "Your role or title", sort_order: 11 },
+    { label: "Home Address", field_type: "long_text", is_required: false, helper_text: "Street, City, State, ZIP", sort_order: 12 },
+    { label: "Spouse Name", field_type: "short_text", is_required: false, sort_order: 13 },
+    { label: "Birthdate", field_type: "date", is_required: false, sort_order: 14 },
+    { label: "Phone (Cell)", field_type: "phone", is_required: false, sort_order: 15 },
+    { label: "Business Address", field_type: "long_text", is_required: false, helper_text: "Street, City, State, ZIP", sort_order: 16 },
+    { label: "Website", field_type: "short_text", is_required: false, helper_text: "Company website URL", sort_order: 17 },
+    { label: "Children Names", field_type: "long_text", is_required: false, helper_text: "List children's names", sort_order: 18 },
+    { label: "One-Time Registration Fee", field_type: "short_text", is_required: false, helper_text: "Registration fee amount", sort_order: 19 },
+    
+    // Section: Member Commitment (required checkboxes)
+    { label: "I commit to attending monthly meetings and making every effort to not miss more than 2 retreats per year nor two in a row", field_type: "checkbox", is_required: true, sort_order: 30 },
+    { label: "I commit to maintaining strict confidentiality regarding all matters discussed during meetings", field_type: "checkbox", is_required: true, sort_order: 31 },
+    { label: "I understand that soliciting other members for business or investment purposes is not permitted", field_type: "checkbox", is_required: true, sort_order: 32 },
+    { label: "I will honor the doctrine statement and refrain from divisive behavior", field_type: "checkbox", is_required: true, sort_order: 33 },
+    { label: "I commit to keeping my membership dues current", field_type: "checkbox", is_required: true, sort_order: 34 },
+    { label: "I acknowledge the cancellation policy and understand the terms of membership termination", field_type: "checkbox", is_required: true, sort_order: 35 },
+    
+    // Section: Signature
+    { label: "Signature", field_type: "short_text", is_required: true, helper_text: "Type your full name as signature", sort_order: 40 },
+    { label: "Signature Date", field_type: "date", is_required: true, helper_text: "Date of signing", sort_order: 41 },
+  ],
+};
+
 export const offboardingWorkflow: WorkflowTemplate = {
   id: "tpl-offboarding-workflow",
   type: "workflow",
@@ -523,13 +571,14 @@ export const allTemplates: StarterTemplate[] = [
   // Coaching
   annualGoalsPortfolioForm,
   keyLeaderMemberCovenantForm,
+  executiveMembershipApplicationForm,
 ];
 
 export const templatesByCategory: Record<TemplateCategory, StarterTemplate[]> = {
   employee_lifecycle: [onboardingIntakeForm, onboardingWorkflow, exitSurveyForm, offboardingWorkflow],
   requests: [itSupportRequestForm, itSupportWorkflow, facilitiesRequestForm, facilitiesWorkflow, hrRequestForm, hrRequestWorkflow],
   surveys: [pulseSurveyForm, trainingFeedbackForm, meetingEffectivenessSurvey],
-  coaching: [annualGoalsPortfolioForm, keyLeaderMemberCovenantForm],
+  coaching: [annualGoalsPortfolioForm, keyLeaderMemberCovenantForm, executiveMembershipApplicationForm],
   knowledge_management: [sopLifecycleWorkflow],
 };
 
