@@ -311,10 +311,10 @@ export function useGenerateWorkflowRun() {
           await supabase.from("coaching_workflow_run_items").insert({
             coaching_workflow_run_id: run.id,
             step_id: step.id,
-            item_type: stepType,
+            item_type: stepType as "task" | "meeting" | "note" | "form",
             created_entity_table: entityTable,
             created_entity_id: entityId,
-            status: "active",
+            status: "active" as const,
           });
         }
       }
