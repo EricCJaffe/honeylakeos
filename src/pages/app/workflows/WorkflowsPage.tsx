@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Clock,
+  Library,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,6 +64,7 @@ import { CreateSOPFormDialog } from "@/components/forms/CreateSOPFormDialog";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import type { WfStatus, WfScopeType } from "@/hooks/useWorkflowForms";
 import { format, isBefore } from "date-fns";
+import { StarterTemplatesTab } from "@/components/workflows/StarterTemplatesTab";
 
 type SOPStatus = "draft" | "active" | "review_due" | "archived";
 
@@ -96,11 +98,11 @@ export default function WorkflowsPage() {
   const [showSOPDialog, setShowSOPDialog] = useState(false);
   
   // Default to "forms" tab when on /app/forms route
-  const getDefaultTab = (): "workflows" | "forms" | "sops" => {
+  const getDefaultTab = (): "workflows" | "forms" | "sops" | "templates" => {
     if (location.pathname.includes("/forms")) return "forms";
     return "workflows";
   };
-  const [activeTab, setActiveTab] = useState<"workflows" | "forms" | "sops">(getDefaultTab);
+  const [activeTab, setActiveTab] = useState<"workflows" | "forms" | "sops" | "templates">(getDefaultTab);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<WfStatus | "all">("all");
   const [scopeFilter, setScopeFilter] = useState<WfScopeType | "all">("all");
@@ -486,6 +488,10 @@ export default function WorkflowsPage() {
               <Badge variant="secondary" className="ml-1">{filteredSOPs.length}</Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="templates" className="gap-2">
+            <Library className="h-4 w-4" />
+            Templates
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="workflows" className="mt-6">
@@ -740,6 +746,10 @@ export default function WorkflowsPage() {
               onAction={canManage && !searchQuery ? () => setShowSOPDialog(true) : undefined}
             />
           )}
+        </TabsContent>
+
+        <TabsContent value="templates" className="mt-6">
+          <StarterTemplatesTab />
         </TabsContent>
       </Tabs>
 
