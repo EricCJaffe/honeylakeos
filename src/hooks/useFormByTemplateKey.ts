@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "./useActiveCompany";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
-import { annualGoalsPortfolioForm, keyLeaderMemberCovenantForm, executiveMembershipApplicationForm, businessPlanOrganizerForm, briefingQuestionnaireTeamForm, briefingQuestionnaireSpouseForm, keyLeaderBriefingForm } from "@/data/workflowTemplates";
+import { annualGoalsPortfolioForm, keyLeaderMemberCovenantForm, executiveMembershipApplicationForm, businessPlanOrganizerForm, briefingQuestionnaireTeamForm, briefingQuestionnaireSpouseForm, keyLeaderBriefingForm, executiveBriefingForm } from "@/data/workflowTemplates";
 import type { FormTemplate, FormFieldTemplate } from "@/data/workflowTemplates";
 
 type WfForm = Database["public"]["Tables"]["wf_forms"]["Row"];
@@ -18,6 +18,7 @@ const FORM_TEMPLATES: Record<string, FormTemplate> = {
   "generic_briefing_questionnaire_team": briefingQuestionnaireTeamForm,
   "generic_briefing_questionnaire_spouse": briefingQuestionnaireSpouseForm,
   "generic_key_leader_briefing": keyLeaderBriefingForm,
+  "generic_executive_briefing": executiveBriefingForm,
 };
 
 // Get template by key
