@@ -167,6 +167,8 @@ export function useMemberEngagement() {
     queryFn: async () => {
       if (!activeCompanyId) return null;
 
+      // Note: coaching_coaches.user_id references auth.users, not profiles directly
+      // We fetch the coach's user_id and handle profile lookup separately if needed
       const { data, error } = await supabase
         .from("coaching_org_engagements")
         .select(`
@@ -178,13 +180,41 @@ export function useMemberEngagement() {
             role,
             coach:coaching_coaches(
               id,
-              profile:profiles(user_id, full_name, email, avatar_url)
+              user_id
             )
           )
         `)
         .eq("member_company_id", activeCompanyId)
         .in("status", ["active", "suspended"])
         .maybeSingle();
+      
+      if (error) throw error;
+      if (!data) return null;
+
+      // Fetch profile data for coaches
+      const coachUserIds = data.assignments
+        ?.map((a: any) => a.coach?.user_id)
+        .filter(Boolean) || [];
+      
+      if (coachUserIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name, email, avatar_url")
+          .in("user_id", coachUserIds);
+        
+        // Attach profile data to coaches
+        if (profiles && data.assignments) {
+          data.assignments = data.assignments.map((a: any) => ({
+            ...a,
+            coach: a.coach ? {
+              ...a.coach,
+              profile: profiles.find((p: any) => p.user_id === a.coach.user_id)
+            } : null
+          }));
+        }
+      }
+      
+      return data;
 
       if (error) throw error;
       return data;
