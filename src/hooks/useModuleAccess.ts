@@ -10,6 +10,7 @@ import { useMembership } from "@/lib/membership";
  */
 export type ModuleKey =
   | "coaches"
+  | "coaching" // New coaching org hierarchy module
   | "forms"
   | "projects"
   | "tasks"
