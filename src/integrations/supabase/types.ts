@@ -1416,6 +1416,77 @@ export type Database = {
           },
         ]
       }
+      coaching_dashboard_widgets: {
+        Row: {
+          config_json: Json | null
+          created_at: string
+          dashboard_id: string
+          data_source: string | null
+          description: string | null
+          id: string
+          updated_at: string
+          widget_key: string
+          widget_order: number
+        }
+        Insert: {
+          config_json?: Json | null
+          created_at?: string
+          dashboard_id: string
+          data_source?: string | null
+          description?: string | null
+          id?: string
+          updated_at?: string
+          widget_key: string
+          widget_order?: number
+        }
+        Update: {
+          config_json?: Json | null
+          created_at?: string
+          dashboard_id?: string
+          data_source?: string | null
+          description?: string | null
+          id?: string
+          updated_at?: string
+          widget_key?: string
+          widget_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_dashboard_widgets_dashboard_id_fkey"
+            columns: ["dashboard_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_dashboards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_dashboards: {
+        Row: {
+          created_at: string
+          dashboard_type: Database["public"]["Enums"]["coaching_dashboard_type"]
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dashboard_type: Database["public"]["Enums"]["coaching_dashboard_type"]
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dashboard_type?: Database["public"]["Enums"]["coaching_dashboard_type"]
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coaching_engagement_onboarding: {
         Row: {
           applied_template_id: string | null
@@ -1541,6 +1612,138 @@ export type Database = {
           },
         ]
       }
+      coaching_goals: {
+        Row: {
+          coaching_plan_id: string
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          metric: string | null
+          status: Database["public"]["Enums"]["coaching_goal_status"]
+          target_value: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          coaching_plan_id: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          metric?: string | null
+          status?: Database["public"]["Enums"]["coaching_goal_status"]
+          target_value?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          coaching_plan_id?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          metric?: string | null
+          status?: Database["public"]["Enums"]["coaching_goal_status"]
+          target_value?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_goals_coaching_plan_id_fkey"
+            columns: ["coaching_plan_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_health_check_responses: {
+        Row: {
+          coaching_health_check_id: string
+          created_at: string
+          id: string
+          question: string
+          responded_by_user_id: string | null
+          response: string | null
+          score: number | null
+          updated_at: string
+        }
+        Insert: {
+          coaching_health_check_id: string
+          created_at?: string
+          id?: string
+          question: string
+          responded_by_user_id?: string | null
+          response?: string | null
+          score?: number | null
+          updated_at?: string
+        }
+        Update: {
+          coaching_health_check_id?: string
+          created_at?: string
+          id?: string
+          question?: string
+          responded_by_user_id?: string | null
+          response?: string | null
+          score?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_health_check_responses_coaching_health_check_id_fkey"
+            columns: ["coaching_health_check_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_health_checks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_health_checks: {
+        Row: {
+          assessment_period: Database["public"]["Enums"]["coaching_assessment_period"]
+          coaching_engagement_id: string
+          created_at: string
+          id: string
+          reviewed_at: string | null
+          reviewed_by_user_id: string | null
+          status: Database["public"]["Enums"]["coaching_health_status"]
+          subject_type: Database["public"]["Enums"]["coaching_health_subject_type"]
+          updated_at: string
+        }
+        Insert: {
+          assessment_period: Database["public"]["Enums"]["coaching_assessment_period"]
+          coaching_engagement_id: string
+          created_at?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by_user_id?: string | null
+          status?: Database["public"]["Enums"]["coaching_health_status"]
+          subject_type: Database["public"]["Enums"]["coaching_health_subject_type"]
+          updated_at?: string
+        }
+        Update: {
+          assessment_period?: Database["public"]["Enums"]["coaching_assessment_period"]
+          coaching_engagement_id?: string
+          created_at?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by_user_id?: string | null
+          status?: Database["public"]["Enums"]["coaching_health_status"]
+          subject_type?: Database["public"]["Enums"]["coaching_health_subject_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_health_checks_coaching_engagement_id_fkey"
+            columns: ["coaching_engagement_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_org_engagements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coaching_manager_assignments: {
         Row: {
           coach_id: string
@@ -1630,6 +1833,97 @@ export type Database = {
             columns: ["coaching_org_id"]
             isOneToOne: false
             referencedRelation: "coaching_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_meeting_prep_items: {
+        Row: {
+          coaching_meeting_id: string
+          created_at: string
+          id: string
+          prompt: string
+          required: boolean
+          responded_at: string | null
+          responded_by_user_id: string | null
+          response: string | null
+          response_type: Database["public"]["Enums"]["coaching_prep_response_type"]
+          updated_at: string
+        }
+        Insert: {
+          coaching_meeting_id: string
+          created_at?: string
+          id?: string
+          prompt: string
+          required?: boolean
+          responded_at?: string | null
+          responded_by_user_id?: string | null
+          response?: string | null
+          response_type?: Database["public"]["Enums"]["coaching_prep_response_type"]
+          updated_at?: string
+        }
+        Update: {
+          coaching_meeting_id?: string
+          created_at?: string
+          id?: string
+          prompt?: string
+          required?: boolean
+          responded_at?: string | null
+          responded_by_user_id?: string | null
+          response?: string | null
+          response_type?: Database["public"]["Enums"]["coaching_prep_response_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_meeting_prep_items_coaching_meeting_id_fkey"
+            columns: ["coaching_meeting_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_meetings: {
+        Row: {
+          coaching_engagement_id: string
+          created_at: string
+          id: string
+          meeting_type: Database["public"]["Enums"]["coaching_meeting_type"]
+          notes: string | null
+          scheduled_for: string | null
+          status: Database["public"]["Enums"]["coaching_meeting_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          coaching_engagement_id: string
+          created_at?: string
+          id?: string
+          meeting_type: Database["public"]["Enums"]["coaching_meeting_type"]
+          notes?: string | null
+          scheduled_for?: string | null
+          status?: Database["public"]["Enums"]["coaching_meeting_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          coaching_engagement_id?: string
+          created_at?: string
+          id?: string
+          meeting_type?: Database["public"]["Enums"]["coaching_meeting_type"]
+          notes?: string | null
+          scheduled_for?: string | null
+          status?: Database["public"]["Enums"]["coaching_meeting_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_meetings_coaching_engagement_id_fkey"
+            columns: ["coaching_engagement_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_org_engagements"
             referencedColumns: ["id"]
           },
         ]
@@ -1994,6 +2288,63 @@ export type Database = {
           },
         ]
       }
+      coaching_plans: {
+        Row: {
+          coaching_engagement_id: string
+          created_at: string
+          created_by_user_id: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          member_company_id: string
+          start_date: string | null
+          status: Database["public"]["Enums"]["coaching_plan_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          coaching_engagement_id: string
+          created_at?: string
+          created_by_user_id?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          member_company_id: string
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["coaching_plan_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          coaching_engagement_id?: string
+          created_at?: string
+          created_by_user_id?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          member_company_id?: string
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["coaching_plan_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_plans_coaching_engagement_id_fkey"
+            columns: ["coaching_engagement_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_org_engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_plans_member_company_id_fkey"
+            columns: ["member_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coaching_sessions: {
         Row: {
           agenda_rte: string | null
@@ -2057,6 +2408,91 @@ export type Database = {
             columns: ["playbook_id"]
             isOneToOne: false
             referencedRelation: "framework_playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_workflow_steps: {
+        Row: {
+          coaching_workflow_template_id: string
+          config_json: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          step_order: number
+          step_type: Database["public"]["Enums"]["coaching_step_type"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          coaching_workflow_template_id: string
+          config_json?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          step_order: number
+          step_type: Database["public"]["Enums"]["coaching_step_type"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          coaching_workflow_template_id?: string
+          config_json?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          step_order?: number
+          step_type?: Database["public"]["Enums"]["coaching_step_type"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_workflow_steps_coaching_workflow_template_id_fkey"
+            columns: ["coaching_workflow_template_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_workflow_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_workflow_templates: {
+        Row: {
+          coaching_org_id: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          status: Database["public"]["Enums"]["template_status"]
+          updated_at: string
+          workflow_type: Database["public"]["Enums"]["coaching_workflow_type"]
+        }
+        Insert: {
+          coaching_org_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          status?: Database["public"]["Enums"]["template_status"]
+          updated_at?: string
+          workflow_type: Database["public"]["Enums"]["coaching_workflow_type"]
+        }
+        Update: {
+          coaching_org_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          status?: Database["public"]["Enums"]["template_status"]
+          updated_at?: string
+          workflow_type?: Database["public"]["Enums"]["coaching_workflow_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_workflow_templates_coaching_org_id_fkey"
+            columns: ["coaching_org_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_orgs"
             referencedColumns: ["id"]
           },
         ]
@@ -9686,6 +10122,7 @@ export type Database = {
           attachments: Json
           category: Json
           coaching_engagement_id: string | null
+          coaching_workflow_template_id: string | null
           company_id: string
           created_at: string
           created_by: string | null
@@ -9727,6 +10164,7 @@ export type Database = {
           attachments?: Json
           category?: Json
           coaching_engagement_id?: string | null
+          coaching_workflow_template_id?: string | null
           company_id: string
           created_at?: string
           created_by?: string | null
@@ -9768,6 +10206,7 @@ export type Database = {
           attachments?: Json
           category?: Json
           coaching_engagement_id?: string | null
+          coaching_workflow_template_id?: string | null
           company_id?: string
           created_at?: string
           created_by?: string | null
@@ -9810,6 +10249,13 @@ export type Database = {
             columns: ["coaching_engagement_id"]
             isOneToOne: false
             referencedRelation: "coaching_org_engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_coaching_workflow_template_id_fkey"
+            columns: ["coaching_workflow_template_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_workflow_templates"
             referencedColumns: ["id"]
           },
           {
@@ -11158,13 +11604,35 @@ export type Database = {
       bill_status: "draft" | "approved" | "paid" | "voided"
       campaign_type: "email" | "event" | "referral" | "content" | "other"
       coach_assignment_role: "primary_coach" | "support_coach"
+      coaching_assessment_period: "quarterly" | "annual" | "ad_hoc"
       coaching_assignment_role: "primary" | "secondary"
+      coaching_dashboard_type: "org_admin" | "manager" | "coach" | "member"
       coaching_engagement_status: "active" | "suspended" | "ended"
+      coaching_goal_status: "planned" | "active" | "achieved" | "abandoned"
       coaching_group_status: "active" | "archived"
+      coaching_health_status: "draft" | "submitted" | "reviewed"
+      coaching_health_subject_type: "leader" | "organization" | "team"
+      coaching_meeting_status: "scheduled" | "completed" | "cancelled"
+      coaching_meeting_type:
+        | "annual"
+        | "quarterly"
+        | "monthly"
+        | "one_on_one"
+        | "ad_hoc"
       coaching_membership_role: "org_admin" | "org_ops" | "org_staff"
       coaching_onboarding_status: "pending" | "completed" | "skipped"
       coaching_org_status: "active" | "suspended"
+      coaching_plan_status: "draft" | "active" | "completed" | "archived"
+      coaching_prep_response_type: "text" | "number" | "scale" | "yes_no"
       coaching_role: "coach" | "coach_manager" | "org_admin"
+      coaching_step_type: "task" | "form" | "meeting" | "note"
+      coaching_workflow_type:
+        | "annual_meeting"
+        | "quarterly_meeting"
+        | "monthly_meeting"
+        | "one_on_one"
+        | "content_creation"
+        | "operations"
       company_onboarding_source:
         | "self_signup"
         | "invited_by_company"
@@ -11481,13 +11949,37 @@ export const Constants = {
       bill_status: ["draft", "approved", "paid", "voided"],
       campaign_type: ["email", "event", "referral", "content", "other"],
       coach_assignment_role: ["primary_coach", "support_coach"],
+      coaching_assessment_period: ["quarterly", "annual", "ad_hoc"],
       coaching_assignment_role: ["primary", "secondary"],
+      coaching_dashboard_type: ["org_admin", "manager", "coach", "member"],
       coaching_engagement_status: ["active", "suspended", "ended"],
+      coaching_goal_status: ["planned", "active", "achieved", "abandoned"],
       coaching_group_status: ["active", "archived"],
+      coaching_health_status: ["draft", "submitted", "reviewed"],
+      coaching_health_subject_type: ["leader", "organization", "team"],
+      coaching_meeting_status: ["scheduled", "completed", "cancelled"],
+      coaching_meeting_type: [
+        "annual",
+        "quarterly",
+        "monthly",
+        "one_on_one",
+        "ad_hoc",
+      ],
       coaching_membership_role: ["org_admin", "org_ops", "org_staff"],
       coaching_onboarding_status: ["pending", "completed", "skipped"],
       coaching_org_status: ["active", "suspended"],
+      coaching_plan_status: ["draft", "active", "completed", "archived"],
+      coaching_prep_response_type: ["text", "number", "scale", "yes_no"],
       coaching_role: ["coach", "coach_manager", "org_admin"],
+      coaching_step_type: ["task", "form", "meeting", "note"],
+      coaching_workflow_type: [
+        "annual_meeting",
+        "quarterly_meeting",
+        "monthly_meeting",
+        "one_on_one",
+        "content_creation",
+        "operations",
+      ],
       company_onboarding_source: [
         "self_signup",
         "invited_by_company",
