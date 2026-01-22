@@ -1618,6 +1618,50 @@ export type Database = {
           },
         ]
       }
+      coaching_form_requests: {
+        Row: {
+          coaching_engagement_id: string
+          created_at: string
+          created_by_user_id: string | null
+          description: string | null
+          due_at: string | null
+          id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          coaching_engagement_id: string
+          created_at?: string
+          created_by_user_id?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          coaching_engagement_id?: string
+          created_at?: string
+          created_by_user_id?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_form_requests_coaching_engagement_id_fkey"
+            columns: ["coaching_engagement_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_org_engagements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coaching_goals: {
         Row: {
           coaching_plan_id: string
@@ -2524,9 +2568,14 @@ export type Database = {
       coaching_program_pack_workflow_steps: {
         Row: {
           created_at: string
+          default_assignee:
+            | Database["public"]["Enums"]["workflow_default_assignee"]
+            | null
           description: string | null
+          due_offset_days: number | null
           id: string
           pack_workflow_template_id: string
+          schedule_offset_days: number | null
           step_order: number
           step_type: Database["public"]["Enums"]["coaching_step_type"]
           title: string
@@ -2534,9 +2583,14 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          default_assignee?:
+            | Database["public"]["Enums"]["workflow_default_assignee"]
+            | null
           description?: string | null
+          due_offset_days?: number | null
           id?: string
           pack_workflow_template_id: string
+          schedule_offset_days?: number | null
           step_order: number
           step_type: Database["public"]["Enums"]["coaching_step_type"]
           title: string
@@ -2544,9 +2598,14 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          default_assignee?:
+            | Database["public"]["Enums"]["workflow_default_assignee"]
+            | null
           description?: string | null
+          due_offset_days?: number | null
           id?: string
           pack_workflow_template_id?: string
+          schedule_offset_days?: number | null
           step_order?: number
           step_type?: Database["public"]["Enums"]["coaching_step_type"]
           title?: string
@@ -2738,13 +2797,173 @@ export type Database = {
           },
         ]
       }
+      coaching_workflow_assignments: {
+        Row: {
+          cadence: Database["public"]["Enums"]["workflow_cadence"]
+          coaching_engagement_id: string
+          coaching_workflow_template_id: string
+          created_at: string
+          created_by_user_id: string
+          id: string
+          last_run_at: string | null
+          name_override: string | null
+          next_run_at: string | null
+          start_on: string
+          status: Database["public"]["Enums"]["workflow_assignment_status"]
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          cadence: Database["public"]["Enums"]["workflow_cadence"]
+          coaching_engagement_id: string
+          coaching_workflow_template_id: string
+          created_at?: string
+          created_by_user_id: string
+          id?: string
+          last_run_at?: string | null
+          name_override?: string | null
+          next_run_at?: string | null
+          start_on: string
+          status?: Database["public"]["Enums"]["workflow_assignment_status"]
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          cadence?: Database["public"]["Enums"]["workflow_cadence"]
+          coaching_engagement_id?: string
+          coaching_workflow_template_id?: string
+          created_at?: string
+          created_by_user_id?: string
+          id?: string
+          last_run_at?: string | null
+          name_override?: string | null
+          next_run_at?: string | null
+          start_on?: string
+          status?: Database["public"]["Enums"]["workflow_assignment_status"]
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_workflow_assignments_coaching_engagement_id_fkey"
+            columns: ["coaching_engagement_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_org_engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_workflow_assignments_coaching_workflow_template_i_fkey"
+            columns: ["coaching_workflow_template_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_workflow_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_workflow_run_items: {
+        Row: {
+          coaching_workflow_run_id: string
+          created_at: string
+          created_entity_id: string
+          created_entity_table: string
+          id: string
+          item_type: Database["public"]["Enums"]["workflow_run_item_type"]
+          status: Database["public"]["Enums"]["workflow_run_item_status"]
+          step_id: string
+          updated_at: string
+        }
+        Insert: {
+          coaching_workflow_run_id: string
+          created_at?: string
+          created_entity_id: string
+          created_entity_table: string
+          id?: string
+          item_type: Database["public"]["Enums"]["workflow_run_item_type"]
+          status?: Database["public"]["Enums"]["workflow_run_item_status"]
+          step_id: string
+          updated_at?: string
+        }
+        Update: {
+          coaching_workflow_run_id?: string
+          created_at?: string
+          created_entity_id?: string
+          created_entity_table?: string
+          id?: string
+          item_type?: Database["public"]["Enums"]["workflow_run_item_type"]
+          status?: Database["public"]["Enums"]["workflow_run_item_status"]
+          step_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_workflow_run_items_coaching_workflow_run_id_fkey"
+            columns: ["coaching_workflow_run_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_workflow_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_workflow_run_items_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_workflow_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_workflow_runs: {
+        Row: {
+          coaching_workflow_assignment_id: string
+          created_at: string
+          id: string
+          run_for_period_end: string | null
+          run_for_period_start: string
+          scheduled_run_at: string
+          status: Database["public"]["Enums"]["workflow_run_status"]
+          updated_at: string
+        }
+        Insert: {
+          coaching_workflow_assignment_id: string
+          created_at?: string
+          id?: string
+          run_for_period_end?: string | null
+          run_for_period_start: string
+          scheduled_run_at: string
+          status?: Database["public"]["Enums"]["workflow_run_status"]
+          updated_at?: string
+        }
+        Update: {
+          coaching_workflow_assignment_id?: string
+          created_at?: string
+          id?: string
+          run_for_period_end?: string | null
+          run_for_period_start?: string
+          scheduled_run_at?: string
+          status?: Database["public"]["Enums"]["workflow_run_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_workflow_runs_coaching_workflow_assignment_id_fkey"
+            columns: ["coaching_workflow_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_workflow_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coaching_workflow_steps: {
         Row: {
           coaching_workflow_template_id: string
           config_json: Json | null
           created_at: string
+          default_assignee:
+            | Database["public"]["Enums"]["workflow_default_assignee"]
+            | null
           description: string | null
+          due_offset_days: number | null
           id: string
+          schedule_offset_days: number | null
           seeded_from_pack_step_id: string | null
           step_order: number
           step_type: Database["public"]["Enums"]["coaching_step_type"]
@@ -2755,8 +2974,13 @@ export type Database = {
           coaching_workflow_template_id: string
           config_json?: Json | null
           created_at?: string
+          default_assignee?:
+            | Database["public"]["Enums"]["workflow_default_assignee"]
+            | null
           description?: string | null
+          due_offset_days?: number | null
           id?: string
+          schedule_offset_days?: number | null
           seeded_from_pack_step_id?: string | null
           step_order: number
           step_type: Database["public"]["Enums"]["coaching_step_type"]
@@ -2767,8 +2991,13 @@ export type Database = {
           coaching_workflow_template_id?: string
           config_json?: Json | null
           created_at?: string
+          default_assignee?:
+            | Database["public"]["Enums"]["workflow_default_assignee"]
+            | null
           description?: string | null
+          due_offset_days?: number | null
           id?: string
+          schedule_offset_days?: number | null
           seeded_from_pack_step_id?: string | null
           step_order?: number
           step_type?: Database["public"]["Enums"]["coaching_step_type"]
@@ -7752,6 +7981,88 @@ export type Database = {
           },
         ]
       }
+      notification_jobs: {
+        Row: {
+          created_at: string
+          id: string
+          notification_id: string
+          run_at: string
+          status: Database["public"]["Enums"]["notification_job_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notification_id: string
+          run_at: string
+          status?: Database["public"]["Enums"]["notification_job_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notification_id?: string
+          run_at?: string
+          status?: Database["public"]["Enums"]["notification_job_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_jobs_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          company_id: string | null
+          created_at: string
+          due_at: string | null
+          id: string
+          link: string | null
+          status: Database["public"]["Enums"]["notification_status"]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          company_id?: string | null
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          link?: string | null
+          status?: Database["public"]["Enums"]["notification_status"]
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          company_id?: string | null
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          link?: string | null
+          status?: Database["public"]["Enums"]["notification_status"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_presets: {
         Row: {
           config_json: Json
@@ -11567,8 +11878,32 @@ export type Database = {
             }[]
           }
       fn_active_company_id: { Args: never; Returns: string }
+      fn_calculate_next_run_date: {
+        Args: {
+          p_cadence: Database["public"]["Enums"]["workflow_cadence"]
+          p_current_date: string
+          p_timezone?: string
+        }
+        Returns: string
+      }
       fn_can_access_engagement: {
         Args: { _engagement_id: string; _user_id: string }
+        Returns: boolean
+      }
+      fn_can_access_engagement_for_workflow: {
+        Args: { _engagement_id: string; _user_id: string }
+        Returns: boolean
+      }
+      fn_can_access_workflow_assignment: {
+        Args: { _assignment_id: string; _user_id: string }
+        Returns: boolean
+      }
+      fn_can_manage_engagement_workflow: {
+        Args: { _engagement_id: string; _user_id: string }
+        Returns: boolean
+      }
+      fn_can_manage_workflow_assignment: {
+        Args: { _assignment_id: string; _user_id: string }
         Returns: boolean
       }
       fn_coaching_scoped_only: {
@@ -12068,6 +12403,8 @@ export type Database = {
         | "user"
         | "external"
       module_status: "active" | "trial" | "expired" | "suspended"
+      notification_job_status: "scheduled" | "sent" | "cancelled"
+      notification_status: "unread" | "read" | "dismissed"
       opportunity_status: "open" | "won" | "lost"
       payment_method: "cash" | "check" | "credit_card" | "online" | "other"
       plan_status: "active" | "grace" | "expired" | "cancelled"
@@ -12178,6 +12515,25 @@ export type Database = {
         | "employee_event"
         | "scheduled"
         | "form_submission"
+      workflow_assignment_status: "active" | "paused" | "archived"
+      workflow_cadence:
+        | "one_time"
+        | "weekly"
+        | "monthly"
+        | "quarterly"
+        | "annually"
+      workflow_default_assignee:
+        | "coach"
+        | "member_admin"
+        | "member_user"
+        | "unassigned"
+      workflow_run_item_status: "active" | "cancelled"
+      workflow_run_item_type: "task" | "meeting" | "note" | "form"
+      workflow_run_status:
+        | "generated"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -12424,6 +12780,8 @@ export const Constants = {
         "external",
       ],
       module_status: ["active", "trial", "expired", "suspended"],
+      notification_job_status: ["scheduled", "sent", "cancelled"],
+      notification_status: ["unread", "read", "dismissed"],
       opportunity_status: ["open", "won", "lost"],
       payment_method: ["cash", "check", "credit_card", "online", "other"],
       plan_status: ["active", "grace", "expired", "cancelled"],
@@ -12544,6 +12902,28 @@ export const Constants = {
         "employee_event",
         "scheduled",
         "form_submission",
+      ],
+      workflow_assignment_status: ["active", "paused", "archived"],
+      workflow_cadence: [
+        "one_time",
+        "weekly",
+        "monthly",
+        "quarterly",
+        "annually",
+      ],
+      workflow_default_assignee: [
+        "coach",
+        "member_admin",
+        "member_user",
+        "unassigned",
+      ],
+      workflow_run_item_status: ["active", "cancelled"],
+      workflow_run_item_type: ["task", "meeting", "note", "form"],
+      workflow_run_status: [
+        "generated",
+        "in_progress",
+        "completed",
+        "cancelled",
       ],
     },
   },
