@@ -22,41 +22,67 @@ import { ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { InspectorEngagementDetail } from "./InspectorEngagementDetail";
 
+interface EngagementData {
+  id: string;
+  coaching_org_id: string;
+  member_company_id: string;
+  status: string;
+  created_at: string;
+  _memberCompanyName: string;
+  _orgName: string;
+  _primaryCoach: string;
+}
+
 export function InspectorEngagementsTab() {
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [selectedEngagementId, setSelectedEngagementId] = React.useState<string | null>(null);
 
   const { data: engagements, isLoading } = useQuery({
     queryKey: ["inspector-all-engagements", statusFilter],
-    queryFn: async () => {
-      let query = supabase
+    queryFn: async (): Promise<EngagementData[]> => {
+      const { data, error } = await supabase
         .from("coaching_org_engagements")
-        .select(`
-          id,
-          coaching_org_id,
-          member_company_id,
-          status,
-          created_at,
-          member_company:companies!coaching_org_engagements_member_company_id_fkey(name),
-          coaching_org:coaching_orgs!coaching_org_engagements_coaching_org_id_fkey(
-            company:companies!coaching_orgs_company_id_fkey(name)
-          )
-        `)
+        .select("id, coaching_org_id, member_company_id, status, created_at")
         .order("created_at", { ascending: false });
 
-      if (statusFilter !== "all") {
-        query = query.eq("status", statusFilter as "active" | "ended" | "suspended");
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
 
-      // Get primary coach for each engagement
-      const engagementsWithCoach = await Promise.all(
-        (data || []).map(async (eng) => {
+      // Filter by status in memory since we need typed data
+      let filteredData = data || [];
+      if (statusFilter !== "all") {
+        filteredData = filteredData.filter(e => e.status === statusFilter);
+      }
+
+      const engagementsWithDetails = await Promise.all(
+        filteredData.map(async (eng) => {
+          // Get member company name
+          const { data: memberCompany } = await supabase
+            .from("companies")
+            .select("name")
+            .eq("id", eng.member_company_id)
+            .maybeSingle();
+
+          // Get coaching org company name
+          const { data: org } = await supabase
+            .from("coaching_orgs")
+            .select("company_id")
+            .eq("id", eng.coaching_org_id)
+            .maybeSingle();
+
+          let orgName = "Unknown Org";
+          if (org?.company_id) {
+            const { data: orgCompany } = await supabase
+              .from("companies")
+              .select("name")
+              .eq("id", org.company_id)
+              .maybeSingle();
+            orgName = orgCompany?.name || "Unknown Org";
+          }
+
+          // Get primary coach
           const { data: coachAssignment } = await supabase
             .from("coach_assignments")
-            .select("coach_user_id, assignment_role")
+            .select("coach_user_id")
             .eq("engagement_id", eng.id)
             .eq("assignment_role", "primary_coach")
             .is("archived_at", null)
@@ -67,20 +93,21 @@ export function InspectorEngagementsTab() {
             const { data: profile } = await supabase
               .from("profiles")
               .select("full_name")
-              .eq("id", coachAssignment.coach_user_id)
+              .eq("user_id", coachAssignment.coach_user_id)
               .maybeSingle();
             coachName = profile?.full_name || "Unknown";
           }
 
           return {
             ...eng,
-            _primaryCoach: coachName,
-            _invitedBy: "System"
+            _memberCompanyName: memberCompany?.name || "Unknown",
+            _orgName: orgName,
+            _primaryCoach: coachName
           };
         })
       );
 
-      return engagementsWithCoach;
+      return engagementsWithDetails;
     }
   });
 
@@ -97,7 +124,7 @@ export function InspectorEngagementsTab() {
     switch (status) {
       case "active":
         return "default";
-      case "pending_acceptance":
+      case "suspended":
         return "secondary";
       case "ended":
         return "outline";
@@ -147,9 +174,9 @@ export function InspectorEngagementsTab() {
                   onClick={() => setSelectedEngagementId(eng.id)}
                 >
                   <TableCell className="font-medium">
-                    {eng.member_company?.name || "Unknown"}
+                    {eng._memberCompanyName}
                   </TableCell>
-                  <TableCell>{eng.coaching_org?.company?.name || "Unknown"}</TableCell>
+                  <TableCell>{eng._orgName}</TableCell>
                   <TableCell>
                     <Badge variant={getStatusBadgeVariant(eng.status)}>
                       {eng.status?.replace("_", " ")}

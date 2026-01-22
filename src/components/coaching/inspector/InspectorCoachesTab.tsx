@@ -13,35 +13,54 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
+interface CoachData {
+  id: string;
+  user_id: string;
+  coaching_org_id: string;
+  status: string;
+  created_at: string;
+  _fullName: string;
+  _email: string;
+  _orgName: string;
+  _activeEngagements: number;
+}
+
 export function InspectorCoachesTab() {
   const { data: coaches, isLoading } = useQuery({
     queryKey: ["inspector-all-coaches"],
-    queryFn: async () => {
+    queryFn: async (): Promise<CoachData[]> => {
       const { data, error } = await supabase
         .from("coaching_coaches")
-        .select(`
-          id,
-          user_id,
-          coaching_org_id,
-          status,
-          created_at,
-          coaching_org:coaching_orgs!coaching_coaches_coaching_org_id_fkey(
-            company:companies!coaching_orgs_company_id_fkey(name)
-          )
-        `)
+        .select("id, user_id, coaching_org_id, status, created_at")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      // Get profile and engagement info for each coach
       const coachesWithDetails = await Promise.all(
         (data || []).map(async (coach) => {
           // Get profile
           const { data: profile } = await supabase
             .from("profiles")
             .select("full_name, email")
-            .eq("id", coach.user_id)
+            .eq("user_id", coach.user_id)
             .maybeSingle();
+
+          // Get org company name
+          const { data: org } = await supabase
+            .from("coaching_orgs")
+            .select("company_id")
+            .eq("id", coach.coaching_org_id)
+            .maybeSingle();
+
+          let orgName = "Unknown Org";
+          if (org?.company_id) {
+            const { data: company } = await supabase
+              .from("companies")
+              .select("name")
+              .eq("id", org.company_id)
+              .maybeSingle();
+            orgName = company?.name || "Unknown Org";
+          }
 
           // Get active engagements count
           const { count: engagementCount } = await supabase
@@ -52,8 +71,9 @@ export function InspectorCoachesTab() {
 
           return {
             ...coach,
-            _profile: profile,
-            _managerName: "N/A",
+            _fullName: profile?.full_name || "Unknown",
+            _email: profile?.email || "-",
+            _orgName: orgName,
             _activeEngagements: engagementCount || 0
           };
         })
@@ -89,10 +109,10 @@ export function InspectorCoachesTab() {
               {coaches.map((coach) => (
                 <TableRow key={coach.id}>
                   <TableCell className="font-medium">
-                    {coach._profile?.full_name || "Unknown"}
+                    {coach._fullName}
                   </TableCell>
-                  <TableCell>{coach._profile?.email || "-"}</TableCell>
-                  <TableCell>{coach.coaching_org?.company?.name || "Unknown Org"}</TableCell>
+                  <TableCell>{coach._email}</TableCell>
+                  <TableCell>{coach._orgName}</TableCell>
                   <TableCell className="text-center">{coach._activeEngagements}</TableCell>
                   <TableCell>
                     <Badge variant={coach.status === "active" ? "default" : "secondary"}>

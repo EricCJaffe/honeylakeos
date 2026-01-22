@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,88 +21,157 @@ interface InspectorOrgDetailProps {
   onBack: () => void;
 }
 
+interface OrgData {
+  id: string;
+  company_id: string;
+  program_name: string;
+  program_version: string | null;
+  created_at: string;
+  _companyName: string;
+}
+
+interface ManagerData {
+  id: string;
+  user_id: string;
+  status: string;
+  created_at: string;
+  _fullName: string;
+  _email: string;
+}
+
+interface CoachData {
+  id: string;
+  user_id: string;
+  status: string;
+  created_at: string;
+  _fullName: string;
+  _email: string;
+}
+
+interface EngagementData {
+  id: string;
+  member_company_id: string;
+  status: string;
+  created_at: string;
+  _memberCompanyName: string;
+}
+
 export function InspectorOrgDetail({ orgId, onBack }: InspectorOrgDetailProps) {
   const { data: org, isLoading: orgLoading } = useQuery({
     queryKey: ["inspector-org-detail", orgId],
-    queryFn: async () => {
+    queryFn: async (): Promise<OrgData | null> => {
       const { data, error } = await supabase
         .from("coaching_orgs")
-        .select(`
-          id,
-          company_id,
-          program_pack_id,
-          program_snapshot_version,
-          created_at,
-          company:companies!coaching_orgs_company_id_fkey(id, name),
-          program_pack:coaching_program_packs(name)
-        `)
+        .select("id, company_id, program_name, program_version, created_at")
         .eq("id", orgId)
         .single();
 
       if (error) throw error;
-      return data;
+
+      const { data: company } = await supabase
+        .from("companies")
+        .select("name")
+        .eq("id", data.company_id)
+        .maybeSingle();
+
+      return {
+        ...data,
+        _companyName: company?.name || "Unknown"
+      };
     }
   });
 
   const { data: managers } = useQuery({
     queryKey: ["inspector-org-managers", orgId],
-    queryFn: async () => {
+    queryFn: async (): Promise<ManagerData[]> => {
       const { data, error } = await supabase
         .from("coaching_managers")
-        .select(`
-          id,
-          user_id,
-          status,
-          created_at,
-          profile:profiles!coaching_managers_user_id_fkey(full_name, email)
-        `)
+        .select("id, user_id, status, created_at")
         .eq("coaching_org_id", orgId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+
+      const managersWithProfiles = await Promise.all(
+        (data || []).map(async (m) => {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name, email")
+            .eq("user_id", m.user_id)
+            .maybeSingle();
+
+          return {
+            ...m,
+            _fullName: profile?.full_name || "Unknown",
+            _email: profile?.email || "-"
+          };
+        })
+      );
+
+      return managersWithProfiles;
     },
     enabled: !!orgId
   });
 
   const { data: coaches } = useQuery({
     queryKey: ["inspector-org-coaches", orgId],
-    queryFn: async () => {
+    queryFn: async (): Promise<CoachData[]> => {
       const { data, error } = await supabase
         .from("coaching_coaches")
-        .select(`
-          id,
-          user_id,
-          status,
-          created_at,
-          profile:profiles!coaching_coaches_user_id_fkey(full_name, email)
-        `)
+        .select("id, user_id, status, created_at")
         .eq("coaching_org_id", orgId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+
+      const coachesWithProfiles = await Promise.all(
+        (data || []).map(async (c) => {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name, email")
+            .eq("user_id", c.user_id)
+            .maybeSingle();
+
+          return {
+            ...c,
+            _fullName: profile?.full_name || "Unknown",
+            _email: profile?.email || "-"
+          };
+        })
+      );
+
+      return coachesWithProfiles;
     },
     enabled: !!orgId
   });
 
   const { data: engagements } = useQuery({
     queryKey: ["inspector-org-engagements", orgId],
-    queryFn: async () => {
+    queryFn: async (): Promise<EngagementData[]> => {
       const { data, error } = await supabase
         .from("coaching_org_engagements")
-        .select(`
-          id,
-          member_company_id,
-          status,
-          created_at,
-          member_company:companies!coaching_org_engagements_member_company_id_fkey(name)
-        `)
+        .select("id, member_company_id, status, created_at")
         .eq("coaching_org_id", orgId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+
+      const engagementsWithCompanies = await Promise.all(
+        (data || []).map(async (e) => {
+          const { data: company } = await supabase
+            .from("companies")
+            .select("name")
+            .eq("id", e.member_company_id)
+            .maybeSingle();
+
+          return {
+            ...e,
+            _memberCompanyName: company?.name || "Unknown"
+          };
+        })
+      );
+
+      return engagementsWithCompanies;
     },
     enabled: !!orgId
   });
@@ -141,6 +210,19 @@ export function InspectorOrgDetail({ orgId, onBack }: InspectorOrgDetailProps) {
     return <div className="text-center py-8 text-muted-foreground">Loading...</div>;
   }
 
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case "active":
+        return "default";
+      case "suspended":
+        return "secondary";
+      case "ended":
+        return "outline";
+      default:
+        return "secondary";
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
@@ -149,10 +231,10 @@ export function InspectorOrgDetail({ orgId, onBack }: InspectorOrgDetailProps) {
           Back to List
         </Button>
         <div className="flex-1">
-          <h2 className="text-xl font-semibold">{org?.company?.name || "Unknown Org"}</h2>
+          <h2 className="text-xl font-semibold">{org?._companyName || "Unknown Org"}</h2>
           <p className="text-sm text-muted-foreground">
-            {org?.program_pack?.name || "No Program"} 
-            {org?.program_snapshot_version && ` v${org.program_snapshot_version}`}
+            {org?.program_name || "No Program"} 
+            {org?.program_version && ` v${org.program_version}`}
           </p>
         </div>
         <Button variant="outline" size="sm" asChild>
@@ -190,8 +272,8 @@ export function InspectorOrgDetail({ orgId, onBack }: InspectorOrgDetailProps) {
                   <dd>{org?.created_at && format(new Date(org.created_at), "PPP")}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm text-muted-foreground">Program Pack</dt>
-                  <dd>{org?.program_pack?.name || "None"}</dd>
+                  <dt className="text-sm text-muted-foreground">Program</dt>
+                  <dd>{org?.program_name || "None"}</dd>
                 </div>
               </dl>
             </CardContent>
@@ -213,8 +295,8 @@ export function InspectorOrgDetail({ orgId, onBack }: InspectorOrgDetailProps) {
                 <TableBody>
                   {managers?.map((m) => (
                     <TableRow key={m.id}>
-                      <TableCell>{m.profile?.full_name || "Unknown"}</TableCell>
-                      <TableCell>{m.profile?.email}</TableCell>
+                      <TableCell>{m._fullName}</TableCell>
+                      <TableCell>{m._email}</TableCell>
                       <TableCell>
                         <Badge variant={m.status === "active" ? "default" : "secondary"}>
                           {m.status}
@@ -251,8 +333,8 @@ export function InspectorOrgDetail({ orgId, onBack }: InspectorOrgDetailProps) {
                 <TableBody>
                   {coaches?.map((c) => (
                     <TableRow key={c.id}>
-                      <TableCell>{c.profile?.full_name || "Unknown"}</TableCell>
-                      <TableCell>{c.profile?.email}</TableCell>
+                      <TableCell>{c._fullName}</TableCell>
+                      <TableCell>{c._email}</TableCell>
                       <TableCell>
                         <Badge variant={c.status === "active" ? "default" : "secondary"}>
                           {c.status}
@@ -288,11 +370,9 @@ export function InspectorOrgDetail({ orgId, onBack }: InspectorOrgDetailProps) {
                 <TableBody>
                   {engagements?.map((e) => (
                     <TableRow key={e.id}>
-                      <TableCell>{e.member_company?.name || "Unknown"}</TableCell>
+                      <TableCell>{e._memberCompanyName}</TableCell>
                       <TableCell>
-                        <Badge 
-                          variant={e.status === "active" ? "default" : e.status === "pending_acceptance" ? "secondary" : "outline"}
-                        >
+                        <Badge variant={getStatusVariant(e.status)}>
                           {e.status}
                         </Badge>
                       </TableCell>
@@ -351,21 +431,19 @@ export function InspectorOrgDetail({ orgId, onBack }: InspectorOrgDetailProps) {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Key</TableHead>
-                    <TableHead>Label</TableHead>
-                    <TableHead>Plural</TableHead>
+                    <TableHead>Value</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {terms?.map((t) => (
                     <TableRow key={t.id}>
                       <TableCell className="font-mono text-sm">{t.term_key}</TableCell>
-                      <TableCell>{t.label}</TableCell>
-                      <TableCell>{t.label_plural || "-"}</TableCell>
+                      <TableCell>{t.term_value}</TableCell>
                     </TableRow>
                   ))}
                   {!terms?.length && (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center text-muted-foreground">
+                      <TableCell colSpan={2} className="text-center text-muted-foreground">
                         No custom terminology
                       </TableCell>
                     </TableRow>
