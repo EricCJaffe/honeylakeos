@@ -2834,6 +2834,269 @@ export type Database = {
         }
         Relationships: []
       }
+      coaching_resource_assignments: {
+        Row: {
+          assignable_type: Database["public"]["Enums"]["coaching_assignable_type"]
+          assigned_at: string
+          assigned_by_user_id: string
+          coaching_engagement_id: string | null
+          coaching_org_id: string
+          collection_id: string | null
+          completed_at: string | null
+          created_at: string
+          due_at: string | null
+          id: string
+          member_user_id: string | null
+          resource_id: string | null
+          status: Database["public"]["Enums"]["coaching_assignment_status"]
+          title_override: string | null
+          updated_at: string
+        }
+        Insert: {
+          assignable_type: Database["public"]["Enums"]["coaching_assignable_type"]
+          assigned_at?: string
+          assigned_by_user_id: string
+          coaching_engagement_id?: string | null
+          coaching_org_id: string
+          collection_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          member_user_id?: string | null
+          resource_id?: string | null
+          status?: Database["public"]["Enums"]["coaching_assignment_status"]
+          title_override?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assignable_type?: Database["public"]["Enums"]["coaching_assignable_type"]
+          assigned_at?: string
+          assigned_by_user_id?: string
+          coaching_engagement_id?: string | null
+          coaching_org_id?: string
+          collection_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          member_user_id?: string | null
+          resource_id?: string | null
+          status?: Database["public"]["Enums"]["coaching_assignment_status"]
+          title_override?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_resource_assignments_coaching_engagement_id_fkey"
+            columns: ["coaching_engagement_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_org_engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_resource_assignments_coaching_org_id_fkey"
+            columns: ["coaching_org_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_resource_assignments_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_resource_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_resource_assignments_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_resource_collection_items: {
+        Row: {
+          collection_id: string
+          created_at: string
+          id: string
+          item_order: number
+          resource_id: string
+          updated_at: string
+        }
+        Insert: {
+          collection_id: string
+          created_at?: string
+          id?: string
+          item_order: number
+          resource_id: string
+          updated_at?: string
+        }
+        Update: {
+          collection_id?: string
+          created_at?: string
+          id?: string
+          item_order?: number
+          resource_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_resource_collection_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_resource_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_resource_collection_items_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_resource_collections: {
+        Row: {
+          coaching_org_id: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          program_key: string | null
+          status: Database["public"]["Enums"]["coaching_resource_status"]
+          updated_at: string
+        }
+        Insert: {
+          coaching_org_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          program_key?: string | null
+          status?: Database["public"]["Enums"]["coaching_resource_status"]
+          updated_at?: string
+        }
+        Update: {
+          coaching_org_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          program_key?: string | null
+          status?: Database["public"]["Enums"]["coaching_resource_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_resource_collections_coaching_org_id_fkey"
+            columns: ["coaching_org_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_resource_progress: {
+        Row: {
+          assignment_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          status: Database["public"]["Enums"]["coaching_progress_status"]
+          updated_at: string
+          user_id: string
+          viewed_at: string | null
+        }
+        Insert: {
+          assignment_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["coaching_progress_status"]
+          updated_at?: string
+          user_id: string
+          viewed_at?: string | null
+        }
+        Update: {
+          assignment_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["coaching_progress_status"]
+          updated_at?: string
+          user_id?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_resource_progress_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_resource_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_resources: {
+        Row: {
+          coaching_org_id: string
+          created_at: string
+          created_by_user_id: string
+          description: string | null
+          file_id: string | null
+          id: string
+          program_key: string | null
+          resource_type: Database["public"]["Enums"]["coaching_resource_type"]
+          status: Database["public"]["Enums"]["coaching_resource_status"]
+          tags: string[] | null
+          title: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          coaching_org_id: string
+          created_at?: string
+          created_by_user_id: string
+          description?: string | null
+          file_id?: string | null
+          id?: string
+          program_key?: string | null
+          resource_type: Database["public"]["Enums"]["coaching_resource_type"]
+          status?: Database["public"]["Enums"]["coaching_resource_status"]
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          coaching_org_id?: string
+          created_at?: string
+          created_by_user_id?: string
+          description?: string | null
+          file_id?: string | null
+          id?: string
+          program_key?: string | null
+          resource_type?: Database["public"]["Enums"]["coaching_resource_type"]
+          status?: Database["public"]["Enums"]["coaching_resource_status"]
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_resources_coaching_org_id_fkey"
+            columns: ["coaching_org_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coaching_scorecard_metrics: {
         Row: {
           created_at: string
@@ -12236,6 +12499,10 @@ export type Database = {
         }
         Returns: string
       }
+      fn_can_access_coaching_org_resources: {
+        Args: { p_coaching_org_id: string }
+        Returns: boolean
+      }
       fn_can_access_engagement: {
         Args: { _engagement_id: string; _user_id: string }
         Returns: boolean
@@ -12244,8 +12511,16 @@ export type Database = {
         Args: { _engagement_id: string; _user_id: string }
         Returns: boolean
       }
+      fn_can_access_resource_assignment: {
+        Args: { p_assignment_id: string }
+        Returns: boolean
+      }
       fn_can_access_workflow_assignment: {
         Args: { _assignment_id: string; _user_id: string }
+        Returns: boolean
+      }
+      fn_can_manage_coaching_org_resources: {
+        Args: { p_coaching_org_id: string }
         Returns: boolean
       }
       fn_can_manage_engagement_workflow: {
@@ -12652,7 +12927,9 @@ export type Database = {
       campaign_type: "email" | "event" | "referral" | "content" | "other"
       coach_assignment_role: "primary_coach" | "support_coach"
       coaching_assessment_period: "quarterly" | "annual" | "ad_hoc"
+      coaching_assignable_type: "resource" | "collection"
       coaching_assignment_role: "primary" | "secondary"
+      coaching_assignment_status: "assigned" | "completed" | "cancelled"
       coaching_dashboard_type: "org_admin" | "manager" | "coach" | "member"
       coaching_engagement_status: "active" | "suspended" | "ended"
       coaching_goal_status: "planned" | "active" | "achieved" | "abandoned"
@@ -12671,6 +12948,14 @@ export type Database = {
       coaching_org_status: "active" | "suspended"
       coaching_plan_status: "draft" | "active" | "completed" | "archived"
       coaching_prep_response_type: "text" | "number" | "scale" | "yes_no"
+      coaching_progress_status: "not_started" | "viewed" | "completed"
+      coaching_resource_status: "active" | "archived"
+      coaching_resource_type:
+        | "link"
+        | "file"
+        | "video"
+        | "document"
+        | "worksheet"
       coaching_role: "coach" | "coach_manager" | "org_admin"
       coaching_step_type: "task" | "form" | "meeting" | "note"
       coaching_workflow_type:
@@ -13027,7 +13312,9 @@ export const Constants = {
       campaign_type: ["email", "event", "referral", "content", "other"],
       coach_assignment_role: ["primary_coach", "support_coach"],
       coaching_assessment_period: ["quarterly", "annual", "ad_hoc"],
+      coaching_assignable_type: ["resource", "collection"],
       coaching_assignment_role: ["primary", "secondary"],
+      coaching_assignment_status: ["assigned", "completed", "cancelled"],
       coaching_dashboard_type: ["org_admin", "manager", "coach", "member"],
       coaching_engagement_status: ["active", "suspended", "ended"],
       coaching_goal_status: ["planned", "active", "achieved", "abandoned"],
@@ -13047,6 +13334,15 @@ export const Constants = {
       coaching_org_status: ["active", "suspended"],
       coaching_plan_status: ["draft", "active", "completed", "archived"],
       coaching_prep_response_type: ["text", "number", "scale", "yes_no"],
+      coaching_progress_status: ["not_started", "viewed", "completed"],
+      coaching_resource_status: ["active", "archived"],
+      coaching_resource_type: [
+        "link",
+        "file",
+        "video",
+        "document",
+        "worksheet",
+      ],
       coaching_role: ["coach", "coach_manager", "org_admin"],
       coaching_step_type: ["task", "form", "meeting", "note"],
       coaching_workflow_type: [
