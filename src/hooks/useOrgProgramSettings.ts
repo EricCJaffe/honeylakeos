@@ -352,7 +352,7 @@ async function seedPackWorkflows(
     return { created: 0, skipped: 0 };
   }
 
-  // Get templates with steps
+  // Get templates with steps - include new metadata columns
   const { data: templates, error: templatesError } = await supabase
     .from("coaching_program_pack_workflow_templates")
     .select(`
@@ -383,12 +383,10 @@ async function seedPackWorkflows(
       continue;
     }
 
-    // Determine if locked
-    const lockedTypes = ["engagement_lifecycle", "chair_recruitment", "chair_onboarding"];
-    const isLocked = lockedTypes.includes(template.workflow_type);
-    const editableFields = isLocked 
-      ? ["name", "description"]
-      : ["name", "description", "is_active", "steps"];
+    // Use pack metadata for locked status and editable fields
+    const isLocked = (template as any).is_locked ?? false;
+    const editableFields = (template as any).editable_fields ?? 
+      (isLocked ? ["name", "description"] : ["name", "description", "is_active", "steps"]);
 
     // Create org workflow
     const { data: newWorkflow, error: wfError } = await supabase
@@ -412,7 +410,7 @@ async function seedPackWorkflows(
       continue;
     }
 
-    // Create steps
+    // Create steps - properly map attached_form_base_key
     const steps = template.coaching_program_pack_workflow_steps || [];
     if (steps.length > 0) {
       const stepInserts = steps.map((step: any) => ({
@@ -428,7 +426,7 @@ async function seedPackWorkflows(
         attached_form_template_key: step.attached_form_template_key || null,
         default_assignee: step.default_assignee || "unassigned",
         due_offset_days: step.due_offset_days,
-        cadence_days: step.cadence_days,
+        cadence_days: step.cadence_days || step.schedule_offset_days,
       }));
 
       await supabase
