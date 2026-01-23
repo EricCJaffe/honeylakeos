@@ -97,6 +97,19 @@ export {
 } from "../useOrgWorkflows";
 
 // =============================================
+// Org Program Settings (pack selection & seeding)
+// =============================================
+export {
+  useAvailableProgramPacksWithCounts,
+  useOrgProgramStatus,
+  useOrgProgramMutations,
+  type ProgramPackOption,
+  type OrgProgramStatus,
+  type ApplyPackResult,
+  type ReseedResult,
+} from "../useOrgProgramSettings";
+
+// =============================================
 // Form Templates (uses resolution engine)
 // =============================================
 export {

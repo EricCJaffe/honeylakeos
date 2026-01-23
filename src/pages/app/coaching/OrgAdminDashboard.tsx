@@ -106,7 +106,7 @@ export default function OrgAdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{pendingOnboarding.length}</div>
+            <div className="text-2xl font-bold text-warning">{pendingOnboarding.length}</div>
           </CardContent>
         </Card>
       </div>
@@ -246,7 +246,7 @@ export default function OrgAdminDashboard() {
                   <CardContent>
                     <div className="flex items-center justify-between">
                       {engagement.onboarding?.[0]?.status === "pending" && (
-                        <Badge variant="outline" className="text-yellow-600">
+                        <Badge variant="outline" className="text-warning">
                           Onboarding Pending
                         </Badge>
                       )}
@@ -361,7 +361,13 @@ export default function OrgAdminDashboard() {
                   {activeOrg?.program_name || "Generic"} (v{activeOrg?.program_version || "1.0"})
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                <Button variant="default" asChild>
+                  <Link to="/app/coaching/org/settings">
+                    <Settings className="mr-2 h-4 w-4" />
+                    All Settings
+                  </Link>
+                </Button>
                 <Button variant="outline" asChild>
                   <Link to="/app/coaching/org/terminology">
                     Manage Terminology
