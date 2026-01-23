@@ -32,6 +32,7 @@ import ModuleChecklistPanel from "./company-console/ModuleChecklistPanel";
 import TerminologyPanel from "./company-console/TerminologyPanel";
 import { CapabilitySettingsPanel } from "./company-console/CapabilitySettingsPanel";
 import DepartmentsPanel from "./company-console/DepartmentsPanel";
+import { FeatureFlagsPanel } from "@/core/modules";
 
 const adminSections = [
   {
@@ -196,6 +197,7 @@ export default function CompanyConsolePage() {
             {section.id === "locations" && <LocationsPanel />}
             {section.id === "modules" && (
               <>
+                <FeatureFlagsPanel />
                 <CompanyModulesPanel />
                 <ModuleChecklistPanel />
               </>

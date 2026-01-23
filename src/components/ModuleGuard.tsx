@@ -4,6 +4,7 @@ import { ModuleKey, CORE_MODULES } from "@/hooks/useModuleAccess";
 import { NoModuleAccessPage } from "@/components/NoModuleAccessPage";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMembership } from "@/lib/membership";
+import { useCompanyModuleFlags, legacyModuleKeyToModuleId, ModuleDisabledPage } from "@/core/modules";
 
 interface ModuleGuardProps {
   moduleKey: ModuleKey;
@@ -14,26 +15,68 @@ interface ModuleGuardProps {
 /**
  * Wrapper component that guards access to a module.
  * 
- * For core modules (projects, tasks, etc.): Only checks company membership
- * For premium modules (forms, workflows, lms): Checks company_modules table
+ * Checks both legacy (company_modules) and new (feature_flags) systems:
+ * - Core modules: Only checks company membership
+ * - Premium modules: Checks company_modules table AND feature_flags table
  * 
  * Shows loading state while checking access, then either renders children
- * or shows the NoModuleAccessPage.
+ * or shows the appropriate access denied page.
  */
 export function ModuleGuard({ moduleKey, moduleName, children }: ModuleGuardProps) {
   const isCoreModule = CORE_MODULES.includes(moduleKey);
   const { isEnabled, loading: modulesLoading } = useCompanyModules();
   const { activeCompanyId, activeMembership, loading: membershipLoading } = useMembership();
+  const { 
+    isModuleEnabled: isModuleFlagEnabled, 
+    isLoading: flagsLoading, 
+    isSafeMode 
+  } = useCompanyModuleFlags();
 
-  const loading = modulesLoading || membershipLoading;
+  const loading = modulesLoading || membershipLoading || flagsLoading;
 
-  // For core modules, only need company membership
-  // For premium modules, need both membership and module enabled
-  const hasAccess = React.useMemo(() => {
-    if (!activeCompanyId || !activeMembership) return false;
-    if (isCoreModule) return true;
-    return isEnabled(moduleKey);
-  }, [activeCompanyId, activeMembership, isCoreModule, isEnabled, moduleKey]);
+  // Map legacy moduleKey to new ModuleId for flag checking
+  const moduleId = legacyModuleKeyToModuleId(moduleKey);
+
+  // Determine access based on multiple checks
+  const accessResult = React.useMemo(() => {
+    // Check basic membership
+    if (!activeCompanyId || !activeMembership) {
+      return { hasAccess: false, reason: "no_permission" as const };
+    }
+
+    // Core modules always accessible if member
+    if (isCoreModule) {
+      return { hasAccess: true, reason: null };
+    }
+
+    // Check legacy company_modules table
+    if (!isEnabled(moduleKey)) {
+      return { hasAccess: false, reason: "not_enabled" as const };
+    }
+
+    // Check new feature_flags table
+    if (moduleId) {
+      // In safe mode, non-core modules are disabled
+      if (isSafeMode) {
+        return { hasAccess: false, reason: "flag_disabled" as const };
+      }
+      
+      if (!isModuleFlagEnabled(moduleId)) {
+        return { hasAccess: false, reason: "flag_disabled" as const };
+      }
+    }
+
+    return { hasAccess: true, reason: null };
+  }, [
+    activeCompanyId, 
+    activeMembership, 
+    isCoreModule, 
+    isEnabled, 
+    moduleKey, 
+    moduleId, 
+    isSafeMode, 
+    isModuleFlagEnabled
+  ]);
 
   if (loading) {
     return (
@@ -46,15 +89,16 @@ export function ModuleGuard({ moduleKey, moduleName, children }: ModuleGuardProp
     );
   }
 
-  if (!hasAccess) {
-    const noAccessReason = !activeCompanyId || !activeMembership 
-      ? "no_permission" 
-      : "not_enabled";
+  if (!accessResult.hasAccess) {
+    // Show different pages based on reason
+    if (accessResult.reason === "flag_disabled") {
+      return <ModuleDisabledPage moduleName={moduleName} />;
+    }
     
     return (
       <NoModuleAccessPage 
         moduleName={moduleName} 
-        reason={noAccessReason} 
+        reason={accessResult.reason || "not_enabled"} 
       />
     );
   }
