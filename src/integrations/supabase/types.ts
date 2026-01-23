@@ -13458,6 +13458,11 @@ export type Database = {
         | "coach_assignment"
         | "periodic_review"
         | "coaching_cadence"
+        | "chair_recruitment"
+        | "chair_onboarding"
+        | "forum_launch"
+        | "forum_cadence"
+        | "quarterly_review"
       company_onboarding_source:
         | "self_signup"
         | "invited_by_company"
@@ -13886,6 +13891,11 @@ export const Constants = {
         "coach_assignment",
         "periodic_review",
         "coaching_cadence",
+        "chair_recruitment",
+        "chair_onboarding",
+        "forum_launch",
+        "forum_cadence",
+        "quarterly_review",
       ],
       company_onboarding_source: [
         "self_signup",
