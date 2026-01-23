@@ -27,6 +27,15 @@ export const DEFAULT_COACHING_TERMS: Record<string, string> = {
   
   // Module label
   module_label: "Coaching",
+  
+  // Additional terms from program packs
+  chair_label: "Chair",
+  forum_label: "Forum",
+  meeting_label: "Meeting",
+  onboarding_label: "Onboarding",
+  review_label: "Review",
+  covenant_label: "Covenant",
+  commitments_label: "Commitments",
 };
 
 interface CoachingTerminology {
@@ -34,44 +43,95 @@ interface CoachingTerminology {
   getTerm: (key: string, defaultValue?: string) => string;
   isLoading: boolean;
   error: Error | null;
+  sourcePackKey?: string;
 }
 
 /**
  * Hook to fetch and use coaching terminology for a coaching org.
- * Falls back to default terms if no custom terms are set.
+ * Uses program pack resolution: org terms → program pack terms → generic pack → defaults
  * 
  * For member companies, uses program snapshot from engagement to determine terms.
  */
 export function useCoachingTerminology(coachingOrgId?: string | null): CoachingTerminology {
-  // Fetch custom terms for the coaching org
-  const { data: customTerms, isLoading, error } = useQuery({
-    queryKey: ["coaching-terms", coachingOrgId],
+  // Fetch org and pack terms with resolution
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["coaching-terminology-resolved", coachingOrgId],
     queryFn: async () => {
-      if (!coachingOrgId) return null;
+      if (!coachingOrgId) {
+        return { terms: DEFAULT_COACHING_TERMS, sourcePackKey: "default" };
+      }
 
-      const { data, error } = await supabase
+      // Get org's program key
+      const { data: org, error: orgError } = await supabase
+        .from("coaching_orgs")
+        .select("program_key")
+        .eq("id", coachingOrgId)
+        .single();
+
+      if (orgError) throw orgError;
+      
+      const programKey = org?.program_key || "generic";
+
+      // Fetch org-specific custom terms
+      const { data: orgTerms, error: termsError } = await supabase
         .from("coaching_terms")
         .select("term_key, term_value")
         .eq("coaching_org_id", coachingOrgId);
 
-      if (error) throw error;
+      if (termsError) throw termsError;
 
-      // Convert to map
-      const termsMap: Record<string, string> = {};
-      data?.forEach((term) => {
-        termsMap[term.term_key] = term.term_value;
+      // Build merged terms: defaults → generic pack → program pack → org custom
+      const mergedTerms: Record<string, string> = { ...DEFAULT_COACHING_TERMS };
+
+      // Get generic pack terms first (always as base fallback)
+      const { data: genericPack } = await supabase
+        .from("coaching_program_packs")
+        .select(`
+          id,
+          coaching_program_pack_terms(term_key, term_value)
+        `)
+        .eq("key", "generic")
+        .single();
+
+      if (genericPack?.coaching_program_pack_terms) {
+        (genericPack.coaching_program_pack_terms as any[]).forEach((t) => {
+          mergedTerms[t.term_key] = t.term_value;
+        });
+      }
+
+      // Get program-specific pack terms (overrides generic)
+      if (programKey !== "generic") {
+        const { data: programPack } = await supabase
+          .from("coaching_program_packs")
+          .select(`
+            id,
+            coaching_program_pack_terms(term_key, term_value)
+          `)
+          .eq("key", programKey)
+          .single();
+
+        if (programPack?.coaching_program_pack_terms) {
+          (programPack.coaching_program_pack_terms as any[]).forEach((t) => {
+            mergedTerms[t.term_key] = t.term_value;
+          });
+        }
+      }
+
+      // Apply org-specific custom overrides (highest priority)
+      orgTerms?.forEach((t) => {
+        mergedTerms[t.term_key] = t.term_value;
       });
 
-      return termsMap;
+      return { terms: mergedTerms, sourcePackKey: programKey };
     },
     enabled: !!coachingOrgId,
     staleTime: 10 * 60 * 1000, // Cache for 10 minutes
   });
 
-  // Merge custom terms with defaults
+  // Merge with defaults for non-loaded state
   const mergedTerms: Record<string, string> = {
     ...DEFAULT_COACHING_TERMS,
-    ...(customTerms || {}),
+    ...(data?.terms || {}),
   };
 
   // Helper to get a term with fallback
@@ -84,6 +144,7 @@ export function useCoachingTerminology(coachingOrgId?: string | null): CoachingT
     getTerm,
     isLoading,
     error: error as Error | null,
+    sourcePackKey: data?.sourcePackKey,
   };
 }
 
@@ -123,5 +184,6 @@ export function useEngagementTerminology(engagementId?: string | null): Coaching
     getTerm: coachingOrgTerms.getTerm,
     isLoading: engagementLoading || coachingOrgTerms.isLoading,
     error: (engagementError || coachingOrgTerms.error) as Error | null,
+    sourcePackKey: coachingOrgTerms.sourcePackKey,
   };
 }

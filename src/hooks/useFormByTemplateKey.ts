@@ -9,7 +9,7 @@ import type { FormTemplate, FormFieldTemplate } from "@/data/workflowTemplates";
 type WfForm = Database["public"]["Tables"]["wf_forms"]["Row"];
 type WfFormField = Database["public"]["Tables"]["wf_form_fields"]["Row"];
 
-// Map of all available form templates
+// Map of all available form templates (keyed by full resolved key)
 const FORM_TEMPLATES: Record<string, FormTemplate> = {
   "generic_annual_goals_portfolio": annualGoalsPortfolioForm,
   "generic_key_leader_member_covenant": keyLeaderMemberCovenantForm,
@@ -22,46 +22,118 @@ const FORM_TEMPLATES: Record<string, FormTemplate> = {
   "generic_briefing_executive_summary": briefingExecutiveSummaryForm,
 };
 
-// Get template by key
-export function getFormTemplate(templateKey: string): FormTemplate | undefined {
-  return FORM_TEMPLATES[templateKey];
+/**
+ * Get template by key with program pack resolution
+ * Resolution order: {program_key}_{base_key} → generic_{base_key}
+ */
+export function getFormTemplate(templateKey: string, programKey: string = "generic"): FormTemplate | undefined {
+  // If already a full key, try direct lookup
+  if (FORM_TEMPLATES[templateKey]) {
+    return FORM_TEMPLATES[templateKey];
+  }
+  
+  // Try program-specific key
+  const programSpecificKey = `${programKey}_${templateKey}`;
+  if (FORM_TEMPLATES[programSpecificKey]) {
+    return FORM_TEMPLATES[programSpecificKey];
+  }
+  
+  // Fallback to generic
+  const genericKey = `generic_${templateKey}`;
+  return FORM_TEMPLATES[genericKey];
+}
+
+/**
+ * Resolve a template key with program pack fallback
+ * Returns the full resolved key that exists in templates
+ */
+export function resolveFormTemplateKey(baseKey: string, programKey: string = "generic"): string {
+  // If already prefixed, return as-is
+  if (baseKey.startsWith("generic_") || baseKey.startsWith("convene_") || baseKey.startsWith("c12_")) {
+    return baseKey;
+  }
+  
+  // Try program-specific first
+  const programSpecificKey = `${programKey}_${baseKey}`;
+  if (FORM_TEMPLATES[programSpecificKey]) {
+    return programSpecificKey;
+  }
+  
+  // Fallback to generic
+  return `generic_${baseKey}`;
+}
+
+/**
+ * Extract base key from a resolved template key
+ */
+export function extractFormBaseKey(resolvedKey: string): string {
+  const prefixes = ["generic_", "convene_", "c12_", "eos_"];
+  for (const prefix of prefixes) {
+    if (resolvedKey.startsWith(prefix)) {
+      return resolvedKey.slice(prefix.length);
+    }
+  }
+  return resolvedKey;
 }
 
 // Check if a form with this template_key exists for the company
-export function useFormByTemplateKey(templateKey: string | undefined) {
+export function useFormByTemplateKey(templateKey: string | undefined, programKey: string = "generic") {
   const { activeCompanyId } = useActiveCompany();
 
   return useQuery({
-    queryKey: ["wf-form-by-template", templateKey, activeCompanyId],
+    queryKey: ["wf-form-by-template", templateKey, activeCompanyId, programKey],
     queryFn: async () => {
       if (!templateKey || !activeCompanyId) return null;
       
-      const { data, error } = await supabase
+      // Resolve the template key with fallback
+      const resolvedKey = resolveFormTemplateKey(templateKey, programKey);
+      
+      // Try program-specific first
+      const { data: programForm, error: err1 } = await supabase
         .from("wf_forms")
         .select("*, fields:wf_form_fields(*)")
-        .eq("template_key", templateKey)
+        .eq("template_key", resolvedKey)
         .eq("company_id", activeCompanyId)
         .maybeSingle();
       
-      if (error) throw error;
-      return data as (WfForm & { fields: WfFormField[] }) | null;
+      if (err1) throw err1;
+      if (programForm) return programForm as (WfForm & { fields: WfFormField[] });
+      
+      // If template key was program-specific, try generic fallback
+      if (!resolvedKey.startsWith("generic_") && programKey !== "generic") {
+        const genericKey = `generic_${extractFormBaseKey(templateKey)}`;
+        const { data: genericForm, error: err2 } = await supabase
+          .from("wf_forms")
+          .select("*, fields:wf_form_fields(*)")
+          .eq("template_key", genericKey)
+          .eq("company_id", activeCompanyId)
+          .maybeSingle();
+        
+        if (err2) throw err2;
+        if (genericForm) return genericForm as (WfForm & { fields: WfFormField[] });
+      }
+      
+      return null;
     },
     enabled: !!templateKey && !!activeCompanyId,
   });
 }
 
-// Create a form from a template
+// Create a form from a template with program pack resolution
 export function useCreateFormFromTemplate() {
   const queryClient = useQueryClient();
   const { activeCompanyId } = useActiveCompany();
 
   return useMutation({
-    mutationFn: async (templateKey: string) => {
-      const template = getFormTemplate(templateKey);
+    mutationFn: async ({ templateKey, programKey = "generic" }: { templateKey: string; programKey?: string }) => {
+      const template = getFormTemplate(templateKey, programKey);
       if (!template) throw new Error("Template not found");
       if (!activeCompanyId) throw new Error("No active company");
 
       const { data: { user } } = await supabase.auth.getUser();
+      
+      // Use the resolved key for storage
+      const resolvedKey = resolveFormTemplateKey(templateKey, programKey);
 
       // Create the form
       const { data: form, error: formError } = await supabase
@@ -71,7 +143,7 @@ export function useCreateFormFromTemplate() {
           description: template.description,
           scope_type: "company",
           company_id: activeCompanyId,
-          template_key: templateKey,
+          template_key: resolvedKey,
           status: "published",
           created_by: user?.id,
           published_at: new Date().toISOString(),
@@ -113,15 +185,15 @@ export function useCreateFormFromTemplate() {
   });
 }
 
-// Hook to get or create form from template
-export function useEnsureFormFromTemplate(templateKey: string | undefined) {
-  const { data: existingForm, isLoading } = useFormByTemplateKey(templateKey);
+// Hook to get or create form from template with program pack resolution
+export function useEnsureFormFromTemplate(templateKey: string | undefined, programKey: string = "generic") {
+  const { data: existingForm, isLoading } = useFormByTemplateKey(templateKey, programKey);
   const createForm = useCreateFormFromTemplate();
 
   const ensureForm = async () => {
     if (existingForm) return existingForm;
     if (!templateKey) throw new Error("No template key");
-    return await createForm.mutateAsync(templateKey);
+    return await createForm.mutateAsync({ templateKey, programKey });
   };
 
   return {
@@ -130,4 +202,24 @@ export function useEnsureFormFromTemplate(templateKey: string | undefined) {
     ensureForm,
     isCreating: createForm.isPending,
   };
+}
+
+/**
+ * List all available form template keys for a program
+ */
+export function getAvailableFormTemplates(programKey: string = "generic"): string[] {
+  const templates: string[] = [];
+  
+  for (const key of Object.keys(FORM_TEMPLATES)) {
+    // Include generic templates (as fallback for all)
+    if (key.startsWith("generic_")) {
+      templates.push(key);
+    }
+    // Include program-specific templates
+    if (key.startsWith(`${programKey}_`)) {
+      templates.push(key);
+    }
+  }
+  
+  return templates;
 }

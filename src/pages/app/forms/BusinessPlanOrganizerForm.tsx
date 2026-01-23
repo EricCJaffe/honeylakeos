@@ -139,7 +139,7 @@ export default function BusinessPlanOrganizerForm() {
   // Auto-create form if needed
   useState(() => {
     if (!formLoading && !form && !createForm.isPending) {
-      createForm.mutate(TEMPLATE_KEY);
+      createForm.mutate({ templateKey: TEMPLATE_KEY });
     }
   });
 
