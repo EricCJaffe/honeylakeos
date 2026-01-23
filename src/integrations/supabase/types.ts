@@ -3060,7 +3060,9 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          editable_fields: Json
           id: string
+          is_locked: boolean
           name: string
           pack_id: string
           status: Database["public"]["Enums"]["template_status"]
@@ -3070,7 +3072,9 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          editable_fields?: Json
           id?: string
+          is_locked?: boolean
           name: string
           pack_id: string
           status?: Database["public"]["Enums"]["template_status"]
@@ -3080,7 +3084,9 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          editable_fields?: Json
           id?: string
+          is_locked?: boolean
           name?: string
           pack_id?: string
           status?: Database["public"]["Enums"]["template_status"]

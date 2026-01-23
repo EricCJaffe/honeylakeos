@@ -2,6 +2,7 @@ import * as React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { WorkflowBuilderList, WorkflowBuilderEditor } from "@/components/coaching/workflow-builder";
 import { useCoachingRole } from "@/hooks/useCoachingRole";
+import { useProgramKey } from "@/hooks/useProgramKey";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ShieldAlert } from "lucide-react";
@@ -9,11 +10,13 @@ import { ShieldAlert } from "lucide-react";
 export default function WorkflowBuilderPage() {
   const { workflowId } = useParams<{ workflowId?: string }>();
   const navigate = useNavigate();
-  const { activeCoachingOrgId, role, isLoading } = useCoachingRole();
+  const { activeCoachingOrgId, role, isLoading: roleLoading } = useCoachingRole();
+  const { programKey, isLoading: packLoading } = useProgramKey(activeCoachingOrgId);
   
   const [editingWorkflowId, setEditingWorkflowId] = React.useState<string | null>(workflowId || null);
   
   const isOrgAdmin = role === "site_admin" || role === "coaching_org_admin";
+  const isLoading = roleLoading || packLoading;
   
   // Sync URL param with state
   React.useEffect(() => {
@@ -83,7 +86,7 @@ export default function WorkflowBuilderPage() {
       ) : (
         <WorkflowBuilderList
           coachingOrgId={activeCoachingOrgId}
-          programKey="generic"
+          programKey={programKey}
           onEditWorkflow={handleEditWorkflow}
         />
       )}

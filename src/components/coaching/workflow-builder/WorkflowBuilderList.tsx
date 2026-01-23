@@ -21,11 +21,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { 
   useOrgWorkflows, 
   useOrgWorkflowMutations,
   OrgWorkflow 
 } from "@/hooks/useOrgWorkflows";
+import { 
+  useOrgProgramMutations,
+  useOrgProgramStatus,
+} from "@/hooks/useOrgProgramSettings";
+import { useProgramKey } from "@/hooks/useProgramKey";
 import { 
   MoreVertical, 
   Edit, 
@@ -36,6 +42,8 @@ import {
   Pause,
   Settings2,
   Download,
+  RefreshCw,
+  Info,
 } from "lucide-react";
 
 interface WorkflowBuilderListProps {
@@ -69,8 +77,13 @@ export function WorkflowBuilderList({
   onEditWorkflow 
 }: WorkflowBuilderListProps) {
   const { data: workflows, isLoading } = useOrgWorkflows(coachingOrgId);
-  const mutations = useOrgWorkflowMutations(coachingOrgId);
+  const workflowMutations = useOrgWorkflowMutations(coachingOrgId);
+  const programMutations = useOrgProgramMutations(coachingOrgId);
+  const { data: orgStatus } = useOrgProgramStatus(coachingOrgId);
+  const { terminology } = useProgramKey(coachingOrgId);
+  
   const [restoreWorkflow, setRestoreWorkflow] = React.useState<OrgWorkflow | null>(null);
+  const [showReseedConfirm, setShowReseedConfirm] = React.useState(false);
 
   // Group by source pack - must be before early return
   const groupedWorkflows = React.useMemo(() => {
@@ -84,17 +97,15 @@ export function WorkflowBuilderList({
   }, [workflows]);
 
   const hasWorkflows = workflows && workflows.length > 0;
+  const isSeeding = workflowMutations.seedFromPack.isPending || programMutations.reseedWorkflows.isPending;
 
   const handleSeedFromPack = async () => {
-    // Seed from both generic and the current program pack
-    await mutations.seedFromPack.mutateAsync({ packKey: "generic" });
-    if (programKey !== "generic") {
-      await mutations.seedFromPack.mutateAsync({ packKey: programKey });
-    }
+    // Use program mutations for full reseed (handles generic + program pack)
+    await programMutations.reseedWorkflows.mutateAsync({ includeProgramPack: true });
   };
 
   const handleToggleActive = async (workflow: OrgWorkflow) => {
-    await mutations.updateWorkflow.mutateAsync({
+    await workflowMutations.updateWorkflow.mutateAsync({
       workflowId: workflow.id,
       updates: { is_active: !workflow.is_active },
     });
@@ -102,8 +113,13 @@ export function WorkflowBuilderList({
 
   const handleRestore = async () => {
     if (!restoreWorkflow) return;
-    await mutations.restoreFromPack.mutateAsync({ workflowId: restoreWorkflow.id });
+    await workflowMutations.restoreFromPack.mutateAsync({ workflowId: restoreWorkflow.id });
     setRestoreWorkflow(null);
+  };
+  
+  const handleReseed = async () => {
+    await programMutations.reseedWorkflows.mutateAsync({ includeProgramPack: true });
+    setShowReseedConfirm(false);
   };
 
   if (isLoading) {
@@ -126,18 +142,44 @@ export function WorkflowBuilderList({
         <div>
           <h2 className="text-lg font-semibold">Workflow Templates</h2>
           <p className="text-sm text-muted-foreground">
-            Manage workflows seeded from program packs
+            Manage {terminology.getTerm("workflow_label", "workflows")} seeded from program packs
           </p>
         </div>
-        <Button 
-          onClick={handleSeedFromPack}
-          disabled={mutations.seedFromPack.isPending}
-          variant="outline"
-        >
-          <Download className="mr-2 h-4 w-4" />
-          {mutations.seedFromPack.isPending ? "Seeding..." : "Seed from Pack"}
-        </Button>
+        <div className="flex gap-2">
+          {hasWorkflows && (
+            <Button 
+              onClick={() => setShowReseedConfirm(true)}
+              disabled={isSeeding}
+              variant="outline"
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${isSeeding ? "animate-spin" : ""}`} />
+              Reseed Missing
+            </Button>
+          )}
+          {!hasWorkflows && (
+            <Button 
+              onClick={handleSeedFromPack}
+              disabled={isSeeding}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              {isSeeding ? "Seeding..." : "Seed Workflows"}
+            </Button>
+          )}
+        </div>
       </div>
+      
+      {/* Pack Info */}
+      {orgStatus && (
+        <Alert className="border-primary/20 bg-primary/5">
+          <Info className="h-4 w-4 text-primary" />
+          <AlertTitle>Active Pack: {orgStatus.programName || "Generic"}</AlertTitle>
+          <AlertDescription>
+            Workflows are seeded from the <strong>Generic</strong> pack
+            {orgStatus.programKey !== "generic" && <> plus the <strong>{orgStatus.programName}</strong> pack</>}.
+            {orgStatus.workflowCount > 0 && ` You have ${orgStatus.workflowCount} org workflows.`}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {!hasWorkflows ? (
         <Card>
@@ -149,7 +191,7 @@ export function WorkflowBuilderList({
             </p>
             <Button 
               onClick={handleSeedFromPack}
-              disabled={mutations.seedFromPack.isPending}
+              disabled={isSeeding}
               className="mt-4"
             >
               <Download className="mr-2 h-4 w-4" />
@@ -178,7 +220,7 @@ export function WorkflowBuilderList({
                     onEdit={() => onEditWorkflow(workflow.id)}
                     onToggleActive={() => handleToggleActive(workflow)}
                     onRestore={() => setRestoreWorkflow(workflow)}
-                    isUpdating={mutations.updateWorkflow.isPending}
+                    isUpdating={workflowMutations.updateWorkflow.isPending}
                   />
                 ))}
               </div>
@@ -201,9 +243,37 @@ export function WorkflowBuilderList({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleRestore}
-              disabled={mutations.restoreFromPack.isPending}
+              disabled={workflowMutations.restoreFromPack.isPending}
             >
-              {mutations.restoreFromPack.isPending ? "Restoring..." : "Restore"}
+              {workflowMutations.restoreFromPack.isPending ? "Restoring..." : "Restore"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* Reseed Confirmation Dialog */}
+      <AlertDialog open={showReseedConfirm} onOpenChange={setShowReseedConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reseed Missing Workflows?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>This will pull in missing workflow templates from:</p>
+              <ul className="list-disc pl-5 text-sm">
+                <li><strong>Generic</strong> pack (base workflows)</li>
+                {orgStatus?.programKey !== "generic" && (
+                  <li><strong>{orgStatus?.programName}</strong> pack (program-specific)</li>
+                )}
+              </ul>
+              <p className="mt-2">
+                <strong>Note:</strong> Existing workflows will NOT be overwritten. 
+                Only missing workflows will be created.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleReseed} disabled={isSeeding}>
+              {isSeeding ? "Reseeding..." : "Reseed Workflows"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

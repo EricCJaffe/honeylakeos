@@ -29,6 +29,7 @@ export interface OrgWorkflowStep {
   is_optional: boolean;
   is_disabled: boolean;
   attached_form_template_key: string | null;
+  attached_form_base_key: string | null;
   default_assignee: string;
   due_offset_days: number | null;
   cadence_days: number | null;
@@ -167,11 +168,11 @@ export function useOrgWorkflowMutations(coachingOrgId: string | null) {
         
         if (existing) continue;
         
-        // Determine editable fields based on workflow type
-        const isLocked = ["engagement_lifecycle", "chair_recruitment", "chair_onboarding"].includes(template.workflow_type);
-        const editableFields = isLocked 
-          ? ["name", "description"]
-          : ["name", "description", "is_active", "steps"];
+        // Use pack metadata for locked status and editable fields
+        const isLocked = (template as any).is_locked ?? 
+          ["engagement_lifecycle"].includes(template.workflow_type);
+        const editableFields = (template as any).editable_fields ?? 
+          (isLocked ? ["name", "description"] : ["name", "description", "is_active", "steps"]);
         
         // Create org workflow
         const { data: newWorkflow, error: wfError } = await supabase
@@ -192,7 +193,7 @@ export function useOrgWorkflowMutations(coachingOrgId: string | null) {
         
         if (wfError) throw wfError;
         
-        // Create steps
+        // Create steps - properly map attached_form_base_key
         const steps = template.coaching_program_pack_workflow_steps || [];
         if (steps.length > 0) {
           const stepInserts = steps.map((step: any) => ({
@@ -204,6 +205,7 @@ export function useOrgWorkflowMutations(coachingOrgId: string | null) {
             description: step.description,
             is_optional: false,
             is_disabled: false,
+            attached_form_base_key: step.attached_form_base_key || null,
             attached_form_template_key: null,
             default_assignee: step.default_assignee || "unassigned",
             due_offset_days: step.due_offset_days,
@@ -374,7 +376,7 @@ export function useOrgWorkflowMutations(coachingOrgId: string | null) {
       
       if (deleteError) throw deleteError;
       
-      // Re-create steps from template
+      // Re-create steps from template - properly map attached_form_base_key
       const steps = template.coaching_program_pack_workflow_steps || [];
       if (steps.length > 0) {
         const stepInserts = steps.map((step: any) => ({
@@ -386,6 +388,7 @@ export function useOrgWorkflowMutations(coachingOrgId: string | null) {
           description: step.description,
           is_optional: false,
           is_disabled: false,
+          attached_form_base_key: step.attached_form_base_key || null,
           attached_form_template_key: null,
           default_assignee: step.default_assignee || "unassigned",
           due_offset_days: step.due_offset_days,

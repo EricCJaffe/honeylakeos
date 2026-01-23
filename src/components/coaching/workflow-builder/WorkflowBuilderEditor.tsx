@@ -64,8 +64,8 @@ interface WorkflowBuilderEditorProps {
 
 // Get the base key from either the new field or extract from legacy template key
 function getStepBaseKey(step: OrgWorkflowStep): string | null {
-  if ((step as any).attached_form_base_key) {
-    return (step as any).attached_form_base_key;
+  if (step.attached_form_base_key) {
+    return step.attached_form_base_key;
   }
   // Extract from legacy template key
   if (step.attached_form_template_key) {
