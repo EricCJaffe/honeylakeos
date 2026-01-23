@@ -7,6 +7,7 @@ import { useMembership } from "@/lib/membership";
 import { useCompanyModules } from "@/hooks/useCompanyModules";
 import { useCompanyTerminology } from "@/hooks/useCompanyTerminology";
 import { useNavState } from "@/hooks/useNavState";
+import { useCompanyModuleFlags, legacyModuleKeyToModuleId } from "@/core/modules";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -35,6 +36,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const { isCompanyAdmin, isSiteAdmin, isSuperAdmin, activeCompany } = useMembership();
   const { isEnabled, loading: modulesLoading } = useCompanyModules();
+  const { isModuleEnabled: isModuleFlagEnabled, isSafeMode } = useCompanyModuleFlags();
   const { getPlural } = useCompanyTerminology();
   const { isExpanded, toggleSection, expandSection } = useNavState();
   const collapsed = state === "collapsed";
@@ -61,10 +63,26 @@ export function AppSidebar() {
     return location.pathname.startsWith(path);
   };
 
-  // Filter nav items based on module enablement
+  // Filter nav items based on both legacy module enablement AND new feature flags
   const filterItems = (items: NavItem[]): NavItem[] => {
     if (modulesLoading) return items;
-    return items.filter((item) => !item.moduleKey || isEnabled(item.moduleKey));
+    return items.filter((item) => {
+      // Check legacy module system (company_modules table)
+      if (item.moduleKey && !isEnabled(item.moduleKey)) {
+        return false;
+      }
+      
+      // Check new feature flags system
+      if (item.moduleKey) {
+        const moduleId = legacyModuleKeyToModuleId(item.moduleKey);
+        if (moduleId && !isModuleFlagEnabled(moduleId)) {
+          // In safe mode, hide non-core modules
+          return false;
+        }
+      }
+      
+      return true;
+    });
   };
 
   // Get the display title for a nav item (with terminology support)

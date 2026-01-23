@@ -5731,6 +5731,41 @@ export type Database = {
           },
         ]
       }
+      feature_flags: {
+        Row: {
+          company_id: string
+          enabled: boolean
+          id: string
+          module_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          company_id: string
+          enabled?: boolean
+          id?: string
+          module_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          company_id?: string
+          enabled?: boolean
+          id?: string
+          module_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_flags_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feedback_items: {
         Row: {
           company_id: string
