@@ -13439,7 +13439,7 @@ export type Database = {
         | "document"
         | "worksheet"
       coaching_role: "coach" | "coach_manager" | "org_admin"
-      coaching_step_type: "task" | "form" | "meeting" | "note"
+      coaching_step_type: "task" | "form" | "meeting" | "note" | "milestone"
       coaching_template_type:
         | "link"
         | "document"
@@ -13453,6 +13453,11 @@ export type Database = {
         | "one_on_one"
         | "content_creation"
         | "operations"
+        | "engagement_lifecycle"
+        | "member_onboarding"
+        | "coach_assignment"
+        | "periodic_review"
+        | "coaching_cadence"
       company_onboarding_source:
         | "self_signup"
         | "invited_by_company"
@@ -13671,6 +13676,9 @@ export type Database = {
         | "member_admin"
         | "member_user"
         | "unassigned"
+        | "org_admin"
+        | "member"
+        | "manager"
       workflow_run_item_status: "active" | "cancelled"
       workflow_run_item_type: "task" | "meeting" | "note" | "form"
       workflow_run_status:
@@ -13858,7 +13866,7 @@ export const Constants = {
         "worksheet",
       ],
       coaching_role: ["coach", "coach_manager", "org_admin"],
-      coaching_step_type: ["task", "form", "meeting", "note"],
+      coaching_step_type: ["task", "form", "meeting", "note", "milestone"],
       coaching_template_type: [
         "link",
         "document",
@@ -13873,6 +13881,11 @@ export const Constants = {
         "one_on_one",
         "content_creation",
         "operations",
+        "engagement_lifecycle",
+        "member_onboarding",
+        "coach_assignment",
+        "periodic_review",
+        "coaching_cadence",
       ],
       company_onboarding_source: [
         "self_signup",
@@ -14116,6 +14129,9 @@ export const Constants = {
         "member_admin",
         "member_user",
         "unassigned",
+        "org_admin",
+        "member",
+        "manager",
       ],
       workflow_run_item_status: ["active", "cancelled"],
       workflow_run_item_type: ["task", "meeting", "note", "form"],
