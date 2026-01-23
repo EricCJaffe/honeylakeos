@@ -9,6 +9,7 @@ import { AuthProvider } from "@/lib/auth";
 import { MembershipProvider } from "@/lib/membership";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ModuleGuard } from "@/components/ModuleGuard";
+import { AppErrorBoundary } from "@/core/errors";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { AppLayout } from "@/components/layout/AppLayout";
 import HomePage from "@/pages/public/HomePage";
@@ -57,6 +58,7 @@ import RlsTestPage from "@/pages/app/dev/RlsTestPage";
 import OnboardingPage from "@/pages/app/onboarding/OnboardingPage";
 import FrameworkOnboardingPage from "@/pages/app/onboarding/FrameworkOnboardingPage";
 import SettingsPage from "@/pages/app/settings/SettingsPage";
+import HealthPage from "@/pages/app/health/HealthPage";
 import TemplatesPage from "@/pages/app/admin/TemplatesPage";
 import FrameworksPage from "@/pages/app/frameworks/FrameworksPage";
 import FrameworkMarketplacePage from "@/pages/app/frameworks/FrameworkMarketplacePage";
@@ -135,15 +137,16 @@ const queryClient = new QueryClient();
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="system">
-        <AuthProvider>
-          <MembershipProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <Routes>
+    <AppErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider defaultTheme="system">
+          <AuthProvider>
+            <MembershipProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <Routes>
                   {/* Public Routes */}
                   <Route element={<PublicLayout />}>
                     <Route path="/" element={<HomePage />} />
@@ -264,6 +267,7 @@ function App() {
                     <Route path="reports/exports" element={<ExportsPage />} />
                     <Route path="reports/:reportId" element={<ReportDetailPage />} />
                     <Route path="settings" element={<SettingsPage />} />
+                    <Route path="health" element={<HealthPage />} />
                     <Route path="integrations" element={<IntegrationsPage />} />
                     <Route path="departments" element={<DepartmentsPage />} />
                     <Route path="departments/:departmentId" element={<DepartmentDetailPage />} />
@@ -303,6 +307,7 @@ function App() {
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
+  </AppErrorBoundary>
   );
 }
 
