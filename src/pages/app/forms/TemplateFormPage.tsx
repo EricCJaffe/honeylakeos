@@ -51,7 +51,7 @@ function StandardTemplateForm({ templateKey }: { templateKey: string | undefined
       if (!formLoading && !form && template && !isInitializing) {
         setIsInitializing(true);
         try {
-          await createForm.mutateAsync(templateKey!);
+          await createForm.mutateAsync({ templateKey: templateKey! });
         } finally {
           setIsInitializing(false);
         }
