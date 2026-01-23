@@ -15,7 +15,8 @@ import {
   Workflow, 
   Shield,
   ArrowLeft,
-  AlertCircle
+  AlertCircle,
+  Wrench
 } from "lucide-react";
 
 export default function OrgSettingsPage() {
@@ -89,6 +90,26 @@ export default function OrgSettingsPage() {
 
       {/* Quick Links */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/* Workflows */}
+        <Card className="hover:shadow-md transition-shadow">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Workflow className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg">Workflow Builder</CardTitle>
+            </div>
+            <CardDescription>
+              Customize onboarding, review, and engagement workflows
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" asChild className="w-full">
+              <Link to="/app/coaching/org/workflows">
+                Manage Workflows
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
         {/* Terminology */}
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader>
@@ -104,26 +125,6 @@ export default function OrgSettingsPage() {
             <Button variant="outline" asChild className="w-full">
               <Link to="/app/coaching/org/terminology">
                 Manage Terminology
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Workflows */}
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Workflow className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg">Workflows</CardTitle>
-            </div>
-            <CardDescription>
-              Customize onboarding, review, and engagement workflows
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="outline" asChild className="w-full">
-              <Link to="/app/coaching/org/workflows">
-                Manage Workflows
               </Link>
             </Button>
           </CardContent>
@@ -148,14 +149,24 @@ export default function OrgSettingsPage() {
         </Card>
       </div>
 
-      {/* Debug Info (for admins) */}
-      <Card className="border-dashed">
-        <CardHeader>
-          <CardTitle className="text-sm text-muted-foreground">Debug Info</CardTitle>
+      {/* Active Program Status */}
+      <ProgramKeyIndicator 
+        coachingOrgId={activeCoachingOrgId} 
+        variant="card" 
+        showChangeWarning={true} 
+      />
+
+      {/* Debug Info (for site admins) */}
+      <Card className="border-dashed border-muted">
+        <CardHeader className="pb-2">
+          <div className="flex items-center gap-2">
+            <Wrench className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm text-muted-foreground">Debug Info</CardTitle>
+          </div>
         </CardHeader>
         <CardContent className="text-xs text-muted-foreground space-y-1">
-          <p>Coaching Org ID: {activeCoachingOrgId}</p>
-          <p>Terminology Source: {terminology.sourcePackKey}</p>
+          <p>Coaching Org ID: <code className="bg-muted px-1 rounded">{activeCoachingOrgId}</code></p>
+          <p>Terminology Source: <code className="bg-muted px-1 rounded">{terminology.sourcePackKey}</code></p>
           <p>
             Sample Terms: {terminology.getTerm("coach_label")}, {terminology.getTerm("member_label")}, {terminology.getTerm("group_label")}
           </p>
