@@ -2628,6 +2628,135 @@ export type Database = {
           },
         ]
       }
+      coaching_org_workflow_steps: {
+        Row: {
+          attached_form_template_key: string | null
+          cadence_days: number | null
+          created_at: string
+          default_assignee: Database["public"]["Enums"]["workflow_default_assignee"]
+          description: string | null
+          due_offset_days: number | null
+          id: string
+          is_disabled: boolean
+          is_optional: boolean
+          org_workflow_id: string
+          source_pack_step_id: string | null
+          step_order: number
+          step_type: Database["public"]["Enums"]["coaching_step_type"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          attached_form_template_key?: string | null
+          cadence_days?: number | null
+          created_at?: string
+          default_assignee?: Database["public"]["Enums"]["workflow_default_assignee"]
+          description?: string | null
+          due_offset_days?: number | null
+          id?: string
+          is_disabled?: boolean
+          is_optional?: boolean
+          org_workflow_id: string
+          source_pack_step_id?: string | null
+          step_order?: number
+          step_type: Database["public"]["Enums"]["coaching_step_type"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          attached_form_template_key?: string | null
+          cadence_days?: number | null
+          created_at?: string
+          default_assignee?: Database["public"]["Enums"]["workflow_default_assignee"]
+          description?: string | null
+          due_offset_days?: number | null
+          id?: string
+          is_disabled?: boolean
+          is_optional?: boolean
+          org_workflow_id?: string
+          source_pack_step_id?: string | null
+          step_order?: number
+          step_type?: Database["public"]["Enums"]["coaching_step_type"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_org_workflow_steps_org_workflow_id_fkey"
+            columns: ["org_workflow_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_org_workflows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_org_workflow_steps_source_pack_step_id_fkey"
+            columns: ["source_pack_step_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_program_pack_workflow_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_org_workflows: {
+        Row: {
+          coaching_org_id: string
+          created_at: string
+          description: string | null
+          editable_fields: Json
+          id: string
+          is_active: boolean
+          is_locked: boolean
+          name: string
+          source_pack_key: string
+          source_pack_template_id: string | null
+          updated_at: string
+          workflow_type: Database["public"]["Enums"]["coaching_workflow_type"]
+        }
+        Insert: {
+          coaching_org_id: string
+          created_at?: string
+          description?: string | null
+          editable_fields?: Json
+          id?: string
+          is_active?: boolean
+          is_locked?: boolean
+          name: string
+          source_pack_key: string
+          source_pack_template_id?: string | null
+          updated_at?: string
+          workflow_type: Database["public"]["Enums"]["coaching_workflow_type"]
+        }
+        Update: {
+          coaching_org_id?: string
+          created_at?: string
+          description?: string | null
+          editable_fields?: Json
+          id?: string
+          is_active?: boolean
+          is_locked?: boolean
+          name?: string
+          source_pack_key?: string
+          source_pack_template_id?: string | null
+          updated_at?: string
+          workflow_type?: Database["public"]["Enums"]["coaching_workflow_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_org_workflows_coaching_org_id_fkey"
+            columns: ["coaching_org_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_org_workflows_source_pack_template_id_fkey"
+            columns: ["source_pack_template_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_program_pack_workflow_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coaching_orgs: {
         Row: {
           company_id: string
