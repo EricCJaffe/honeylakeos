@@ -272,6 +272,7 @@ export function useOrgWorkflowMutations(coachingOrgId: string | null) {
         is_optional?: boolean;
         is_disabled?: boolean;
         attached_form_template_key?: string | null;
+        attached_form_base_key?: string | null;
         default_assignee?: "coach" | "manager" | "member" | "member_admin" | "member_user" | "org_admin" | "unassigned";
         due_offset_days?: number | null;
         cadence_days?: number | null;

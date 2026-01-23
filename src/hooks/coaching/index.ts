@@ -3,8 +3,8 @@
  * 
  * Central export for all coaching-related hooks including:
  * - Program Pack Resolution Engine
+ * - Dynamic Form Resolution
  * - Terminology Resolution
- * - Form Template Resolution
  * - Workflow Resolution
  * - Dashboard Widget Resolution
  */
@@ -28,6 +28,17 @@ export {
   type ResolvedAsset,
   type ProgramPackInfo,
 } from "../useProgramPackResolver";
+
+// Dynamic Form Resolution
+export {
+  useResolvedForm,
+  useEngagementResolvedForm,
+  useAvailableFormBaseKeys,
+  useFormActivationMutations,
+  extractBaseKeyFromTemplate,
+  buildTemplateKey,
+  type ResolvedForm,
+} from "../useFormResolver";
 
 // Coaching Terminology (uses resolution engine internally)
 export {
