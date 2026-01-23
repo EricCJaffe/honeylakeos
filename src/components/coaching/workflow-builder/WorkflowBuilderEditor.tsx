@@ -37,6 +37,8 @@ import {
   useOrgWorkflowMutations,
   OrgWorkflowStep 
 } from "@/hooks/useOrgWorkflows";
+import { FormBaseKeySelector } from "@/components/forms/FormBaseKeySelector";
+import { FormPreview } from "@/components/forms/FormLauncher";
 import { 
   ArrowLeft, 
   GripVertical, 
@@ -58,6 +60,24 @@ interface WorkflowBuilderEditorProps {
   workflowId: string;
   coachingOrgId: string;
   onBack: () => void;
+}
+
+// Get the base key from either the new field or extract from legacy template key
+function getStepBaseKey(step: OrgWorkflowStep): string | null {
+  if ((step as any).attached_form_base_key) {
+    return (step as any).attached_form_base_key;
+  }
+  // Extract from legacy template key
+  if (step.attached_form_template_key) {
+    const prefixes = ["generic_", "convene_", "c12_", "eos_"];
+    for (const prefix of prefixes) {
+      if (step.attached_form_template_key.startsWith(prefix)) {
+        return step.attached_form_template_key.slice(prefix.length);
+      }
+    }
+    return step.attached_form_template_key;
+  }
+  return null;
 }
 
 const STEP_TYPE_ICONS: Record<string, React.ReactNode> = {
@@ -154,7 +174,7 @@ export function WorkflowBuilderEditor({
     description?: string | null;
     is_optional?: boolean;
     is_disabled?: boolean;
-    attached_form_template_key?: string | null;
+    attached_form_base_key?: string | null;
     default_assignee?: "coach" | "manager" | "member" | "member_admin" | "member_user" | "org_admin" | "unassigned";
     due_offset_days?: number | null;
     cadence_days?: number | null;
@@ -297,11 +317,8 @@ export function WorkflowBuilderEditor({
                     {step.is_optional && (
                       <Badge variant="outline" className="text-xs">Optional</Badge>
                     )}
-                    {step.attached_form_template_key && (
-                      <Badge variant="secondary" className="text-xs">
-                        <FileText className="mr-1 h-3 w-3" />
-                        {step.attached_form_template_key}
-                      </Badge>
+                    {getStepBaseKey(step) && (
+                      <FormPreview baseKey={getStepBaseKey(step)!} coachingOrgId={coachingOrgId} />
                     )}
                   </div>
                   {step.description && (
@@ -362,6 +379,7 @@ export function WorkflowBuilderEditor({
       {/* Edit Step Dialog */}
       <StepEditDialog
         step={editingStep}
+        coachingOrgId={coachingOrgId}
         onClose={() => setEditingStep(null)}
         onSave={handleSaveStep}
         isPending={mutations.updateStep.isPending}
@@ -395,22 +413,23 @@ export function WorkflowBuilderEditor({
 
 interface StepEditDialogProps {
   step: OrgWorkflowStep | null;
+  coachingOrgId: string;
   onClose: () => void;
   onSave: (updates: {
     title?: string;
     description?: string | null;
-    attached_form_template_key?: string | null;
+    attached_form_base_key?: string | null;
     default_assignee?: "coach" | "manager" | "member" | "member_admin" | "member_user" | "org_admin" | "unassigned";
     due_offset_days?: number | null;
   }) => void;
   isPending: boolean;
 }
 
-function StepEditDialog({ step, onClose, onSave, isPending }: StepEditDialogProps) {
+function StepEditDialog({ step, coachingOrgId, onClose, onSave, isPending }: StepEditDialogProps) {
   const [title, setTitle] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [assignee, setAssignee] = React.useState("unassigned");
-  const [formKey, setFormKey] = React.useState("");
+  const [formBaseKey, setFormBaseKey] = React.useState<string | null>(null);
   const [dueOffset, setDueOffset] = React.useState("");
   
   React.useEffect(() => {
@@ -418,7 +437,7 @@ function StepEditDialog({ step, onClose, onSave, isPending }: StepEditDialogProp
       setTitle(step.title);
       setDescription(step.description || "");
       setAssignee(step.default_assignee);
-      setFormKey(step.attached_form_template_key || "");
+      setFormBaseKey(getStepBaseKey(step));
       setDueOffset(step.due_offset_days?.toString() || "");
     }
   }, [step]);
@@ -429,7 +448,7 @@ function StepEditDialog({ step, onClose, onSave, isPending }: StepEditDialogProp
       title,
       description: description || null,
       default_assignee: validAssignee,
-      attached_form_template_key: formKey || null,
+      attached_form_base_key: formBaseKey,
       due_offset_days: dueOffset ? parseInt(dueOffset) : null,
     });
   };
@@ -484,12 +503,12 @@ function StepEditDialog({ step, onClose, onSave, isPending }: StepEditDialogProp
           
           {step?.step_type === "form" && (
             <div className="space-y-2">
-              <Label htmlFor="formKey">Attached Form Template Key</Label>
-              <Input
-                id="formKey"
-                value={formKey}
-                onChange={(e) => setFormKey(e.target.value)}
-                placeholder="e.g., generic_member_covenant"
+              <Label>Attached Form (Base Key)</Label>
+              <FormBaseKeySelector
+                value={formBaseKey}
+                onChange={setFormBaseKey}
+                coachingOrgId={coachingOrgId}
+                placeholder="Select a form..."
               />
             </div>
           )}

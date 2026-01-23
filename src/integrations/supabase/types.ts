@@ -2630,6 +2630,7 @@ export type Database = {
       }
       coaching_org_workflow_steps: {
         Row: {
+          attached_form_base_key: string | null
           attached_form_template_key: string | null
           cadence_days: number | null
           created_at: string
@@ -2647,6 +2648,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          attached_form_base_key?: string | null
           attached_form_template_key?: string | null
           cadence_days?: number | null
           created_at?: string
@@ -2664,6 +2666,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          attached_form_base_key?: string | null
           attached_form_template_key?: string | null
           cadence_days?: number | null
           created_at?: string
@@ -2996,6 +2999,7 @@ export type Database = {
       }
       coaching_program_pack_workflow_steps: {
         Row: {
+          attached_form_base_key: string | null
           created_at: string
           default_assignee:
             | Database["public"]["Enums"]["workflow_default_assignee"]
@@ -3011,6 +3015,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          attached_form_base_key?: string | null
           created_at?: string
           default_assignee?:
             | Database["public"]["Enums"]["workflow_default_assignee"]
@@ -3026,6 +3031,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          attached_form_base_key?: string | null
           created_at?: string
           default_assignee?:
             | Database["public"]["Enums"]["workflow_default_assignee"]
@@ -12335,13 +12341,16 @@ export type Database = {
       }
       wf_forms: {
         Row: {
+          base_key: string | null
           company_id: string | null
           created_at: string
           created_by: string | null
           description: string | null
           group_id: string | null
           id: string
+          is_active: boolean | null
           language_code: string | null
+          program_key: string | null
           published_at: string | null
           published_by: string | null
           scope_type: Database["public"]["Enums"]["wf_scope_type"]
@@ -12351,15 +12360,19 @@ export type Database = {
           template_key: string | null
           title: string
           updated_at: string
+          version: string | null
         }
         Insert: {
+          base_key?: string | null
           company_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           group_id?: string | null
           id?: string
+          is_active?: boolean | null
           language_code?: string | null
+          program_key?: string | null
           published_at?: string | null
           published_by?: string | null
           scope_type?: Database["public"]["Enums"]["wf_scope_type"]
@@ -12369,15 +12382,19 @@ export type Database = {
           template_key?: string | null
           title: string
           updated_at?: string
+          version?: string | null
         }
         Update: {
+          base_key?: string | null
           company_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           group_id?: string | null
           id?: string
+          is_active?: boolean | null
           language_code?: string | null
+          program_key?: string | null
           published_at?: string | null
           published_by?: string | null
           scope_type?: Database["public"]["Enums"]["wf_scope_type"]
@@ -12387,6 +12404,7 @@ export type Database = {
           template_key?: string | null
           title?: string
           updated_at?: string
+          version?: string | null
         }
         Relationships: [
           {
