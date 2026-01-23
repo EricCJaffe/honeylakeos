@@ -123,6 +123,8 @@ import DepartmentsPage from "@/pages/app/departments/DepartmentsPage";
 import DepartmentDetailPage from "@/pages/app/departments/DepartmentDetailPage";
 import CoachingInspectorPage from "@/pages/app/admin/CoachingInspectorPage";
 import OrgAdminDashboard from "@/pages/app/coaching/OrgAdminDashboard";
+import OrgSettingsPage from "@/pages/app/coaching/OrgSettingsPage";
+import WorkflowBuilderPage from "@/pages/app/coaching/WorkflowBuilderPage";
 import ManagerDashboard from "@/pages/app/coaching/ManagerDashboard";
 import MemberDashboard from "@/pages/app/coaching/MemberDashboard";
 import TemplateFormPage from "@/pages/app/forms/TemplateFormPage";
@@ -235,6 +237,9 @@ function App() {
                     <Route path="coaching/playbooks" element={<PlaybooksPage />} />
                     <Route path="coaching/requests" element={<CoachRequestsInbox />} />
                     <Route path="coaching/org" element={<OrgAdminDashboard />} />
+                    <Route path="coaching/org/settings" element={<OrgSettingsPage />} />
+                    <Route path="coaching/org/workflows" element={<WorkflowBuilderPage />} />
+                    <Route path="coaching/org/workflows/:workflowId" element={<WorkflowBuilderPage />} />
                     <Route path="coaching/manager" element={<ManagerDashboard />} />
                     <Route path="coaching/member" element={<MemberDashboard />} />
                     <Route path="support/kb" element={<KnowledgeBasePage />} />
