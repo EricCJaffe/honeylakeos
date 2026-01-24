@@ -55,6 +55,7 @@ interface Note {
   project_id: string | null;
   access_level: string;
   is_pinned: boolean;
+  pinned_at: string | null;
   color: string | null;
   status: string;
   created_by: string | null;
@@ -255,12 +256,20 @@ export default function NotesPage() {
     mutationFn: async ({ noteId, isPinned }: { noteId: string; isPinned: boolean }) => {
       const { error } = await supabase
         .from("notes")
-        .update({ is_pinned: !isPinned })
+        .update({ 
+          is_pinned: !isPinned,
+          pinned_at: !isPinned ? new Date().toISOString() : null
+        })
         .eq("id", noteId);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, { isPinned }) => {
       queryClient.invalidateQueries({ queryKey: ["notes"] });
+      queryClient.invalidateQueries({ queryKey: ["recent-notes"] });
+      toast.success(isPinned ? "Note unpinned" : "Note pinned");
+    },
+    onError: () => {
+      toast.error("Failed to update note");
     },
   });
 
@@ -543,8 +552,16 @@ export default function NotesPage() {
                 <span>Select all</span>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {filteredNotes.map((note, index) => {
+              {/* Separate pinned and unpinned notes */}
+              {(() => {
+                const pinnedNotes = filteredNotes.filter(n => n.is_pinned).sort((a, b) => {
+                  const aTime = a.pinned_at ? new Date(a.pinned_at).getTime() : 0;
+                  const bTime = b.pinned_at ? new Date(b.pinned_at).getTime() : 0;
+                  return bTime - aTime;
+                });
+                const unpinnedNotes = filteredNotes.filter(n => !n.is_pinned);
+                
+                const renderNoteCard = (note: Note, index: number) => {
                   const isSelected = selectedIds.has(note.id);
                   const showFolderPath = searchAllFolders && note.folder_id;
                   
@@ -577,7 +594,7 @@ export default function NotesPage() {
                             <div className="flex items-start justify-between">
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
-                                  {note.is_pinned && <Pin className="h-3 w-3 text-primary" />}
+                                  {note.is_pinned && <Pin className="h-3 w-3 text-primary fill-primary" />}
                                   <CardTitle className="text-sm truncate">{note.title}</CardTitle>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -614,8 +631,8 @@ export default function NotesPage() {
                                           togglePin.mutate({ noteId: note.id, isPinned: note.is_pinned });
                                         }}
                                       >
-                                        <Pin className="h-4 w-4 mr-2" />
-                                        {note.is_pinned ? "Unpin" : "Pin"}
+                                        <Pin className={cn("h-4 w-4 mr-2", note.is_pinned && "fill-current")} />
+                                        {note.is_pinned ? "Unpin" : "Pin to top"}
                                       </DropdownMenuItem>
                                     )}
                                     <DropdownMenuItem
@@ -688,8 +705,36 @@ export default function NotesPage() {
                       </Card>
                     </motion.div>
                   );
-                })}
-              </div>
+                };
+
+                return (
+                  <div className="space-y-6">
+                    {pinnedNotes.length > 0 && (
+                      <div>
+                        <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+                          <Pin className="h-3 w-3" />
+                          Pinned ({pinnedNotes.length})
+                        </h3>
+                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                          {pinnedNotes.map((note, index) => renderNoteCard(note, index))}
+                        </div>
+                      </div>
+                    )}
+                    {unpinnedNotes.length > 0 && (
+                      <div>
+                        {pinnedNotes.length > 0 && (
+                          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+                            All Notes ({unpinnedNotes.length})
+                          </h3>
+                        )}
+                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                          {unpinnedNotes.map((note, index) => renderNoteCard(note, pinnedNotes.length + index))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </>
           )}
         </div>

@@ -93,6 +93,8 @@ export default function TasksPage() {
         .eq("company_id", activeCompanyId)
         .eq("is_recurring_template", false)
         .is("parent_recurring_task_id", null)
+        .order("is_pinned", { ascending: false })
+        .order("pinned_at", { ascending: false, nullsFirst: false })
         .order("order_index", { ascending: true });
       if (projectFilter !== "all") query = query.eq("project_id", projectFilter);
       if (phaseFilter !== "all") query = query.eq("phase_id", phaseFilter);
@@ -120,6 +122,8 @@ export default function TasksPage() {
         .select(`*, task_assignees(user_id), project:projects(id, name, emoji), phase:project_phases(id, name), task_list:task_lists(id, name, color)`)
         .in("id", taskIds)
         .eq("company_id", activeCompanyId)
+        .order("is_pinned", { ascending: false })
+        .order("pinned_at", { ascending: false, nullsFirst: false })
         .order("due_date", { ascending: true, nullsFirst: false });
       if (projectFilter !== "all") query = query.eq("project_id", projectFilter);
       if (phaseFilter !== "all") query = query.eq("phase_id", phaseFilter);
@@ -144,6 +148,8 @@ export default function TasksPage() {
         .select(`*, task_assignees(user_id), project:projects(id, name, emoji), phase:project_phases(id, name), task_list:task_lists(id, name, color)`)
         .eq("company_id", activeCompanyId)
         .eq("is_recurring_template", true)
+        .order("is_pinned", { ascending: false })
+        .order("pinned_at", { ascending: false, nullsFirst: false })
         .order("created_at", { ascending: false });
       if (projectFilter !== "all") query = query.eq("project_id", projectFilter);
       if (phaseFilter !== "all") query = query.eq("phase_id", phaseFilter);

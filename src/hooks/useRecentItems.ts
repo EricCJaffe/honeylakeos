@@ -19,6 +19,8 @@ export interface RecentNote {
   id: string;
   title: string;
   folder_id: string | null;
+  is_pinned?: boolean;
+  pinned_at?: string | null;
   created_at: string;
   updated_at: string;
 }

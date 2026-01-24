@@ -8885,6 +8885,7 @@ export type Database = {
           id: string
           is_pinned: boolean
           is_sample: boolean
+          pinned_at: string | null
           project_id: string | null
           sample_batch_id: string | null
           status: string
@@ -8905,6 +8906,7 @@ export type Database = {
           id?: string
           is_pinned?: boolean
           is_sample?: boolean
+          pinned_at?: string | null
           project_id?: string | null
           sample_batch_id?: string | null
           status?: string
@@ -8925,6 +8927,7 @@ export type Database = {
           id?: string
           is_pinned?: boolean
           is_sample?: boolean
+          pinned_at?: string | null
           project_id?: string | null
           sample_batch_id?: string | null
           status?: string
@@ -11835,6 +11838,7 @@ export type Database = {
           due_date: string | null
           estimated_time: number | null
           id: string
+          is_pinned: boolean
           is_recurrence_exception: boolean | null
           is_recurring_template: boolean
           is_sample: boolean
@@ -11847,6 +11851,7 @@ export type Database = {
           parent_recurring_task_id: string | null
           phase: string | null
           phase_id: string | null
+          pinned_at: string | null
           priority: string
           project_id: string | null
           recurrence_count: number | null
@@ -11877,6 +11882,7 @@ export type Database = {
           due_date?: string | null
           estimated_time?: number | null
           id?: string
+          is_pinned?: boolean
           is_recurrence_exception?: boolean | null
           is_recurring_template?: boolean
           is_sample?: boolean
@@ -11889,6 +11895,7 @@ export type Database = {
           parent_recurring_task_id?: string | null
           phase?: string | null
           phase_id?: string | null
+          pinned_at?: string | null
           priority?: string
           project_id?: string | null
           recurrence_count?: number | null
@@ -11919,6 +11926,7 @@ export type Database = {
           due_date?: string | null
           estimated_time?: number | null
           id?: string
+          is_pinned?: boolean
           is_recurrence_exception?: boolean | null
           is_recurring_template?: boolean
           is_sample?: boolean
@@ -11931,6 +11939,7 @@ export type Database = {
           parent_recurring_task_id?: string | null
           phase?: string | null
           phase_id?: string | null
+          pinned_at?: string | null
           priority?: string
           project_id?: string | null
           recurrence_count?: number | null

@@ -27,6 +27,8 @@ export function DepartmentNotesTab({ departmentId }: DepartmentNotesTabProps) {
         .from("notes")
         .select("*")
         .eq("department_id", departmentId)
+        .order("is_pinned", { ascending: false })
+        .order("pinned_at", { ascending: false, nullsFirst: false })
         .order("updated_at", { ascending: false });
 
       if (error) throw error;

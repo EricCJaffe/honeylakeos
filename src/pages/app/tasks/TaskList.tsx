@@ -15,7 +15,8 @@ import {
   RotateCcw,
   AlertCircle,
   Clock,
-  Ban
+  Ban,
+  Pin
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -142,6 +143,29 @@ export function TaskList({
     },
   });
 
+  const togglePin = useMutation({
+    mutationFn: async ({ taskId, isPinned }: { taskId: string; isPinned: boolean }) => {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ 
+          is_pinned: !isPinned,
+          pinned_at: !isPinned ? new Date().toISOString() : null
+        })
+        .eq("id", taskId);
+      if (error) throw error;
+    },
+    onSuccess: (_, { isPinned }) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["project-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["recurring-tasks"] });
+      toast.success(isPinned ? "Task unpinned" : "Task pinned");
+    },
+    onError: () => {
+      toast.error("Failed to update task");
+    },
+  });
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "urgent":
@@ -207,12 +231,21 @@ export function TaskList({
     );
   }
 
-  // Group tasks by status
-  const todoTasks = tasks.filter((t) => t.status === "to_do");
-  const inProgressTasks = tasks.filter((t) => t.status === "in_progress");
-  const blockedTasks = tasks.filter((t) => t.status === "blocked");
-  const doneTasks = tasks.filter((t) => t.status === "done");
-  const archivedTasks = tasks.filter((t) => t.status === "archived");
+  // Separate pinned tasks from the rest
+  const pinnedTasks = tasks.filter((t) => t.is_pinned).sort((a, b) => {
+    // Sort by pinned_at desc (most recently pinned first)
+    const aTime = a.pinned_at ? new Date(a.pinned_at).getTime() : 0;
+    const bTime = b.pinned_at ? new Date(b.pinned_at).getTime() : 0;
+    return bTime - aTime;
+  });
+  const unpinnedTasks = tasks.filter((t) => !t.is_pinned);
+
+  // Group unpinned tasks by status
+  const todoTasks = unpinnedTasks.filter((t) => t.status === "to_do");
+  const inProgressTasks = unpinnedTasks.filter((t) => t.status === "in_progress");
+  const blockedTasks = unpinnedTasks.filter((t) => t.status === "blocked");
+  const doneTasks = unpinnedTasks.filter((t) => t.status === "done");
+  const archivedTasks = unpinnedTasks.filter((t) => t.status === "archived");
 
   // Status icon helper
   const getStatusIcon = (status: string) => {
@@ -274,6 +307,9 @@ export function TaskList({
                     >
                       {task.title}
                     </span>
+                    {task.is_pinned && (
+                      <Pin className="h-3.5 w-3.5 text-primary fill-primary" />
+                    )}
                     {task.is_recurring_template && (
                       <Repeat className="h-3.5 w-3.5 text-muted-foreground" />
                     )}
@@ -349,6 +385,13 @@ export function TaskList({
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={(e) => {
                         e.stopPropagation();
+                        togglePin.mutate({ taskId: task.id, isPinned: task.is_pinned });
+                      }}>
+                        <Pin className={cn("h-4 w-4 mr-2", task.is_pinned && "fill-current")} />
+                        {task.is_pinned ? "Unpin" : "Pin to top"}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => {
+                        e.stopPropagation();
                         onEditTask(task);
                       }}>
                         <Pencil className="h-4 w-4 mr-2" />
@@ -396,6 +439,7 @@ export function TaskList({
 
   return (
     <div>
+      {pinnedTasks.length > 0 && renderTaskGroup(pinnedTasks, "Pinned")}
       {renderTaskGroup(todoTasks, "To Do")}
       {renderTaskGroup(inProgressTasks, "In Progress")}
       {renderTaskGroup(blockedTasks, "Blocked")}

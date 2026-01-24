@@ -108,6 +108,8 @@ export default function ProjectDetailPage() {
         .from("tasks")
         .select("*, task_assignees(user_id)")
         .eq("project_id", projectId)
+        .order("is_pinned", { ascending: false })
+        .order("pinned_at", { ascending: false, nullsFirst: false })
         .order("order_index", { ascending: true });
 
       if (error) throw error;
