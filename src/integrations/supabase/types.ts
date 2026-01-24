@@ -16,27 +16,51 @@ export type Database = {
     Tables: {
       companies: {
         Row: {
+          company_type: string | null
           created_at: string
+          created_by: string | null
+          created_by_coaching_org_id: string | null
           description: string | null
+          finance_mode: string | null
           id: string
           logo_url: string | null
           name: string
+          onboarding_source: string | null
+          primary_color: string | null
+          site_id: string | null
+          status: string | null
           updated_at: string
         }
         Insert: {
+          company_type?: string | null
           created_at?: string
+          created_by?: string | null
+          created_by_coaching_org_id?: string | null
           description?: string | null
+          finance_mode?: string | null
           id?: string
           logo_url?: string | null
           name: string
+          onboarding_source?: string | null
+          primary_color?: string | null
+          site_id?: string | null
+          status?: string | null
           updated_at?: string
         }
         Update: {
+          company_type?: string | null
           created_at?: string
+          created_by?: string | null
+          created_by_coaching_org_id?: string | null
           description?: string | null
+          finance_mode?: string | null
           id?: string
           logo_url?: string | null
           name?: string
+          onboarding_source?: string | null
+          primary_color?: string | null
+          site_id?: string | null
+          status?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -46,6 +70,7 @@ export type Database = {
           address: string | null
           company_id: string
           created_at: string
+          created_by: string | null
           email: string | null
           id: string
           name: string
@@ -53,11 +78,13 @@ export type Database = {
           phone: string | null
           status: string | null
           updated_at: string
+          website: string | null
         }
         Insert: {
           address?: string | null
           company_id: string
           created_at?: string
+          created_by?: string | null
           email?: string | null
           id?: string
           name: string
@@ -65,11 +92,13 @@ export type Database = {
           phone?: string | null
           status?: string | null
           updated_at?: string
+          website?: string | null
         }
         Update: {
           address?: string | null
           company_id?: string
           created_at?: string
+          created_by?: string | null
           email?: string | null
           id?: string
           name?: string
@@ -77,6 +106,7 @@ export type Database = {
           phone?: string | null
           status?: string | null
           updated_at?: string
+          website?: string | null
         }
         Relationships: [
           {
@@ -88,32 +118,131 @@ export type Database = {
           },
         ]
       }
+      crm_clients_import: {
+        Row: {
+          archived_at: string | null
+          company_id: string | null
+          created_at: string | null
+          created_by: string | null
+          entity_kind: string | null
+          external_contact_id: string | null
+          id: string | null
+          is_active: string | null
+          is_sample: string | null
+          lifecycle_status: string | null
+          notes: string | null
+          org_email: string | null
+          org_name: string | null
+          org_phone: string | null
+          org_website: string | null
+          person_email: string | null
+          person_full_name: string | null
+          person_phone: string | null
+          primary_contact_id: string | null
+          sample_batch_id: string | null
+          status: string | null
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          entity_kind?: string | null
+          external_contact_id?: string | null
+          id?: string | null
+          is_active?: string | null
+          is_sample?: string | null
+          lifecycle_status?: string | null
+          notes?: string | null
+          org_email?: string | null
+          org_name?: string | null
+          org_phone?: string | null
+          org_website?: string | null
+          person_email?: string | null
+          person_full_name?: string | null
+          person_phone?: string | null
+          primary_contact_id?: string | null
+          sample_batch_id?: string | null
+          status?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          entity_kind?: string | null
+          external_contact_id?: string | null
+          id?: string | null
+          is_active?: string | null
+          is_sample?: string | null
+          lifecycle_status?: string | null
+          notes?: string | null
+          org_email?: string | null
+          org_name?: string | null
+          org_phone?: string | null
+          org_website?: string | null
+          person_email?: string | null
+          person_full_name?: string | null
+          person_phone?: string | null
+          primary_contact_id?: string | null
+          sample_batch_id?: string | null
+          status?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       folders: {
         Row: {
+          access_level: string | null
+          archived_at: string | null
           company_id: string
           created_at: string
+          created_by: string | null
           description: string | null
           id: string
           name: string
+          owner_user_id: string | null
+          parent_folder_id: string | null
           parent_id: string | null
+          scope: string | null
+          sort_order: number | null
           updated_at: string
         }
         Insert: {
+          access_level?: string | null
+          archived_at?: string | null
           company_id: string
           created_at?: string
+          created_by?: string | null
           description?: string | null
           id?: string
           name: string
+          owner_user_id?: string | null
+          parent_folder_id?: string | null
           parent_id?: string | null
+          scope?: string | null
+          sort_order?: number | null
           updated_at?: string
         }
         Update: {
+          access_level?: string | null
+          archived_at?: string | null
           company_id?: string
           created_at?: string
+          created_by?: string | null
           description?: string | null
           id?: string
           name?: string
+          owner_user_id?: string | null
+          parent_folder_id?: string | null
           parent_id?: string | null
+          scope?: string | null
+          sort_order?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -133,28 +262,88 @@ export type Database = {
           },
         ]
       }
+      folders_import: {
+        Row: {
+          access_level: string | null
+          archived_at: string | null
+          company_id: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string | null
+          name: string | null
+          owner_user_id: string | null
+          parent_folder_id: string | null
+          scope: string | null
+          sort_order: string | null
+        }
+        Insert: {
+          access_level?: string | null
+          archived_at?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string | null
+          name?: string | null
+          owner_user_id?: string | null
+          parent_folder_id?: string | null
+          scope?: string | null
+          sort_order?: string | null
+        }
+        Update: {
+          access_level?: string | null
+          archived_at?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string | null
+          name?: string | null
+          owner_user_id?: string | null
+          parent_folder_id?: string | null
+          scope?: string | null
+          sort_order?: string | null
+        }
+        Relationships: []
+      }
       memberships: {
         Row: {
+          can_access_finance: boolean | null
           company_id: string
           created_at: string
+          default_location_id: string | null
+          employee_id: string | null
+          expires_at: string | null
           id: string
+          member_type: string | null
           role: Database["public"]["Enums"]["app_role"]
+          status: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          can_access_finance?: boolean | null
           company_id: string
           created_at?: string
+          default_location_id?: string | null
+          employee_id?: string | null
+          expires_at?: string | null
           id?: string
+          member_type?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          status?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          can_access_finance?: boolean | null
           company_id?: string
           created_at?: string
+          default_location_id?: string | null
+          employee_id?: string | null
+          expires_at?: string | null
           id?: string
+          member_type?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          status?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -167,6 +356,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      memberships_import: {
+        Row: {
+          can_access_finance: string | null
+          company_id: string | null
+          created_at: string | null
+          default_location_id: string | null
+          employee_id: string | null
+          expires_at: string | null
+          id: string | null
+          member_type: string | null
+          role: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          can_access_finance?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          default_location_id?: string | null
+          employee_id?: string | null
+          expires_at?: string | null
+          id?: string | null
+          member_type?: string | null
+          role?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          can_access_finance?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          default_location_id?: string | null
+          employee_id?: string | null
+          expires_at?: string | null
+          id?: string | null
+          member_type?: string | null
+          role?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       notes: {
         Row: {
@@ -226,6 +457,75 @@ export type Database = {
           },
         ]
       }
+      notes_import: {
+        Row: {
+          access_level: string | null
+          coaching_engagement_id: string | null
+          color: string | null
+          company_id: string | null
+          content: string | null
+          created_at: string | null
+          created_by: string | null
+          department_id: string | null
+          folder_id: string | null
+          id: string | null
+          is_pinned: string | null
+          is_sample: string | null
+          owner_user_id: string | null
+          pinned_at: string | null
+          project_id: string | null
+          sample_batch_id: string | null
+          status: string | null
+          tags: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          access_level?: string | null
+          coaching_engagement_id?: string | null
+          color?: string | null
+          company_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          department_id?: string | null
+          folder_id?: string | null
+          id?: string | null
+          is_pinned?: string | null
+          is_sample?: string | null
+          owner_user_id?: string | null
+          pinned_at?: string | null
+          project_id?: string | null
+          sample_batch_id?: string | null
+          status?: string | null
+          tags?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          access_level?: string | null
+          coaching_engagement_id?: string | null
+          color?: string | null
+          company_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          department_id?: string | null
+          folder_id?: string | null
+          id?: string | null
+          is_pinned?: string | null
+          is_sample?: string | null
+          owner_user_id?: string | null
+          pinned_at?: string | null
+          project_id?: string | null
+          sample_batch_id?: string | null
+          status?: string | null
+          tags?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       projects: {
         Row: {
           company_id: string
@@ -279,6 +579,84 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      projects_import: {
+        Row: {
+          coaching_engagement_id: string | null
+          color: string | null
+          company_id: string | null
+          created_at: string | null
+          created_by: string | null
+          deleted_at: string | null
+          deleted_by: string | null
+          department_id: string | null
+          description: string | null
+          due_date: string | null
+          emoji: string | null
+          id: string | null
+          is_sample: string | null
+          is_template: string | null
+          name: string | null
+          owner_user_id: string | null
+          phases: string | null
+          progress: string | null
+          sample_batch_id: string | null
+          settings: string | null
+          start_date: string | null
+          status: string | null
+          template_category: string | null
+        }
+        Insert: {
+          coaching_engagement_id?: string | null
+          color?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          emoji?: string | null
+          id?: string | null
+          is_sample?: string | null
+          is_template?: string | null
+          name?: string | null
+          owner_user_id?: string | null
+          phases?: string | null
+          progress?: string | null
+          sample_batch_id?: string | null
+          settings?: string | null
+          start_date?: string | null
+          status?: string | null
+          template_category?: string | null
+        }
+        Update: {
+          coaching_engagement_id?: string | null
+          color?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          emoji?: string | null
+          id?: string | null
+          is_sample?: string | null
+          is_template?: string | null
+          name?: string | null
+          owner_user_id?: string | null
+          phases?: string | null
+          progress?: string | null
+          sample_batch_id?: string | null
+          settings?: string | null
+          start_date?: string | null
+          status?: string | null
+          template_category?: string | null
+        }
+        Relationships: []
       }
       tasks: {
         Row: {
@@ -340,6 +718,144 @@ export type Database = {
           },
         ]
       }
+      tasks_import: {
+        Row: {
+          assigned_by: string | null
+          attachments: string | null
+          category: string | null
+          coaching_engagement_id: string | null
+          coaching_workflow_template_id: string | null
+          company_id: string | null
+          created_at: string | null
+          created_by: string | null
+          custom_fields: string | null
+          department_id: string | null
+          description: string | null
+          due_date: string | null
+          estimated_time: string | null
+          id: string | null
+          is_pinned: string | null
+          is_recurrence_exception: string | null
+          is_recurring_template: string | null
+          is_sample: string | null
+          is_virtual_instance: string | null
+          last_generated_date: string | null
+          linked_note_id: string | null
+          list_id: string | null
+          notes: string | null
+          order_index: string | null
+          owner_user_id: string | null
+          parent_recurring_task_id: string | null
+          phase: string | null
+          phase_id: string | null
+          pinned_at: string | null
+          priority: string | null
+          project_id: string | null
+          recurrence_count: string | null
+          recurrence_end_at: string | null
+          recurrence_exceptions: string | null
+          recurrence_instance_date: string | null
+          recurrence_rules: string | null
+          recurrence_start_at: string | null
+          recurrence_timezone: string | null
+          sample_batch_id: string | null
+          status: string | null
+          subtasks: string | null
+          tags: string | null
+          title: string | null
+        }
+        Insert: {
+          assigned_by?: string | null
+          attachments?: string | null
+          category?: string | null
+          coaching_engagement_id?: string | null
+          coaching_workflow_template_id?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          custom_fields?: string | null
+          department_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          estimated_time?: string | null
+          id?: string | null
+          is_pinned?: string | null
+          is_recurrence_exception?: string | null
+          is_recurring_template?: string | null
+          is_sample?: string | null
+          is_virtual_instance?: string | null
+          last_generated_date?: string | null
+          linked_note_id?: string | null
+          list_id?: string | null
+          notes?: string | null
+          order_index?: string | null
+          owner_user_id?: string | null
+          parent_recurring_task_id?: string | null
+          phase?: string | null
+          phase_id?: string | null
+          pinned_at?: string | null
+          priority?: string | null
+          project_id?: string | null
+          recurrence_count?: string | null
+          recurrence_end_at?: string | null
+          recurrence_exceptions?: string | null
+          recurrence_instance_date?: string | null
+          recurrence_rules?: string | null
+          recurrence_start_at?: string | null
+          recurrence_timezone?: string | null
+          sample_batch_id?: string | null
+          status?: string | null
+          subtasks?: string | null
+          tags?: string | null
+          title?: string | null
+        }
+        Update: {
+          assigned_by?: string | null
+          attachments?: string | null
+          category?: string | null
+          coaching_engagement_id?: string | null
+          coaching_workflow_template_id?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          custom_fields?: string | null
+          department_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          estimated_time?: string | null
+          id?: string | null
+          is_pinned?: string | null
+          is_recurrence_exception?: string | null
+          is_recurring_template?: string | null
+          is_sample?: string | null
+          is_virtual_instance?: string | null
+          last_generated_date?: string | null
+          linked_note_id?: string | null
+          list_id?: string | null
+          notes?: string | null
+          order_index?: string | null
+          owner_user_id?: string | null
+          parent_recurring_task_id?: string | null
+          phase?: string | null
+          phase_id?: string | null
+          pinned_at?: string | null
+          priority?: string | null
+          project_id?: string | null
+          recurrence_count?: string | null
+          recurrence_end_at?: string | null
+          recurrence_exceptions?: string | null
+          recurrence_instance_date?: string | null
+          recurrence_rules?: string | null
+          recurrence_start_at?: string | null
+          recurrence_timezone?: string | null
+          sample_batch_id?: string | null
+          status?: string | null
+          subtasks?: string | null
+          tags?: string | null
+          title?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -360,7 +876,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "member" | "viewer"
+      app_role: "admin" | "member" | "viewer" | "Company_Admin"
       task_priority: "low" | "medium" | "high" | "urgent"
       task_status: "todo" | "in_progress" | "completed" | "cancelled"
     }
@@ -490,7 +1006,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "member", "viewer"],
+      app_role: ["admin", "member", "viewer", "Company_Admin"],
       task_priority: ["low", "medium", "high", "urgent"],
       task_status: ["todo", "in_progress", "completed", "cancelled"],
     },
