@@ -1,0 +1,260 @@
+import { Link } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CoachingDashboardLayout } from "@/components/coaching/CoachingDashboardLayout";
+import { CoachingAccessGuard } from "@/components/coaching/CoachingAccessGuard";
+import { DashboardWidgetGrid } from "@/components/coaching/DashboardWidgetGrid";
+import { useActiveCoachingOrg } from "@/hooks/useActiveCoachingOrg";
+import { useCoachingOrgEngagements } from "@/hooks/useCoachingData";
+import { useCoachingTerminology } from "@/hooks/useCoachingTerminology";
+import { useCoachClients } from "@/hooks/useCoachOrganizations";
+import { useCoachingDashboard, DashboardWidget } from "@/hooks/useCoachingDashboard";
+import { 
+  Users, 
+  Building2, 
+  Calendar,
+  Target,
+  ArrowRight,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
+} from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+
+function CoachDashboardContent() {
+  const { activeCoachingOrgId, activeOrg, isLoading: orgLoading } = useActiveCoachingOrg();
+  const { data: engagements, isLoading: engagementsLoading } = useCoachingOrgEngagements(activeCoachingOrgId);
+  const { getTerm, isLoading: termsLoading } = useCoachingTerminology(activeCoachingOrgId);
+  const { data: clients = [], isLoading: clientsLoading } = useCoachClients();
+  const { data: dashboard, isLoading: dashboardLoading } = useCoachingDashboard("coach");
+
+  const isLoading = orgLoading || termsLoading || dashboardLoading;
+
+  // Get assigned clients
+  const activeEngagements = engagements?.filter((e) => e.status === "active") || [];
+  const pendingEngagements = engagements?.filter((e) => 
+    (e.status as string) === "pending_acceptance" || e.status === "suspended"
+  ) || [];
+
+  // Calculate stats
+  const totalClients = clients.length + activeEngagements.length;
+  const needsAttention = activeEngagements.filter(
+    (e) => e.onboarding?.[0]?.status === "pending"
+  ).length;
+
+  // Custom renderer for widgets with live data
+  const renderWidget = (widget: DashboardWidget): React.ReactNode | null => {
+    switch (widget.widgetKey) {
+      case "upcoming_meetings":
+        return (
+          <div className="flex items-center justify-between">
+            <span className="text-2xl font-bold text-muted-foreground">—</span>
+            <Badge variant="secondary">Coming Soon</Badge>
+          </div>
+        );
+      case "client_goals":
+        return (
+          <div className="flex items-center justify-between">
+            <span className="text-2xl font-bold text-muted-foreground">—</span>
+            <Badge variant="secondary">Coming Soon</Badge>
+          </div>
+        );
+      case "prep_required":
+        return (
+          <div className="flex items-center justify-between">
+            <span className="text-2xl font-bold text-muted-foreground">—</span>
+            <Badge variant="secondary">Coming Soon</Badge>
+          </div>
+        );
+      case "active_plans":
+        return (
+          <div className="flex items-center justify-between">
+            <span className="text-2xl font-bold text-muted-foreground">—</span>
+            <Badge variant="secondary">Coming Soon</Badge>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <CoachingDashboardLayout
+      title="Coach Dashboard"
+      description={`Manage your ${getTerm("member_label")} relationships`}
+      isLoading={isLoading}
+    >
+      {/* Dashboard Widgets from DB */}
+      <DashboardWidgetGrid 
+        widgets={dashboard?.widgets || []} 
+        isLoading={dashboardLoading}
+        renderWidget={renderWidget}
+        programKey={activeOrg?.programKey}
+      />
+
+      {/* Main Content Grid */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Active Clients */}
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  My {getTerm("member_label")}s
+                </CardTitle>
+                <CardDescription>Organizations you're coaching</CardDescription>
+              </div>
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{totalClients}</span>
+                  <span className="text-muted-foreground">Total</span>
+                </div>
+                {needsAttention > 0 && (
+                  <Badge variant="outline" className="text-destructive">
+                    {needsAttention} needs attention
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {engagementsLoading || clientsLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-16" />
+                ))}
+              </div>
+            ) : activeEngagements.length === 0 && clients.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No assigned {getTerm("member_label")}s yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {/* Show engagements from coaching org */}
+                {activeEngagements.slice(0, 5).map((engagement) => (
+                  <div
+                    key={engagement.id}
+                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Building2 className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{engagement.member_company?.name}</p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          <span>
+                            Started {formatDistanceToNow(new Date(engagement.linked_at), { addSuffix: true })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {engagement.onboarding?.[0]?.status === "pending" && (
+                        <Badge variant="outline" className="text-amber-600">
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          Onboarding
+                        </Badge>
+                      )}
+                      <Badge variant={engagement.status === "active" ? "default" : "secondary"}>
+                        {engagement.status}
+                      </Badge>
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link to={`/app/coaching/engagements/${engagement.id}`}>
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Show coach_organizations clients */}
+                {clients.slice(0, 5).map((client) => (
+                  <div
+                    key={client.id}
+                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Building2 className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{client.client_company?.name}</p>
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {client.relationship_type}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={client.status === "active" ? "default" : "secondary"}>
+                        {client.status}
+                      </Badge>
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link to={`/app/coaching/clients/${client.client_company_id}`}>
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Upcoming Sessions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Upcoming Sessions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8 text-muted-foreground">
+              <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No upcoming sessions scheduled</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5" />
+              Quick Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Button asChild className="w-full justify-start" variant="outline">
+              <Link to="/app/coaching/requests">
+                <Users className="mr-2 h-4 w-4" />
+                View Requests
+              </Link>
+            </Button>
+            <Button asChild className="w-full justify-start" variant="outline">
+              <Link to="/app/coaching/playbooks">
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Playbooks
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </CoachingDashboardLayout>
+  );
+}
+
+export default function CoachFacilitatorDashboardPage() {
+  return (
+    <CoachingAccessGuard requiredAccess="coach">
+      <CoachDashboardContent />
+    </CoachingAccessGuard>
+  );
+}
