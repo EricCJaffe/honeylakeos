@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CoachingAccessGuard } from "@/components/coaching/CoachingAccessGuard";
+import { CoachingDashboardLayout } from "@/components/coaching/CoachingDashboardLayout";
 import { 
   useCoachingOrgs, 
   useCoachingManagers, 
@@ -45,25 +45,23 @@ function OrgAdminDashboardContent() {
     (e) => e.onboarding?.[0]?.status === "pending"
   ) || [];
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-64" />
-        <div className="grid gap-4 md:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-32" />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={`${activeOrg?.name || "Coaching"} Dashboard`}
-        description={`${getTerm("module_label")} Organization Administration`}
-      />
+    <CoachingDashboardLayout
+      title={`${activeOrg?.name || "Coaching Org"} Dashboard`}
+      description={`${getTerm("module_label")} Organization Administration`}
+      programKey={activeOrg?.program_key}
+      programVersion={activeOrg?.program_version}
+      orgName={activeOrg?.name}
+      isLoading={isLoading}
+      headerActions={
+        <Button asChild>
+          <Link to="/app/coaching/org/settings">
+            <Settings className="mr-2 h-4 w-4" />
+            Settings
+          </Link>
+        </Button>
+      }
+    >
 
       {/* Quick Stats */}
       <div className="grid gap-4 md:grid-cols-4">
@@ -384,7 +382,7 @@ function OrgAdminDashboardContent() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </CoachingDashboardLayout>
   );
 }
 
