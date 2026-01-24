@@ -23,7 +23,23 @@ interface FormPreviewPanelProps {
 
 export function FormPreviewPanel({ form, fields, onClose }: FormPreviewPanelProps) {
   const renderField = (field: WfFormField) => {
-    const options = field.options as string[] | null;
+    // Handle options - can be string[], { items: string[] }, or { min, max } for ratings
+    const rawOptions = field.options;
+    let optionsArray: string[] = [];
+    
+    if (Array.isArray(rawOptions)) {
+      optionsArray = rawOptions.filter((opt): opt is string => typeof opt === "string");
+    } else if (rawOptions && typeof rawOptions === "object" && !Array.isArray(rawOptions) && "items" in (rawOptions as object)) {
+      const items = (rawOptions as { items?: unknown }).items;
+      if (Array.isArray(items)) {
+        optionsArray = items.filter((opt): opt is string => typeof opt === "string");
+      }
+    }
+
+    // For ratings, extract min/max
+    const ratingConfig = rawOptions && typeof rawOptions === "object" && "min" in rawOptions
+      ? (rawOptions as { min: number; max: number })
+      : { min: 1, max: 5 };
 
     switch (field.field_type as WfFieldType) {
       case "short_text":
@@ -61,7 +77,7 @@ export function FormPreviewPanel({ form, fields, onClose }: FormPreviewPanelProp
               <SelectValue placeholder="Select an option" />
             </SelectTrigger>
             <SelectContent>
-              {options?.map((option) => (
+              {optionsArray.map((option) => (
                 <SelectItem key={option} value={option}>
                   {option}
                 </SelectItem>
@@ -73,7 +89,7 @@ export function FormPreviewPanel({ form, fields, onClose }: FormPreviewPanelProp
       case "multi_select":
         return (
           <div className="space-y-2">
-            {options?.map((option) => (
+            {optionsArray.map((option) => (
               <div key={option} className="flex items-center gap-2">
                 <Checkbox id={`${field.id}-${option}`} disabled />
                 <Label htmlFor={`${field.id}-${option}`} className="text-muted-foreground">
@@ -111,9 +127,14 @@ export function FormPreviewPanel({ form, fields, onClose }: FormPreviewPanelProp
         );
 
       case "rating":
+        // Generate rating buttons based on min/max config
+        const ratingRange = Array.from(
+          { length: ratingConfig.max - ratingConfig.min + 1 },
+          (_, i) => ratingConfig.min + i
+        );
         return (
-          <div className="flex gap-2">
-            {[1, 2, 3, 4, 5].map((n) => (
+          <div className="flex gap-2 flex-wrap">
+            {ratingRange.map((n) => (
               <Button key={n} type="button" variant="outline" size="sm" disabled>
                 {n}
               </Button>
