@@ -24,7 +24,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 
 function CoachDashboardContent() {
-  const { activeCoachingOrgId, isLoading: orgLoading } = useActiveCoachingOrg();
+  const { activeCoachingOrgId, activeOrg, isLoading: orgLoading } = useActiveCoachingOrg();
   const { data: engagements, isLoading: engagementsLoading } = useCoachingOrgEngagements(activeCoachingOrgId);
   const { getTerm, isLoading: termsLoading } = useCoachingTerminology(activeCoachingOrgId);
   const { data: clients = [], isLoading: clientsLoading } = useCoachClients();
@@ -91,6 +91,7 @@ function CoachDashboardContent() {
         widgets={dashboard?.widgets || []} 
         isLoading={dashboardLoading}
         renderWidget={renderWidget}
+        programKey={activeOrg?.programKey}
       />
 
       {/* Main Content Grid */}

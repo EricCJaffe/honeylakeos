@@ -8,6 +8,8 @@ interface DashboardWidgetGridProps {
   /** Custom renderer for specific widget keys */
   renderWidget?: (widget: DashboardWidget) => React.ReactNode | null;
   columns?: 2 | 3 | 4;
+  /** Program key for program-specific descriptions */
+  programKey?: string | null;
 }
 
 export function DashboardWidgetGrid({ 
@@ -15,6 +17,7 @@ export function DashboardWidgetGrid({
   isLoading,
   renderWidget,
   columns = 4,
+  programKey,
 }: DashboardWidgetGridProps) {
   if (isLoading) {
     return (
@@ -51,7 +54,11 @@ export function DashboardWidgetGrid({
         const customContent = renderWidget?.(widget);
         
         return (
-          <DashboardWidgetCard key={widget.id} widget={widget}>
+          <DashboardWidgetCard 
+            key={widget.id} 
+            widget={widget}
+            programKey={programKey}
+          >
             {customContent}
           </DashboardWidgetCard>
         );

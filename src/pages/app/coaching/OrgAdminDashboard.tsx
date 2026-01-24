@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 
 function OrgAdminDashboardContent() {
-  const { activeCoachingOrgId, isLoading: orgLoading } = useActiveCoachingOrg();
+  const { activeCoachingOrgId, activeOrg, isLoading: orgLoading } = useActiveCoachingOrg();
   const { data: managers } = useCoachingManagers(activeCoachingOrgId);
   const { data: coaches } = useCoachingCoaches(activeCoachingOrgId);
   const { data: engagements, isLoading: engagementsLoading } = useCoachingOrgEngagements(activeCoachingOrgId);
@@ -115,6 +115,7 @@ function OrgAdminDashboardContent() {
         widgets={dashboard?.widgets || []} 
         isLoading={dashboardLoading}
         renderWidget={renderWidget}
+        programKey={activeOrg?.programKey}
       />
 
       {/* Main Content Tabs */}

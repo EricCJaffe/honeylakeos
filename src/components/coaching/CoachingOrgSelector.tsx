@@ -10,6 +10,7 @@ import {
 import { Building2, ChevronDown, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { formatProgramBadge, getFrameworkShortName } from "@/lib/coaching/programFrameworkRegistry";
 
 interface CoachingOrgSelectorProps {
   className?: string;
@@ -36,9 +37,11 @@ export function CoachingOrgSelector({
     return null;
   }
 
-  const programBadgeText = activeOrg.programKey
-    ? `${activeOrg.programKey}${activeOrg.programVersion ? ` v${activeOrg.programVersion}` : ""}`
-    : null;
+  // Use the framework registry for display name
+  const programBadgeText = formatProgramBadge(
+    activeOrg.programKey,
+    activeOrg.programVersion
+  );
 
   // Single org - just display it
   if (!hasMultipleOrgs) {
@@ -48,7 +51,7 @@ export function CoachingOrgSelector({
           <Building2 className="h-4 w-4 text-muted-foreground" />
           <span className="font-medium">{activeOrg.name}</span>
         </div>
-        {showProgramBadge && programBadgeText && (
+        {showProgramBadge && (
           <Badge variant="secondary" className="text-xs">
             {programBadgeText}
           </Badge>
@@ -82,7 +85,7 @@ export function CoachingOrgSelector({
               <div className="flex items-center gap-2 shrink-0">
                 {org.programKey && (
                   <Badge variant="outline" className="text-xs">
-                    {org.programKey}
+                    {getFrameworkShortName(org.programKey)}
                   </Badge>
                 )}
                 {org.id === activeOrg.id && (
@@ -93,7 +96,7 @@ export function CoachingOrgSelector({
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
-      {showProgramBadge && programBadgeText && (
+      {showProgramBadge && (
         <Badge variant="secondary" className="text-xs">
           {programBadgeText}
         </Badge>
