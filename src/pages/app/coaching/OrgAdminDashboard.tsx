@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CoachingAccessGuard } from "@/components/coaching/CoachingAccessGuard";
 import { CoachingDashboardLayout } from "@/components/coaching/CoachingDashboardLayout";
+import { DashboardWidgetGrid } from "@/components/coaching/DashboardWidgetGrid";
 import { 
   useCoachingManagers, 
   useCoachingCoaches,
@@ -14,6 +15,7 @@ import {
 } from "@/hooks/useCoachingData";
 import { useActiveCoachingOrg } from "@/hooks/useActiveCoachingOrg";
 import { useCoachingTerminology } from "@/hooks/useCoachingTerminology";
+import { useCoachingDashboard, DashboardWidget } from "@/hooks/useCoachingDashboard";
 import { 
   Users, 
   Building2, 
@@ -27,20 +29,72 @@ import {
 
 function OrgAdminDashboardContent() {
   const { activeCoachingOrgId, isLoading: orgLoading } = useActiveCoachingOrg();
-  const { data: managers, isLoading: managersLoading } = useCoachingManagers(activeCoachingOrgId);
-  const { data: coaches, isLoading: coachesLoading } = useCoachingCoaches(activeCoachingOrgId);
+  const { data: managers } = useCoachingManagers(activeCoachingOrgId);
+  const { data: coaches } = useCoachingCoaches(activeCoachingOrgId);
   const { data: engagements, isLoading: engagementsLoading } = useCoachingOrgEngagements(activeCoachingOrgId);
   const { getTerm, isLoading: termsLoading } = useCoachingTerminology(activeCoachingOrgId);
+  const { data: dashboard, isLoading: dashboardLoading } = useCoachingDashboard("org_admin");
 
   const [activeTab, setActiveTab] = useState("overview");
 
-  const isLoading = orgLoading || termsLoading;
+  const isLoading = orgLoading || termsLoading || dashboardLoading;
 
-  // Calculate stats
+  // Calculate stats for widget rendering
   const activeEngagements = engagements?.filter((e) => e.status === "active") || [];
   const pendingOnboarding = engagements?.filter(
     (e) => e.onboarding?.[0]?.status === "pending"
   ) || [];
+
+  // Custom renderer for widgets with live data
+  const renderWidget = (widget: DashboardWidget): React.ReactNode | null => {
+    switch (widget.widgetKey) {
+      case "active_engagements":
+        return (
+          <div className="flex items-center justify-between">
+            <span className="text-2xl font-bold">{activeEngagements.length}</span>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/app/coaching/engagements">
+                View All
+                <ArrowRight className="ml-1 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        );
+      case "coach_performance":
+        return (
+          <div className="flex items-center justify-between">
+            <span className="text-2xl font-bold">{coaches?.length || 0}</span>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/app/coaching/org/team">
+                View Team
+                <ArrowRight className="ml-1 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        );
+      case "org_health_trends":
+        return (
+          <div className="flex items-center justify-between">
+            <span className="text-2xl font-bold text-muted-foreground">—</span>
+            <Badge variant="secondary">Coming Soon</Badge>
+          </div>
+        );
+      case "workflow_templates":
+        return (
+          <div className="flex items-center justify-between">
+            <span className="text-2xl font-bold text-muted-foreground">—</span>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/app/coaching/org/workflows">
+                Manage
+                <ArrowRight className="ml-1 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <CoachingDashboardLayout
@@ -56,53 +110,12 @@ function OrgAdminDashboardContent() {
         </Button>
       }
     >
-
-      {/* Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {getTerm("manager_label")}s
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{managers?.length || 0}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {getTerm("coach_label")}es
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{coaches?.length || 0}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Active {getTerm("member_label")}s
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeEngagements.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Pending Onboarding
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-warning">{pendingOnboarding.length}</div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Dashboard Widgets from DB */}
+      <DashboardWidgetGrid 
+        widgets={dashboard?.widgets || []} 
+        isLoading={dashboardLoading}
+        renderWidget={renderWidget}
+      />
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -118,10 +131,6 @@ function OrgAdminDashboardContent() {
           <TabsTrigger value="team" className="flex items-center gap-2">
             <UserCheck className="h-4 w-4" />
             Team
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Settings
           </TabsTrigger>
         </TabsList>
 
@@ -157,7 +166,7 @@ function OrgAdminDashboardContent() {
               </CardContent>
             </Card>
 
-            {/* Recent Activity */}
+            {/* Quick Actions */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Quick Actions</CardTitle>
@@ -272,9 +281,7 @@ function OrgAdminDashboardContent() {
                 </div>
               </CardHeader>
               <CardContent>
-                {managersLoading ? (
-                  <Skeleton className="h-20" />
-                ) : managers?.length === 0 ? (
+                {managers?.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No managers yet</p>
                 ) : (
                   <ul className="space-y-3">
@@ -310,9 +317,7 @@ function OrgAdminDashboardContent() {
                 </div>
               </CardHeader>
               <CardContent>
-                {coachesLoading ? (
-                  <Skeleton className="h-20" />
-                ) : coaches?.length === 0 ? (
+                {coaches?.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No coaches yet</p>
                 ) : (
                   <ul className="space-y-3">
@@ -336,44 +341,6 @@ function OrgAdminDashboardContent() {
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-
-        {/* Settings Tab */}
-        <TabsContent value="settings" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Organization Settings</CardTitle>
-              <CardDescription>
-                Configure your {getTerm("module_label")} organization settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h4 className="font-medium mb-2">Program Type</h4>
-                <p className="text-sm text-muted-foreground">
-                  Program settings are managed in the organization settings.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button variant="default" asChild>
-                  <Link to="/app/coaching/org/settings">
-                    <Settings className="mr-2 h-4 w-4" />
-                    All Settings
-                  </Link>
-                </Button>
-                <Button variant="outline" asChild>
-                  <Link to="/app/coaching/org/terminology">
-                    Manage Terminology
-                  </Link>
-                </Button>
-                <Button variant="outline" asChild>
-                  <Link to="/app/coaching/org/workflows">
-                    Manage Workflows
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </CoachingDashboardLayout>
