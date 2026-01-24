@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Paperclip } from "lucide-react";
+import { Paperclip, Pin } from "lucide-react";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 import { TemplateSelector } from "@/components/templates/TemplateSelector";
 import { applyTemplateToForm } from "@/hooks/useTemplates";
 import { LinkPicker } from "@/components/LinkPicker";
@@ -89,6 +90,9 @@ export function NoteFormDialog({
   // CRM client link state
   const [linkedCrmClientId, setLinkedCrmClientId] = React.useState<string | null>(crmClientId || null);
 
+  // Pin state
+  const [isPinned, setIsPinned] = React.useState(false);
+
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(noteSchema),
     defaultValues: {
@@ -111,6 +115,7 @@ export function NoteFormDialog({
         color: note.color || null,
         project_id: note.project_id || null,
       });
+      setIsPinned(note.is_pinned ?? false);
     } else {
       form.reset({
         title: "",
@@ -121,12 +126,24 @@ export function NoteFormDialog({
         project_id: initialProjectId || null,
       });
       setLinkedCrmClientId(crmClientId || null);
+      setIsPinned(false);
     }
   }, [note, folderId, form, initialProjectId, crmClientId, open]);
 
   const mutation = useMutation({
     mutationFn: async (values: NoteFormValues) => {
       if (!activeCompanyId || !user) throw new Error("Missing context");
+
+      // Determine pinned_at based on is_pinned state
+      const wasPinned = note?.is_pinned ?? false;
+      let pinned_at: string | null = note?.pinned_at ?? null;
+      if (isPinned && !wasPinned) {
+        // Newly pinned
+        pinned_at = new Date().toISOString();
+      } else if (!isPinned) {
+        // Unpinned
+        pinned_at = null;
+      }
 
       const noteData = {
         title: values.title,
@@ -135,6 +152,8 @@ export function NoteFormDialog({
         folder_id: values.folder_id || null,
         color: values.color || null,
         project_id: values.project_id || null,
+        is_pinned: isPinned,
+        pinned_at: pinned_at,
       };
 
       let noteId: string;
@@ -184,6 +203,7 @@ export function NoteFormDialog({
       onOpenChange(false);
       form.reset();
       setLinkedCrmClientId(null);
+      setIsPinned(false);
       onSuccess?.(noteId);
     },
     onError: (error) => {
@@ -348,6 +368,21 @@ export function NoteFormDialog({
                 </FormItem>
               )}
             />
+
+            {/* Pin toggle */}
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="flex items-center gap-2">
+                <Pin className={cn("h-4 w-4", isPinned && "text-primary fill-primary")} />
+                <div className="space-y-0.5">
+                  <span className="text-sm font-medium">Pin to top</span>
+                  <p className="text-xs text-muted-foreground">Keep this note at the top of lists</p>
+                </div>
+              </div>
+              <Switch
+                checked={isPinned}
+                onCheckedChange={setIsPinned}
+              />
+            </div>
 
             {!isEditing && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md p-3">

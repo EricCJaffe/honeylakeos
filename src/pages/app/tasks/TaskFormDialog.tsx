@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CalendarIcon, Paperclip } from "lucide-react";
+import { CalendarIcon, Paperclip, Pin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
@@ -40,6 +40,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -119,6 +120,9 @@ export function TaskFormDialog({
   // Recurrence state
   const [recurrenceConfig, setRecurrenceConfig] = React.useState<RecurrenceConfig | null>(null);
 
+  // Pin state
+  const [isPinned, setIsPinned] = React.useState(false);
+
   // Assignees state
   const [assignees, setAssignees] = React.useState<string[]>([]);
   const { data: existingAssignees = [] } = useTaskAssignees(task?.id);
@@ -144,6 +148,8 @@ export function TaskFormDialog({
     } else {
       setTags([]);
     }
+    // Set pin state from task
+    setIsPinned(task?.is_pinned ?? false);
     // Reset draft subtasks when opening for new task
     if (!task) {
       setDraftSubtasks([]);
@@ -245,6 +251,17 @@ export function TaskFormDialog({
       const rrule = configToRRule(recurrenceConfig, values.due_date || undefined);
       const isRecurring = !!rrule;
 
+      // Determine pinned_at based on is_pinned state
+      const wasPinned = task?.is_pinned ?? false;
+      let pinned_at: string | null = task?.pinned_at ?? null;
+      if (isPinned && !wasPinned) {
+        // Newly pinned
+        pinned_at = new Date().toISOString();
+      } else if (!isPinned) {
+        // Unpinned
+        pinned_at = null;
+      }
+
       const taskData = {
         title: values.title,
         description: values.description || null,
@@ -265,6 +282,8 @@ export function TaskFormDialog({
           ? recurrenceConfig.endDate.toISOString() 
           : null,
         recurrence_count: recurrenceConfig?.endCount || null,
+        is_pinned: isPinned,
+        pinned_at: pinned_at,
       };
 
       let taskId = task?.id;
@@ -392,6 +411,7 @@ export function TaskFormDialog({
       setTags([]);
       setDraftSubtasks([]);
       setLinkedCrmClientId(null);
+      setIsPinned(false);
       if (taskId) {
         onSuccess?.(taskId);
       }
@@ -726,6 +746,21 @@ export function TaskFormDialog({
                 />
               </div>
             )}
+
+            {/* Pin toggle */}
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="flex items-center gap-2">
+                <Pin className={cn("h-4 w-4", isPinned && "text-primary fill-primary")} />
+                <div className="space-y-0.5">
+                  <span className="text-sm font-medium">Pin to top</span>
+                  <p className="text-xs text-muted-foreground">Keep this task at the top of lists</p>
+                </div>
+              </div>
+              <Switch
+                checked={isPinned}
+                onCheckedChange={setIsPinned}
+              />
+            </div>
 
             {!isEditing && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md p-3">

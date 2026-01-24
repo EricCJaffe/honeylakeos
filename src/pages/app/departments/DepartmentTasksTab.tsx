@@ -43,6 +43,8 @@ export function DepartmentTasksTab({ departmentId }: DepartmentTasksTabProps) {
         .from("tasks")
         .select("*")
         .eq("department_id", departmentId)
+        .order("is_pinned", { ascending: false })
+        .order("pinned_at", { ascending: false, nullsFirst: false })
         .order("created_at", { ascending: false });
 
       if (error) throw error;
