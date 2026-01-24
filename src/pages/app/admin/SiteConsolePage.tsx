@@ -108,6 +108,11 @@ export default function SiteConsolePage() {
         )}
       </div>
 
+      {/* Dev Tasks Panel - Always visible at top for site admins */}
+      <div className="mb-6">
+        <DeferredTasksPanel />
+      </div>
+
       <Tabs defaultValue="platform" className="space-y-6">
         <TabsList className="flex-wrap h-auto gap-1 p-1 bg-muted/50">
           {/* Site Admin Tabs */}

@@ -10,7 +10,6 @@ import {
   Workflow, 
   BookOpen,
   ArrowRight,
-  AlertTriangle,
   Pin,
   Clock,
   CalendarClock,
@@ -25,8 +24,8 @@ import { useAuth } from "@/lib/auth";
 import { useMembership } from "@/lib/membership";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { supabase } from "@/integrations/supabase/client";
-import { getDeferredTasksCount } from "./admin/DeferredTasksPage";
 import { TaskFormDialog } from "./tasks/TaskFormDialog";
+import DeferredTasksPanel from "./admin/site-console/DeferredTasksPanel";
 
 const modules = [
   { icon: LayoutDashboard, name: "Projects", href: "/app/projects", description: "Manage your projects" },
@@ -133,9 +132,6 @@ export default function AppDashboard() {
   const { activeCompanyId } = useActiveCompany();
   const queryClient = useQueryClient();
   const firstName = user?.user_metadata?.first_name || "User";
-  
-  const isAdmin = isCompanyAdmin || isSiteAdmin || isSuperAdmin;
-  const deferredCount = getDeferredTasksCount();
 
   // State for task dialog
   const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
@@ -181,36 +177,14 @@ export default function AppDashboard() {
 
   return (
     <div className="p-6 lg:p-8">
-      {/* Admin Deferred Tasks Banner */}
-      {isAdmin && deferredCount > 0 && (
+      {/* Dev Tasks Panel - Shown at top for site admins */}
+      {(isSiteAdmin || isSuperAdmin) && (
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-6"
         >
-          <div className="flex items-center justify-between p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
-                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-                  You have {deferredCount} deferred task{deferredCount > 1 ? "s" : ""}
-                </p>
-                <p className="text-xs text-amber-600 dark:text-amber-400">
-                  Items requiring follow-up action
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              asChild
-              className="border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50"
-            >
-              <Link to="/app/admin/deferred">View Tasks</Link>
-            </Button>
-          </div>
+          <DeferredTasksPanel />
         </motion.div>
       )}
 
