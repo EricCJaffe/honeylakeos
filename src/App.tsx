@@ -124,6 +124,7 @@ import IntegrationsPage from "@/pages/app/integrations/IntegrationsPage";
 import DepartmentsPage from "@/pages/app/departments/DepartmentsPage";
 import DepartmentDetailPage from "@/pages/app/departments/DepartmentDetailPage";
 import CoachingInspectorPage from "@/pages/app/admin/CoachingInspectorPage";
+import CoachingDebugPage from "@/pages/app/admin/CoachingDebugPage";
 import OrgAdminDashboard from "@/pages/app/coaching/OrgAdminDashboard";
 import OrgSettingsPage from "@/pages/app/coaching/OrgSettingsPage";
 import WorkflowBuilderPage from "@/pages/app/coaching/WorkflowBuilderPage";
@@ -286,6 +287,7 @@ function App() {
                     <Route path="admin/validation" element={<ValidationDashboardPage />} />
                     <Route path="admin/validation/:companyId" element={<PilotCompanyDetailPage />} />
                     <Route path="admin/coaching-inspector" element={<CoachingInspectorPage />} />
+                    <Route path="admin/coaching-debug" element={<CoachingDebugPage />} />
                     <Route path="admin/sites" element={<SitesPage />} />
                     <Route path="admin/companies" element={<CompaniesPage />} />
                     <Route path="admin/users" element={<UsersPage />} />
