@@ -8,6 +8,7 @@ import { CalendarIcon, Paperclip, Pin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
+import { useMembership } from "@/lib/membership";
 import {
   Dialog,
   DialogContent,
@@ -59,6 +60,8 @@ import { useTaskAssignees } from "@/hooks/useCompanyMembers";
 import { TaskTagInput } from "@/components/tasks/TaskTagInput";
 import { SubtasksDialogSection, DraftSubtask } from "@/components/tasks/SubtasksDialogSection";
 import { CrmClientPicker } from "@/components/crm/CrmClientPicker";
+import { OwnerSelector } from "@/components/ownership/OwnerSelector";
+import { useReassignOwner } from "@/hooks/useReassignOwner";
 
 const taskSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -111,6 +114,7 @@ export function TaskFormDialog({
 }: TaskFormDialogProps) {
   const { activeCompanyId } = useActiveCompany();
   const { user } = useAuth();
+  const { isCompanyAdmin } = useMembership();
   const queryClient = useQueryClient();
   const isEditing = !!task;
 
@@ -122,6 +126,14 @@ export function TaskFormDialog({
 
   // Pin state
   const [isPinned, setIsPinned] = React.useState(false);
+
+  // Owner state (for reassignment)
+  const [pendingOwnerId, setPendingOwnerId] = React.useState<string | null>(null);
+  
+  // Check if user can reassign owner (admin or current owner)
+  const canReassign = isEditing && task && (isCompanyAdmin || task.owner_user_id === user?.id || task.created_by === user?.id);
+  
+  const reassignOwner = useReassignOwner();
 
   // Assignees state
   const [assignees, setAssignees] = React.useState<string[]>([]);
@@ -150,6 +162,8 @@ export function TaskFormDialog({
     }
     // Set pin state from task
     setIsPinned(task?.is_pinned ?? false);
+    // Set owner state
+    setPendingOwnerId(task?.owner_user_id || task?.created_by || null);
     // Reset draft subtasks when opening for new task
     if (!task) {
       setDraftSubtasks([]);
@@ -391,7 +405,15 @@ export function TaskFormDialog({
 
       return taskId;
     },
-    onSuccess: (taskId: string) => {
+    onSuccess: async (taskId: string) => {
+      // Handle owner reassignment if changed (for editing only)
+      if (isEditing && task && pendingOwnerId && pendingOwnerId !== (task.owner_user_id || task.created_by)) {
+        await reassignOwner.mutateAsync({
+          entityType: "task",
+          entityId: task.id,
+          newOwnerId: pendingOwnerId,
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["project-tasks"] });
@@ -412,6 +434,7 @@ export function TaskFormDialog({
       setDraftSubtasks([]);
       setLinkedCrmClientId(null);
       setIsPinned(false);
+      setPendingOwnerId(null);
       if (taskId) {
         onSuccess?.(taskId);
       }
@@ -761,6 +784,17 @@ export function TaskFormDialog({
                 onCheckedChange={setIsPinned}
               />
             </div>
+
+            {/* Owner selector - only for editing, and only if user can reassign */}
+            {canReassign && activeCompanyId && (
+              <OwnerSelector
+                companyId={activeCompanyId}
+                value={pendingOwnerId}
+                onChange={setPendingOwnerId}
+                label="Owner"
+                helperText="Changing owner transfers management of this task (separate from assignees)."
+              />
+            )}
 
             {!isEditing && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md p-3">

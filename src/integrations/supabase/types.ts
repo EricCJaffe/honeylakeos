@@ -4788,6 +4788,7 @@ export type Database = {
           id: string
           mime_type: string | null
           name: string
+          owner_user_id: string | null
           project_id: string | null
           tags: Json
           updated_at: string
@@ -4805,6 +4806,7 @@ export type Database = {
           id?: string
           mime_type?: string | null
           name: string
+          owner_user_id?: string | null
           project_id?: string | null
           tags?: Json
           updated_at?: string
@@ -4822,6 +4824,7 @@ export type Database = {
           id?: string
           mime_type?: string | null
           name?: string
+          owner_user_id?: string | null
           project_id?: string | null
           tags?: Json
           updated_at?: string
@@ -8885,6 +8888,7 @@ export type Database = {
           id: string
           is_pinned: boolean
           is_sample: boolean
+          owner_user_id: string | null
           pinned_at: string | null
           project_id: string | null
           sample_batch_id: string | null
@@ -8906,6 +8910,7 @@ export type Database = {
           id?: string
           is_pinned?: boolean
           is_sample?: boolean
+          owner_user_id?: string | null
           pinned_at?: string | null
           project_id?: string | null
           sample_batch_id?: string | null
@@ -8927,6 +8932,7 @@ export type Database = {
           id?: string
           is_pinned?: boolean
           is_sample?: boolean
+          owner_user_id?: string | null
           pinned_at?: string | null
           project_id?: string | null
           sample_batch_id?: string | null
@@ -11848,6 +11854,7 @@ export type Database = {
           list_id: string | null
           notes: string | null
           order_index: number
+          owner_user_id: string | null
           parent_recurring_task_id: string | null
           phase: string | null
           phase_id: string | null
@@ -11892,6 +11899,7 @@ export type Database = {
           list_id?: string | null
           notes?: string | null
           order_index?: number
+          owner_user_id?: string | null
           parent_recurring_task_id?: string | null
           phase?: string | null
           phase_id?: string | null
@@ -11936,6 +11944,7 @@ export type Database = {
           list_id?: string | null
           notes?: string | null
           order_index?: number
+          owner_user_id?: string | null
           parent_recurring_task_id?: string | null
           phase?: string | null
           phase_id?: string | null
@@ -13500,6 +13509,10 @@ export type Database = {
         Returns: undefined
       }
       promote_self_to_super_admin: { Args: never; Returns: Json }
+      reassign_owner: {
+        Args: { p_entity: string; p_id: string; p_new_owner: string }
+        Returns: Json
+      }
       recalculate_all_pilot_scores: { Args: never; Returns: number }
       remove_sample_data: { Args: { p_company_id: string }; Returns: boolean }
       require_module_enabled: {

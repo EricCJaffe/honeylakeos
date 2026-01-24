@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
+import { useMembership } from "@/lib/membership";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,8 @@ import { usePhaseTemplates } from "@/hooks/useProjectPhases";
 import { TemplateSelector } from "@/components/templates/TemplateSelector";
 import { applyTemplateToForm, Template } from "@/hooks/useTemplates";
 import { CrmClientPicker } from "@/components/crm/CrmClientPicker";
+import { OwnerSelector } from "@/components/ownership/OwnerSelector";
+import { useReassignOwner } from "@/hooks/useReassignOwner";
 
 const projectSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -77,9 +80,16 @@ export function ProjectFormDialog({
 }: ProjectFormDialogProps) {
   const { activeCompanyId } = useActiveCompany();
   const { user } = useAuth();
+  const { isCompanyAdmin } = useMembership();
   const queryClient = useQueryClient();
   const isEditing = !!project;
   const [createdProjectId, setCreatedProjectId] = React.useState<string | null>(null);
+  const [pendingOwnerId, setPendingOwnerId] = React.useState<string | null>(null);
+
+  // Check if user can reassign owner (admin or current owner)
+  const canReassign = isEditing && project && (isCompanyAdmin || project.owner_user_id === user?.id);
+
+  const reassignOwner = useReassignOwner();
 
   // Fetch phase templates for new project creation
   const { data: phaseTemplates = [] } = usePhaseTemplates();
@@ -126,6 +136,7 @@ export function ProjectFormDialog({
         phase_template_id: null,
         linked_crm_client_id: null,
       });
+      setPendingOwnerId(project.owner_user_id || null);
       fetchLinkedClient();
     } else {
       form.reset({
@@ -242,12 +253,21 @@ export function ProjectFormDialog({
         return newProject.id;
       }
     },
-    onSuccess: (projectId) => {
+    onSuccess: async (projectId) => {
+      // Handle owner reassignment if changed (for editing only)
+      if (isEditing && project && pendingOwnerId && pendingOwnerId !== project.owner_user_id) {
+        await reassignOwner.mutateAsync({
+          entityType: "project",
+          entityId: project.id,
+          newOwnerId: pendingOwnerId,
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["project-phases"] });
       toast.success(isEditing ? "Project updated" : "Project created");
       onOpenChange(false);
       form.reset();
+      setPendingOwnerId(null);
       if (!isEditing && onSuccess && projectId) {
         onSuccess(projectId);
       }
@@ -422,6 +442,17 @@ export function ProjectFormDialog({
                 </FormItem>
               )}
             />
+
+            {/* Owner selector - only for editing, and only if user can reassign */}
+            {canReassign && activeCompanyId && (
+              <OwnerSelector
+                companyId={activeCompanyId}
+                value={pendingOwnerId}
+                onChange={setPendingOwnerId}
+                label="Owner"
+                helperText="Changing owner transfers management of this project."
+              />
+            )}
 
             </DialogBody>
 
