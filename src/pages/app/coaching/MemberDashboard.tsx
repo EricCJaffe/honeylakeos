@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { CoachingAccessGuard } from "@/components/coaching/CoachingAccessGuard";
+import { CoachingDashboardLayout } from "@/components/coaching/CoachingDashboardLayout";
 import { 
   useMemberEngagement,
   useCoachingPlans,
@@ -55,27 +54,14 @@ function MemberDashboardContent() {
     engagement?.onboarding?.[0]?.status === "pending" && 
     isCompanyAdmin;
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-64" />
-        <div className="grid gap-4 md:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-32" />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   // No active engagement
-  if (!engagement) {
+  if (!engagement && !isLoading) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title={getTerm("module_label")}
-          description="Your coaching relationship"
-        />
+      <CoachingDashboardLayout
+        title="Member Dashboard"
+        description="Your coaching relationship"
+        isLoading={isLoading}
+      >
         <Card>
           <CardContent className="py-12 text-center">
             <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -86,12 +72,12 @@ function MemberDashboardContent() {
             </p>
           </CardContent>
         </Card>
-      </div>
+      </CoachingDashboardLayout>
     );
   }
 
   // Show onboarding wizard
-  if (showOnboardingWizard) {
+  if (showOnboardingWizard && engagement) {
     return (
       <AccessWizard 
         engagement={engagement}
@@ -118,14 +104,18 @@ function MemberDashboardContent() {
     p.goals?.filter((g: any) => g.status === "active") || []
   ) || [];
 
+  // Get program info from engagement's coaching org
+  const programKey = engagement?.program_key_snapshot || null;
+  
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <PageHeader
-          title={`${getTerm("module_label")} Dashboard`}
-          description={`Your coaching relationship with ${engagement.coaching_org?.name}`}
-        />
-        {isCompanyAdmin && (
+    <CoachingDashboardLayout
+      title="Member Dashboard"
+      description={engagement ? `Your coaching relationship with ${engagement.coaching_org?.name}` : "Your coaching dashboard"}
+      programKey={programKey}
+      orgName={engagement?.coaching_org?.name}
+      isLoading={isLoading}
+      headerActions={
+        isCompanyAdmin && engagement ? (
           <AlertDialog open={showEndDialog} onOpenChange={setShowEndDialog}>
             <AlertDialogTrigger asChild>
               <Button variant="outline" size="sm" className="text-destructive">
@@ -158,8 +148,9 @@ function MemberDashboardContent() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-        )}
-      </div>
+        ) : undefined
+      }
+    >
 
       {/* Coach Info */}
       {primaryCoach && (
@@ -326,7 +317,7 @@ function MemberDashboardContent() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </CoachingDashboardLayout>
   );
 }
 
