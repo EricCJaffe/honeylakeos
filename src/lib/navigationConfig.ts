@@ -31,6 +31,10 @@ import {
   ClipboardList,
   Workflow,
   Inbox,
+  Briefcase,
+  UserCog,
+  UsersRound,
+  Settings2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ModuleKey } from "@/hooks/useModuleAccess";
@@ -251,6 +255,36 @@ export const adminNavItems = {
     title: "Coaching Inspector",
     url: "/app/admin/coaching-inspector",
     icon: Users,
+  },
+};
+
+/**
+ * Coaching navigation items - shown based on coaching roles
+ */
+export const coachingNavItems = {
+  orgDashboard: {
+    key: "coaching-org",
+    title: "Org Dashboard",
+    url: "/app/coaching/org",
+    icon: Building2,
+  },
+  coachDashboard: {
+    key: "coaching-coach",
+    title: "Coach Dashboard",
+    url: "/app/coaching/dashboard",
+    icon: UserCog,
+  },
+  memberDashboard: {
+    key: "coaching-member",
+    title: "Member Dashboard",
+    url: "/app/coaching/member",
+    icon: UsersRound,
+  },
+  adminDashboard: {
+    key: "coaching-admin",
+    title: "Coaching Admin",
+    url: "/app/admin/coaching-inspector",
+    icon: Settings2,
   },
 };
 
