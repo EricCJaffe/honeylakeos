@@ -5,8 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CoachingDashboardLayout } from "@/components/coaching/CoachingDashboardLayout";
 import { CoachingAccessGuard } from "@/components/coaching/CoachingAccessGuard";
-import { useCoachingRole } from "@/hooks/useCoachingRole";
-import { useCoachingOrgs, useCoachingOrgEngagements } from "@/hooks/useCoachingData";
+import { useActiveCoachingOrg } from "@/hooks/useActiveCoachingOrg";
+import { useCoachingOrgEngagements } from "@/hooks/useCoachingData";
 import { useCoachingTerminology } from "@/hooks/useCoachingTerminology";
 import { useCoachClients } from "@/hooks/useCoachOrganizations";
 import { 
@@ -22,14 +22,12 @@ import {
 import { formatDistanceToNow } from "date-fns";
 
 function CoachDashboardContent() {
-  const { activeCoachingOrgId } = useCoachingRole();
-  const { data: coachingOrgs, isLoading: orgsLoading } = useCoachingOrgs();
+  const { activeCoachingOrgId, isLoading: orgLoading } = useActiveCoachingOrg();
   const { data: engagements, isLoading: engagementsLoading } = useCoachingOrgEngagements(activeCoachingOrgId);
   const { getTerm, isLoading: termsLoading } = useCoachingTerminology(activeCoachingOrgId);
   const { data: clients = [], isLoading: clientsLoading } = useCoachClients();
 
-  const isLoading = orgsLoading || termsLoading;
-  const activeOrg = coachingOrgs?.[0];
+  const isLoading = orgLoading || termsLoading;
 
   // Get assigned clients
   const activeEngagements = engagements?.filter((e) => e.status === "active") || [];
@@ -47,9 +45,6 @@ function CoachDashboardContent() {
     <CoachingDashboardLayout
       title="Coach Dashboard"
       description={`Manage your ${getTerm("member_label")} relationships`}
-      programKey={activeOrg?.program_key}
-      programVersion={activeOrg?.program_version}
-      orgName={activeOrg?.name}
       isLoading={isLoading}
     >
       {/* Quick Stats */}

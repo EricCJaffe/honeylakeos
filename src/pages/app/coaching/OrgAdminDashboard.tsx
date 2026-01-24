@@ -8,12 +8,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CoachingAccessGuard } from "@/components/coaching/CoachingAccessGuard";
 import { CoachingDashboardLayout } from "@/components/coaching/CoachingDashboardLayout";
 import { 
-  useCoachingOrgs, 
   useCoachingManagers, 
   useCoachingCoaches,
   useCoachingOrgEngagements 
 } from "@/hooks/useCoachingData";
-import { useCoachingRole } from "@/hooks/useCoachingRole";
+import { useActiveCoachingOrg } from "@/hooks/useActiveCoachingOrg";
 import { useCoachingTerminology } from "@/hooks/useCoachingTerminology";
 import { 
   Users, 
@@ -27,8 +26,7 @@ import {
 } from "lucide-react";
 
 function OrgAdminDashboardContent() {
-  const { activeCoachingOrgId } = useCoachingRole();
-  const { data: coachingOrgs, isLoading: orgsLoading } = useCoachingOrgs();
+  const { activeCoachingOrgId, isLoading: orgLoading } = useActiveCoachingOrg();
   const { data: managers, isLoading: managersLoading } = useCoachingManagers(activeCoachingOrgId);
   const { data: coaches, isLoading: coachesLoading } = useCoachingCoaches(activeCoachingOrgId);
   const { data: engagements, isLoading: engagementsLoading } = useCoachingOrgEngagements(activeCoachingOrgId);
@@ -36,8 +34,7 @@ function OrgAdminDashboardContent() {
 
   const [activeTab, setActiveTab] = useState("overview");
 
-  const isLoading = orgsLoading || termsLoading;
-  const activeOrg = coachingOrgs?.[0];
+  const isLoading = orgLoading || termsLoading;
 
   // Calculate stats
   const activeEngagements = engagements?.filter((e) => e.status === "active") || [];
@@ -47,11 +44,8 @@ function OrgAdminDashboardContent() {
 
   return (
     <CoachingDashboardLayout
-      title={`${activeOrg?.name || "Coaching Org"} Dashboard`}
+      title="Org Admin Dashboard"
       description={`${getTerm("module_label")} Organization Administration`}
-      programKey={activeOrg?.program_key}
-      programVersion={activeOrg?.program_version}
-      orgName={activeOrg?.name}
       isLoading={isLoading}
       headerActions={
         <Button asChild>
@@ -357,7 +351,7 @@ function OrgAdminDashboardContent() {
               <div>
                 <h4 className="font-medium mb-2">Program Type</h4>
                 <p className="text-sm text-muted-foreground">
-                  {activeOrg?.program_name || "Generic"} (v{activeOrg?.program_version || "1.0"})
+                  Program settings are managed in the organization settings.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">

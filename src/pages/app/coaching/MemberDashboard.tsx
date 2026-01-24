@@ -104,16 +104,13 @@ function MemberDashboardContent() {
     p.goals?.filter((g: any) => g.status === "active") || []
   ) || [];
 
-  // Get program info from engagement's coaching org
-  const programKey = engagement?.program_key_snapshot || null;
-  
+  // Member dashboard shows their specific engagement, not org selector
   return (
     <CoachingDashboardLayout
       title="Member Dashboard"
       description={engagement ? `Your coaching relationship with ${engagement.coaching_org?.name}` : "Your coaching dashboard"}
-      programKey={programKey}
-      orgName={engagement?.coaching_org?.name}
       isLoading={isLoading}
+      showOrgSelector={false}
       headerActions={
         isCompanyAdmin && engagement ? (
           <AlertDialog open={showEndDialog} onOpenChange={setShowEndDialog}>

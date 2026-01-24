@@ -1,36 +1,34 @@
 import { ReactNode } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CoachingOrgSelector } from "./CoachingOrgSelector";
 
 interface CoachingDashboardLayoutProps {
   title: string;
   description?: string;
+  /** @deprecated Use CoachingOrgSelector instead */
   programKey?: string | null;
+  /** @deprecated Use CoachingOrgSelector instead */
   programVersion?: string | number | null;
+  /** @deprecated Use CoachingOrgSelector instead */
   orgName?: string | null;
   isLoading?: boolean;
   headerActions?: ReactNode;
   children: ReactNode;
   className?: string;
+  /** Whether to show the org selector (default: true) */
+  showOrgSelector?: boolean;
 }
 
 export function CoachingDashboardLayout({
   title,
   description,
-  programKey,
-  programVersion,
-  orgName,
   isLoading = false,
   headerActions,
   children,
   className,
+  showOrgSelector = true,
 }: CoachingDashboardLayoutProps) {
-  const programBadgeText = programKey
-    ? `${programKey}${programVersion ? ` v${programVersion}` : ""}`
-    : null;
-
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -54,27 +52,17 @@ export function CoachingDashboardLayout({
     <div className={cn("space-y-6", className)}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
+        <div className="space-y-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
             <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-            {programBadgeText && (
-              <Badge variant="secondary" className="text-xs">
-                {programBadgeText}
-              </Badge>
-            )}
+            {showOrgSelector && <CoachingOrgSelector />}
           </div>
           {description && (
             <p className="text-muted-foreground">{description}</p>
           )}
-          {orgName && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Building2 className="h-4 w-4" />
-              <span>{orgName}</span>
-            </div>
-          )}
         </div>
         {headerActions && (
-          <div className="flex items-center gap-2">{headerActions}</div>
+          <div className="flex items-center gap-2 shrink-0">{headerActions}</div>
         )}
       </div>
 
