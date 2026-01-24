@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
+import { useMembership } from "@/lib/membership";
 import {
   Dialog,
   DialogContent,
@@ -41,6 +42,8 @@ import { applyTemplateToForm } from "@/hooks/useTemplates";
 import { LinkPicker } from "@/components/LinkPicker";
 import { FolderPicker } from "@/components/folders";
 import { CrmClientPicker } from "@/components/crm/CrmClientPicker";
+import { OwnerSelector } from "@/components/ownership/OwnerSelector";
+import { useReassignOwner } from "@/hooks/useReassignOwner";
 
 const noteSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -84,6 +87,7 @@ export function NoteFormDialog({
 }: NoteFormDialogProps) {
   const { activeCompanyId } = useActiveCompany();
   const { user } = useAuth();
+  const { isCompanyAdmin } = useMembership();
   const queryClient = useQueryClient();
   const isEditing = !!note;
 
@@ -92,6 +96,14 @@ export function NoteFormDialog({
 
   // Pin state
   const [isPinned, setIsPinned] = React.useState(false);
+
+  // Owner state (for reassignment)
+  const [pendingOwnerId, setPendingOwnerId] = React.useState<string | null>(null);
+  
+  // Check if user can reassign owner (admin or current owner)
+  const canReassign = isEditing && note && (isCompanyAdmin || note.owner_user_id === user?.id || note.created_by === user?.id);
+  
+  const reassignOwner = useReassignOwner();
 
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(noteSchema),
@@ -116,6 +128,7 @@ export function NoteFormDialog({
         project_id: note.project_id || null,
       });
       setIsPinned(note.is_pinned ?? false);
+      setPendingOwnerId(note.owner_user_id || note.created_by || null);
     } else {
       form.reset({
         title: "",
@@ -127,6 +140,7 @@ export function NoteFormDialog({
       });
       setLinkedCrmClientId(crmClientId || null);
       setIsPinned(false);
+      setPendingOwnerId(null);
     }
   }, [note, folderId, form, initialProjectId, crmClientId, open]);
 
@@ -193,7 +207,15 @@ export function NoteFormDialog({
 
       return noteId;
     },
-    onSuccess: (noteId: string) => {
+    onSuccess: async (noteId: string) => {
+      // Handle owner reassignment if changed (for editing only)
+      if (isEditing && note && pendingOwnerId && pendingOwnerId !== (note.owner_user_id || note.created_by)) {
+        await reassignOwner.mutateAsync({
+          entityType: "note",
+          entityId: note.id,
+          newOwnerId: pendingOwnerId,
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ["notes"] });
       queryClient.invalidateQueries({ queryKey: ["project-notes"] });
       queryClient.invalidateQueries({ queryKey: ["entity-links"] });
@@ -204,6 +226,7 @@ export function NoteFormDialog({
       form.reset();
       setLinkedCrmClientId(null);
       setIsPinned(false);
+      setPendingOwnerId(null);
       onSuccess?.(noteId);
     },
     onError: (error) => {
@@ -383,6 +406,17 @@ export function NoteFormDialog({
                 onCheckedChange={setIsPinned}
               />
             </div>
+
+            {/* Owner selector - only for editing, and only if user can reassign */}
+            {canReassign && activeCompanyId && (
+              <OwnerSelector
+                companyId={activeCompanyId}
+                value={pendingOwnerId}
+                onChange={setPendingOwnerId}
+                label="Owner"
+                helperText="Changing owner transfers management of this note."
+              />
+            )}
 
             {!isEditing && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md p-3">
