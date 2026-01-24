@@ -121,3 +121,19 @@ export {
   useEnsureFormFromTemplate,
   getAvailableFormTemplates,
 } from "../useFormByTemplateKey";
+
+// =============================================
+// Program Framework Registry
+// =============================================
+export {
+  PROGRAM_FRAMEWORKS,
+  getFramework,
+  getFrameworkDisplayName,
+  getFrameworkShortName,
+  getFrameworkTerm,
+  getWidgetDescription,
+  formatProgramBadge,
+  getAvailableFrameworks,
+  getFrameworkOptions,
+  type ProgramFramework,
+} from "@/lib/coaching/programFrameworkRegistry";

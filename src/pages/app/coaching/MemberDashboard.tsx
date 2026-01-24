@@ -197,6 +197,7 @@ function MemberDashboardContent() {
         widgets={dashboard?.widgets || []} 
         isLoading={dashboardLoading}
         renderWidget={renderWidget}
+        programKey={engagement?.program_key_snapshot}
       />
 
       {/* Coach Info */}

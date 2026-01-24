@@ -16,6 +16,7 @@ import {
   getDataSourceRoute,
   WidgetConfig 
 } from "@/hooks/useCoachingDashboard";
+import { getWidgetDescription } from "@/lib/coaching/programFrameworkRegistry";
 import { 
   ArrowRight, 
   Calendar, 
@@ -39,6 +40,8 @@ import {
 interface DashboardWidgetCardProps {
   widget: DashboardWidget;
   children?: React.ReactNode;
+  /** Program key for program-specific descriptions */
+  programKey?: string | null;
 }
 
 const WIDGET_ICONS: Record<string, React.ReactNode> = {
@@ -85,10 +88,13 @@ function getIconFromConfig(iconName: string | undefined): React.ReactNode | null
   return null;
 }
 
-export function DashboardWidgetCard({ widget, children }: DashboardWidgetCardProps) {
+export function DashboardWidgetCard({ widget, children, programKey }: DashboardWidgetCardProps) {
   const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   const title = humanizeWidgetKey(widget.widgetKey);
+  
+  // Get program-specific description, falling back to widget.description
+  const description = getWidgetDescription(programKey, widget.widgetKey, widget.description);
   const config = widget.configJson || {};
   const isComingSoon = config.comingSoon === true;
   const isLink = config.kind === "link";
@@ -129,9 +135,9 @@ export function DashboardWidgetCard({ widget, children }: DashboardWidgetCardPro
               </Badge>
             )}
           </div>
-          {widget.description && (
+          {description && (
             <CardDescription className="text-sm">
-              {widget.description}
+              {description}
             </CardDescription>
           )}
         </CardHeader>
@@ -169,7 +175,7 @@ export function DashboardWidgetCard({ widget, children }: DashboardWidgetCardPro
               {preview?.title || title}
             </DialogTitle>
             <DialogDescription>
-              {config.modalContent || widget.description || "This feature is coming soon."}
+              {config.modalContent || description || "This feature is coming soon."}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
