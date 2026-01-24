@@ -57,7 +57,7 @@ async function fetchDashboardTasks(companyId: string, userId: string): Promise<T
     .from("tasks")
     .select("id, title, status, priority, due_date, is_pinned, pinned_at")
     .eq("company_id", companyId)
-    .eq("assigned_to_user_id", userId)
+    .eq("owner_user_id", userId)
     .neq("status", "archived")
     .limit(50);
   
