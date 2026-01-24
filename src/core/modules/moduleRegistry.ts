@@ -323,6 +323,11 @@ export function getModuleByRoute(pathname: string): ModuleDefinition | undefined
  * Check if a module is enabled for a company.
  * Core modules are always enabled.
  * 
+ * Feature flags act as an OVERRIDE mechanism:
+ * - If a flag explicitly exists and is `false` → module is disabled (blast radius control)
+ * - If no flag exists → module is enabled (defers to legacy company_modules system)
+ * - Core modules are always enabled regardless of flags
+ * 
  * @param moduleId - The module ID to check
  * @param flags - Map of moduleId to enabled state from feature_flags table
  * @returns true if the module is enabled
@@ -337,12 +342,16 @@ export function isModuleEnabled(
   // Core modules are always enabled
   if (module.isCore) return true;
   
-  // Check feature flags, fallback to defaultEnabled
+  // Feature flags act as explicit overrides only
+  // If a flag exists, respect its value; otherwise default to enabled
+  // This allows the legacy company_modules system to remain authoritative
+  // while feature_flags can be used to explicitly disable modules for blast radius control
   if (flags.has(moduleId)) {
-    return flags.get(moduleId) ?? module.defaultEnabled;
+    return flags.get(moduleId) ?? true;
   }
   
-  return module.defaultEnabled;
+  // No flag exists - allow module (defer to legacy system)
+  return true;
 }
 
 /**
