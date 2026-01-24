@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CoachingAccessGuard } from "@/components/coaching/CoachingAccessGuard";
 import { CoachingDashboardLayout } from "@/components/coaching/CoachingDashboardLayout";
+import { DashboardWidgetGrid } from "@/components/coaching/DashboardWidgetGrid";
 import { 
   useMemberEngagement,
   useCoachingPlans,
@@ -15,13 +16,15 @@ import {
 import { useEngagementTerminology } from "@/hooks/useCoachingTerminology";
 import { useMembership } from "@/lib/membership";
 import { AccessWizard } from "@/components/coaching/AccessWizard";
+import { useCoachingDashboard, DashboardWidget } from "@/hooks/useCoachingDashboard";
 import { 
   Calendar, 
   Target,
   Heart,
   UserCheck,
   AlertCircle,
-  XCircle
+  XCircle,
+  ArrowRight
 } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -44,10 +47,11 @@ function MemberDashboardContent() {
   const { data: meetings } = useCoachingMeetings(engagement?.id);
   const { data: healthChecks } = useCoachingHealthChecks(engagement?.id);
   const endEngagement = useEndEngagement();
+  const { data: dashboard, isLoading: dashboardLoading } = useCoachingDashboard("member");
 
   const [showEndDialog, setShowEndDialog] = useState(false);
 
-  const isLoading = engagementLoading || termsLoading;
+  const isLoading = engagementLoading || termsLoading || dashboardLoading;
 
   // Check if onboarding wizard should be shown
   const showOnboardingWizard = 
@@ -61,6 +65,7 @@ function MemberDashboardContent() {
         title="Member Dashboard"
         description="Your coaching relationship"
         isLoading={isLoading}
+        showOrgSelector={false}
       >
         <Card>
           <CardContent className="py-12 text-center">
@@ -87,7 +92,7 @@ function MemberDashboardContent() {
   }
 
   // Get assigned coach info - coach data comes from coaching_coaches table
-  const primaryAssignment = engagement.assignments?.find((a: any) => a.role === "primary");
+  const primaryAssignment = engagement?.assignments?.find((a: any) => a.role === "primary");
   const primaryCoach = primaryAssignment?.coach as { id: string; user_id: string; profile?: { full_name?: string; email?: string; avatar_url?: string } } | undefined;
   // Profile is attached via separate query in useCoachingData
   const coachName = primaryCoach?.profile?.full_name || "Your Coach";
@@ -104,11 +109,48 @@ function MemberDashboardContent() {
     p.goals?.filter((g: any) => g.status === "active") || []
   ) || [];
 
-  // Member dashboard shows their specific engagement, not org selector
+  // Custom renderer for widgets with live data
+  const renderWidget = (widget: DashboardWidget): React.ReactNode | null => {
+    switch (widget.widgetKey) {
+      case "my_upcoming_meetings":
+        return (
+          <div className="flex items-center justify-between">
+            <span className="text-2xl font-bold">{upcomingMeetings.length}</span>
+            <Badge variant={upcomingMeetings.length > 0 ? "default" : "secondary"}>
+              {upcomingMeetings.length === 0 ? "None scheduled" : "Scheduled"}
+            </Badge>
+          </div>
+        );
+      case "goals_progress":
+        return (
+          <div className="flex items-center justify-between">
+            <span className="text-2xl font-bold">{activeGoals.length}</span>
+            <span className="text-sm text-muted-foreground">Active {getTerm("goals_label")}</span>
+          </div>
+        );
+      case "health_trends":
+        return (
+          <div className="flex items-center justify-between">
+            <span className="text-2xl font-bold">{healthChecks?.length || 0}</span>
+            <span className="text-sm text-muted-foreground">Completed</span>
+          </div>
+        );
+      case "my_plans":
+        return (
+          <div className="flex items-center justify-between">
+            <span className="text-2xl font-bold">{plans?.length || 0}</span>
+            <span className="text-sm text-muted-foreground">Active plans</span>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <CoachingDashboardLayout
       title="Member Dashboard"
-      description={engagement ? `Your coaching relationship with ${engagement.coaching_org?.name}` : "Your coaching dashboard"}
+      description={engagement ? `Your coaching relationship with ${engagement?.coaching_org?.name}` : "Your coaching dashboard"}
       isLoading={isLoading}
       showOrgSelector={false}
       headerActions={
@@ -124,7 +166,7 @@ function MemberDashboardContent() {
               <AlertDialogHeader>
                 <AlertDialogTitle>End Coaching Relationship?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will end your coaching engagement with {engagement.coaching_org?.name}. 
+                  This will end your coaching engagement with {engagement?.coaching_org?.name}. 
                   Your coach will no longer have access to your company data. This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
@@ -132,10 +174,12 @@ function MemberDashboardContent() {
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => {
-                    endEngagement.mutate({
-                      engagementId: engagement.id,
-                      reason: "member_requested",
-                    });
+                    if (engagement) {
+                      endEngagement.mutate({
+                        engagementId: engagement.id,
+                        reason: "member_requested",
+                      });
+                    }
                     setShowEndDialog(false);
                   }}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -148,6 +192,12 @@ function MemberDashboardContent() {
         ) : undefined
       }
     >
+      {/* Dashboard Widgets from DB */}
+      <DashboardWidgetGrid 
+        widgets={dashboard?.widgets || []} 
+        isLoading={dashboardLoading}
+        renderWidget={renderWidget}
+      />
 
       {/* Coach Info */}
       {primaryCoach && (
@@ -171,42 +221,6 @@ function MemberDashboardContent() {
           </CardContent>
         </Card>
       )}
-
-      {/* Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Upcoming Meetings
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{upcomingMeetings.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Active {getTerm("goals_label")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeGoals.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {getTerm("health_check_label")}s
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{healthChecks?.length || 0}</div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Content Sections */}
       <div className="grid gap-6 md:grid-cols-2">

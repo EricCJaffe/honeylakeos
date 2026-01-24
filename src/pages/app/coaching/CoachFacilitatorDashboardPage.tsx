@@ -5,10 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CoachingDashboardLayout } from "@/components/coaching/CoachingDashboardLayout";
 import { CoachingAccessGuard } from "@/components/coaching/CoachingAccessGuard";
+import { DashboardWidgetGrid } from "@/components/coaching/DashboardWidgetGrid";
 import { useActiveCoachingOrg } from "@/hooks/useActiveCoachingOrg";
 import { useCoachingOrgEngagements } from "@/hooks/useCoachingData";
 import { useCoachingTerminology } from "@/hooks/useCoachingTerminology";
 import { useCoachClients } from "@/hooks/useCoachOrganizations";
+import { useCoachingDashboard, DashboardWidget } from "@/hooks/useCoachingDashboard";
 import { 
   Users, 
   Building2, 
@@ -26,8 +28,9 @@ function CoachDashboardContent() {
   const { data: engagements, isLoading: engagementsLoading } = useCoachingOrgEngagements(activeCoachingOrgId);
   const { getTerm, isLoading: termsLoading } = useCoachingTerminology(activeCoachingOrgId);
   const { data: clients = [], isLoading: clientsLoading } = useCoachClients();
+  const { data: dashboard, isLoading: dashboardLoading } = useCoachingDashboard("coach");
 
-  const isLoading = orgLoading || termsLoading;
+  const isLoading = orgLoading || termsLoading || dashboardLoading;
 
   // Get assigned clients
   const activeEngagements = engagements?.filter((e) => e.status === "active") || [];
@@ -41,58 +44,54 @@ function CoachDashboardContent() {
     (e) => e.onboarding?.[0]?.status === "pending"
   ).length;
 
+  // Custom renderer for widgets with live data
+  const renderWidget = (widget: DashboardWidget): React.ReactNode | null => {
+    switch (widget.widgetKey) {
+      case "upcoming_meetings":
+        return (
+          <div className="flex items-center justify-between">
+            <span className="text-2xl font-bold text-muted-foreground">—</span>
+            <Badge variant="secondary">Coming Soon</Badge>
+          </div>
+        );
+      case "client_goals":
+        return (
+          <div className="flex items-center justify-between">
+            <span className="text-2xl font-bold text-muted-foreground">—</span>
+            <Badge variant="secondary">Coming Soon</Badge>
+          </div>
+        );
+      case "prep_required":
+        return (
+          <div className="flex items-center justify-between">
+            <span className="text-2xl font-bold text-muted-foreground">—</span>
+            <Badge variant="secondary">Coming Soon</Badge>
+          </div>
+        );
+      case "active_plans":
+        return (
+          <div className="flex items-center justify-between">
+            <span className="text-2xl font-bold text-muted-foreground">—</span>
+            <Badge variant="secondary">Coming Soon</Badge>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <CoachingDashboardLayout
       title="Coach Dashboard"
       description={`Manage your ${getTerm("member_label")} relationships`}
       isLoading={isLoading}
     >
-      {/* Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              My {getTerm("member_label")}s
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalClients}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Active
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">{activeEngagements.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Pending
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-warning">{pendingEngagements.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Needs Attention
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">{needsAttention}</div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Dashboard Widgets from DB */}
+      <DashboardWidgetGrid 
+        widgets={dashboard?.widgets || []} 
+        isLoading={dashboardLoading}
+        renderWidget={renderWidget}
+      />
 
       {/* Main Content Grid */}
       <div className="grid gap-6 md:grid-cols-2">
@@ -106,6 +105,17 @@ function CoachDashboardContent() {
                   My {getTerm("member_label")}s
                 </CardTitle>
                 <CardDescription>Organizations you're coaching</CardDescription>
+              </div>
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{totalClients}</span>
+                  <span className="text-muted-foreground">Total</span>
+                </div>
+                {needsAttention > 0 && (
+                  <Badge variant="outline" className="text-destructive">
+                    {needsAttention} needs attention
+                  </Badge>
+                )}
               </div>
             </div>
           </CardHeader>
