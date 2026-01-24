@@ -271,7 +271,7 @@ export const coachingNavItems = {
   coachDashboard: {
     key: "coaching-coach",
     title: "Coach Dashboard",
-    url: "/app/coaching/dashboard",
+    url: "/app/coaching/coach",
     icon: UserCog,
   },
   memberDashboard: {
@@ -283,7 +283,7 @@ export const coachingNavItems = {
   adminDashboard: {
     key: "coaching-admin",
     title: "Coaching Admin",
-    url: "/app/admin/coaching-inspector",
+    url: "/app/coaching/admin",
     icon: Settings2,
   },
 };

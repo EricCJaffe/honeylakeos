@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CoachingAccessGuard } from "@/components/coaching/CoachingAccessGuard";
 import { 
   useCoachingOrgs, 
   useCoachingManagers, 
@@ -25,7 +26,7 @@ import {
   Clock
 } from "lucide-react";
 
-export default function OrgAdminDashboard() {
+function OrgAdminDashboardContent() {
   const { activeCoachingOrgId } = useCoachingRole();
   const { data: coachingOrgs, isLoading: orgsLoading } = useCoachingOrgs();
   const { data: managers, isLoading: managersLoading } = useCoachingManagers(activeCoachingOrgId);
@@ -384,5 +385,13 @@ export default function OrgAdminDashboard() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function OrgAdminDashboard() {
+  return (
+    <CoachingAccessGuard requiredAccess="org_admin">
+      <OrgAdminDashboardContent />
+    </CoachingAccessGuard>
   );
 }

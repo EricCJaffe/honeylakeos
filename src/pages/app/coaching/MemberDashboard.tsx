@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CoachingAccessGuard } from "@/components/coaching/CoachingAccessGuard";
 import { 
   useMemberEngagement,
   useCoachingPlans,
@@ -36,7 +37,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-export default function MemberDashboard() {
+function MemberDashboardContent() {
   const { isCompanyAdmin } = useMembership();
   const { data: engagement, isLoading: engagementLoading } = useMemberEngagement();
   const { getTerm, isLoading: termsLoading } = useEngagementTerminology(engagement?.id);
@@ -326,5 +327,13 @@ export default function MemberDashboard() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function MemberDashboard() {
+  return (
+    <CoachingAccessGuard requiredAccess="member">
+      <MemberDashboardContent />
+    </CoachingAccessGuard>
   );
 }
