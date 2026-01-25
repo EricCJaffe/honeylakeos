@@ -1,4 +1,1 @@
-project_id = "swcuoeacnpieqyerllrb"
-
-[functions.get-finance-metrics]
-verify_jwt = false
+project_id = "uvunixucwpdcdtswnpmi"
