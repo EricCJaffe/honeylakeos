@@ -404,7 +404,9 @@ export type Database = {
           company_id: string
           content: string
           created_at: string
+          created_by: string | null
           id: string
+          owner_user_id: string | null
           project_id: string | null
           task_id: string | null
           title: string | null
@@ -415,7 +417,9 @@ export type Database = {
           company_id: string
           content: string
           created_at?: string
+          created_by?: string | null
           id?: string
+          owner_user_id?: string | null
           project_id?: string | null
           task_id?: string | null
           title?: string | null
@@ -426,7 +430,9 @@ export type Database = {
           company_id?: string
           content?: string
           created_at?: string
+          created_by?: string | null
           id?: string
+          owner_user_id?: string | null
           project_id?: string | null
           task_id?: string | null
           title?: string | null
@@ -530,11 +536,13 @@ export type Database = {
         Row: {
           company_id: string
           created_at: string
+          created_by: string | null
           description: string | null
           end_date: string | null
           folder_id: string | null
           id: string
           name: string
+          owner_user_id: string | null
           start_date: string | null
           status: string | null
           updated_at: string
@@ -542,11 +550,13 @@ export type Database = {
         Insert: {
           company_id: string
           created_at?: string
+          created_by?: string | null
           description?: string | null
           end_date?: string | null
           folder_id?: string | null
           id?: string
           name: string
+          owner_user_id?: string | null
           start_date?: string | null
           status?: string | null
           updated_at?: string
@@ -554,11 +564,13 @@ export type Database = {
         Update: {
           company_id?: string
           created_at?: string
+          created_by?: string | null
           description?: string | null
           end_date?: string | null
           folder_id?: string | null
           id?: string
           name?: string
+          owner_user_id?: string | null
           start_date?: string | null
           status?: string | null
           updated_at?: string
@@ -664,9 +676,11 @@ export type Database = {
           company_id: string
           completed_at: string | null
           created_at: string
+          created_by: string | null
           description: string | null
           due_date: string | null
           id: string
+          owner_user_id: string | null
           priority: Database["public"]["Enums"]["task_priority"]
           project_id: string | null
           status: Database["public"]["Enums"]["task_status"]
@@ -678,9 +692,11 @@ export type Database = {
           company_id: string
           completed_at?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
           due_date?: string | null
           id?: string
+          owner_user_id?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
@@ -692,9 +708,11 @@ export type Database = {
           company_id?: string
           completed_at?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
           due_date?: string | null
           id?: string
+          owner_user_id?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
