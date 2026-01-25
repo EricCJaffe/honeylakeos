@@ -3,47 +3,38 @@ import { createContext, useContext, useEffect, useState, useCallback } from "rea
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 
-export type MembershipRole = "company_admin" | "location_admin" | "module_admin" | "user" | "external";
-export type SiteRole = "super_admin" | "site_admin";
+export type MembershipRole = "admin" | "member" | "viewer" | "Company_Admin";
 
 export interface Membership {
   id: string;
   user_id: string;
   company_id: string;
   role: MembershipRole;
-  member_type: string;
-  status: string;
+  member_type: string | null;
+  status: string | null;
   default_location_id: string | null;
   expires_at: string | null;
   created_at: string;
-  can_access_finance: boolean;
+  can_access_finance: boolean | null;
   company: {
     id: string;
     name: string;
     logo_url: string | null;
-    status: string;
-    finance_mode: "builtin_books" | "external_reporting" | null;
+    status: string | null;
+    finance_mode: string | null;
   };
-}
-
-export interface SiteMembership {
-  id: string;
-  user_id: string;
-  site_id: string;
-  role: SiteRole;
 }
 
 interface MembershipContextType {
   memberships: Membership[];
-  siteMemberships: SiteMembership[];
   activeCompanyId: string | null;
   activeCompany: Membership["company"] | null;
   activeMembership: Membership | null;
   loading: boolean;
   setActiveCompany: (companyId: string) => Promise<void>;
-  isSuperAdmin: boolean;
-  isSiteAdmin: boolean;
   isCompanyAdmin: boolean;
+  isSiteAdmin: boolean;
+  isSuperAdmin: boolean;
   refreshMemberships: () => Promise<void>;
 }
 
@@ -52,14 +43,12 @@ const MembershipContext = createContext<MembershipContextType | undefined>(undef
 export function MembershipProvider({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const [memberships, setMemberships] = useState<Membership[]>([]);
-  const [siteMemberships, setSiteMemberships] = useState<SiteMembership[]>([]);
   const [activeCompanyId, setActiveCompanyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchMemberships = useCallback(async () => {
     if (!user) {
       setMemberships([]);
-      setSiteMemberships([]);
       setActiveCompanyId(null);
       setLoading(false);
       return;
@@ -67,6 +56,7 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
 
     try {
       // Fetch company memberships with company details
+      // Note: We filter by status = 'active' OR status IS NULL for backwards compatibility
       const { data: membershipData, error: membershipError } = await supabase
         .from("memberships")
         .select(`
@@ -88,14 +78,15 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
             finance_mode
           )
         `)
-        .eq("user_id", user.id)
-        .eq("status", "active");
+        .eq("user_id", user.id);
 
       if (membershipError) {
         console.error("Error fetching memberships:", membershipError);
       } else {
         const validMemberships = (membershipData || [])
           .filter((m) => m.company !== null && typeof m.company === 'object')
+          // Filter for active status (or null for backwards compatibility)
+          .filter((m) => m.status === 'active' || m.status === null)
           .map(m => ({
             id: m.id,
             user_id: m.user_id,
@@ -106,7 +97,7 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
             default_location_id: m.default_location_id,
             expires_at: m.expires_at,
             created_at: m.created_at,
-            can_access_finance: m.can_access_finance ?? false,
+            can_access_finance: m.can_access_finance,
             company: {
               id: (m.company as any).id,
               name: (m.company as any).name,
@@ -116,34 +107,10 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
             }
           }));
         setMemberships(validMemberships);
-      }
 
-      // Fetch site memberships
-      const { data: siteData, error: siteError } = await supabase
-        .from("site_memberships")
-        .select("id, user_id, site_id, role")
-        .eq("user_id", user.id);
-
-      if (siteError) {
-        console.error("Error fetching site memberships:", siteError);
-      } else {
-        setSiteMemberships(siteData || []);
-      }
-
-      // Fetch active company from profile
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("active_company_id")
-        .eq("user_id", user.id)
-        .single();
-
-      if (!profileError && profileData?.active_company_id) {
-        setActiveCompanyId(profileData.active_company_id);
-      } else if (membershipData && membershipData.length > 0) {
-        // Default to first company
-        const firstCompany = membershipData[0];
-        if (firstCompany?.company_id) {
-          setActiveCompanyId(firstCompany.company_id);
+        // Auto-select first company if no active company is set
+        if (validMemberships.length > 0 && !activeCompanyId) {
+          setActiveCompanyId(validMemberships[0].company_id);
         }
       }
     } catch (err) {
@@ -151,7 +118,7 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, activeCompanyId]);
 
   useEffect(() => {
     if (!authLoading) {
@@ -161,40 +128,29 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
 
   const setActiveCompany = async (companyId: string) => {
     if (!user) return;
-
-    const { error } = await supabase
-      .from("profiles")
-      .update({ active_company_id: companyId })
-      .eq("user_id", user.id);
-
-    if (error) {
-      console.error("Error setting active company:", error);
-      throw error;
-    }
-
     setActiveCompanyId(companyId);
   };
 
   const activeCompany = memberships.find(m => m.company_id === activeCompanyId)?.company || null;
   const activeMembership = memberships.find(m => m.company_id === activeCompanyId) || null;
   
-  const isSuperAdmin = siteMemberships.some(sm => sm.role === "super_admin");
-  const isSiteAdmin = siteMemberships.some(sm => sm.role === "site_admin" || sm.role === "super_admin");
-  const isCompanyAdmin = activeMembership?.role === "company_admin";
+  const isCompanyAdmin = activeMembership?.role === "admin" || activeMembership?.role === "Company_Admin";
+  // These are stubbed out - can be implemented when site_memberships table is added
+  const isSiteAdmin = false;
+  const isSuperAdmin = false;
 
   return (
     <MembershipContext.Provider
       value={{
         memberships,
-        siteMemberships,
         activeCompanyId,
         activeCompany,
         activeMembership,
         loading,
         setActiveCompany,
-        isSuperAdmin,
-        isSiteAdmin,
         isCompanyAdmin,
+        isSiteAdmin,
+        isSuperAdmin,
         refreshMemberships: fetchMemberships,
       }}
     >

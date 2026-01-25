@@ -5,7 +5,6 @@ import { AppTopbar } from "./AppTopbar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useMembership } from "@/lib/membership";
 import { useAuth } from "@/lib/auth";
-import { ModuleErrorBoundary } from "@/core/errors";
 import { Loader2 } from "lucide-react";
 import { APP_VERSION } from "@/lib/version";
 
@@ -71,9 +70,7 @@ export function AppLayout() {
         <div className="flex-1 flex flex-col min-w-0">
           <AppTopbar />
           <main className="flex-1 overflow-auto">
-            <ModuleErrorBoundary moduleName="Page">
-              <Outlet />
-            </ModuleErrorBoundary>
+            <Outlet />
           </main>
           <footer className="border-t border-border px-4 py-2 text-xs text-muted-foreground flex justify-end">
             <span>{APP_VERSION}</span>
