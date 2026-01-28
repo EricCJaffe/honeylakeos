@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redirecting…</title>
+    <meta http-equiv="refresh" content="0; url=/" />
+  </head>
+  <body>
+    <script>
+      // SPA deep-link fallback for hosts that don't support rewrites.
+      // Redirect unknown routes to /?redirect=<original_path> so the app can restore it.
+      (function () {
+        var path = window.location.pathname + window.location.search + window.location.hash;
+        // Avoid looping if we're already at root.
+        if (window.location.pathname === "/") return;
+        var target = "/?redirect=" + encodeURIComponent(path);
+        window.location.replace(target);
+      })();
+    </script>
+  </body>
+</html>
