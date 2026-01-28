@@ -20,6 +20,7 @@ import ContactPage from "@/pages/public/ContactPage";
 import PublicFormPage from "@/pages/public/PublicFormPage";
 import LoginPage from "@/pages/auth/LoginPage";
 import SignUpPage from "@/pages/auth/SignUpPage";
+import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
 import AppDashboard from "@/pages/app/AppDashboard";
 import CompanySelector from "@/pages/app/CompanySelector";
 import ModulePage from "@/pages/app/ModulePage";
@@ -165,6 +166,7 @@ function App() {
                   {/* Auth Routes */}
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/signup" element={<SignUpPage />} />
+                  <Route path="/auth/reset" element={<ResetPasswordPage />} />
                   
                   {/* Invite Route */}
                   <Route path="/invite" element={<InvitePage />} />
