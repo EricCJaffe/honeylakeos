@@ -47,6 +47,8 @@ function loadDotEnvLocal() {
     if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
       val = val.slice(1, -1);
     }
+    // normalize common escaped newlines from env files
+    val = val.replace(/\\n/g, "\n").trim();
     if (!(key in process.env)) process.env[key] = val;
   }
 }

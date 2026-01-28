@@ -16,6 +16,7 @@ function loadDotEnvLocal() {
     if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
       val = val.slice(1, -1);
     }
+    val = val.replace(/\\n/g, "\n").trim();
     if (!(key in process.env)) process.env[key] = val;
   }
 }
