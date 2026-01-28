@@ -197,12 +197,55 @@ export default function HealthPage() {
   const allPassing = healthChecks.every((c) => c.status === "pass");
   const hasFailures = healthChecks.some((c) => c.status === "fail");
 
+  const envInfo = {
+    supabaseUrl: import.meta.env.VITE_SUPABASE_URL as string | undefined,
+    supabaseProjectId: import.meta.env.VITE_SUPABASE_PROJECT_ID as string | undefined,
+    supabasePublishableKey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined,
+    mode: import.meta.env.MODE as string | undefined,
+    dev: import.meta.env.DEV as boolean | undefined,
+    prod: import.meta.env.PROD as boolean | undefined,
+  };
+
+  const maskKey = (key?: string) => {
+    if (!key) return "(missing)";
+    if (key.length <= 10) return "(set)";
+    return `${key.slice(0, 6)}…${key.slice(-4)}`;
+  };
+
   return (
     <div className="p-6 space-y-6">
       <PageHeader
         title="System Health"
         description="Diagnostics and connectivity status"
       />
+
+      {/* Build/Env Info (helps catch stale Vercel env builds) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Build / Environment</CardTitle>
+          <CardDescription>
+            Useful when debugging mismatched Vercel env vars (Vite bakes env at build time).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-muted-foreground">MODE</span>
+            <span className="font-mono">{String(envInfo.mode)}</span>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-muted-foreground">VITE_SUPABASE_URL</span>
+            <span className="font-mono truncate max-w-[60%]">{envInfo.supabaseUrl || "(missing)"}</span>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-muted-foreground">VITE_SUPABASE_PROJECT_ID</span>
+            <span className="font-mono">{envInfo.supabaseProjectId || "(missing)"}</span>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-muted-foreground">VITE_SUPABASE_PUBLISHABLE_KEY</span>
+            <span className="font-mono">{maskKey(envInfo.supabasePublishableKey)}</span>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Overall Status */}
       <Card>
