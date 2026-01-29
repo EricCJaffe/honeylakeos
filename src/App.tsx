@@ -98,6 +98,8 @@ import TicketDetailPage from "@/pages/app/support/TicketDetailPage";
 import TicketDashboardPage from "@/pages/app/support/TicketDashboardPage";
 import KbAdminPage from "@/pages/app/support/KbAdminPage";
 import SalesPage from "@/pages/app/sales/SalesPage";
+import QuotesPage from "@/pages/app/sales/QuotesPage";
+import QuoteDetailPage from "@/pages/app/sales/QuoteDetailPage";
 import PipelinesPage from "@/pages/app/sales/PipelinesPage";
 import OpportunityDetailPage from "@/pages/app/sales/OpportunityDetailPage";
 import CampaignsPage from "@/pages/app/sales/CampaignsPage";
@@ -260,6 +262,8 @@ function App() {
                     <Route path="support/tickets/:ticketId" element={<TicketDetailPage />} />
                     <Route path="support/dashboard" element={<TicketDashboardPage />} />
                     <Route path="sales" element={<ModuleGuard moduleKey="sales" moduleName="Sales"><SalesPage /></ModuleGuard>} />
+                    <Route path="sales/quotes" element={<ModuleGuard moduleKey="sales" moduleName="Sales"><QuotesPage /></ModuleGuard>} />
+                    <Route path="sales/quotes/:quoteId" element={<ModuleGuard moduleKey="sales" moduleName="Sales"><QuoteDetailPage /></ModuleGuard>} />
                     <Route path="sales/pipelines" element={<ModuleGuard moduleKey="sales" moduleName="Sales"><PipelinesPage /></ModuleGuard>} />
                     <Route path="sales/opportunities/:opportunityId" element={<ModuleGuard moduleKey="sales" moduleName="Sales"><OpportunityDetailPage /></ModuleGuard>} />
                     <Route path="sales/campaigns" element={<ModuleGuard moduleKey="sales" moduleName="Sales"><CampaignsPage /></ModuleGuard>} />

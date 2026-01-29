@@ -84,6 +84,9 @@ function SalesContent() {
       <div className="flex items-center justify-between">
         <PageHeader title="Sales" description="Manage your sales pipeline and opportunities" />
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate("/app/sales/quotes")}>
+            Quotes
+          </Button>
           <Button variant="outline" onClick={() => navigate("/app/sales/campaigns")}>
             Campaigns
           </Button>

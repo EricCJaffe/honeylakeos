@@ -25,3 +25,5 @@ dist-ssr
 
 # Supabase temp artifacts
 supabase/.temp/
+.vercel
+.env*.local

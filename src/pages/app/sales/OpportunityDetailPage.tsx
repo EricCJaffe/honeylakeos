@@ -21,6 +21,7 @@ import { ModuleGuard } from "@/components/ModuleGuard";
 import { EntityLinksPanel } from "@/components/EntityLinksPanel";
 import { OpportunityCreateActionsMenu } from "@/components/sales/OpportunityCreateActionsMenu";
 import { useSalesOpportunity, useOpportunityStageHistory } from "@/hooks/useSalesOpportunities";
+import { useSalesQuotes, useCreateSalesQuote } from "@/hooks/useSalesQuotes";
 import { usePipelineStages } from "@/hooks/useSalesPipelines";
 import { OpportunityFormDialog } from "./OpportunityFormDialog";
 import { format } from "date-fns";
@@ -33,6 +34,8 @@ function OpportunityDetailContent() {
   const { data: opportunity, isLoading } = useSalesOpportunity(opportunityId);
   const { data: stages = [] } = usePipelineStages(opportunity?.pipeline_id);
   const { data: stageHistory = [] } = useOpportunityStageHistory(opportunityId);
+  const { data: quotes = [] } = useSalesQuotes({ opportunityId });
+  const createQuote = useCreateSalesQuote();
 
   if (isLoading) {
     return (
@@ -172,6 +175,7 @@ function OpportunityDetailContent() {
           <Tabs defaultValue="activity">
             <TabsList>
               <TabsTrigger value="activity">Activity</TabsTrigger>
+              <TabsTrigger value="quotes">Quotes</TabsTrigger>
               <TabsTrigger value="history">Stage History</TabsTrigger>
             </TabsList>
 
@@ -182,6 +186,52 @@ function OpportunityDetailContent() {
                     entityType="sales_opportunity"
                     entityId={opportunity.id}
                   />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="quotes" className="mt-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Quotes</span>
+                    <Button
+                      size="sm"
+                      onClick={async () => {
+                        if (!opportunity.crm_client_id) return;
+                        const created = await createQuote.mutateAsync({
+                          crm_client_id: opportunity.crm_client_id,
+                          opportunity_id: opportunity.id,
+                          title: `Quote — ${opportunity.name}`,
+                          quote_type: "sow",
+                        });
+                        navigate(`/app/sales/quotes/${created.id}`);
+                      }}
+                    >
+                      Create Quote
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {quotes.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">No quotes yet for this opportunity.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {quotes.map((q) => (
+                        <div
+                          key={q.id}
+                          className="flex items-center justify-between rounded border p-3 hover:bg-muted/50 cursor-pointer"
+                          onClick={() => navigate(`/app/sales/quotes/${q.id}`)}
+                        >
+                          <div>
+                            <div className="font-medium">{q.title}</div>
+                            <div className="text-xs text-muted-foreground">{q.quote_type.toUpperCase()}</div>
+                          </div>
+                          <Badge variant={q.status === "won" ? "default" : q.status === "lost" ? "destructive" : "secondary"}>{q.status}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
