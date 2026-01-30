@@ -105,6 +105,7 @@ import OpportunityDetailPage from "@/pages/app/sales/OpportunityDetailPage";
 import CampaignsPage from "@/pages/app/sales/CampaignsPage";
 import FinancePage from "@/pages/app/finance/FinancePage";
 import InvoicesPage from "@/pages/app/finance/InvoicesPage";
+import InvoiceDetailPage from "@/pages/app/finance/InvoiceDetailPage";
 import PaymentsPage from "@/pages/app/finance/PaymentsPage";
 import ReceiptsPage from "@/pages/app/finance/ReceiptsPage";
 import ChartOfAccountsPage from "@/pages/app/finance/ChartOfAccountsPage";
@@ -269,6 +270,7 @@ function App() {
                     <Route path="sales/campaigns" element={<ModuleGuard moduleKey="sales" moduleName="Sales"><CampaignsPage /></ModuleGuard>} />
                     <Route path="finance" element={<ModuleGuard moduleKey="finance" moduleName="Finance"><FinancePage /></ModuleGuard>} />
                     <Route path="finance/invoices" element={<ModuleGuard moduleKey="finance" moduleName="Finance"><InvoicesPage /></ModuleGuard>} />
+                    <Route path="finance/invoices/:invoiceId" element={<ModuleGuard moduleKey="finance" moduleName="Finance"><InvoiceDetailPage /></ModuleGuard>} />
                     <Route path="finance/payments" element={<ModuleGuard moduleKey="finance" moduleName="Finance"><PaymentsPage /></ModuleGuard>} />
                     <Route path="finance/receipts" element={<ModuleGuard moduleKey="finance" moduleName="Finance"><ReceiptsPage /></ModuleGuard>} />
                     <Route path="finance/accounts" element={<ModuleGuard moduleKey="finance" moduleName="Finance"><ChartOfAccountsPage /></ModuleGuard>} />

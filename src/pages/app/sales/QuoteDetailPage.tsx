@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Upload, CheckCircle2, XCircle, Trophy, Send } from "lucide-react";
 import { useSalesQuote, useUpdateSalesQuote, useConvertQuoteToSalesOrder } from "@/hooks/useSalesQuotes";
+import { useCreateDraftInvoiceFromQuote } from "@/hooks/useInvoices";
 import { useAttachments, useAttachmentMutations } from "@/hooks/useAttachments";
 
 export default function QuoteDetailPage() {
@@ -20,6 +21,7 @@ export default function QuoteDetailPage() {
 
   const { data: attachments = [] } = useAttachments("sales_quote", quoteId);
   const { uploadAttachment } = useAttachmentMutations("sales_quote", quoteId || "");
+  const createInvoice = useCreateDraftInvoiceFromQuote();
 
   const clientName = useMemo(() => {
     if (!quote) return "";
@@ -151,6 +153,20 @@ export default function QuoteDetailPage() {
           disabled={convert.isPending}
         >
           {convert.isPending ? "Creating…" : "Create Sales Order"}
+        </Button>
+      </Card>
+
+      <Card className="p-4 flex items-center justify-between">
+        <div>
+          <div className="text-sm font-medium">Invoice</div>
+          <div className="text-sm text-muted-foreground">Create a draft invoice (Net 30) linked to the sales order for this quote.</div>
+        </div>
+        <Button
+          onClick={() => createInvoice.mutate({ quoteId: quote.id, termsDays: 30 })}
+          disabled={createInvoice.isPending}
+          variant="outline"
+        >
+          {createInvoice.isPending ? "Creating…" : "Create Draft Invoice (Net 30)"}
         </Button>
       </Card>
     </div>
