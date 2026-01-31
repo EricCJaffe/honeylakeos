@@ -96,32 +96,40 @@ export default function ProjectsPage() {
     queryFn: async () => {
       if (!activeCompanyId) return [];
 
-      // Pull projects + their linked CRM client (if any) via entity_links
+      // Pull projects; CRM client linking is stored in entity_links, but we should NOT
+      // filter the project list by presence of a link (otherwise projects without links disappear).
       const { data, error } = await supabase
         .from("projects")
-        .select(`
-          *,
-          entity_links!left(from_id, to_id, crm_client:crm_clients(id, person_full_name, org_name))
-        `)
+        .select("*")
         .eq("company_id", activeCompanyId)
         .eq("is_template", false)
-        .eq("entity_links.company_id", activeCompanyId)
-        .eq("entity_links.from_type", "project")
-        .eq("entity_links.to_type", "crm_client")
-        .is("entity_links.deleted_at", null)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      // Normalize: attach linked crm_client (if present)
-      return (data as any[]).map((p) => {
-        const links = (p.entity_links || []) as any[];
-        const link = links.find((l) => l?.crm_client);
-        return {
-          ...p,
-          linked_crm_client: link?.crm_client || null,
-        };
-      }) as any;
+      // Fetch project→crm_client links separately
+      const { data: links, error: linksError } = await supabase
+        .from("entity_links")
+        .select(
+          "from_id,to_id,crm_client:crm_clients(id, person_full_name, org_name)"
+        )
+        .eq("company_id", activeCompanyId)
+        .eq("from_type", "project")
+        .eq("to_type", "crm_client")
+        .is("deleted_at", null);
+
+      if (linksError) throw linksError;
+
+      const byProject = new Map<string, any>();
+      for (const l of links || []) {
+        if (!l?.from_id || !l?.crm_client) continue;
+        byProject.set(l.from_id, l.crm_client);
+      }
+
+      return (data as any[]).map((p) => ({
+        ...p,
+        linked_crm_client: byProject.get(p.id) || null,
+      })) as any;
     },
     enabled: !!activeCompanyId,
   });
