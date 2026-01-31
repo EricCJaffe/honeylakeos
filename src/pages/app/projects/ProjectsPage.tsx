@@ -85,6 +85,7 @@ export default function ProjectsPage() {
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [companyFilter, setCompanyFilter] = useState<string>("all");
+  const [clientFilter, setClientFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch templates for "New from Template"
@@ -94,15 +95,33 @@ export default function ProjectsPage() {
     queryKey: ["projects", activeCompanyId],
     queryFn: async () => {
       if (!activeCompanyId) return [];
+
+      // Pull projects + their linked CRM client (if any) via entity_links
       const { data, error } = await supabase
         .from("projects")
-        .select("*")
+        .select(`
+          *,
+          entity_links!left(from_id, to_id, crm_client:crm_clients(id, person_full_name, org_name))
+        `)
         .eq("company_id", activeCompanyId)
         .eq("is_template", false)
+        .eq("entity_links.company_id", activeCompanyId)
+        .eq("entity_links.from_type", "project")
+        .eq("entity_links.to_type", "crm_client")
+        .is("entity_links.deleted_at", null)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as Project[];
+
+      // Normalize: attach linked crm_client (if present)
+      return (data as any[]).map((p) => {
+        const links = (p.entity_links || []) as any[];
+        const link = links.find((l) => l?.crm_client);
+        return {
+          ...p,
+          linked_crm_client: link?.crm_client || null,
+        };
+      }) as any;
     },
     enabled: !!activeCompanyId,
   });
@@ -242,6 +261,12 @@ export default function ProjectsPage() {
 
       // Status filter
       if (statusFilter !== "all" && project.status !== statusFilter) return false;
+
+      // Client filter (linked CRM client)
+      if (clientFilter !== "all") {
+        const linked = (project as any).linked_crm_client;
+        if (!linked || linked.id !== clientFilter) return false;
+      }
       
       // Search filter
       if (searchQuery) {
@@ -254,7 +279,7 @@ export default function ProjectsPage() {
       
       return true;
     });
-  }, [projects, companyFilter, statusFilter, searchQuery]);
+  }, [projects, companyFilter, statusFilter, clientFilter, searchQuery]);
 
   if (membershipLoading || isLoading) {
     return (
@@ -414,6 +439,34 @@ export default function ProjectsPage() {
                     {m.company.name}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+
+            {/* Client filter */}
+            <Select value={clientFilter} onValueChange={setClientFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Client" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Clients</SelectItem>
+                {Array.from(
+                  new Map(
+                    (projects || [])
+                      .map((p: any) => p.linked_crm_client)
+                      .filter(Boolean)
+                      .map((c: any) => [c.id, c])
+                  ).values()
+                )
+                  .sort((a: any, b: any) => {
+                    const an = (a.org_name || a.person_full_name || '').toLowerCase();
+                    const bn = (b.org_name || b.person_full_name || '').toLowerCase();
+                    return an.localeCompare(bn);
+                  })
+                  .map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.org_name || c.person_full_name || 'Unnamed client'}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
 
