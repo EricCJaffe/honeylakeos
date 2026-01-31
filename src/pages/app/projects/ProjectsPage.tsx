@@ -21,7 +21,6 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
-import { useMembership } from "@/lib/membership";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -65,12 +64,6 @@ type Project = Tables<"projects">;
 
 export default function ProjectsPage() {
   const { activeCompanyId, isCompanyAdmin, loading: membershipLoading } = useActiveCompany();
-  const { memberships, activeCompanyId: membershipActiveCompanyId } = useMembership();
-
-  // Keep the company filter aligned with whatever company is selected in the global header.
-  React.useEffect(() => {
-    if (membershipActiveCompanyId) setCompanyFilter(membershipActiveCompanyId);
-  }, [membershipActiveCompanyId]);
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -84,7 +77,6 @@ export default function ProjectsPage() {
   // View and filter state
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [companyFilter, setCompanyFilter] = useState<string>("all");
   const [clientFilter, setClientFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -264,9 +256,6 @@ export default function ProjectsPage() {
   // Filter projects
   const filteredProjects = useMemo(() => {
     return projects.filter(project => {
-      // Company filter (optional override)
-      if (companyFilter !== "all" && (project as any).company_id !== companyFilter) return false;
-
       // Status filter
       if (statusFilter !== "all" && project.status !== statusFilter) return false;
 
@@ -287,7 +276,7 @@ export default function ProjectsPage() {
       
       return true;
     });
-  }, [projects, companyFilter, statusFilter, clientFilter, searchQuery]);
+  }, [projects, statusFilter, clientFilter, searchQuery]);
 
   if (membershipLoading || isLoading) {
     return (
@@ -432,21 +421,6 @@ export default function ProjectsPage() {
                 <SelectItem value="completed">Completed</SelectItem>
                 <SelectItem value="on_hold">On Hold</SelectItem>
                 <SelectItem value="archived">Archived</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Company filter */}
-            <Select value={companyFilter} onValueChange={setCompanyFilter}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Company" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Companies</SelectItem>
-                {(memberships || []).map((m) => (
-                  <SelectItem key={m.company.id} value={m.company.id}>
-                    {m.company.name}
-                  </SelectItem>
-                ))}
               </SelectContent>
             </Select>
 
