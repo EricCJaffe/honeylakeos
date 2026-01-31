@@ -99,23 +99,36 @@ export default function ProjectsPage() {
 
       if (error) throw error;
 
-      // Fetch project→crm_client links separately
+      // Fetch project→crm_client links separately.
+      // NOTE: entity_links.to_id is a polymorphic pointer (no FK), so PostgREST
+      // cannot join to crm_clients. We fetch links and then fetch clients by id.
       const { data: links, error: linksError } = await supabase
         .from("entity_links")
-        .select(
-          "from_id,to_id,crm_client:crm_clients(id, person_full_name, org_name)"
-        )
+        .select("from_id,to_id")
         .eq("company_id", activeCompanyId)
         .eq("from_type", "project")
-        .eq("to_type", "crm_client")
-        .is("deleted_at", null);
+        .eq("to_type", "crm_client");
 
       if (linksError) throw linksError;
 
+      const clientIds = Array.from(new Set((links || []).map((l) => l.to_id).filter(Boolean)));
+      let clientById = new Map<string, any>();
+      if (clientIds.length) {
+        const { data: clients, error: clientsError } = await supabase
+          .from("crm_clients")
+          .select("id, person_full_name, org_name")
+          .eq("company_id", activeCompanyId)
+          .in("id", clientIds);
+        if (clientsError) throw clientsError;
+        clientById = new Map((clients || []).map((c) => [c.id, c]));
+      }
+
       const byProject = new Map<string, any>();
       for (const l of links || []) {
-        if (!l?.from_id || !l?.crm_client) continue;
-        byProject.set(l.from_id, l.crm_client);
+        if (!l?.from_id || !l?.to_id) continue;
+        const client = clientById.get(l.to_id);
+        if (!client) continue;
+        byProject.set(l.from_id, client);
       }
 
       return (data as any[]).map((p) => ({
@@ -406,6 +419,7 @@ export default function ProjectsPage() {
               {projectsError && <div className="mt-2 text-xs"><span className="font-semibold">projects:</span> {(projectsError as any)?.message || String(projectsError)}</div>}
               {projectTasksError && <div className="mt-1 text-xs"><span className="font-semibold">tasks:</span> {(projectTasksError as any)?.message || String(projectTasksError)}</div>}
               {projectPhasesError && <div className="mt-1 text-xs"><span className="font-semibold">phases:</span> {(projectPhasesError as any)?.message || String(projectPhasesError)}</div>}
+              <div className="mt-2 text-xs text-muted-foreground">(Diagnostics banner will be removed once this is stable.)</div>
               <div className="mt-2 text-xs">activeCompanyId: <span className="font-mono">{activeCompanyId || "(null)"}</span></div>
               <div className="mt-1 text-xs">projects loaded: <span className="font-mono">{projects.length}</span></div>
             </div>
