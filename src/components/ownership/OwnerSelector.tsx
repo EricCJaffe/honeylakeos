@@ -41,23 +41,31 @@ export function OwnerSelector({
   const { data: members = [], isLoading } = useQuery({
     queryKey: ["company-members", companyId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // memberships table doesn't have a typed FK relationship to profiles in generated types,
+      // so do it in two queries (same pattern used in MembersPanel).
+      const { data: memberships, error: membershipError } = await supabase
         .from("memberships")
-        .select(`
-          user_id,
-          profiles:user_id (
-            user_id,
-            full_name,
-            email,
-            avatar_url
-          )
-        `)
+        .select("user_id, created_at")
         .eq("company_id", companyId)
         .eq("status", "active")
         .order("created_at", { ascending: true });
 
-      if (error) throw error;
-      return (data as unknown as CompanyMember[]) || [];
+      if (membershipError) throw membershipError;
+      if (!memberships?.length) return [];
+
+      const userIds = memberships.map((m) => m.user_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, email, avatar_url")
+        .in("user_id", userIds);
+
+      if (profilesError) throw profilesError;
+
+      const profileMap = new Map((profiles || []).map((p) => [p.user_id, p]));
+      return memberships.map((m) => ({
+        user_id: m.user_id,
+        profiles: profileMap.get(m.user_id) || null,
+      })) as CompanyMember[];
     },
     enabled: !!companyId,
   });
