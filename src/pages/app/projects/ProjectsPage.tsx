@@ -83,7 +83,11 @@ export default function ProjectsPage() {
   // Fetch templates for "New from Template"
   const { data: templates = [] } = useProjectTemplates();
 
-  const { data: projects = [], isLoading, error: projectsError } = useQuery({
+  const {
+    data: projectsPayload,
+    isLoading,
+    error: projectsError,
+  } = useQuery({
     queryKey: ["projects", activeCompanyId],
     queryFn: async () => {
       if (!activeCompanyId) return [];
@@ -131,13 +135,22 @@ export default function ProjectsPage() {
         byProject.set(l.from_id, client);
       }
 
-      return (data as any[]).map((p) => ({
-        ...p,
-        linked_crm_client: byProject.get(p.id) || null,
-      })) as any;
+      // Also return the distinct linked clients so the filter dropdown has options.
+      const linkedClients = Array.from(clientById.values());
+
+      return {
+        projects: (data as any[]).map((p) => ({
+          ...p,
+          linked_crm_client: byProject.get(p.id) || null,
+        })),
+        linkedClients,
+      } as any;
     },
     enabled: !!activeCompanyId,
   });
+
+  const projects = (projectsPayload as any)?.projects || [];
+  const linkedClients = (projectsPayload as any)?.linkedClients || [];
 
   // Fetch tasks linked to active projects for KPIs
   const { data: projectTasks = [], error: projectTasksError } = useQuery({
@@ -457,14 +470,8 @@ export default function ProjectsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Clients</SelectItem>
-                {Array.from(
-                  new Map(
-                    (projects || [])
-                      .map((p: any) => p.linked_crm_client)
-                      .filter(Boolean)
-                      .map((c: any) => [c.id, c])
-                  ).values()
-                )
+                {(linkedClients || [])
+                  .slice()
                   .sort((a: any, b: any) => {
                     const an = (a.org_name || a.person_full_name || '').toLowerCase();
                     const bn = (b.org_name || b.person_full_name || '').toLowerCase();
