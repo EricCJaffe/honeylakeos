@@ -83,7 +83,7 @@ export default function ProjectsPage() {
   // Fetch templates for "New from Template"
   const { data: templates = [] } = useProjectTemplates();
 
-  const { data: projects = [], isLoading } = useQuery({
+  const { data: projects = [], isLoading, error: projectsError } = useQuery({
     queryKey: ["projects", activeCompanyId],
     queryFn: async () => {
       if (!activeCompanyId) return [];
@@ -127,7 +127,7 @@ export default function ProjectsPage() {
   });
 
   // Fetch tasks linked to active projects for KPIs
-  const { data: projectTasks = [] } = useQuery({
+  const { data: projectTasks = [], error: projectTasksError } = useQuery({
     queryKey: ["projects-tasks-kpi", activeCompanyId],
     queryFn: async () => {
       if (!activeCompanyId) return [];
@@ -144,7 +144,7 @@ export default function ProjectsPage() {
   });
 
   // Fetch current phases for projects
-  const { data: projectPhases = [] } = useQuery({
+  const { data: projectPhases = [], error: projectPhasesError } = useQuery({
     queryKey: ["projects-phases", activeCompanyId],
     queryFn: async () => {
       if (!activeCompanyId) return [];
@@ -399,6 +399,18 @@ export default function ProjectsPage() {
         </TabsList>
 
         <TabsContent value="projects">
+          {(projectsError || projectTasksError || projectPhasesError) && (
+            <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm">
+              <div className="font-semibold text-destructive">Projects data error</div>
+              <div className="mt-1 text-xs text-muted-foreground">If you see this, something is failing (RLS/auth/context). Please screenshot this box.</div>
+              {projectsError && <div className="mt-2 text-xs"><span className="font-semibold">projects:</span> {(projectsError as any)?.message || String(projectsError)}</div>}
+              {projectTasksError && <div className="mt-1 text-xs"><span className="font-semibold">tasks:</span> {(projectTasksError as any)?.message || String(projectTasksError)}</div>}
+              {projectPhasesError && <div className="mt-1 text-xs"><span className="font-semibold">phases:</span> {(projectPhasesError as any)?.message || String(projectPhasesError)}</div>}
+              <div className="mt-2 text-xs">activeCompanyId: <span className="font-mono">{activeCompanyId || "(null)"}</span></div>
+              <div className="mt-1 text-xs">projects loaded: <span className="font-mono">{projects.length}</span></div>
+            </div>
+          )}
+
           {/* Filters and View Toggle */}
           <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <div className="relative flex-1">
