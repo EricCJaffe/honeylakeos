@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CalendarIcon, Paperclip, Pin } from "lucide-react";
+import { CalendarIcon, Paperclip, Pin, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
@@ -805,6 +805,32 @@ export function TaskFormDialog({
             </DialogBody>
 
             <DialogFooter className="border-t border-border -mx-4 px-4 sm:-mx-6 sm:px-6">
+              {/* Delete (edit mode only) */}
+              {isEditing && editMode !== "single" && taskId && canEdit && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="mr-auto text-destructive hover:text-destructive"
+                  onClick={async () => {
+                    const ok = window.confirm("Delete this task? This cannot be undone.")
+                    if (!ok) return
+
+                    const { error } = await supabase.from("tasks").delete().eq("id", taskId)
+                    if (error) {
+                      toast.error("Failed to delete task")
+                      return
+                    }
+
+                    toast.success("Task deleted")
+                    onOpenChange(false)
+                    queryClient.invalidateQueries({ queryKey: ["tasks"] })
+                    queryClient.invalidateQueries({ queryKey: ["crm-hub-tasks"] })
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+
               <Button
                 type="button"
                 variant="outline"
