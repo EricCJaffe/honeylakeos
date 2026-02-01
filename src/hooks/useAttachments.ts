@@ -105,7 +105,7 @@ export function useAttachments(entityType: EntityType, entityId: string | undefi
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as Attachment[];
+      return (data || []) as Attachment[];
     },
     enabled: !!entityId && !!activeCompanyId,
   });

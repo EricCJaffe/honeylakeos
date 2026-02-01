@@ -37,7 +37,7 @@ export function useTaskSubtasks(taskId: string | undefined) {
         .order("sort_order", { ascending: true });
 
       if (error) throw error;
-      return data as TaskSubtask[];
+      return (data || []) as TaskSubtask[];
     },
     enabled: !!taskId,
   });
