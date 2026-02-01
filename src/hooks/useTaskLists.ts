@@ -55,10 +55,10 @@ export function useTaskLists() {
           .eq("status", "active")
           .order("sort_order", { ascending: true });
         if (error) throw error;
-        companyLists = data as TaskList[];
+        companyLists = (data || []) as TaskList[];
       }
 
-      return [...(personalLists as TaskList[]), ...companyLists];
+      return [...((personalLists || []) as TaskList[]), ...companyLists];
     },
     enabled: !!user,
   });
