@@ -150,7 +150,24 @@ export default function ProjectsPage() {
   });
 
   const projects = (projectsPayload as any)?.projects || [];
-  const linkedClients = (projectsPayload as any)?.linkedClients || [];
+
+  // Fetch ALL CRM clients for the company (for filter dropdown)
+  const { data: allClients = [] } = useQuery({
+    queryKey: ["crm-clients-for-filter", activeCompanyId],
+    queryFn: async () => {
+      if (!activeCompanyId) return [];
+      const { data, error } = await supabase
+        .from("crm_clients")
+        .select("id, person_full_name, org_name")
+        .eq("company_id", activeCompanyId)
+        .is("archived_at", null)
+        .order("org_name", { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!activeCompanyId,
+  });
 
   // Fetch tasks linked to active projects for KPIs
   const { data: projectTasks = [], error: projectTasksError } = useQuery({
@@ -470,18 +487,11 @@ export default function ProjectsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Clients</SelectItem>
-                {(linkedClients || [])
-                  .slice()
-                  .sort((a: any, b: any) => {
-                    const an = (a.org_name || a.person_full_name || '').toLowerCase();
-                    const bn = (b.org_name || b.person_full_name || '').toLowerCase();
-                    return an.localeCompare(bn);
-                  })
-                  .map((c: any) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.org_name || c.person_full_name || 'Unnamed client'}
-                    </SelectItem>
-                  ))}
+                {allClients.map((c: any) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.org_name || c.person_full_name || 'Unnamed client'}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
