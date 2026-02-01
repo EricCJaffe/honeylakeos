@@ -130,9 +130,9 @@ export function useCompanyModules(): UseCompanyModulesResult {
         `)
         .eq("company_id", activeCompanyId);
       if (error) throw error;
-      
+
       // Transform the data to flatten the module relation
-      return data.map((cm: any) => ({
+      return (data || []).map((cm: any) => ({
         ...cm,
         module: cm.module as Module,
       })) as CompanyModule[];

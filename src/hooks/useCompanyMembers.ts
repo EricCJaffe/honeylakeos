@@ -82,7 +82,7 @@ export function useTaskAssignees(taskId?: string) {
         .eq("task_id", taskId);
 
       if (error) throw error;
-      return data.map((a) => a.user_id);
+      return (data || []).map((a) => a.user_id);
     },
     enabled: !!taskId,
   });
