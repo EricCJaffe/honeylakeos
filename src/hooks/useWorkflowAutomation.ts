@@ -93,7 +93,7 @@ export function useWorkflowAssignments(engagementId?: string) {
         .order("created_at", { ascending: false });
       
       if (error) throw error;
-      return data as WorkflowAssignment[];
+      return (data || []) as WorkflowAssignment[];
     },
     enabled: !!engagementId,
   });
@@ -116,7 +116,7 @@ export function useWorkflowRuns(assignmentId?: string) {
         .order("scheduled_run_at", { ascending: false });
       
       if (error) throw error;
-      return data as WorkflowRun[];
+      return (data || []) as WorkflowRun[];
     },
     enabled: !!assignmentId,
   });

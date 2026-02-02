@@ -41,7 +41,7 @@ export function useRecentRuns(limit = 10) {
         .limit(limit);
 
       if (error) throw error;
-      return data as ReportRecentRun[];
+      return (data || []) as ReportRecentRun[];
     },
     enabled: !!activeCompanyId && !!user?.id,
   });
@@ -392,7 +392,7 @@ export function useReportVisibilityRoles(reportId: string | undefined) {
         .eq("report_id", reportId);
 
       if (error) throw error;
-      return data as ReportVisibilityRole[];
+      return (data || []) as ReportVisibilityRole[];
     },
     enabled: !!reportId,
   });

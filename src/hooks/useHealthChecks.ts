@@ -81,7 +81,7 @@ export function useHealthCheckTemplates(coachingOrgId?: string) {
         .order("name");
       
       if (error) throw error;
-      return data as HealthCheckTemplate[];
+      return (data || []) as HealthCheckTemplate[];
     },
     enabled: !!coachingOrgId,
   });
@@ -105,7 +105,7 @@ export function useEngagementHealthChecks(engagementId?: string) {
         .order("created_at", { ascending: false });
       
       if (error) throw error;
-      return data as HealthCheck[];
+      return (data || []) as HealthCheck[];
     },
     enabled: !!engagementId,
   });
@@ -124,7 +124,7 @@ export function useHealthCheckTrends(engagementId?: string) {
         .eq("coaching_engagement_id", engagementId);
       
       if (error) throw error;
-      return data as HealthCheckTrend[];
+      return (data || []) as HealthCheckTrend[];
     },
     enabled: !!engagementId,
   });

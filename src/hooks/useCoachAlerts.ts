@@ -66,7 +66,7 @@ export function useCoachAlerts(severity?: AlertSeverity) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as CoachAlert[];
+      return (data || []) as CoachAlert[];
     },
     enabled: !!activeCompanyId,
   });
@@ -90,7 +90,7 @@ export function useClientAlerts(clientCompanyId: string | undefined) {
         .limit(20);
 
       if (error) throw error;
-      return data as CoachAlert[];
+      return (data || []) as CoachAlert[];
     },
     enabled: !!activeCompanyId && !!clientCompanyId,
   });
@@ -144,7 +144,7 @@ export function useClientHealthHistory(clientCompanyId: string | undefined, limi
         .limit(limit);
 
       if (error) throw error;
-      return data as HealthScoreRecord[];
+      return (data || []) as HealthScoreRecord[];
     },
     enabled: !!clientCompanyId,
   });

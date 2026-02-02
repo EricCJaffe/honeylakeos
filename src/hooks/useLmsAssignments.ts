@@ -118,7 +118,7 @@ export function useLmsAssignments() {
         .order("assigned_at", { ascending: false });
 
       if (error) throw error;
-      return data as LmsAssignment[];
+      return (data || []) as LmsAssignment[];
     },
     enabled: !!activeCompanyId && lmsEnabled,
   });

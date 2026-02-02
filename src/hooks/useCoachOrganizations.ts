@@ -81,7 +81,7 @@ export function useCoachClients() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as CoachOrganization[];
+      return (data || []) as CoachOrganization[];
     },
     enabled: !!activeCompanyId,
   });
@@ -107,7 +107,7 @@ export function useClientCoaches() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as CoachOrganization[];
+      return (data || []) as CoachOrganization[];
     },
     enabled: !!activeCompanyId,
   });

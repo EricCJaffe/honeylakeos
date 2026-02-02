@@ -289,7 +289,7 @@ export function useFormFields(formId: string | undefined) {
         .order("sort_order", { ascending: true });
 
       if (error) throw error;
-      return data as FormField[];
+      return (data || []) as FormField[];
     },
     enabled: !!formId && !moduleLoading && hasAccess,
   });

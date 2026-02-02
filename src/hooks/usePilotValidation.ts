@@ -349,7 +349,7 @@ export function useActivationEvents(companyId?: string) {
         .order("occurred_at", { ascending: false });
 
       if (error) throw error;
-      return data as ActivationEvent[];
+      return (data || []) as ActivationEvent[];
     },
     enabled: !!targetCompanyId,
   });
@@ -462,7 +462,7 @@ export function useFeedbackItems(filters?: {
 
       const { data, error } = await query.limit(200);
       if (error) throw error;
-      return data as FeedbackItem[];
+      return (data || []) as FeedbackItem[];
     },
   });
 }

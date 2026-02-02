@@ -68,7 +68,7 @@ export function useFinanceAccounts() {
         .order("name");
 
       if (error) throw error;
-      return data as FinanceAccount[];
+      return (data || []) as FinanceAccount[];
     },
     enabled: !!activeCompanyId,
   });
@@ -92,7 +92,7 @@ export function useActiveFinanceAccounts() {
         .order("name");
 
       if (error) throw error;
-      return data as FinanceAccount[];
+      return (data || []) as FinanceAccount[];
     },
     enabled: !!activeCompanyId,
   });

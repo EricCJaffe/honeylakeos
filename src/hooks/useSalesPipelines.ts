@@ -43,7 +43,7 @@ export function useSalesPipelines() {
         .order("is_default", { ascending: false })
         .order("name");
       if (error) throw error;
-      return data as SalesPipeline[];
+      return (data || []) as SalesPipeline[];
     },
     enabled: !!activeCompany?.id,
   });
@@ -78,7 +78,7 @@ export function usePipelineStages(pipelineId: string | undefined) {
         .is("archived_at", null)
         .order("sort_order");
       if (error) throw error;
-      return data as SalesPipelineStage[];
+      return (data || []) as SalesPipelineStage[];
     },
     enabled: !!pipelineId,
   });

@@ -48,7 +48,7 @@ export function useTemplateResources(coachingOrgId?: string | null) {
         .order("title");
 
       if (error) throw error;
-      return data as CoachingTemplateResource[];
+      return (data || []) as CoachingTemplateResource[];
     },
     enabled: !!orgId,
   });
@@ -193,7 +193,7 @@ export function useTemplateTaskSets(coachingOrgId?: string | null) {
         .order("name");
 
       if (error) throw error;
-      return data as CoachingTemplateTaskSet[];
+      return (data || []) as CoachingTemplateTaskSet[];
     },
     enabled: !!orgId,
   });
@@ -349,7 +349,7 @@ export function useCoachingAssignmentsUnified(filters?: {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as CoachingAssignment[];
+      return (data || []) as CoachingAssignment[];
     },
     enabled: !!orgId || !!filters?.engagementId || !!filters?.userId,
   });
@@ -523,7 +523,7 @@ export function useAssignmentInstances(assignmentId?: string | null) {
         .eq("status", "active");
 
       if (error) throw error;
-      return data as CoachingAssignmentInstance[];
+      return (data || []) as CoachingAssignmentInstance[];
     },
     enabled: !!assignmentId,
   });

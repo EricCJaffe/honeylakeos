@@ -151,7 +151,7 @@ export function useCoachingSessions(clientCompanyId?: string) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as CoachingSession[];
+      return (data || []) as CoachingSession[];
     },
     enabled: !!activeCompanyId,
   });
@@ -232,7 +232,7 @@ export function useSuggestedTasks(options?: { clientCompanyId?: string; status?:
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as SuggestedTask[];
+      return (data || []) as SuggestedTask[];
     },
     enabled: !!activeCompanyId,
   });
@@ -255,7 +255,7 @@ export function useIncomingSuggestions() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as SuggestedTask[];
+      return (data || []) as SuggestedTask[];
     },
     enabled: !!activeCompanyId,
   });
@@ -392,7 +392,7 @@ export function useShareRequests(options?: { clientCompanyId?: string; status?: 
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as CoachShareRequest[];
+      return (data || []) as CoachShareRequest[];
     },
     enabled: !!activeCompanyId,
   });
@@ -414,7 +414,7 @@ export function useIncomingShareRequests() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as CoachShareRequest[];
+      return (data || []) as CoachShareRequest[];
     },
     enabled: !!activeCompanyId,
   });

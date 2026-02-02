@@ -86,7 +86,7 @@ export function useDonorProfiles() {
         .eq("company_id", activeCompany.id)
         .order("lifetime_giving_amount", { ascending: false });
       if (error) throw error;
-      return data as DonorProfile[];
+      return (data || []) as DonorProfile[];
     },
     enabled: !!activeCompany?.id,
   });
@@ -129,7 +129,7 @@ export function useDonations(donorProfileId?: string) {
       if (donorProfileId) query = query.eq("donor_profile_id", donorProfileId);
       const { data, error } = await query;
       if (error) throw error;
-      return data as Donation[];
+      return (data || []) as Donation[];
     },
     enabled: !!activeCompany?.id,
   });
@@ -172,7 +172,7 @@ export function useDonorCampaigns() {
         .is("archived_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as DonorCampaign[];
+      return (data || []) as DonorCampaign[];
     },
     enabled: !!activeCompany?.id,
   });
@@ -215,7 +215,7 @@ export function useDonorPledges(donorProfileId?: string) {
       if (donorProfileId) query = query.eq("donor_profile_id", donorProfileId);
       const { data, error } = await query;
       if (error) throw error;
-      return data as DonorPledge[];
+      return (data || []) as DonorPledge[];
     },
     enabled: !!activeCompany?.id,
   });

@@ -104,7 +104,7 @@ export function useEntityContacts(
         .order("created_at", { ascending: true });
 
       if (error) throw error;
-      return data as EntityContact[];
+      return (data || []) as EntityContact[];
     },
     enabled: !!activeCompanyId && !!entityType && !!entityId,
   });

@@ -58,7 +58,7 @@ export function useBankAccounts() {
         .order("name");
 
       if (error) throw error;
-      return data as BankAccount[];
+      return (data || []) as BankAccount[];
     },
     enabled: !!activeCompanyId,
   });

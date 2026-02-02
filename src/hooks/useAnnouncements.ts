@@ -53,7 +53,7 @@ export function useAnnouncements(status?: AnnouncementStatus) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as Announcement[];
+      return (data || []) as Announcement[];
     },
     enabled: !!activeCompanyId,
   });

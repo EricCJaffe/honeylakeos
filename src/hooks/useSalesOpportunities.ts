@@ -70,7 +70,7 @@ export function useSalesOpportunities(pipelineId?: string) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as SalesOpportunity[];
+      return (data || []) as SalesOpportunity[];
     },
     enabled: !!activeCompany?.id,
   });
@@ -112,7 +112,7 @@ export function useOpportunityStageHistory(opportunityId: string | undefined) {
         .eq("opportunity_id", opportunityId)
         .order("changed_at", { ascending: false });
       if (error) throw error;
-      return data as OpportunityStageHistory[];
+      return (data || []) as OpportunityStageHistory[];
     },
     enabled: !!opportunityId,
   });

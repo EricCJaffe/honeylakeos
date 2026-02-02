@@ -82,7 +82,7 @@ export function useLmsCourses(filters: CourseFilters = {}) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as LmsCourse[];
+      return (data || []) as LmsCourse[];
     },
     enabled: !!activeCompanyId && lmsEnabled,
   });

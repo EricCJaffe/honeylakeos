@@ -33,7 +33,7 @@ export function useSalesCampaigns() {
         .is("archived_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as SalesCampaign[];
+      return (data || []) as SalesCampaign[];
     },
     enabled: !!activeCompany?.id,
   });

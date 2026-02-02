@@ -53,7 +53,7 @@ export function useWfForms(options: UseWfFormsOptions = {}) {
 
       const { data, error } = await query.order("created_at", { ascending: false });
       if (error) throw error;
-      return data as WfForm[];
+      return (data || []) as WfForm[];
     },
     enabled: !!companyId || options.scopeType === "site",
   });
@@ -87,7 +87,7 @@ export function useWfFormFields(formId: string | undefined) {
         .eq("form_id", formId)
         .order("sort_order", { ascending: true });
       if (error) throw error;
-      return data as WfFormField[];
+      return (data || []) as WfFormField[];
     },
     enabled: !!formId,
   });

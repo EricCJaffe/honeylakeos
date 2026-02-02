@@ -154,7 +154,7 @@ export function useFolderAcl(folderId: string | undefined) {
         .order("created_at", { ascending: true });
 
       if (error) throw error;
-      return data as FolderAcl[];
+      return (data || []) as FolderAcl[];
     },
     enabled: !!folderId,
   });

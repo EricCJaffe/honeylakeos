@@ -49,7 +49,7 @@ export function useCompanyBackups() {
         .limit(50);
       
       if (error) throw error;
-      return data as CompanyBackup[];
+      return (data || []) as CompanyBackup[];
     },
     enabled: !!companyId,
   });
