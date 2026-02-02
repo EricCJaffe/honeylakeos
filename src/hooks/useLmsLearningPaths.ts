@@ -79,7 +79,7 @@ export function useLmsLearningPaths(filters: PathFilters = {}) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as LmsLearningPath[];
+      return (data || []) as LmsLearningPath[];
     },
     enabled: !!activeCompanyId && lmsEnabled,
   });

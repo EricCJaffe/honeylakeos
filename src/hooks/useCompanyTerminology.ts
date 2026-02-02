@@ -68,7 +68,7 @@ export function useCompanyTerminology() {
         .eq("company_id", activeCompanyId);
 
       if (error) throw error;
-      return data as TerminologyEntry[];
+      return (data || []) as TerminologyEntry[];
     },
     enabled: !!activeCompanyId,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes (frequently read, rarely written)

@@ -81,7 +81,7 @@ export function useFormSubmissions(formId: string | undefined) {
 
       if (error) throw error;
       
-      return data as FormSubmission[];
+      return (data || []) as FormSubmission[];
     },
     enabled: !!formId && !!activeCompanyId && !moduleLoading && hasAccess,
   });

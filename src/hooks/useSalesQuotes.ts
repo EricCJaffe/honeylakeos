@@ -55,7 +55,7 @@ export function useSalesQuotes(params?: { opportunityId?: string; crmClientId?: 
 
       const { data, error } = await q;
       if (error) throw error;
-      return data as SalesQuote[];
+      return (data || []) as SalesQuote[];
     },
     enabled: !!activeCompany?.id,
   });

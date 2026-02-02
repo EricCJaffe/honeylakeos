@@ -60,7 +60,7 @@ export function useUniversalResources() {
         .order("title");
 
       if (error) throw error;
-      return data as Resource[];
+      return (data || []) as Resource[];
     },
     enabled: !!activeCompanyId,
   });
@@ -81,7 +81,7 @@ export function useDepartmentResources(departmentId: string | undefined) {
         .order("title");
 
       if (error) throw error;
-      return data as Resource[];
+      return (data || []) as Resource[];
     },
     enabled: !!departmentId,
   });
@@ -107,7 +107,7 @@ export function useAllResources() {
         .order("title");
 
       if (error) throw error;
-      return data as Resource[];
+      return (data || []) as Resource[];
     },
     enabled: !!activeCompanyId,
   });

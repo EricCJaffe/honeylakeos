@@ -30,7 +30,7 @@ export function useKbCategories() {
         .order("sort_order", { ascending: true });
 
       if (error) throw error;
-      return data as KbCategory[];
+      return (data || []) as KbCategory[];
     },
   });
 }
@@ -401,7 +401,7 @@ export function useTicketMessages(ticketId: string | undefined) {
         .order("created_at", { ascending: true });
 
       if (error) throw error;
-      return data as TicketMessage[];
+      return (data || []) as TicketMessage[];
     },
     enabled: !!ticketId,
   });
@@ -419,7 +419,7 @@ export function useTicketEvents(ticketId: string | undefined) {
         .order("created_at", { ascending: true });
 
       if (error) throw error;
-      return data as TicketEvent[];
+      return (data || []) as TicketEvent[];
     },
     enabled: !!ticketId,
   });

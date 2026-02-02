@@ -30,7 +30,7 @@ export function useTaskComments(taskId: string | undefined) {
         .order("created_at", { ascending: true });
 
       if (error) throw error;
-      return data as TaskComment[];
+      return (data || []) as TaskComment[];
     },
     enabled: !!taskId && !!activeCompanyId,
   });

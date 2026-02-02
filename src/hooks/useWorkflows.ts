@@ -59,7 +59,7 @@ export function useWfWorkflows(options: UseWfWorkflowsOptions = {}) {
 
       const { data, error } = await query.order("created_at", { ascending: false });
       if (error) throw error;
-      return data as WfWorkflow[];
+      return (data || []) as WfWorkflow[];
     },
     enabled: !!companyId || options.scopeType === "site",
   });
@@ -93,7 +93,7 @@ export function useWfWorkflowSteps(workflowId: string | undefined) {
         .eq("workflow_id", workflowId)
         .order("sort_order", { ascending: true });
       if (error) throw error;
-      return data as WfWorkflowStep[];
+      return (data || []) as WfWorkflowStep[];
     },
     enabled: !!workflowId,
   });

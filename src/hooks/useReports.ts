@@ -128,7 +128,7 @@ export function useReports() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as Report[];
+      return (data || []) as Report[];
     },
     enabled: !!activeCompanyId && !!user?.id,
   });

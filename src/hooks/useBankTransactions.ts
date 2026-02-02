@@ -87,7 +87,7 @@ export function useBankTransactions(filter?: BankTransactionsFilter) {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as BankTransaction[];
+      return (data || []) as BankTransaction[];
     },
     enabled: !!activeCompanyId,
   });

@@ -86,7 +86,7 @@ export function useFinancialCategories() {
         .order("sort_order");
 
       if (error) throw error;
-      return data as FinancialCategory[];
+      return (data || []) as FinancialCategory[];
     },
     enabled: !!activeCompanyId,
   });
@@ -164,7 +164,7 @@ export function useFinancialImports() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as FinancialImportBatch[];
+      return (data || []) as FinancialImportBatch[];
     },
     enabled: !!activeCompanyId,
   });
@@ -305,7 +305,7 @@ export function useFinancialStatementLines(batchId?: string, statementType?: "pl
       const { data, error } = await query.order("created_at");
 
       if (error) throw error;
-      return data as FinancialStatementLine[];
+      return (data || []) as FinancialStatementLine[];
     },
     enabled: !!activeCompanyId,
   });
@@ -397,7 +397,7 @@ export function useOpenArItems(batchId?: string) {
       const { data, error } = await query.order("due_date", { ascending: true, nullsFirst: false });
 
       if (error) throw error;
-      return data as OpenArItem[];
+      return (data || []) as OpenArItem[];
     },
     enabled: !!activeCompanyId,
   });
@@ -458,7 +458,7 @@ export function useOpenApItems(batchId?: string) {
       const { data, error } = await query.order("due_date", { ascending: true, nullsFirst: false });
 
       if (error) throw error;
-      return data as OpenApItem[];
+      return (data || []) as OpenApItem[];
     },
     enabled: !!activeCompanyId,
   });

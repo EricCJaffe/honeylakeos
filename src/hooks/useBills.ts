@@ -112,7 +112,7 @@ export function useBills(filter?: BillsFilter) {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as Bill[];
+      return (data || []) as Bill[];
     },
     enabled: !!activeCompanyId,
   });

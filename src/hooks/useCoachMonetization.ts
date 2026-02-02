@@ -114,7 +114,7 @@ export function useCoachPlans() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as CoachPlan[];
+      return (data || []) as CoachPlan[];
     },
     enabled: !!activeCompanyId,
   });
@@ -135,7 +135,7 @@ export function useCoachPlanOverrides(coachPlanId: string | null) {
         .eq("coach_plan_id", coachPlanId);
 
       if (error) throw error;
-      return data as CoachPlanOverride[];
+      return (data || []) as CoachPlanOverride[];
     },
     enabled: !!coachPlanId,
   });
@@ -353,7 +353,7 @@ export function useAttributedCompanies() {
         .order("attributed_at", { ascending: false });
 
       if (error) throw error;
-      return data as CompanyCoachAttribution[];
+      return (data || []) as CompanyCoachAttribution[];
     },
     enabled: !!activeCompanyId,
   });
@@ -502,7 +502,7 @@ export function useCoachReferralLinks() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as CoachReferralLink[];
+      return (data || []) as CoachReferralLink[];
     },
     enabled: !!activeCompanyId,
   });
@@ -699,7 +699,7 @@ export function useRevenueEvents() {
         .limit(100);
 
       if (error) throw error;
-      return data as RevenueEvent[];
+      return (data || []) as RevenueEvent[];
     },
     enabled: !!activeCompanyId,
   });

@@ -806,7 +806,7 @@ export function TaskFormDialog({
 
             <DialogFooter className="border-t border-border -mx-4 px-4 sm:-mx-6 sm:px-6">
               {/* Delete (edit mode only) */}
-              {isEditing && editMode !== "single" && taskId && canEdit && (
+              {isEditing && editMode !== "single" && task?.id && canReassign && (
                 <Button
                   type="button"
                   variant="ghost"
@@ -815,7 +815,7 @@ export function TaskFormDialog({
                     const ok = window.confirm("Delete this task? This cannot be undone.")
                     if (!ok) return
 
-                    const { error } = await supabase.from("tasks").delete().eq("id", taskId)
+                    const { error } = await supabase.from("tasks").delete().eq("id", task.id)
                     if (error) {
                       toast.error("Failed to delete task")
                       return

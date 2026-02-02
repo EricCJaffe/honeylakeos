@@ -39,7 +39,7 @@ export function useTemplates(templateType?: TemplateType) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as Template[];
+      return (data || []) as Template[];
     },
     enabled: !!activeCompanyId,
   });
@@ -62,7 +62,7 @@ export function useActiveTemplates(templateType: TemplateType) {
         .order("name");
 
       if (error) throw error;
-      return data as Template[];
+      return (data || []) as Template[];
     },
     enabled: !!activeCompanyId,
   });

@@ -58,7 +58,7 @@ export function useVendors() {
         .order("name");
 
       if (error) throw error;
-      return data as Vendor[];
+      return (data || []) as Vendor[];
     },
     enabled: !!activeCompanyId,
   });

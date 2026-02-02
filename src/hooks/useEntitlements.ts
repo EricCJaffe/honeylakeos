@@ -146,7 +146,7 @@ export function usePlans() {
         .select("*")
         .order("sort_order");
       if (error) throw error;
-      return data as Plan[];
+      return (data || []) as Plan[];
     },
   });
 }

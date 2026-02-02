@@ -104,7 +104,7 @@ export function useCompanyModules(): UseCompanyModulesResult {
         .order("category", { ascending: true })
         .order("name", { ascending: true });
       if (error) throw error;
-      return data as Module[];
+      return (data || []) as Module[];
     },
     staleTime: STALE_TIMES.STATIC, // 10 minutes - modules rarely change
     gcTime: STALE_TIMES.STATIC * 2, // Keep in cache longer
@@ -130,9 +130,9 @@ export function useCompanyModules(): UseCompanyModulesResult {
         `)
         .eq("company_id", activeCompanyId);
       if (error) throw error;
-      
+
       // Transform the data to flatten the module relation
-      return data.map((cm: any) => ({
+      return (data || []).map((cm: any) => ({
         ...cm,
         module: cm.module as Module,
       })) as CompanyModule[];

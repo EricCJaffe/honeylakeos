@@ -39,7 +39,7 @@ export function useProjectPhases(projectId: string | undefined) {
         .order("sort_order", { ascending: true });
 
       if (error) throw error;
-      return data as ProjectPhase[];
+      return (data || []) as ProjectPhase[];
     },
     enabled: !!projectId && !!activeCompanyId,
   });
@@ -59,7 +59,7 @@ export function usePhaseTemplates() {
         .order("name");
 
       if (error) throw error;
-      return data.map((t) => ({
+      return (data || []).map((t) => ({
         ...t,
         phases: Array.isArray(t.phases) ? t.phases : [],
       })) as PhaseTemplate[];

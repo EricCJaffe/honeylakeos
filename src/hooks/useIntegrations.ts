@@ -71,7 +71,7 @@ export function useIntegrationProviders() {
         .order("name");
 
       if (error) throw error;
-      return data as IntegrationProvider[];
+      return (data || []) as IntegrationProvider[];
     },
   });
 }
@@ -91,7 +91,7 @@ export function useCompanyIntegrations(companyId?: string) {
         .eq("company_id", effectiveCompanyId);
 
       if (error) throw error;
-      return data as CompanyIntegration[];
+      return (data || []) as CompanyIntegration[];
     },
     enabled: !!effectiveCompanyId,
   });
@@ -118,7 +118,7 @@ export function useSiteIntegrations(siteId?: string) {
         .eq("site_id", siteId);
 
       if (error) throw error;
-      return data as SiteIntegration[];
+      return (data || []) as SiteIntegration[];
     },
   });
 }

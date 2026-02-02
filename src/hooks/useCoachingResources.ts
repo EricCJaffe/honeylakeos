@@ -100,7 +100,7 @@ export function useCoachingResources(coachingOrgId?: string | null) {
         .order("title");
 
       if (error) throw error;
-      return data as CoachingResource[];
+      return (data || []) as CoachingResource[];
     },
     enabled: !!orgId,
   });
@@ -281,7 +281,7 @@ export function useCoachingCollections(coachingOrgId?: string | null) {
         .order("name");
 
       if (error) throw error;
-      return data as CoachingResourceCollection[];
+      return (data || []) as CoachingResourceCollection[];
     },
     enabled: !!orgId,
   });
@@ -473,7 +473,7 @@ export function useCoachingResourceAssignments(filters?: {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as CoachingResourceAssignment[];
+      return (data || []) as CoachingResourceAssignment[];
     },
     enabled: !!orgId || !!filters?.engagementId || !!filters?.userId,
   });

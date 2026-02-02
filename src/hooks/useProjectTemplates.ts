@@ -57,7 +57,7 @@ export function useProjectTemplates() {
         .order("name");
 
       if (error) throw error;
-      return data as ProjectTemplate[];
+      return (data || []) as ProjectTemplate[];
     },
     enabled: !!activeCompanyId,
   });

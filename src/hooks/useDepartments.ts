@@ -54,7 +54,7 @@ export function useDepartments() {
         .order("name");
 
       if (error) throw error;
-      return data as Department[];
+      return (data || []) as Department[];
     },
     enabled: !!activeCompanyId,
   });

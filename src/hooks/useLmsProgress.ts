@@ -66,7 +66,7 @@ export function useMyLmsProgress() {
         .order("updated_at", { ascending: false });
 
       if (error) throw error;
-      return data as LmsProgress[];
+      return (data || []) as LmsProgress[];
     },
     enabled: !!activeCompanyId && !!user,
   });

@@ -61,7 +61,7 @@ export function useBankReconciliations(bankAccountId?: string) {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as BankReconciliation[];
+      return (data || []) as BankReconciliation[];
     },
     enabled: !!activeCompanyId,
   });
