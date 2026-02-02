@@ -104,7 +104,7 @@ export function useCompanyModules(): UseCompanyModulesResult {
         .order("category", { ascending: true })
         .order("name", { ascending: true });
       if (error) throw error;
-      return data as Module[];
+      return (data || []) as Module[];
     },
     staleTime: STALE_TIMES.STATIC, // 10 minutes - modules rarely change
     gcTime: STALE_TIMES.STATIC * 2, // Keep in cache longer
