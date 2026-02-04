@@ -255,6 +255,9 @@ export default function ProjectDetailPage() {
 
   const canEdit = project && (isCompanyAdmin || project.owner_user_id === user?.id);
 
+  // Ensure tasks is always an array to prevent .map errors
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+
   if (isLoading) {
     return (
       <div className="p-6">
@@ -278,11 +281,11 @@ export default function ProjectDetailPage() {
     );
   }
 
-  const completedTasks = tasks.filter((t) => t.status === "done").length;
-  const totalTasks = tasks.length;
+  const completedTasks = safeTasks.filter((t) => t.status === "done").length;
+  const totalTasks = safeTasks.length;
   const calculatedProgress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
   const now = new Date();
-  const overdueTasks = tasks.filter((t) => 
+  const overdueTasks = safeTasks.filter((t) =>
     t.status !== "done" && t.due_date && new Date(t.due_date) < now
   ).length;
 
@@ -439,7 +442,7 @@ export default function ProjectDetailPage() {
         <TabsList className="flex-wrap">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="tasks">
-            Tasks ({tasks.length})
+            Tasks ({safeTasks.length})
           </TabsTrigger>
           {isEnabled("notes") && (
             <TabsTrigger value="notes">Notes ({notes.length})</TabsTrigger>
@@ -466,7 +469,7 @@ export default function ProjectDetailPage() {
                 </CardHeader>
                 <CardContent className="p-0">
                   <PhaseGroupedTaskList
-                    tasks={tasks}
+                    tasks={safeTasks}
                     projectId={projectId!}
                     onAddTask={() => setIsTaskDialogOpen(true)}
                     onEditTask={handleEditTask}
@@ -587,7 +590,7 @@ export default function ProjectDetailPage() {
                 />
               ) : (
                 <TaskBoardView
-                  tasks={tasks}
+                  tasks={safeTasks}
                   projectId={projectId!}
                   onAddTask={() => setIsTaskDialogOpen(true)}
                   onEditTask={handleEditTask}
