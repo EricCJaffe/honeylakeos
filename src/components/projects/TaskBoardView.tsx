@@ -51,6 +51,9 @@ export function TaskBoardView({
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
+  // Ensure tasks is always an array to prevent .map errors
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+
   // Sorting state
   const [sortField, setSortField] = useState<SortField>("due_date");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
@@ -170,7 +173,7 @@ export function TaskBoardView({
     setDragOverPhase(null);
   };
 
-  if (tasks.length === 0) {
+  if (safeTasks.length === 0) {
     return (
       <div className="py-12">
         <EmptyState
@@ -189,7 +192,7 @@ export function TaskBoardView({
   const tasksByPhase: Record<string, any[]> = {};
   const unassignedTasks: any[] = [];
 
-  tasks.forEach((task) => {
+  safeTasks.forEach((task) => {
     if (task.phase_id) {
       if (!tasksByPhase[task.phase_id]) {
         tasksByPhase[task.phase_id] = [];
@@ -394,9 +397,9 @@ export function TaskBoardView({
 
   // If no phases, show by status instead
   if (activePhases.length === 0) {
-    const todoTasks = tasks.filter((t) => t.status === "to_do");
-    const inProgressTasks = tasks.filter((t) => t.status === "in_progress");
-    const doneTasks = tasks.filter((t) => t.status === "done");
+    const todoTasks = safeTasks.filter((t) => t.status === "to_do");
+    const inProgressTasks = safeTasks.filter((t) => t.status === "in_progress");
+    const doneTasks = safeTasks.filter((t) => t.status === "done");
 
     return (
       <div>

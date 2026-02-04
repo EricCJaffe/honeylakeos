@@ -34,6 +34,9 @@ export function PhaseGroupedTaskList({
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
+  // Ensure tasks is always an array to prevent .map errors
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+
   const toggleStatus = useMutation({
     mutationFn: async ({ taskId, currentStatus }: { taskId: string; currentStatus: string }) => {
       const newStatus = currentStatus === "done" ? "to_do" : "done";
@@ -67,7 +70,7 @@ export function PhaseGroupedTaskList({
     }
   };
 
-  if (tasks.length === 0) {
+  if (safeTasks.length === 0) {
     return (
       <div className="py-12">
         <EmptyState
@@ -86,7 +89,7 @@ export function PhaseGroupedTaskList({
   const tasksByPhase: Record<string, any[]> = {};
   const unassignedTasks: any[] = [];
 
-  tasks.forEach((task) => {
+  safeTasks.forEach((task) => {
     if (task.phase_id) {
       if (!tasksByPhase[task.phase_id]) {
         tasksByPhase[task.phase_id] = [];
@@ -195,9 +198,9 @@ export function PhaseGroupedTaskList({
 
   // If no phases exist, show simple grouped by status
   if (activePhases.length === 0) {
-    const todoTasks = tasks.filter((t) => t.status === "to_do");
-    const inProgressTasks = tasks.filter((t) => t.status === "in_progress");
-    const doneTasks = tasks.filter((t) => t.status === "done");
+    const todoTasks = safeTasks.filter((t) => t.status === "to_do");
+    const inProgressTasks = safeTasks.filter((t) => t.status === "in_progress");
+    const doneTasks = safeTasks.filter((t) => t.status === "done");
 
     const renderStatusGroup = (groupTasks: any[], label: string) => {
       if (groupTasks.length === 0) return null;
