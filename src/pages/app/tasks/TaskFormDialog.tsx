@@ -542,7 +542,7 @@ export function TaskFormDialog({
             )}
 
             {/* Phase selector - show when project is selected */}
-            {effectiveProjectId && phases.length > 0 && (
+            {effectiveProjectId && Array.isArray(phases) && phases.length > 0 && (
               <FormField
                 control={form.control}
                 name="phase_id"
@@ -559,7 +559,7 @@ export function TaskFormDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {phases.filter(p => p.status === "active").map((phase) => (
+                        {Array.isArray(phases) && phases.filter(p => p.status === "active").map((phase) => (
                           <SelectItem key={phase.id} value={phase.id}>
                             {phase.name}
                           </SelectItem>
@@ -573,7 +573,7 @@ export function TaskFormDialog({
             )}
 
             {/* List selector */}
-            {taskLists.length > 0 && (
+            {Array.isArray(taskLists) && taskLists.length > 0 && (
               <FormField
                 control={form.control}
                 name="list_id"
