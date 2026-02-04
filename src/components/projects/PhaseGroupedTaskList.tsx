@@ -178,7 +178,9 @@ export function PhaseGroupedTaskList({
   );
 
   const renderPhaseGroup = (phase: ProjectPhase, phaseTasks: any[]) => {
-    const completedCount = phaseTasks.filter((t) => t.status === "done").length;
+    // Ensure phaseTasks is always an array to prevent .filter and .map errors
+    const safePhaseTasks = Array.isArray(phaseTasks) ? phaseTasks : [];
+    const completedCount = safePhaseTasks.filter((t) => t.status === "done").length;
     
     return (
       <div key={phase.id} className="mb-4 last:mb-0">
@@ -188,10 +190,10 @@ export function PhaseGroupedTaskList({
             {phase.name}
           </h4>
           <Badge variant="secondary" className="text-xs">
-            {completedCount}/{phaseTasks.length}
+            {completedCount}/{safePhaseTasks.length}
           </Badge>
         </div>
-        <div>{phaseTasks.map(renderTask)}</div>
+        <div>{safePhaseTasks.map(renderTask)}</div>
       </div>
     );
   };
@@ -203,13 +205,15 @@ export function PhaseGroupedTaskList({
     const doneTasks = safeTasks.filter((t) => t.status === "done");
 
     const renderStatusGroup = (groupTasks: any[], label: string) => {
-      if (groupTasks.length === 0) return null;
+      // Ensure groupTasks is always an array to prevent .length and .map errors
+      const safeGroupTasks = Array.isArray(groupTasks) ? groupTasks : [];
+      if (safeGroupTasks.length === 0) return null;
       return (
         <div className="mb-4 last:mb-0">
           <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-2 border-b">
-            {label} ({groupTasks.length})
+            {label} ({safeGroupTasks.length})
           </h4>
-          <div>{groupTasks.map(renderTask)}</div>
+          <div>{safeGroupTasks.map(renderTask)}</div>
         </div>
       );
     };
