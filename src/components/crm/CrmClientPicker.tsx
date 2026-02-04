@@ -75,7 +75,8 @@ export function CrmClientPicker({
     return null;
   }
 
-  const selectedClient = clients.find((c) => c.id === value);
+  // Ensure clients is an array before calling .find()
+  const selectedClient = Array.isArray(clients) ? clients.find((c) => c.id === value) : undefined;
 
   const getClientName = (client: CrmClientOption) => {
     return client.entity_kind === "organization"
@@ -130,7 +131,7 @@ export function CrmClientPicker({
             <CommandList>
               <CommandEmpty>No clients found.</CommandEmpty>
               <CommandGroup>
-                {clients.map((client) => (
+                {Array.isArray(clients) && clients.map((client) => (
                   <CommandItem
                     key={client.id}
                     value={`${getClientName(client)} ${getClientSubtitle(client) || ""}`}

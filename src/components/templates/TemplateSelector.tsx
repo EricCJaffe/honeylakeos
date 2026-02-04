@@ -35,6 +35,8 @@ export function TemplateSelector({
   const [pendingTemplate, setPendingTemplate] = React.useState<Template | null>(null);
 
   const handleSelect = (templateId: string) => {
+    // Ensure templates is an array before calling .find()
+    if (!Array.isArray(templates)) return;
     const template = templates.find((t) => t.id === templateId);
     if (!template) return;
 
@@ -52,7 +54,7 @@ export function TemplateSelector({
     }
   };
 
-  if (isLoading || templates.length === 0) {
+  if (isLoading || !Array.isArray(templates) || templates.length === 0) {
     return null;
   }
 
