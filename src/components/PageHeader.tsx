@@ -7,6 +7,7 @@ interface PageHeaderProps {
   title: string;
   description?: string;
   backHref?: string;
+  onBack?: () => void;
   actionLabel?: string;
   onAction?: () => void;
   showAction?: boolean;
@@ -17,6 +18,7 @@ export function PageHeader({
   title,
   description,
   backHref,
+  onBack,
   actionLabel,
   onAction,
   showAction = true,
@@ -30,6 +32,11 @@ export function PageHeader({
             <Link to={backHref}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
+          </Button>
+        )}
+        {onBack && !backHref && (
+          <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0">
+            <ArrowLeft className="h-4 w-4" />
           </Button>
         )}
         <div>

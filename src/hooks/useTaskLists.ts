@@ -233,7 +233,7 @@ export function useTaskLists() {
   };
 
   return {
-    taskLists,
+    taskLists: safeTaskLists,
     personalLists,
     companyLists,
     unlistedCount,
