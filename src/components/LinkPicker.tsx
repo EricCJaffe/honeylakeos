@@ -89,7 +89,8 @@ export function LinkPicker({
   }
 
   const items = type === "project" ? projects : tasks;
-  const selectedItem = items.find((item) => item.id === value);
+  // Ensure items is an array before calling .find()
+  const selectedItem = Array.isArray(items) ? items.find((item) => item.id === value) : undefined;
 
   const Icon = type === "project" ? FolderKanban : CheckCircle2;
   const defaultPlaceholder = type === "project" ? "Link to project..." : "Link to task...";
@@ -125,7 +126,7 @@ export function LinkPicker({
             <CommandList>
               <CommandEmpty>No {type}s found.</CommandEmpty>
               <CommandGroup>
-                {items.map((item: any) => (
+                {Array.isArray(items) && items.map((item: any) => (
                   <CommandItem
                     key={item.id}
                     value={item.id}
