@@ -161,7 +161,7 @@ export default function TaskDetailPage() {
     <div className="p-6 max-w-4xl mx-auto">
       <PageHeader
         title={task.title}
-        backHref="/app/tasks"
+        onBack={() => navigate(-1)}
       >
         {canEdit && (
           <>

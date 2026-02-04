@@ -101,11 +101,14 @@ export function useTaskLists() {
   });
 
   // Split lists into personal and company with counts
-  const personalLists: TaskListWithCount[] = taskLists
+  // Ensure taskLists is always an array to prevent .filter and .map errors during refetch
+  const safeTaskLists = Array.isArray(taskLists) ? taskLists : [];
+
+  const personalLists: TaskListWithCount[] = safeTaskLists
     .filter(l => l.is_personal)
     .map(l => ({ ...l, task_count: listCounts[l.id] || 0 }));
-  
-  const companyLists: TaskListWithCount[] = taskLists
+
+  const companyLists: TaskListWithCount[] = safeTaskLists
     .filter(l => !l.is_personal)
     .map(l => ({ ...l, task_count: listCounts[l.id] || 0 }));
 

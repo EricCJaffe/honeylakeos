@@ -206,7 +206,12 @@ export default function TasksPage() {
   // Extract unique tags from all tasks
   const uniqueTags = useMemo(() => {
     const tagSet = new Set<string>();
-    [...allTasks, ...myTasks, ...recurringTasks].forEach((task) => {
+    // Ensure all arrays are defined before spreading to prevent errors during refetch
+    const safeAllTasks = Array.isArray(allTasks) ? allTasks : [];
+    const safeMyTasks = Array.isArray(myTasks) ? myTasks : [];
+    const safeRecurringTasks = Array.isArray(recurringTasks) ? recurringTasks : [];
+
+    [...safeAllTasks, ...safeMyTasks, ...safeRecurringTasks].forEach((task) => {
       if (task.tags && Array.isArray(task.tags)) {
         task.tags.forEach((tag: string) => tagSet.add(tag));
       }
@@ -216,7 +221,9 @@ export default function TasksPage() {
 
   // Filter function for tags and search
   const filterTasks = (tasks: any[]) => {
-    return tasks.filter((task) => {
+    // Ensure tasks is always an array to prevent .filter errors
+    const safeTasks = Array.isArray(tasks) ? tasks : [];
+    return safeTasks.filter((task) => {
       // Tag filter
       if (tagFilter !== "all") {
         const taskTags = Array.isArray(task.tags) ? task.tags : [];
