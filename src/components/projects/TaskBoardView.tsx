@@ -115,7 +115,9 @@ export function TaskBoardView({
 
   // Sorting functions
   const sortTasks = (tasksToSort: any[]) => {
-    return [...tasksToSort].sort((a, b) => {
+    // Ensure tasksToSort is always an array to prevent spread operator errors
+    const safeTasksToSort = Array.isArray(tasksToSort) ? tasksToSort : [];
+    return [...safeTasksToSort].sort((a, b) => {
       let aValue: any;
       let bValue: any;
 
@@ -326,8 +328,10 @@ export function TaskBoardView({
   );
 
   const renderColumn = (title: string, columnTasks: any[], phaseId: string | null) => {
-    const completedCount = columnTasks.filter((t) => t.status === "done").length;
-    const sortedTasks = sortTasks(columnTasks);
+    // Ensure columnTasks is always an array to prevent .filter and .map errors
+    const safeColumnTasks = Array.isArray(columnTasks) ? columnTasks : [];
+    const completedCount = safeColumnTasks.filter((t) => t.status === "done").length;
+    const sortedTasks = sortTasks(safeColumnTasks);
     const isDropTarget = dragOverPhase === phaseId;
     
     return (
