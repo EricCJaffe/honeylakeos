@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { ModuleErrorBoundary } from "@/core/errors";
 import { Loader2 } from "lucide-react";
 import { APP_VERSION } from "@/lib/version";
+import { prefetchCoreAppRoutes } from "@/lib/routePrefetch";
 
 export function AppLayout() {
   const navigate = useNavigate();
@@ -53,6 +54,11 @@ export function AppLayout() {
     // All checks passed, user can view the current route
     setIsRedirectResolved(true);
   }, [isLoading, user, memberships, activeCompanyId, navigate, location.pathname]);
+
+  React.useEffect(() => {
+    if (!isRedirectResolved || !user) return;
+    prefetchCoreAppRoutes();
+  }, [isRedirectResolved, user]);
 
   // Show loading state while auth OR memberships are loading, OR while redirect decision is pending
   // This prevents the flash of onboarding UI for returning users
