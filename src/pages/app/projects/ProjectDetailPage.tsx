@@ -64,6 +64,7 @@ import { DuplicateProjectDialog } from "@/components/projects/DuplicateProjectDi
 import { AttachmentsPanel } from "@/components/attachments";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { safeFormatDate } from "@/core/runtime/safety";
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -263,13 +264,6 @@ export default function ProjectDetailPage() {
   const safeDocuments = Array.isArray(documents) ? documents : [];
   const safeEvents = Array.isArray(events) ? events : [];
   const safeMembers = Array.isArray(members) ? members : [];
-
-  const safeFormatDate = (value: string | null | undefined, pattern: string) => {
-    if (!value) return "—";
-    const dt = new Date(value);
-    if (Number.isNaN(dt.getTime())) return "Invalid date";
-    return format(dt, pattern);
-  };
 
   if (isLoading) {
     return (

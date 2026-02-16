@@ -1,7 +1,6 @@
 import { useState, Suspense, lazy } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
 import { CheckCircle2, Pencil, Trash2, Calendar, Clock, User, Repeat, Layers, ChevronDown, ChevronUp, Tag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
@@ -24,6 +23,7 @@ import { AttachmentsPanel } from "@/components/attachments";
 import { useTaskOccurrenceActions } from "@/hooks/useTaskOccurrenceCompletions";
 import { configToRRule, rruleToConfig } from "@/components/tasks/RecurrenceSelector";
 import { TaskTagsDisplay } from "@/components/tasks/TaskTagInput";
+import { safeFormatDate } from "@/core/runtime/safety";
 
 // Lazy load rich text display
 const RichTextDisplay = lazy(() => import("@/components/ui/rich-text-editor").then(m => ({ default: m.RichTextDisplay })));
@@ -40,13 +40,6 @@ const statusConfig = {
   in_progress: { label: "In Progress", color: "bg-blue-500/10 text-blue-600" },
   done: { label: "Done", color: "bg-green-500/10 text-green-600" },
   blocked: { label: "Blocked", color: "bg-destructive/10 text-destructive" },
-};
-
-const safeFormatDate = (value: string | null | undefined, pattern: string) => {
-  if (!value) return null;
-  const dt = new Date(value);
-  if (Number.isNaN(dt.getTime())) return null;
-  return format(dt, pattern);
 };
 
 export default function TaskDetailPage() {
@@ -273,7 +266,7 @@ export default function TaskDetailPage() {
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span>
-                    Due {safeFormatDate(task.due_date, "MMM d, yyyy") || "Invalid date"}
+                    Due {safeFormatDate(task.due_date, "MMM d, yyyy")}
                   </span>
                 </div>
               )}

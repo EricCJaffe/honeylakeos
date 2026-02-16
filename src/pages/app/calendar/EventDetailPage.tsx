@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
 import { Calendar, Pencil, Trash2, Clock, MapPin, Users, Repeat } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
@@ -17,6 +16,7 @@ import { EntityLinksPanel } from "@/components/EntityLinksPanel";
 import { RecurringEventOccurrences } from "@/components/calendar/RecurringEventOccurrences";
 import { EventAttendeesManager } from "@/components/calendar/EventAttendeesManager";
 import { AttachmentsPanel } from "@/components/attachments";
+import { safeFormatDate } from "@/core/runtime/safety";
 
 export default function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -64,13 +64,6 @@ export default function EventDetailPage() {
   });
 
   const canEdit = event && (isCompanyAdmin || event.created_by === user?.id);
-
-  const safeFormatDate = (value: string | null | undefined, pattern: string) => {
-    if (!value) return null;
-    const dt = new Date(value);
-    if (Number.isNaN(dt.getTime())) return null;
-    return format(dt, pattern);
-  };
 
   if (isLoading) {
     return (
@@ -175,14 +168,14 @@ export default function EventDetailPage() {
             <div className="space-y-3 text-sm">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span>{safeFormatDate(event.start_at, "EEEE, MMMM d, yyyy") || "Invalid date"}</span>
+                <span>{safeFormatDate(event.start_at, "EEEE, MMMM d, yyyy")}</span>
               </div>
               {!event.all_day && (
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <span>
-                    {safeFormatDate(event.start_at, "h:mm a") || "Invalid time"}
-                    {event.end_at && ` - ${safeFormatDate(event.end_at, "h:mm a") || "Invalid time"}`}
+                    {safeFormatDate(event.start_at, "h:mm a", "Invalid time")}
+                    {event.end_at && ` - ${safeFormatDate(event.end_at, "h:mm a", "Invalid time")}`}
                   </span>
                 </div>
               )}

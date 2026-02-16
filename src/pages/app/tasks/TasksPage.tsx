@@ -27,6 +27,7 @@ import { TaskTemplateList } from "@/components/tasks/TaskTemplateList";
 import { TemplateFormDialog } from "@/components/templates/TemplateFormDialog";
 import { TaskListManager } from "@/components/tasks/TaskListManager";
 import { Template } from "@/hooks/useTemplates";
+import { ensureArray } from "@/core/runtime/safety";
 
 export default function TasksPage() {
   const navigate = useNavigate();
@@ -45,7 +46,7 @@ export default function TasksPage() {
   const [templateToApply, setTemplateToApply] = useState<Template | null>(null);
   const [listManagerOpen, setListManagerOpen] = useState(false);
 
-  const { data: projects = [] } = useQuery({
+  const { data: projectsRaw = [] } = useQuery({
     queryKey: ["projects", activeCompanyId],
     queryFn: async () => {
       if (!activeCompanyId) return [];
@@ -62,7 +63,7 @@ export default function TasksPage() {
   });
 
   // Fetch phases for selected project
-  const { data: phases = [] } = useQuery({
+  const { data: phasesRaw = [] } = useQuery({
     queryKey: ["project-phases", projectFilter],
     queryFn: async () => {
       if (!projectFilter || projectFilter === "all") return [];
@@ -83,7 +84,7 @@ export default function TasksPage() {
     setPhaseFilter("all");
   }, [projectFilter]);
 
-  const { data: allTasks = [], isLoading: loadingAll } = useQuery({
+  const { data: allTasksRaw = [], isLoading: loadingAll } = useQuery({
     queryKey: ["tasks", activeCompanyId, projectFilter, phaseFilter, listFilter],
     queryFn: async () => {
       if (!activeCompanyId) return [];
@@ -110,7 +111,7 @@ export default function TasksPage() {
     enabled: !!activeCompanyId,
   });
 
-  const { data: myTasks = [] } = useQuery({
+  const { data: myTasksRaw = [] } = useQuery({
     queryKey: ["my-tasks", activeCompanyId, user?.id, projectFilter, phaseFilter, listFilter],
     queryFn: async () => {
       if (!activeCompanyId || !user) return [];
@@ -139,7 +140,7 @@ export default function TasksPage() {
     enabled: !!activeCompanyId && !!user,
   });
 
-  const { data: recurringTasks = [] } = useQuery({
+  const { data: recurringTasksRaw = [] } = useQuery({
     queryKey: ["recurring-tasks", activeCompanyId, projectFilter, phaseFilter, listFilter],
     queryFn: async () => {
       if (!activeCompanyId) return [];
@@ -203,13 +204,18 @@ export default function TasksPage() {
 
   const hasFilters = projectFilter !== "all" || phaseFilter !== "all" || listFilter !== "all" || tagFilter !== "all" || searchQuery !== "";
 
+  const projects = ensureArray<{ id: string; name: string; emoji: string | null }>(projectsRaw);
+  const phases = ensureArray<{ id: string; name: string }>(phasesRaw);
+  const allTasks = ensureArray<any>(allTasksRaw);
+  const myTasks = ensureArray<any>(myTasksRaw);
+  const recurringTasks = ensureArray<any>(recurringTasksRaw);
+
   // Extract unique tags from all tasks
   const uniqueTags = useMemo(() => {
     const tagSet = new Set<string>();
-    // Ensure all arrays are defined before spreading to prevent errors during refetch
-    const safeAllTasks = Array.isArray(allTasks) ? allTasks : [];
-    const safeMyTasks = Array.isArray(myTasks) ? myTasks : [];
-    const safeRecurringTasks = Array.isArray(recurringTasks) ? recurringTasks : [];
+    const safeAllTasks = ensureArray<any>(allTasks);
+    const safeMyTasks = ensureArray<any>(myTasks);
+    const safeRecurringTasks = ensureArray<any>(recurringTasks);
 
     [...safeAllTasks, ...safeMyTasks, ...safeRecurringTasks].forEach((task) => {
       if (task.tags && Array.isArray(task.tags)) {
@@ -221,8 +227,7 @@ export default function TasksPage() {
 
   // Filter function for tags and search
   const filterTasks = (tasks: any[]) => {
-    // Ensure tasks is always an array to prevent .filter errors
-    const safeTasks = Array.isArray(tasks) ? tasks : [];
+    const safeTasks = ensureArray<any>(tasks);
     return safeTasks.filter((task) => {
       // Tag filter
       if (tagFilter !== "all") {
