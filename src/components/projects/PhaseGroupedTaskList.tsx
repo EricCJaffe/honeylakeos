@@ -1,7 +1,6 @@
 import * as React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
 import { CheckCircle2, Circle, Calendar, Repeat, MoreHorizontal, Pencil, FolderOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -16,12 +15,18 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/EmptyState";
 import { useProjectPhases, ProjectPhase } from "@/hooks/useProjectPhases";
+import { ensureArray, safeFormatDate } from "@/core/runtime/safety";
+import type { TaskListItem } from "@/pages/app/tasks/TaskList";
+
+type ProjectTaskItem = TaskListItem & {
+  phase_id?: string | null;
+};
 
 interface PhaseGroupedTaskListProps {
-  tasks: any[];
+  tasks: ProjectTaskItem[];
   projectId: string;
   onAddTask?: () => void;
-  onEditTask?: (task: any) => void;
+  onEditTask?: (task: ProjectTaskItem) => void;
 }
 
 export function PhaseGroupedTaskList({
@@ -35,7 +40,7 @@ export function PhaseGroupedTaskList({
   const navigate = useNavigate();
 
   // Ensure tasks is always an array to prevent .map errors
-  const safeTasks = Array.isArray(tasks) ? tasks : [];
+  const safeTasks = ensureArray<ProjectTaskItem>(tasks);
 
   const toggleStatus = useMutation({
     mutationFn: async ({ taskId, currentStatus }: { taskId: string; currentStatus: string }) => {
@@ -86,8 +91,8 @@ export function PhaseGroupedTaskList({
 
   // Group tasks by phase
   const activePhases = phases.filter((p) => p.status === "active");
-  const tasksByPhase: Record<string, any[]> = {};
-  const unassignedTasks: any[] = [];
+  const tasksByPhase: Record<string, ProjectTaskItem[]> = {};
+  const unassignedTasks: ProjectTaskItem[] = [];
 
   safeTasks.forEach((task) => {
     if (task.phase_id) {
@@ -100,7 +105,7 @@ export function PhaseGroupedTaskList({
     }
   });
 
-  const renderTask = (task: any) => (
+  const renderTask = (task: ProjectTaskItem) => (
     <div
       key={task.id}
       className={cn(
@@ -140,7 +145,7 @@ export function PhaseGroupedTaskList({
         {task.due_date && (
           <span className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
             <Calendar className="h-3 w-3" />
-            {format(new Date(task.due_date), "MMM d")}
+            {safeFormatDate(task.due_date, "MMM d")}
           </span>
         )}
       </div>
@@ -177,9 +182,9 @@ export function PhaseGroupedTaskList({
     </div>
   );
 
-  const renderPhaseGroup = (phase: ProjectPhase, phaseTasks: any[]) => {
+  const renderPhaseGroup = (phase: ProjectPhase, phaseTasks: ProjectTaskItem[]) => {
     // Ensure phaseTasks is always an array to prevent .filter and .map errors
-    const safePhaseTasks = Array.isArray(phaseTasks) ? phaseTasks : [];
+    const safePhaseTasks = ensureArray<ProjectTaskItem>(phaseTasks);
     const completedCount = safePhaseTasks.filter((t) => t.status === "done").length;
     
     return (
@@ -204,9 +209,9 @@ export function PhaseGroupedTaskList({
     const inProgressTasks = safeTasks.filter((t) => t.status === "in_progress");
     const doneTasks = safeTasks.filter((t) => t.status === "done");
 
-    const renderStatusGroup = (groupTasks: any[], label: string) => {
+    const renderStatusGroup = (groupTasks: ProjectTaskItem[], label: string) => {
       // Ensure groupTasks is always an array to prevent .length and .map errors
-      const safeGroupTasks = Array.isArray(groupTasks) ? groupTasks : [];
+      const safeGroupTasks = ensureArray<ProjectTaskItem>(groupTasks);
       if (safeGroupTasks.length === 0) return null;
       return (
         <div className="mb-4 last:mb-0">

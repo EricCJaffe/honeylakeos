@@ -2,7 +2,6 @@ import * as React from "react";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
 import { 
   CheckCircle2, 
   Circle, 
@@ -28,14 +27,21 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/EmptyState";
-import { useProjectPhases, ProjectPhase } from "@/hooks/useProjectPhases";
+import { useProjectPhases } from "@/hooks/useProjectPhases";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ensureArray, safeFormatDate } from "@/core/runtime/safety";
+import type { TaskListItem } from "@/pages/app/tasks/TaskList";
+
+type ProjectTaskItem = TaskListItem & {
+  phase_id?: string | null;
+  created_at?: string | null;
+};
 
 interface TaskBoardViewProps {
-  tasks: any[];
+  tasks: ProjectTaskItem[];
   projectId: string;
   onAddTask?: () => void;
-  onEditTask?: (task: any) => void;
+  onEditTask?: (task: ProjectTaskItem) => void;
 }
 
 type SortField = "due_date" | "created_at";
@@ -52,7 +58,7 @@ export function TaskBoardView({
   const navigate = useNavigate();
 
   // Ensure tasks is always an array to prevent .map errors
-  const safeTasks = Array.isArray(tasks) ? tasks : [];
+  const safeTasks = ensureArray<ProjectTaskItem>(tasks);
 
   // Sorting state
   const [sortField, setSortField] = useState<SortField>("due_date");
@@ -114,19 +120,26 @@ export function TaskBoardView({
   };
 
   // Sorting functions
-  const sortTasks = (tasksToSort: any[]) => {
+  const sortTasks = (tasksToSort: ProjectTaskItem[]) => {
     // Ensure tasksToSort is always an array to prevent spread operator errors
-    const safeTasksToSort = Array.isArray(tasksToSort) ? tasksToSort : [];
+    const safeTasksToSort = ensureArray<ProjectTaskItem>(tasksToSort);
+
+    const toTimestamp = (value: string | null | undefined, fallback: number) => {
+      if (!value) return fallback;
+      const parsed = new Date(value).getTime();
+      return Number.isFinite(parsed) ? parsed : fallback;
+    };
+
     return [...safeTasksToSort].sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
+      let aValue: number;
+      let bValue: number;
 
       if (sortField === "due_date") {
-        aValue = a.due_date ? new Date(a.due_date).getTime() : Infinity;
-        bValue = b.due_date ? new Date(b.due_date).getTime() : Infinity;
+        aValue = toTimestamp(a.due_date, Number.POSITIVE_INFINITY);
+        bValue = toTimestamp(b.due_date, Number.POSITIVE_INFINITY);
       } else {
-        aValue = new Date(a.created_at).getTime();
-        bValue = new Date(b.created_at).getTime();
+        aValue = toTimestamp(a.created_at, 0);
+        bValue = toTimestamp(b.created_at, 0);
       }
 
       if (sortDirection === "asc") {
@@ -191,8 +204,8 @@ export function TaskBoardView({
 
   // Group tasks by phase
   const activePhases = phases.filter((p) => p.status === "active");
-  const tasksByPhase: Record<string, any[]> = {};
-  const unassignedTasks: any[] = [];
+  const tasksByPhase: Record<string, ProjectTaskItem[]> = {};
+  const unassignedTasks: ProjectTaskItem[] = [];
 
   safeTasks.forEach((task) => {
     if (task.phase_id) {
@@ -205,7 +218,7 @@ export function TaskBoardView({
     }
   });
 
-  const renderTaskCard = (task: any) => (
+  const renderTaskCard = (task: ProjectTaskItem) => (
     <div
       key={task.id}
       draggable
@@ -258,7 +271,7 @@ export function TaskBoardView({
                 {task.due_date && (
                   <span className="text-xs text-muted-foreground flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
-                    {format(new Date(task.due_date), "MMM d")}
+                    {safeFormatDate(task.due_date, "MMM d")}
                   </span>
                 )}
                 <Badge
@@ -327,9 +340,9 @@ export function TaskBoardView({
     </div>
   );
 
-  const renderColumn = (title: string, columnTasks: any[], phaseId: string | null) => {
+  const renderColumn = (title: string, columnTasks: ProjectTaskItem[], phaseId: string | null) => {
     // Ensure columnTasks is always an array to prevent .filter and .map errors
-    const safeColumnTasks = Array.isArray(columnTasks) ? columnTasks : [];
+    const safeColumnTasks = ensureArray<ProjectTaskItem>(columnTasks);
     const completedCount = safeColumnTasks.filter((t) => t.status === "done").length;
     const sortedTasks = sortTasks(safeColumnTasks);
     const isDropTarget = dragOverPhase === phaseId;
@@ -352,7 +365,7 @@ export function TaskBoardView({
                 {title}
               </CardTitle>
               <Badge variant="secondary" className="text-xs">
-                {completedCount}/{columnTasks.length}
+                {completedCount}/{safeColumnTasks.length}
               </Badge>
             </div>
           </CardHeader>
