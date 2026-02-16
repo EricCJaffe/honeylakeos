@@ -3,6 +3,18 @@
 -- GENERIC COACHING PROGRAM PACK - COMPLETE SEED DATA
 -- =====================================================
 
+-- Ensure referenced pack exists for deterministic FK-safe seeding.
+INSERT INTO coaching_program_packs (id, key, name, version, description, is_active)
+VALUES (
+  'cc93b66a-6f8f-4b85-96e5-3aab2127ec44',
+  'generic-seed-pack',
+  'Generic Seed Pack',
+  '1.0',
+  'Seed pack used by migration 20260123144213',
+  true
+)
+ON CONFLICT (id) DO NOTHING;
+
 -- =====================================================
 -- 1. ADD MISSING TERMINOLOGY
 -- =====================================================

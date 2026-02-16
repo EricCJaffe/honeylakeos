@@ -90,9 +90,15 @@ USING (
 );
 
 -- Create private storage bucket for attachments
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('attachments', 'attachments', false, 52428800, NULL)
-ON CONFLICT (id) DO NOTHING;
+DO $$
+BEGIN
+  INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+  VALUES ('attachments', 'attachments', false, 52428800, NULL)
+  ON CONFLICT (id) DO NOTHING;
+EXCEPTION
+  WHEN insufficient_privilege THEN
+    RAISE NOTICE 'Skipping attachments bucket creation due to insufficient privilege in this environment.';
+END $$;
 
 -- Storage policies for attachments bucket
 CREATE POLICY "Users can upload to their company folder"

@@ -100,9 +100,15 @@ AS $$
 $$;
 
 -- Create storage bucket for backups
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('company-backups', 'company-backups', false, 104857600, ARRAY['application/json'])
-ON CONFLICT (id) DO NOTHING;
+DO $$
+BEGIN
+  INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+  VALUES ('company-backups', 'company-backups', false, 104857600, ARRAY['application/json'])
+  ON CONFLICT (id) DO NOTHING;
+EXCEPTION
+  WHEN insufficient_privilege THEN
+    RAISE NOTICE 'Skipping company-backups bucket creation due to insufficient privilege in this environment.';
+END $$;
 
 -- Storage policies for backups bucket
 CREATE POLICY "Company admins can upload backups"

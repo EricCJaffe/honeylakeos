@@ -1,3 +1,7 @@
+/*
+No-op in this repository: this migration redefines core bootstrap tables/policies
+that already exist in earlier migrations and breaks shadow-db replay for `db pull`.
+Kept in history intentionally but disabled for deterministic replays.
 -- =============================================
 -- BusinessOS Database Schema - Part 1: Tables
 -- =============================================
@@ -326,3 +330,4 @@ CREATE POLICY "Users can update their own notes"
 CREATE POLICY "Users can delete their own notes or admins"
   ON public.notes FOR DELETE
   USING (auth.uid() = user_id OR public.has_company_role(auth.uid(), company_id, 'admin'));
+*/
