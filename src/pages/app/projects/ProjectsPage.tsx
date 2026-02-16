@@ -67,9 +67,17 @@ type LinkedClient = {
   org_name?: string | null;
   person_full_name?: string | null;
 };
+type ProjectWithClient = Project & { linked_crm_client: LinkedClient | null };
 
 const getClientDisplayName = (client: LinkedClient | null | undefined) =>
   client?.org_name || client?.person_full_name || client?.name || "Unnamed client";
+
+const getErrorMessage = (error: unknown) => {
+  if (error && typeof error === "object" && "message" in error) {
+    return String((error as { message?: string }).message ?? "Unknown error");
+  }
+  return String(error);
+};
 
 export default function ProjectsPage() {
   const { activeCompanyId, isCompanyAdmin, loading: membershipLoading } = useActiveCompany();
@@ -96,7 +104,7 @@ export default function ProjectsPage() {
     data: projects = [],
     isLoading,
     error: projectsError,
-  } = useQuery({
+  } = useQuery<ProjectWithClient[]>({
     queryKey: ["projects", activeCompanyId],
     queryFn: async () => {
       if (!activeCompanyId) return [];
@@ -146,10 +154,11 @@ export default function ProjectsPage() {
 
       // IMPORTANT: keep this as an ARRAY. Other routes reuse the same query key
       // and expect a list they can call `.map()` on.
-      return (data as any[]).map((p) => ({
-        ...p,
-        linked_crm_client: byProject.get(p.id) || null,
-      }));
+	      const baseProjects = (data ?? []) as Project[];
+	      return baseProjects.map((p) => ({
+	        ...p,
+	        linked_crm_client: byProject.get(p.id) || null,
+	      }));
     },
     enabled: !!activeCompanyId,
   });
@@ -307,7 +316,7 @@ export default function ProjectsPage() {
 
       // Client filter (linked CRM client)
       if (clientFilter !== "all") {
-        const linked = (project as any).linked_crm_client;
+        const linked = project.linked_crm_client;
         if (!linked || linked.id !== clientFilter) return false;
       }
       
@@ -449,9 +458,9 @@ export default function ProjectsPage() {
             <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm">
               <div className="font-semibold text-destructive">Projects data error</div>
               <div className="mt-1 text-xs text-muted-foreground">If you see this, something is failing (RLS/auth/context). Please screenshot this box.</div>
-              {projectsError && <div className="mt-2 text-xs"><span className="font-semibold">projects:</span> {(projectsError as any)?.message || String(projectsError)}</div>}
-              {projectTasksError && <div className="mt-1 text-xs"><span className="font-semibold">tasks:</span> {(projectTasksError as any)?.message || String(projectTasksError)}</div>}
-              {projectPhasesError && <div className="mt-1 text-xs"><span className="font-semibold">phases:</span> {(projectPhasesError as any)?.message || String(projectPhasesError)}</div>}
+              {projectsError && <div className="mt-2 text-xs"><span className="font-semibold">projects:</span> {getErrorMessage(projectsError)}</div>}
+              {projectTasksError && <div className="mt-1 text-xs"><span className="font-semibold">tasks:</span> {getErrorMessage(projectTasksError)}</div>}
+              {projectPhasesError && <div className="mt-1 text-xs"><span className="font-semibold">phases:</span> {getErrorMessage(projectPhasesError)}</div>}
               <div className="mt-2 text-xs text-muted-foreground">(Diagnostics banner will be removed once this is stable.)</div>
               <div className="mt-2 text-xs">activeCompanyId: <span className="font-mono">{activeCompanyId || "(null)"}</span></div>
               <div className="mt-1 text-xs">projects loaded: <span className="font-mono">{projects.length}</span></div>

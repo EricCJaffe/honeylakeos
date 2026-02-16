@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, Repeat, Filter, FileText, Layers, List, Settings, Tag } from "lucide-react";
@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
-import { TaskList } from "./TaskList";
+import { TaskList, type TaskListItem } from "./TaskList";
 import { TaskFormDialog } from "./TaskFormDialog";
 import { TaskTemplateList } from "@/components/tasks/TaskTemplateList";
 import { TemplateFormDialog } from "@/components/templates/TemplateFormDialog";
@@ -35,7 +35,7 @@ export default function TasksPage() {
   const { user } = useAuth();
   const { taskLists, personalLists, companyLists, unlistedCount } = useTaskLists();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<any>(null);
+  const [editingTask, setEditingTask] = useState<TaskListItem | null>(null);
   const [projectFilter, setProjectFilter] = useState<string>("all");
   const [phaseFilter, setPhaseFilter] = useState<string>("all");
   const [listFilter, setListFilter] = useState<string>("all");
@@ -172,7 +172,7 @@ export default function TasksPage() {
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (task: any) => {
+  const handleEdit = (task: TaskListItem) => {
     setEditingTask(task);
     setTemplateToApply(null);
     setIsDialogOpen(true);
@@ -206,16 +206,16 @@ export default function TasksPage() {
 
   const projects = ensureArray<{ id: string; name: string; emoji: string | null }>(projectsRaw);
   const phases = ensureArray<{ id: string; name: string }>(phasesRaw);
-  const allTasks = ensureArray<any>(allTasksRaw);
-  const myTasks = ensureArray<any>(myTasksRaw);
-  const recurringTasks = ensureArray<any>(recurringTasksRaw);
+  const allTasks = ensureArray<TaskListItem>(allTasksRaw);
+  const myTasks = ensureArray<TaskListItem>(myTasksRaw);
+  const recurringTasks = ensureArray<TaskListItem>(recurringTasksRaw);
 
   // Extract unique tags from all tasks
   const uniqueTags = useMemo(() => {
     const tagSet = new Set<string>();
-    const safeAllTasks = ensureArray<any>(allTasks);
-    const safeMyTasks = ensureArray<any>(myTasks);
-    const safeRecurringTasks = ensureArray<any>(recurringTasks);
+    const safeAllTasks = ensureArray<TaskListItem>(allTasks);
+    const safeMyTasks = ensureArray<TaskListItem>(myTasks);
+    const safeRecurringTasks = ensureArray<TaskListItem>(recurringTasks);
 
     [...safeAllTasks, ...safeMyTasks, ...safeRecurringTasks].forEach((task) => {
       if (task.tags && Array.isArray(task.tags)) {
@@ -226,8 +226,8 @@ export default function TasksPage() {
   }, [allTasks, myTasks, recurringTasks]);
 
   // Filter function for tags and search
-  const filterTasks = (tasks: any[]) => {
-    const safeTasks = ensureArray<any>(tasks);
+  const filterTasks = useCallback((tasks: TaskListItem[]) => {
+    const safeTasks = ensureArray<TaskListItem>(tasks);
     return safeTasks.filter((task) => {
       // Tag filter
       if (tagFilter !== "all") {
@@ -244,11 +244,11 @@ export default function TasksPage() {
       }
       return true;
     });
-  };
+  }, [tagFilter, searchQuery]);
 
-  const filteredAllTasks = useMemo(() => filterTasks(allTasks), [allTasks, tagFilter, searchQuery]);
-  const filteredMyTasks = useMemo(() => filterTasks(myTasks), [myTasks, tagFilter, searchQuery]);
-  const filteredRecurringTasks = useMemo(() => filterTasks(recurringTasks), [recurringTasks, tagFilter, searchQuery]);
+  const filteredAllTasks = useMemo(() => filterTasks(allTasks), [allTasks, filterTasks]);
+  const filteredMyTasks = useMemo(() => filterTasks(myTasks), [myTasks, filterTasks]);
+  const filteredRecurringTasks = useMemo(() => filterTasks(recurringTasks), [recurringTasks, filterTasks]);
 
   if (membershipLoading || loadingAll) {
     return <div className="p-6"><div className="animate-pulse space-y-4"><div className="h-8 bg-muted rounded w-48" /><div className="h-64 bg-muted rounded-lg" /></div></div>;

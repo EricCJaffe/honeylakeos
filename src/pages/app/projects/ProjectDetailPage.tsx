@@ -65,6 +65,13 @@ import { AttachmentsPanel } from "@/components/attachments";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { safeFormatDate } from "@/core/runtime/safety";
+import type { Tables } from "@/integrations/supabase/types";
+
+type ProjectTask = Tables<"tasks"> & { task_assignees?: Array<{ user_id: string }> | null };
+type ProjectNoteSummary = Pick<Tables<"notes">, "id" | "title" | "created_at" | "is_pinned" | "color">;
+type ProjectDocumentSummary = Pick<Tables<"documents">, "id" | "name" | "mime_type" | "created_at">;
+type ProjectEventSummary = Pick<Tables<"events">, "id" | "title" | "start_at" | "end_at" | "all_day">;
+type ProjectMember = Tables<"project_members">;
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -84,7 +91,7 @@ export default function ProjectDetailPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddingPhase, setIsAddingPhase] = useState(false);
   const [taskViewMode, setTaskViewMode] = useState<"list" | "board">("list");
-  const [editingTask, setEditingTask] = useState<any>(null);
+  const [editingTask, setEditingTask] = useState<ProjectTask | null>(null);
 
   const { data: project, isLoading } = useQuery({
     queryKey: ["project", safeProjectId],
@@ -103,7 +110,7 @@ export default function ProjectDetailPage() {
     enabled: !!safeProjectId,
   });
 
-  const { data: tasks = [] } = useQuery({
+  const { data: tasks = [] } = useQuery<ProjectTask[]>({
     queryKey: ["project-tasks", safeProjectId],
     queryFn: async () => {
       if (!safeProjectId) return [];
@@ -116,12 +123,12 @@ export default function ProjectDetailPage() {
         .order("order_index", { ascending: true });
 
       if (error) throw error;
-      return data;
+      return (data ?? []) as ProjectTask[];
     },
     enabled: !!safeProjectId,
   });
 
-  const { data: members = [] } = useQuery({
+  const { data: members = [] } = useQuery<ProjectMember[]>({
     queryKey: ["project-members", safeProjectId],
     queryFn: async () => {
       if (!safeProjectId) return [];
@@ -131,12 +138,12 @@ export default function ProjectDetailPage() {
         .eq("project_id", safeProjectId);
 
       if (error) throw error;
-      return data;
+      return (data ?? []) as ProjectMember[];
     },
     enabled: !!safeProjectId,
   });
 
-  const { data: notes = [] } = useQuery({
+  const { data: notes = [] } = useQuery<ProjectNoteSummary[]>({
     queryKey: ["project-notes", safeProjectId],
     queryFn: async () => {
       if (!safeProjectId) return [];
@@ -148,12 +155,12 @@ export default function ProjectDetailPage() {
         .order("updated_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+      return (data ?? []) as ProjectNoteSummary[];
     },
     enabled: !!safeProjectId && isEnabled("notes"),
   });
 
-  const { data: documents = [] } = useQuery({
+  const { data: documents = [] } = useQuery<ProjectDocumentSummary[]>({
     queryKey: ["project-documents", safeProjectId],
     queryFn: async () => {
       if (!safeProjectId) return [];
@@ -164,12 +171,12 @@ export default function ProjectDetailPage() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+      return (data ?? []) as ProjectDocumentSummary[];
     },
     enabled: !!safeProjectId && isEnabled("documents"),
   });
 
-  const { data: events = [] } = useQuery({
+  const { data: events = [] } = useQuery<ProjectEventSummary[]>({
     queryKey: ["project-events", safeProjectId],
     queryFn: async () => {
       if (!safeProjectId) return [];
@@ -183,12 +190,12 @@ export default function ProjectDetailPage() {
         .limit(10);
 
       if (error) throw error;
-      return data;
+      return (data ?? []) as ProjectEventSummary[];
     },
     enabled: !!safeProjectId && isEnabled("calendar"),
   });
 
-  const handleEditTask = (task: any) => {
+  const handleEditTask = (task: ProjectTask) => {
     setEditingTask(task);
     setIsTaskDialogOpen(true);
   };
@@ -513,7 +520,7 @@ export default function ProjectDetailPage() {
                       <p className="text-sm text-muted-foreground">No notes yet</p>
                     ) : (
                       <div className="space-y-2">
-                        {safeNotes.slice(0, 3).map((note: any) => (
+                        {safeNotes.slice(0, 3).map((note) => (
                           <Link
                             key={note.id}
                             to={`/app/notes/${note.id}`}
@@ -630,7 +637,7 @@ export default function ProjectDetailPage() {
                 />
               ) : (
                 <div className="space-y-2">
-                  {safeNotes.map((note: any) => (
+                  {safeNotes.map((note) => (
                     <Link
                       key={note.id}
                       to={`/app/notes/${note.id}`}
@@ -685,7 +692,7 @@ export default function ProjectDetailPage() {
                 />
               ) : (
                 <div className="space-y-2">
-                  {safeDocuments.map((doc: any) => (
+                  {safeDocuments.map((doc) => (
                     <Link
                       key={doc.id}
                       to={`/app/documents/${doc.id}`}
@@ -728,7 +735,7 @@ export default function ProjectDetailPage() {
                 />
               ) : (
                 <div className="space-y-2">
-                  {safeEvents.map((event: any) => (
+                  {safeEvents.map((event) => (
                     <Link
                       key={event.id}
                       to={`/app/calendar/${event.id}`}

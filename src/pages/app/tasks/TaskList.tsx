@@ -47,7 +47,7 @@ interface TaskListProps {
   showList?: boolean;
 }
 
-interface TaskListItem {
+export interface TaskListItem {
   id: string;
   title: string;
   status: string;
