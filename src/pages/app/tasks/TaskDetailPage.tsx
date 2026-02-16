@@ -42,6 +42,13 @@ const statusConfig = {
   blocked: { label: "Blocked", color: "bg-destructive/10 text-destructive" },
 };
 
+const safeFormatDate = (value: string | null | undefined, pattern: string) => {
+  if (!value) return null;
+  const dt = new Date(value);
+  if (Number.isNaN(dt.getTime())) return null;
+  return format(dt, pattern);
+};
+
 export default function TaskDetailPage() {
   const { taskId } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
@@ -265,7 +272,9 @@ export default function TaskDetailPage() {
               {task.due_date && (
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>Due {format(new Date(task.due_date), "MMM d, yyyy")}</span>
+                  <span>
+                    Due {safeFormatDate(task.due_date, "MMM d, yyyy") || "Invalid date"}
+                  </span>
                 </div>
               )}
               {task.estimated_time && (

@@ -67,6 +67,7 @@ import { toast } from "sonner";
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>();
+  const safeProjectId = projectId ?? null;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { isEnabled } = useCompanyModules();
@@ -85,29 +86,30 @@ export default function ProjectDetailPage() {
   const [editingTask, setEditingTask] = useState<any>(null);
 
   const { data: project, isLoading } = useQuery({
-    queryKey: ["project", projectId],
+    queryKey: ["project", safeProjectId],
     queryFn: async () => {
-      if (!projectId) return null;
+      if (!safeProjectId) return null;
       const { data, error } = await supabase
         .from("projects")
         .select("*")
-        .eq("id", projectId)
-        .single();
+        .eq("id", safeProjectId)
+        .is("deleted_at", null)
+        .maybeSingle();
 
       if (error) throw error;
       return data;
     },
-    enabled: !!projectId,
+    enabled: !!safeProjectId,
   });
 
   const { data: tasks = [] } = useQuery({
-    queryKey: ["project-tasks", projectId],
+    queryKey: ["project-tasks", safeProjectId],
     queryFn: async () => {
-      if (!projectId) return [];
+      if (!safeProjectId) return [];
       const { data, error } = await supabase
         .from("tasks")
         .select("*, task_assignees(user_id)")
-        .eq("project_id", projectId)
+        .eq("project_id", safeProjectId)
         .order("is_pinned", { ascending: false })
         .order("pinned_at", { ascending: false, nullsFirst: false })
         .order("order_index", { ascending: true });
@@ -115,66 +117,66 @@ export default function ProjectDetailPage() {
       if (error) throw error;
       return data;
     },
-    enabled: !!projectId,
+    enabled: !!safeProjectId,
   });
 
   const { data: members = [] } = useQuery({
-    queryKey: ["project-members", projectId],
+    queryKey: ["project-members", safeProjectId],
     queryFn: async () => {
-      if (!projectId) return [];
+      if (!safeProjectId) return [];
       const { data, error } = await supabase
         .from("project_members")
         .select("*")
-        .eq("project_id", projectId);
+        .eq("project_id", safeProjectId);
 
       if (error) throw error;
       return data;
     },
-    enabled: !!projectId,
+    enabled: !!safeProjectId,
   });
 
   const { data: notes = [] } = useQuery({
-    queryKey: ["project-notes", projectId],
+    queryKey: ["project-notes", safeProjectId],
     queryFn: async () => {
-      if (!projectId) return [];
+      if (!safeProjectId) return [];
       const { data, error } = await supabase
         .from("notes")
         .select("id, title, created_at, is_pinned, color")
-        .eq("project_id", projectId)
+        .eq("project_id", safeProjectId)
         .order("is_pinned", { ascending: false })
         .order("updated_at", { ascending: false });
 
       if (error) throw error;
       return data;
     },
-    enabled: !!projectId && isEnabled("notes"),
+    enabled: !!safeProjectId && isEnabled("notes"),
   });
 
   const { data: documents = [] } = useQuery({
-    queryKey: ["project-documents", projectId],
+    queryKey: ["project-documents", safeProjectId],
     queryFn: async () => {
-      if (!projectId) return [];
+      if (!safeProjectId) return [];
       const { data, error } = await supabase
         .from("documents")
         .select("id, name, mime_type, created_at")
-        .eq("project_id", projectId)
+        .eq("project_id", safeProjectId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data;
     },
-    enabled: !!projectId && isEnabled("documents"),
+    enabled: !!safeProjectId && isEnabled("documents"),
   });
 
   const { data: events = [] } = useQuery({
-    queryKey: ["project-events", projectId],
+    queryKey: ["project-events", safeProjectId],
     queryFn: async () => {
-      if (!projectId) return [];
+      if (!safeProjectId) return [];
       const now = new Date().toISOString();
       const { data, error } = await supabase
         .from("events")
         .select("id, title, start_at, end_at, all_day")
-        .eq("project_id", projectId)
+        .eq("project_id", safeProjectId)
         .gte("start_at", now)
         .order("start_at", { ascending: true })
         .limit(10);
@@ -182,7 +184,7 @@ export default function ProjectDetailPage() {
       if (error) throw error;
       return data;
     },
-    enabled: !!projectId && isEnabled("calendar"),
+    enabled: !!safeProjectId && isEnabled("calendar"),
   });
 
   const handleEditTask = (task: any) => {
@@ -257,6 +259,17 @@ export default function ProjectDetailPage() {
 
   // Ensure tasks is always an array to prevent .map errors
   const safeTasks = Array.isArray(tasks) ? tasks : [];
+  const safeNotes = Array.isArray(notes) ? notes : [];
+  const safeDocuments = Array.isArray(documents) ? documents : [];
+  const safeEvents = Array.isArray(events) ? events : [];
+  const safeMembers = Array.isArray(members) ? members : [];
+
+  const safeFormatDate = (value: string | null | undefined, pattern: string) => {
+    if (!value) return "—";
+    const dt = new Date(value);
+    if (Number.isNaN(dt.getTime())) return "Invalid date";
+    return format(dt, pattern);
+  };
 
   if (isLoading) {
     return (
@@ -269,7 +282,7 @@ export default function ProjectDetailPage() {
     );
   }
 
-  if (!project) {
+  if (!safeProjectId || !project) {
     return (
       <div className="p-6">
         <EmptyState
@@ -290,7 +303,7 @@ export default function ProjectDetailPage() {
   ).length;
 
   // Calculate upcoming events count
-  const upcomingEventsCount = events.length;
+  const upcomingEventsCount = safeEvents.length;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -350,12 +363,12 @@ export default function ProjectDetailPage() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {isArchived ? (
-                <DropdownMenuItem onClick={() => unarchiveProject.mutate(projectId!)}>
+                <DropdownMenuItem onClick={() => safeProjectId && unarchiveProject.mutate(safeProjectId)}>
                   <ArchiveRestore className="h-4 w-4 mr-2" />
                   Restore from Archive
                 </DropdownMenuItem>
               ) : (
-                <DropdownMenuItem onClick={() => archiveProject.mutate(projectId!)}>
+                <DropdownMenuItem onClick={() => safeProjectId && archiveProject.mutate(safeProjectId)}>
                   <Archive className="h-4 w-4 mr-2" />
                   Archive Project
                 </DropdownMenuItem>
@@ -470,7 +483,7 @@ export default function ProjectDetailPage() {
                 <CardContent className="p-0">
                   <PhaseGroupedTaskList
                     tasks={safeTasks}
-                    projectId={projectId!}
+                    projectId={safeProjectId}
                     onAddTask={() => setIsTaskDialogOpen(true)}
                     onEditTask={handleEditTask}
                   />
@@ -486,7 +499,7 @@ export default function ProjectDetailPage() {
                   <CardTitle className="text-base">Manage Phases</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <PhasesManager projectId={projectId!} />
+                  <PhasesManager projectId={safeProjectId} />
                 </CardContent>
               </Card>
 
@@ -502,11 +515,11 @@ export default function ProjectDetailPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="py-0 pb-4">
-                    {notes.length === 0 ? (
+                    {safeNotes.length === 0 ? (
                       <p className="text-sm text-muted-foreground">No notes yet</p>
                     ) : (
                       <div className="space-y-2">
-                        {notes.slice(0, 3).map((note: any) => (
+                        {safeNotes.slice(0, 3).map((note: any) => (
                           <Link
                             key={note.id}
                             to={`/app/notes/${note.id}`}
@@ -521,9 +534,9 @@ export default function ProjectDetailPage() {
                             <span className="text-sm truncate">{note.title}</span>
                           </Link>
                         ))}
-                        {notes.length > 3 && (
+                        {safeNotes.length > 3 && (
                           <p className="text-xs text-muted-foreground pl-2">
-                            +{notes.length - 3} more
+                            +{safeNotes.length - 3} more
                           </p>
                         )}
                       </div>
@@ -533,13 +546,13 @@ export default function ProjectDetailPage() {
               )}
 
               {/* Links Section */}
-              {projectId && (
+              {safeProjectId && (
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base">Related Items</CardTitle>
                   </CardHeader>
                   <CardContent className="py-0 pb-4">
-                    <EntityLinksPanel entityType="project" entityId={projectId} />
+                    <EntityLinksPanel entityType="project" entityId={safeProjectId} />
                   </CardContent>
                 </Card>
               )}
@@ -547,9 +560,9 @@ export default function ProjectDetailPage() {
           </div>
 
           {/* Attachments Section */}
-          {projectId && (
+          {safeProjectId && (
             <div className="mt-6">
-              <AttachmentsPanel entityType="project" entityId={projectId} />
+              <AttachmentsPanel entityType="project" entityId={safeProjectId} />
             </div>
           )}
         </TabsContent>
@@ -583,15 +596,15 @@ export default function ProjectDetailPage() {
             <CardContent className="p-0">
               {taskViewMode === "list" ? (
                 <PhaseGroupedTaskList
-                  tasks={tasks}
-                  projectId={projectId!}
+                  tasks={safeTasks}
+                  projectId={safeProjectId}
                   onAddTask={() => setIsTaskDialogOpen(true)}
                   onEditTask={handleEditTask}
                 />
               ) : (
                 <TaskBoardView
                   tasks={safeTasks}
-                  projectId={projectId!}
+                  projectId={safeProjectId}
                   onAddTask={() => setIsTaskDialogOpen(true)}
                   onEditTask={handleEditTask}
                 />
@@ -613,7 +626,7 @@ export default function ProjectDetailPage() {
               </div>
             </CardHeader>
             <CardContent className="py-0 pb-6">
-              {notes.length === 0 ? (
+              {safeNotes.length === 0 ? (
                 <EmptyState
                   icon={MessageSquare}
                   title="No notes yet"
@@ -623,7 +636,7 @@ export default function ProjectDetailPage() {
                 />
               ) : (
                 <div className="space-y-2">
-                  {notes.map((note: any) => (
+                  {safeNotes.map((note: any) => (
                     <Link
                       key={note.id}
                       to={`/app/notes/${note.id}`}
@@ -644,7 +657,7 @@ export default function ProjectDetailPage() {
                         </div>
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        {format(new Date(note.created_at), "MMM d, yyyy")}
+                        {safeFormatDate(note.created_at, "MMM d, yyyy")}
                       </span>
                     </Link>
                   ))}
@@ -668,7 +681,7 @@ export default function ProjectDetailPage() {
               </div>
             </CardHeader>
             <CardContent className="py-0 pb-6">
-              {documents.length === 0 ? (
+              {safeDocuments.length === 0 ? (
                 <EmptyState
                   icon={FileText}
                   title="No documents yet"
@@ -678,7 +691,7 @@ export default function ProjectDetailPage() {
                 />
               ) : (
                 <div className="space-y-2">
-                  {documents.map((doc: any) => (
+                  {safeDocuments.map((doc: any) => (
                     <Link
                       key={doc.id}
                       to={`/app/documents/${doc.id}`}
@@ -689,7 +702,7 @@ export default function ProjectDetailPage() {
                         <span className="text-sm font-medium">{doc.name}</span>
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        {format(new Date(doc.created_at), "MMM d, yyyy")}
+                        {safeFormatDate(doc.created_at, "MMM d, yyyy")}
                       </span>
                     </Link>
                   ))}
@@ -711,7 +724,7 @@ export default function ProjectDetailPage() {
               </div>
             </CardHeader>
             <CardContent className="py-0 pb-6">
-              {events.length === 0 ? (
+              {safeEvents.length === 0 ? (
                 <EmptyState
                   icon={Calendar}
                   title="No upcoming events"
@@ -721,7 +734,7 @@ export default function ProjectDetailPage() {
                 />
               ) : (
                 <div className="space-y-2">
-                  {events.map((event: any) => (
+                  {safeEvents.map((event: any) => (
                     <Link
                       key={event.id}
                       to={`/app/calendar/${event.id}`}
@@ -733,8 +746,8 @@ export default function ProjectDetailPage() {
                       </div>
                       <span className="text-xs text-muted-foreground">
                         {event.all_day
-                          ? format(new Date(event.start_at), "MMM d, yyyy")
-                          : format(new Date(event.start_at), "MMM d, h:mm a")}
+                          ? safeFormatDate(event.start_at, "MMM d, yyyy")
+                          : safeFormatDate(event.start_at, "MMM d, h:mm a")}
                       </span>
                     </Link>
                   ))}
@@ -747,7 +760,7 @@ export default function ProjectDetailPage() {
         <TabsContent value="members">
           <Card>
             <CardContent className="py-6">
-              {members.length === 0 ? (
+              {safeMembers.length === 0 ? (
                 <EmptyState
                   icon={Users}
                   title="No members yet"
@@ -755,7 +768,7 @@ export default function ProjectDetailPage() {
                 />
               ) : (
                 <div className="space-y-2">
-                  {members.map((member) => (
+                  {safeMembers.map((member) => (
                     <div
                       key={member.user_id}
                       className="flex items-center justify-between p-3 rounded-lg border"
@@ -775,21 +788,21 @@ export default function ProjectDetailPage() {
       <TaskFormDialog
         open={isTaskDialogOpen}
         onOpenChange={handleCloseTaskDialog}
-        projectId={projectId}
+        projectId={safeProjectId}
         task={editingTask}
       />
 
       <NoteFormDialog
         open={isNoteDialogOpen}
         onOpenChange={setIsNoteDialogOpen}
-        projectId={projectId}
+        projectId={safeProjectId}
       />
 
       <EventFormDialog
         open={isEventDialogOpen}
         onOpenChange={setIsEventDialogOpen}
         defaultDate={new Date()}
-        projectId={projectId}
+        projectId={safeProjectId}
       />
 
       <ProjectFormDialog
@@ -821,7 +834,7 @@ export default function ProjectDetailPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deleteProject.mutate(projectId!)}
+              onClick={() => safeProjectId && deleteProject.mutate(safeProjectId)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete

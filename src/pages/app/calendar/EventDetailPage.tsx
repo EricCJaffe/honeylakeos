@@ -65,6 +65,13 @@ export default function EventDetailPage() {
 
   const canEdit = event && (isCompanyAdmin || event.created_by === user?.id);
 
+  const safeFormatDate = (value: string | null | undefined, pattern: string) => {
+    if (!value) return null;
+    const dt = new Date(value);
+    if (Number.isNaN(dt.getTime())) return null;
+    return format(dt, pattern);
+  };
+
   if (isLoading) {
     return (
       <div className="p-6">
@@ -168,14 +175,14 @@ export default function EventDetailPage() {
             <div className="space-y-3 text-sm">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span>{format(new Date(event.start_at), "EEEE, MMMM d, yyyy")}</span>
+                <span>{safeFormatDate(event.start_at, "EEEE, MMMM d, yyyy") || "Invalid date"}</span>
               </div>
               {!event.all_day && (
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <span>
-                    {format(new Date(event.start_at), "h:mm a")}
-                    {event.end_at && ` - ${format(new Date(event.end_at), "h:mm a")}`}
+                    {safeFormatDate(event.start_at, "h:mm a") || "Invalid time"}
+                    {event.end_at && ` - ${safeFormatDate(event.end_at, "h:mm a") || "Invalid time"}`}
                   </span>
                 </div>
               )}
