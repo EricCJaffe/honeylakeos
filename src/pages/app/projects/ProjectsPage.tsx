@@ -93,7 +93,7 @@ export default function ProjectsPage() {
   const { data: templates = [] } = useProjectTemplates();
 
   const {
-    data: projectsPayload,
+    data: projects = [],
     isLoading,
     error: projectsError,
   } = useQuery({
@@ -144,17 +144,15 @@ export default function ProjectsPage() {
         byProject.set(l.from_id, client);
       }
 
-      return {
-        projects: (data as any[]).map((p) => ({
-          ...p,
-          linked_crm_client: byProject.get(p.id) || null,
-        })),
-      };
+      // IMPORTANT: keep this as an ARRAY. Other routes reuse the same query key
+      // and expect a list they can call `.map()` on.
+      return (data as any[]).map((p) => ({
+        ...p,
+        linked_crm_client: byProject.get(p.id) || null,
+      }));
     },
     enabled: !!activeCompanyId,
   });
-
-  const projects = (projectsPayload as any)?.projects || [];
 
   // Fetch ALL CRM clients for the company (for filter dropdown)
   const { data: allClients = [] } = useQuery({
