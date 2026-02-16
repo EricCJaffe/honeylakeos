@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/EmptyState";
 import { useProjectPhases } from "@/hooks/useProjectPhases";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { ensureArray, safeFormatDate } from "@/core/runtime/safety";
+import { ensureArray, safeFormatDate, safeTimestamp } from "@/core/runtime/safety";
 import type { TaskListItem } from "@/pages/app/tasks/TaskList";
 
 type ProjectTaskItem = TaskListItem & {
@@ -124,22 +124,16 @@ export function TaskBoardView({
     // Ensure tasksToSort is always an array to prevent spread operator errors
     const safeTasksToSort = ensureArray<ProjectTaskItem>(tasksToSort);
 
-    const toTimestamp = (value: string | null | undefined, fallback: number) => {
-      if (!value) return fallback;
-      const parsed = new Date(value).getTime();
-      return Number.isFinite(parsed) ? parsed : fallback;
-    };
-
     return [...safeTasksToSort].sort((a, b) => {
       let aValue: number;
       let bValue: number;
 
       if (sortField === "due_date") {
-        aValue = toTimestamp(a.due_date, Number.POSITIVE_INFINITY);
-        bValue = toTimestamp(b.due_date, Number.POSITIVE_INFINITY);
+        aValue = safeTimestamp(a.due_date, Number.POSITIVE_INFINITY);
+        bValue = safeTimestamp(b.due_date, Number.POSITIVE_INFINITY);
       } else {
-        aValue = toTimestamp(a.created_at, 0);
-        bValue = toTimestamp(b.created_at, 0);
+        aValue = safeTimestamp(a.created_at, 0);
+        bValue = safeTimestamp(b.created_at, 0);
       }
 
       if (sortDirection === "asc") {

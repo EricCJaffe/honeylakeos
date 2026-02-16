@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ensureArray, safeFormatDate } from "./safety";
+import { ensureArray, safeFormatDate, safeTimestamp } from "./safety";
 
 describe("runtime safety smoke", () => {
   it("ensureArray guards cache-shape collisions", () => {
@@ -26,5 +26,15 @@ describe("runtime safety smoke", () => {
 
   it("safeFormatDate formats valid dates", () => {
     expect(safeFormatDate("2026-02-14T12:00:00.000Z", "yyyy-MM-dd")).toBe("2026-02-14");
+  });
+
+  it("safeTimestamp returns fallback for bad values", () => {
+    expect(safeTimestamp("not-a-date", Number.POSITIVE_INFINITY)).toBe(Number.POSITIVE_INFINITY);
+    expect(safeTimestamp(undefined, 0)).toBe(0);
+  });
+
+  it("safeTimestamp normalizes valid values for sort operations", () => {
+    expect(safeTimestamp("2026-02-14T12:00:00.000Z", 0)).toBe(1771070400000);
+    expect(safeTimestamp(new Date("2026-02-14T12:00:00.000Z"), 0)).toBe(1771070400000);
   });
 });

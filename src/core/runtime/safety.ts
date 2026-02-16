@@ -14,3 +14,13 @@ export function safeFormatDate(
   if (Number.isNaN(dt.getTime())) return fallback;
   return format(dt, pattern);
 }
+
+export function safeTimestamp(
+  value: string | Date | null | undefined,
+  fallback: number
+): number {
+  if (!value) return fallback;
+  const dt = value instanceof Date ? value : new Date(value);
+  const ms = dt.getTime();
+  return Number.isFinite(ms) ? ms : fallback;
+}
