@@ -2,8 +2,7 @@ import * as React from "react";
 import { useState, Suspense, lazy } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { ArrowLeft, Pencil, Trash2, Share2, Lock, Users, MessageSquare } from "lucide-react";
+import { Pencil, Trash2, Share2, Lock, Users, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
@@ -17,10 +16,14 @@ import { NoteFormDialog } from "./NoteFormDialog";
 import { ShareDialog } from "@/components/ShareDialog";
 import { EntityLinksPanel } from "@/components/EntityLinksPanel";
 import { AttachmentsPanel } from "@/components/attachments";
+import { safeFormatDate } from "@/core/runtime/safety";
+import type { Tables } from "@/integrations/supabase/types";
 
 // Lazy load rich text components
 const RichTextEditor = lazy(() => import("@/components/ui/rich-text-editor").then(m => ({ default: m.RichTextEditor })));
 const RichTextDisplay = lazy(() => import("@/components/ui/rich-text-editor").then(m => ({ default: m.RichTextDisplay })));
+
+type NoteDetailRecord = Tables<"notes">;
 
 export default function NoteDetailPage() {
   const { noteId } = useParams<{ noteId: string }>();
@@ -33,7 +36,7 @@ export default function NoteDetailPage() {
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
 
-  const { data: note, isLoading } = useQuery({
+  const { data: note, isLoading } = useQuery<NoteDetailRecord | null>({
     queryKey: ["note", noteId],
     queryFn: async () => {
       if (!noteId) return null;
@@ -164,7 +167,7 @@ export default function NoteDetailPage() {
           </Badge>
         )}
         <span className="text-sm text-muted-foreground">
-          Last updated {format(new Date(note.updated_at), "MMM d, yyyy 'at' h:mm a")}
+          Last updated {safeFormatDate(note.updated_at, "MMM d, yyyy 'at' h:mm a")}
         </span>
       </div>
 

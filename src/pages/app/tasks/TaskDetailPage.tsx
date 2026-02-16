@@ -23,7 +23,8 @@ import { AttachmentsPanel } from "@/components/attachments";
 import { useTaskOccurrenceActions } from "@/hooks/useTaskOccurrenceCompletions";
 import { configToRRule, rruleToConfig } from "@/components/tasks/RecurrenceSelector";
 import { TaskTagsDisplay } from "@/components/tasks/TaskTagInput";
-import { safeFormatDate } from "@/core/runtime/safety";
+import { ensureArray, safeFormatDate } from "@/core/runtime/safety";
+import type { Tables } from "@/integrations/supabase/types";
 
 // Lazy load rich text display
 const RichTextDisplay = lazy(() => import("@/components/ui/rich-text-editor").then(m => ({ default: m.RichTextDisplay })));
@@ -42,6 +43,12 @@ const statusConfig = {
   blocked: { label: "Blocked", color: "bg-destructive/10 text-destructive" },
 };
 
+type TaskDetailRecord = Tables<"tasks"> & {
+  project?: { id: string; name: string; emoji: string | null } | null;
+  phase?: { id: string; name: string } | null;
+  task_assignees?: Array<{ user_id: string }> | null;
+};
+
 export default function TaskDetailPage() {
   const { taskId } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
@@ -54,7 +61,7 @@ export default function TaskDetailPage() {
   const [showLegacyNotes, setShowLegacyNotes] = useState(false);
   const { splitSeries } = useTaskOccurrenceActions();
 
-  const { data: task, isLoading } = useQuery({
+  const { data: task, isLoading } = useQuery<TaskDetailRecord | null>({
     queryKey: ["task", taskId],
     queryFn: async () => {
       if (!taskId) return null;
@@ -156,6 +163,8 @@ export default function TaskDetailPage() {
 
   const priority = priorityConfig[task.priority as keyof typeof priorityConfig] || priorityConfig.medium;
   const status = statusConfig[task.status as keyof typeof statusConfig] || statusConfig.to_do;
+  const taskAssignees = ensureArray<{ user_id: string }>(task.task_assignees);
+  const taskTags = Array.isArray(task.tags) ? task.tags.filter((tag): tag is string => typeof tag === "string") : [];
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -215,8 +224,8 @@ export default function TaskDetailPage() {
           </Badge>
         )}
         {/* Tags display */}
-        {task.tags && Array.isArray(task.tags) && task.tags.length > 0 && (
-          <TaskTagsDisplay tags={task.tags as string[]} maxDisplay={5} />
+        {taskTags.length > 0 && (
+          <TaskTagsDisplay tags={taskTags} maxDisplay={5} />
         )}
       </div>
 
@@ -279,7 +288,7 @@ export default function TaskDetailPage() {
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4 text-muted-foreground" />
                 <span>
-                  {task.task_assignees?.length || 0} assignee(s)
+                  {taskAssignees.length} assignee(s)
                 </span>
               </div>
             </div>

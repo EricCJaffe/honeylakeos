@@ -1,8 +1,7 @@
 import * as React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { FileText, Download, Trash2, Share2, Lock, Users, Link2, FolderKanban, CheckCircle2, Calendar } from "lucide-react";
+import { FileText, Download, Trash2, Share2, Lock, Users, Link2, FolderKanban, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useAuth } from "@/lib/auth";
@@ -16,6 +15,18 @@ import { DocumentFormDialog } from "./DocumentFormDialog";
 import { ShareDialog } from "@/components/ShareDialog";
 import { LinkDocumentDialog } from "@/components/LinkDocumentDialog";
 import { EntityLinksPanel } from "@/components/EntityLinksPanel";
+import { ensureArray, safeFormatDate } from "@/core/runtime/safety";
+import type { Tables } from "@/integrations/supabase/types";
+
+type DocumentDetailRecord = Tables<"documents">;
+type LinkedProjectRow = {
+  project_id: string;
+  projects: { id: string; name: string; emoji: string | null } | null;
+};
+type LinkedTaskRow = {
+  task_id: string;
+  tasks: { id: string; title: string } | null;
+};
 
 export default function DocumentDetailPage() {
   const { documentId } = useParams<{ documentId: string }>();
@@ -27,7 +38,7 @@ export default function DocumentDetailPage() {
   const [isShareDialogOpen, setIsShareDialogOpen] = React.useState(false);
   const [isLinkDialogOpen, setIsLinkDialogOpen] = React.useState(false);
 
-  const { data: document, isLoading } = useQuery({
+  const { data: document, isLoading } = useQuery<DocumentDetailRecord | null>({
     queryKey: ["document", documentId],
     queryFn: async () => {
       if (!documentId) return null;
@@ -44,7 +55,7 @@ export default function DocumentDetailPage() {
   });
 
   // Fetch linked items
-  const { data: linkedProjects = [] } = useQuery({
+  const { data: linkedProjects = [] } = useQuery<LinkedProjectRow[]>({
     queryKey: ["document-projects", documentId],
     queryFn: async () => {
       if (!documentId) return [];
@@ -58,7 +69,7 @@ export default function DocumentDetailPage() {
     enabled: !!documentId,
   });
 
-  const { data: linkedTasks = [] } = useQuery({
+  const { data: linkedTasks = [] } = useQuery<LinkedTaskRow[]>({
     queryKey: ["document-tasks", documentId],
     queryFn: async () => {
       if (!documentId) return [];
@@ -122,6 +133,8 @@ export default function DocumentDetailPage() {
   };
 
   const canEdit = document && (isCompanyAdmin || document.created_by === user?.id);
+  const safeLinkedProjects = ensureArray<LinkedProjectRow>(linkedProjects);
+  const safeLinkedTasks = ensureArray<LinkedTaskRow>(linkedTasks);
 
   if (isLoading) {
     return (
@@ -227,7 +240,7 @@ export default function DocumentDetailPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Uploaded</span>
-                <span>{format(new Date(document.created_at), "MMM d, yyyy")}</span>
+                <span>{safeFormatDate(document.created_at, "MMM d, yyyy")}</span>
               </div>
             </div>
 
@@ -246,13 +259,13 @@ export default function DocumentDetailPage() {
             <CardTitle className="text-base">Linked Items</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {linkedProjects.length > 0 && (
+            {safeLinkedProjects.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
                   <FolderKanban className="h-4 w-4" /> Projects
                 </h4>
                 <div className="space-y-1">
-                  {linkedProjects.map((link: any) => (
+                  {safeLinkedProjects.map((link) => (
                     <div
                       key={link.project_id}
                       className="text-sm text-muted-foreground"
@@ -264,13 +277,13 @@ export default function DocumentDetailPage() {
               </div>
             )}
 
-            {linkedTasks.length > 0 && (
+            {safeLinkedTasks.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4" /> Tasks
                 </h4>
                 <div className="space-y-1">
-                  {linkedTasks.map((link: any) => (
+                  {safeLinkedTasks.map((link) => (
                     <div
                       key={link.task_id}
                       className="text-sm text-muted-foreground"
@@ -282,7 +295,7 @@ export default function DocumentDetailPage() {
               </div>
             )}
 
-            {linkedProjects.length === 0 && linkedTasks.length === 0 && (
+            {safeLinkedProjects.length === 0 && safeLinkedTasks.length === 0 && (
               <p className="text-sm text-muted-foreground">
                 No linked items. Click "Link" to connect this document to projects, tasks, or events.
               </p>

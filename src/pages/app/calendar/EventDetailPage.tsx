@@ -17,6 +17,12 @@ import { RecurringEventOccurrences } from "@/components/calendar/RecurringEventO
 import { EventAttendeesManager } from "@/components/calendar/EventAttendeesManager";
 import { AttachmentsPanel } from "@/components/attachments";
 import { safeFormatDate } from "@/core/runtime/safety";
+import type { Tables } from "@/integrations/supabase/types";
+
+type EventDetailRecord = Tables<"events"> & {
+  project?: { id: string; name: string; emoji: string | null } | null;
+  event_attendees?: Array<{ user_id: string }> | null;
+};
 
 export default function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -28,7 +34,7 @@ export default function EventDetailPage() {
   const [editMode, setEditMode] = useState<"single" | "series">("series");
   const [occurrenceToEdit, setOccurrenceToEdit] = useState<Date | undefined>();
 
-  const { data: event, isLoading } = useQuery({
+  const { data: event, isLoading } = useQuery<EventDetailRecord | null>({
     queryKey: ["event", eventId],
     queryFn: async () => {
       if (!eventId) return null;
