@@ -72,13 +72,6 @@ type ProjectWithClient = Project & { linked_crm_client: LinkedClient | null };
 const getClientDisplayName = (client: LinkedClient | null | undefined) =>
   client?.org_name || client?.person_full_name || client?.name || "Unnamed client";
 
-const getErrorMessage = (error: unknown) => {
-  if (error && typeof error === "object" && "message" in error) {
-    return String((error as { message?: string }).message ?? "Unknown error");
-  }
-  return String(error);
-};
-
 export default function ProjectsPage() {
   const { activeCompanyId, isCompanyAdmin, loading: membershipLoading } = useActiveCompany();
   const { user } = useAuth();
@@ -103,7 +96,6 @@ export default function ProjectsPage() {
   const {
     data: projects = [],
     isLoading,
-    error: projectsError,
   } = useQuery<ProjectWithClient[]>({
     queryKey: ["projects", activeCompanyId],
     queryFn: async () => {
@@ -182,7 +174,7 @@ export default function ProjectsPage() {
   });
 
   // Fetch tasks linked to active projects for KPIs
-  const { data: projectTasks = [], error: projectTasksError } = useQuery({
+  const { data: projectTasks = [] } = useQuery({
     queryKey: ["projects-tasks-kpi", activeCompanyId],
     queryFn: async () => {
       if (!activeCompanyId) return [];
@@ -199,7 +191,7 @@ export default function ProjectsPage() {
   });
 
   // Fetch current phases for projects
-  const { data: projectPhases = [], error: projectPhasesError } = useQuery({
+  const { data: projectPhases = [] } = useQuery({
     queryKey: ["projects-phases", activeCompanyId],
     queryFn: async () => {
       if (!activeCompanyId) return [];
@@ -454,19 +446,6 @@ export default function ProjectsPage() {
         </TabsList>
 
         <TabsContent value="projects">
-          {(projectsError || projectTasksError || projectPhasesError) && (
-            <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm">
-              <div className="font-semibold text-destructive">Projects data error</div>
-              <div className="mt-1 text-xs text-muted-foreground">If you see this, something is failing (RLS/auth/context). Please screenshot this box.</div>
-              {projectsError && <div className="mt-2 text-xs"><span className="font-semibold">projects:</span> {getErrorMessage(projectsError)}</div>}
-              {projectTasksError && <div className="mt-1 text-xs"><span className="font-semibold">tasks:</span> {getErrorMessage(projectTasksError)}</div>}
-              {projectPhasesError && <div className="mt-1 text-xs"><span className="font-semibold">phases:</span> {getErrorMessage(projectPhasesError)}</div>}
-              <div className="mt-2 text-xs text-muted-foreground">(Diagnostics banner will be removed once this is stable.)</div>
-              <div className="mt-2 text-xs">activeCompanyId: <span className="font-mono">{activeCompanyId || "(null)"}</span></div>
-              <div className="mt-1 text-xs">projects loaded: <span className="font-mono">{projects.length}</span></div>
-            </div>
-          )}
-
           {/* Filters and View Toggle */}
           <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <div className="relative flex-1">
