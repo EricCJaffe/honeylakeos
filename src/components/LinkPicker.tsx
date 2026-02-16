@@ -31,6 +31,24 @@ interface LinkPickerProps {
   showClear?: boolean;
 }
 
+type LinkProject = {
+  id: string;
+  name: string;
+  emoji: string | null;
+  status: string | null;
+};
+
+type LinkTask = {
+  id: string;
+  title: string;
+  status: string | null;
+  project_id: string | null;
+};
+
+type LinkItem = LinkProject | LinkTask;
+
+const isLinkProject = (item: LinkItem): item is LinkProject => "name" in item;
+
 export function LinkPicker({
   type,
   value,
@@ -49,8 +67,8 @@ export function LinkPicker({
   const moduleEnabled = !modulesLoading && isEnabled(moduleKey);
 
   // Fetch projects
-  const { data: projects = [] } = useQuery({
-    queryKey: ["projects", activeCompanyId],
+  const { data: projects = [] } = useQuery<LinkProject[]>({
+    queryKey: ["projects", "lite", activeCompanyId],
     queryFn: async () => {
       if (!activeCompanyId) return [];
       const { data, error } = await supabase
@@ -66,7 +84,7 @@ export function LinkPicker({
   });
 
   // Fetch tasks
-  const { data: tasks = [] } = useQuery({
+  const { data: tasks = [] } = useQuery<LinkTask[]>({
     queryKey: ["tasks-for-link", activeCompanyId],
     queryFn: async () => {
       if (!activeCompanyId) return [];
@@ -88,7 +106,7 @@ export function LinkPicker({
     return null;
   }
 
-  const items = type === "project" ? projects : tasks;
+  const items: LinkItem[] = type === "project" ? projects : tasks;
   // Ensure items is an array before calling .find()
   const selectedItem = Array.isArray(items) ? items.find((item) => item.id === value) : undefined;
 
@@ -112,8 +130,7 @@ export function LinkPicker({
             <Icon className="mr-2 h-4 w-4 shrink-0 opacity-50" />
             {selectedItem ? (
               <span className="truncate">
-                {type === "project" && (selectedItem as any).emoji}{" "}
-                {type === "project" ? (selectedItem as any).name : (selectedItem as any).title}
+                {isLinkProject(selectedItem) ? `${selectedItem.emoji || ""} ${selectedItem.name}` : selectedItem.title}
               </span>
             ) : (
               <span>{placeholder || defaultPlaceholder}</span>
@@ -126,7 +143,7 @@ export function LinkPicker({
             <CommandList>
               <CommandEmpty>No {type}s found.</CommandEmpty>
               <CommandGroup>
-                {Array.isArray(items) && items.map((item: any) => (
+                {Array.isArray(items) && items.map((item) => (
                   <CommandItem
                     key={item.id}
                     value={item.id}
@@ -137,8 +154,7 @@ export function LinkPicker({
                   >
                     <Icon className="mr-2 h-4 w-4" />
                     <span className="truncate">
-                      {type === "project" && item.emoji}{" "}
-                      {type === "project" ? item.name : item.title}
+                      {isLinkProject(item) ? `${item.emoji || ""} ${item.name}` : item.title}
                     </span>
                     {item.status && (
                       <Badge
@@ -183,7 +199,7 @@ export function LinkBadge({ type, id, onRemove }: LinkBadgeProps) {
   const { activeCompanyId } = useActiveCompany();
 
   // Fetch project
-  const { data: project } = useQuery({
+  const { data: project } = useQuery<LinkProject>({
     queryKey: ["project", id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -198,7 +214,7 @@ export function LinkBadge({ type, id, onRemove }: LinkBadgeProps) {
   });
 
   // Fetch task
-  const { data: task } = useQuery({
+  const { data: task } = useQuery<LinkTask>({
     queryKey: ["task", id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -212,13 +228,11 @@ export function LinkBadge({ type, id, onRemove }: LinkBadgeProps) {
     enabled: !!id && type === "task",
   });
 
-  const item = type === "project" ? project : task;
+  const item: LinkItem | undefined = type === "project" ? project : task;
   if (!item) return null;
 
   const Icon = type === "project" ? FolderKanban : CheckCircle2;
-  const label = type === "project" 
-    ? `${(item as any).emoji || ""} ${(item as any).name}`
-    : (item as any).title;
+  const label = isLinkProject(item) ? `${item.emoji || ""} ${item.name}` : item.title;
 
   return (
     <Badge variant="secondary" className="gap-1 pr-1">

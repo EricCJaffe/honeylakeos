@@ -43,6 +43,45 @@ import { cn } from "@/lib/utils";
 
 type ViewMode = "month" | "week" | "agenda";
 type PageTab = "calendar" | "templates";
+type ProjectSummary = { id: string; name: string; emoji: string | null };
+type EventAttendee = { user_id: string };
+type CalendarEventRecord = {
+  id: string;
+  title: string;
+  start_at: string;
+  end_at: string | null;
+  color: string | null;
+  all_day: boolean;
+  project_id: string | null;
+  project: ProjectSummary | null;
+  event_attendees?: EventAttendee[] | null;
+  is_override?: boolean;
+  is_exception?: boolean;
+  override_event_id?: string | null;
+  occurrence_date?: string;
+};
+type CalendarEventItem = {
+  id: string;
+  title: string;
+  start_at: string;
+  end_at: string | null;
+  color: string | null;
+  all_day: boolean;
+  isRecurring: boolean;
+  seriesEventId?: string;
+  occurrenceDate?: Date;
+  event?: CalendarEventRecord;
+  project_id?: string | null;
+  project?: ProjectSummary | null;
+  attendeeCount?: number;
+};
+type RecurringOccurrenceWithEvent = {
+  occurrence_date: string;
+  is_exception: boolean;
+  override_event_id: string | null;
+  is_override: boolean;
+  event: CalendarEventRecord;
+};
 
 export default function CalendarPage() {
   const { activeCompanyId, loading: membershipLoading } = useActiveCompany();
@@ -52,7 +91,7 @@ export default function CalendarPage() {
   const [pageTab, setPageTab] = useState<PageTab>("calendar");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<any>(null);
+  const [editingEvent, setEditingEvent] = useState<CalendarEventRecord | null>(null);
   const [editMode, setEditMode] = useState<"single" | "future" | "series">("series");
   const [occurrenceDate, setOccurrenceDate] = useState<Date | undefined>();
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
@@ -61,8 +100,8 @@ export default function CalendarPage() {
   const [projectFilter, setProjectFilter] = useState<string>("all");
 
   // Fetch projects for filter
-  const { data: projects = [] } = useQuery({
-    queryKey: ["projects", activeCompanyId],
+  const { data: projects = [] } = useQuery<ProjectSummary[]>({
+    queryKey: ["projects", "lite", activeCompanyId],
     queryFn: async () => {
       if (!activeCompanyId) return [];
       const { data, error } = await supabase
@@ -99,7 +138,7 @@ export default function CalendarPage() {
   }, [currentDate, viewMode]);
 
   // Fetch regular (non-recurring) events
-  const { data: regularEvents = [], isLoading: loadingRegular } = useQuery({
+  const { data: regularEvents = [], isLoading: loadingRegular } = useQuery<CalendarEventRecord[]>({
     queryKey: ["events", activeCompanyId, rangeStart.toISOString(), rangeEnd.toISOString()],
     queryFn: async () => {
       if (!activeCompanyId) return [];
@@ -128,21 +167,8 @@ export default function CalendarPage() {
 
   // Combine regular events with recurring occurrences
   const allEvents = useMemo(() => {
-    const events: Array<{
-      id: string;
-      title: string;
-      start_at: string;
-      end_at: string | null;
-      color: string | null;
-      all_day: boolean;
-      isRecurring: boolean;
-      seriesEventId?: string;
-      occurrenceDate?: Date;
-      event?: any;
-      project_id?: string | null;
-      project?: { id: string; name: string; emoji: string } | null;
-      attendeeCount?: number;
-    }> = [];
+    const events: CalendarEventItem[] = [];
+    const safeRecurringOccurrences = recurringOccurrences as RecurringOccurrenceWithEvent[];
 
     // Add regular events
     regularEvents.forEach((event) => {
@@ -155,7 +181,7 @@ export default function CalendarPage() {
     });
 
     // Add recurring occurrences
-    recurringOccurrences.forEach((occ: any) => {
+    safeRecurringOccurrences.forEach((occ) => {
       if (!occ || occ.is_exception || !occ.event?.id || !occ.occurrence_date) return;
       const occurrenceTime = new Date(occ.occurrence_date).getTime();
       if (Number.isNaN(occurrenceTime)) return;
@@ -235,28 +261,28 @@ export default function CalendarPage() {
     setTemplateDialogOpen(true);
   };
 
-  const handleEventClick = (event: any, e: React.MouseEvent) => {
+  const handleEventClick = (event: CalendarEventItem, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!event.isRecurring) {
       navigate(`/app/calendar/${event.id}`);
     }
   };
 
-  const handleEditOccurrence = (event: any) => {
+  const handleEditOccurrence = (event: CalendarEventItem) => {
     setEditingEvent(event.event || event);
     setEditMode("single");
     setOccurrenceDate(event.occurrenceDate);
     setIsDialogOpen(true);
   };
 
-  const handleEditSeries = (event: any) => {
+  const handleEditSeries = (event: CalendarEventItem) => {
     setEditingEvent(event.event || event);
     setEditMode("series");
     setOccurrenceDate(undefined);
     setIsDialogOpen(true);
   };
 
-  const handleEditFuture = (event: any) => {
+  const handleEditFuture = (event: CalendarEventItem) => {
     setEditingEvent(event.event || event);
     setEditMode("future");
     setOccurrenceDate(event.occurrenceDate);

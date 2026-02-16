@@ -89,7 +89,7 @@ export default function NotesPage() {
   const { data: folderTree } = useFolders();
 
   const { data: projects = [] } = useQuery({
-    queryKey: ["projects", activeCompanyId],
+    queryKey: ["projects", "lite", activeCompanyId],
     queryFn: async () => {
       if (!activeCompanyId) return [];
       const { data, error } = await supabase
@@ -174,7 +174,7 @@ export default function NotesPage() {
     // If showing recent, use that list
     if (recentFilter === "recent") {
       const recentIds = new Set(recentNotes.map((n) => n.id));
-      let result = notes.filter((note) => recentIds.has(note.id));
+      const result = notes.filter((note) => recentIds.has(note.id));
       // Sort by recent order
       result.sort((a, b) => {
         const aIdx = recentNotes.findIndex((n) => n.id === a.id);

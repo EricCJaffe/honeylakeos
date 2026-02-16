@@ -83,7 +83,7 @@ export function LinkDocumentDialog({
 
   // Fetch available items
   const { data: projects = [] } = useQuery({
-    queryKey: ["projects", activeCompanyId],
+    queryKey: ["projects", "lite", activeCompanyId],
     queryFn: async () => {
       if (!activeCompanyId) return [];
       const { data, error } = await supabase

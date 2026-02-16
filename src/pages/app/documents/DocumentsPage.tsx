@@ -103,7 +103,7 @@ export default function DocumentsPage() {
   }, [folderTree]);
 
   const { data: projects = [] } = useQuery({
-    queryKey: ["projects", activeCompanyId],
+    queryKey: ["projects", "lite", activeCompanyId],
     queryFn: async () => {
       if (!activeCompanyId) return [];
       const { data, error } = await supabase
@@ -184,7 +184,7 @@ export default function DocumentsPage() {
     // If showing recent, use that list
     if (recentFilter === "recent") {
       const recentIds = new Set(recentDocs.map((d) => d.id));
-      let result = documents.filter((doc) => recentIds.has(doc.id));
+      const result = documents.filter((doc) => recentIds.has(doc.id));
       // Sort by recent order
       result.sort((a, b) => {
         const aIdx = recentDocs.findIndex((d) => d.id === a.id);

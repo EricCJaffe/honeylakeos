@@ -62,6 +62,7 @@ import { SubtasksDialogSection, DraftSubtask } from "@/components/tasks/Subtasks
 import { CrmClientPicker } from "@/components/crm/CrmClientPicker";
 import { OwnerSelector } from "@/components/ownership/OwnerSelector";
 import { useReassignOwner } from "@/hooks/useReassignOwner";
+import type { Tables } from "@/integrations/supabase/types";
 
 const taskSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -75,11 +76,18 @@ const taskSchema = z.object({
 });
 
 type TaskFormValues = z.infer<typeof taskSchema>;
+type TaskDialogTask = Tables<"tasks">;
+type TaskTemplatePayload = {
+  title?: string;
+  description?: string;
+  status?: string;
+  priority?: string;
+};
 
 interface TaskFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  task?: any;
+  task?: TaskDialogTask | null;
   projectId?: string;
   crmClientId?: string; // Pre-fill CRM client link
   editMode?: "single" | "series"; // For recurring tasks
@@ -177,7 +185,7 @@ export function TaskFormDialog({
 
   // Fetch projects for dropdown
   const { data: projects = [] } = useQuery({
-    queryKey: ["projects", activeCompanyId],
+    queryKey: ["projects", "lite", activeCompanyId],
     queryFn: async () => {
       if (!activeCompanyId) return [];
       const { data, error } = await supabase
@@ -235,7 +243,7 @@ export function TaskFormDialog({
       }
     } else if (templateToApply) {
       // Apply template when creating new task from template
-      const payload = templateToApply.payload as Record<string, any>;
+      const payload = templateToApply.payload as TaskTemplatePayload;
       form.reset({
         title: payload.title || "",
         description: payload.description || "",
@@ -499,7 +507,7 @@ export function TaskFormDialog({
                 templateType="task"
                 hasExistingData={!!form.watch("title") || !!form.watch("description")}
                 onSelect={(template, overwrite) => {
-                  const payload = template.payload as Record<string, any>;
+                  const payload = template.payload as Record<string, unknown>;
                   const currentValues = form.getValues();
                   const newValues = applyTemplateToForm(currentValues, payload, overwrite);
                   form.reset(newValues);

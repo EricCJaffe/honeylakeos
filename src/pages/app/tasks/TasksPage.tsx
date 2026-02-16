@@ -47,7 +47,7 @@ export default function TasksPage() {
   const [listManagerOpen, setListManagerOpen] = useState(false);
 
   const { data: projectsRaw = [] } = useQuery({
-    queryKey: ["projects", activeCompanyId],
+    queryKey: ["projects", "lite", activeCompanyId],
     queryFn: async () => {
       if (!activeCompanyId) return [];
       const { data, error } = await supabase
