@@ -69,7 +69,9 @@ function rruleToText(rruleStr: string): string {
       try {
         const untilDate = new Date(until.replace(/(\d{4})(\d{2})(\d{2}).*/, "$1-$2-$3"));
         text += ` until ${format(untilDate, "MMM d, yyyy")}`;
-      } catch {}
+      } catch {
+        // Keep fallback summary when UNTIL parsing fails.
+      }
     }
     if (count) text += `, ${count} times`;
     
@@ -131,13 +133,16 @@ export function RecurringEventOccurrences({
   };
 
   const handleConfirmSkip = async () => {
-    if (skipConfirm) {
-      await skipOccurrence.mutateAsync({
-        seriesEventId: event.id,
-        occurrenceDate: skipConfirm,
-      });
+    try {
+      if (skipConfirm) {
+        await skipOccurrence.mutateAsync({
+          seriesEventId: event.id,
+          occurrenceDate: skipConfirm,
+        });
+      }
+    } finally {
+      setSkipConfirm(null);
     }
-    setSkipConfirm(null);
   };
 
   return (

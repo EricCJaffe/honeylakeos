@@ -147,6 +147,8 @@ export function TaskFormDialog({
 
   // Set initial assignees, tags, and reset subtasks when editing or dialog opens
   React.useEffect(() => {
+    if (!open) return;
+
     if (task && existingAssignees.length > 0) {
       setAssignees(existingAssignees);
     } else if (!task && user) {
@@ -168,7 +170,7 @@ export function TaskFormDialog({
     if (!task) {
       setDraftSubtasks([]);
     }
-  }, [task, existingAssignees, user]);
+  }, [open, task, existingAssignees, user]);
 
   // Fetch task lists
   const { taskLists, personalLists, companyLists } = useTaskLists();
@@ -212,6 +214,8 @@ export function TaskFormDialog({
   const { data: phases = [] } = useProjectPhases(effectiveProjectId || undefined);
 
   React.useEffect(() => {
+    if (!open) return;
+
     if (task) {
       form.reset({
         title: task.title,
@@ -256,7 +260,7 @@ export function TaskFormDialog({
       });
       setRecurrenceConfig(null);
     }
-  }, [task, projectId, form, templateToApply]);
+  }, [open, task, projectId, form, templateToApply]);
 
   const mutation = useMutation({
     mutationFn: async (values: TaskFormValues) => {
@@ -303,8 +307,10 @@ export function TaskFormDialog({
       let taskId = task?.id;
 
       if (isEditing && task) {
+        const isSingleOccurrenceEdit = editMode === "single" && task.is_recurring_template;
+
         // If editing a single occurrence, create an override
-        if (editMode === "single" && task.is_recurring_template) {
+        if (isSingleOccurrenceEdit) {
           const { error } = await supabase.rpc("create_task_occurrence_override", {
             p_series_task_id: task.id,
             p_occurrence_start_at: task.recurrence_start_at || new Date().toISOString(),
@@ -324,19 +330,19 @@ export function TaskFormDialog({
           if (error) throw error;
         }
 
-        // Update assignees for existing task
-        // First, remove existing assignees
-        await supabase.from("task_assignees").delete().eq("task_id", task.id);
-        
-        // Then add new assignees
-        if (assignees.length > 0) {
-          const { error: assignError } = await supabase.from("task_assignees").insert(
-            assignees.map((userId) => ({
-              task_id: task.id,
-              user_id: userId,
-            }))
-          );
-          if (assignError) throw assignError;
+        // Assignees are series-level and should not be changed by single-occurrence edits.
+        if (!isSingleOccurrenceEdit) {
+          await supabase.from("task_assignees").delete().eq("task_id", task.id);
+
+          if (assignees.length > 0) {
+            const { error: assignError } = await supabase.from("task_assignees").insert(
+              assignees.map((userId) => ({
+                task_id: task.id,
+                user_id: userId,
+              }))
+            );
+            if (assignError) throw assignError;
+          }
         }
       } else {
         // Create new task
@@ -407,7 +413,8 @@ export function TaskFormDialog({
     },
     onSuccess: async (taskId: string) => {
       // Handle owner reassignment if changed (for editing only)
-      if (isEditing && task && pendingOwnerId && pendingOwnerId !== (task.owner_user_id || task.created_by)) {
+      const isSingleOccurrenceEdit = isEditing && editMode === "single" && task?.is_recurring_template;
+      if (!isSingleOccurrenceEdit && isEditing && task && pendingOwnerId && pendingOwnerId !== (task.owner_user_id || task.created_by)) {
         await reassignOwner.mutateAsync({
           entityType: "task",
           entityId: task.id,
@@ -450,8 +457,29 @@ export function TaskFormDialog({
 
   const dueDate = form.watch("due_date");
 
+  const handleOpenChange = React.useCallback((nextOpen: boolean) => {
+    if (!nextOpen) {
+      form.reset({
+        title: "",
+        description: "",
+        status: "to_do",
+        priority: "medium",
+        due_date: null,
+        project_id: projectId || null,
+        phase_id: null,
+        list_id: null,
+      });
+      setRecurrenceConfig(null);
+      setLinkedCrmClientId(crmClientId || null);
+      setIsPinned(false);
+      setPendingOwnerId(null);
+      setDraftSubtasks([]);
+    }
+    onOpenChange(nextOpen);
+  }, [crmClientId, form, onOpenChange, projectId]);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>

@@ -37,14 +37,31 @@ import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { TaskTagsDisplay } from "@/components/tasks/TaskTagInput";
 
 interface TaskListProps {
-  tasks: any[];
+  tasks: TaskListItem[];
   projectId?: string;
   onAddTask?: () => void;
-  onEditTask?: (task: any) => void;
+  onEditTask?: (task: TaskListItem) => void;
   showProject?: boolean;
   showPhase?: boolean;
   showRecurrence?: boolean;
   showList?: boolean;
+}
+
+interface TaskListItem {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  due_date: string | null;
+  is_recurring_template: boolean | null;
+  recurrence_rules: string | null;
+  recurrence_timezone: string | null;
+  is_pinned: boolean | null;
+  pinned_at: string | null;
+  tags: string[] | null;
+  task_list?: { id: string; name: string; color: string | null } | null;
+  project?: { id: string; name: string; emoji: string | null } | null;
+  phase?: { id: string; name: string } | null;
 }
 
 export function TaskList({
@@ -102,9 +119,9 @@ export function TaskList({
   });
 
   const duplicateTask = useMutation({
-    mutationFn: async (task: any) => {
+    mutationFn: async (task: TaskListItem) => {
       if (!activeCompanyId || !user) throw new Error("Missing context");
-      const { id, created_at, updated_at, task_assignees, project, phase, ...rest } = task;
+      const { id, task_list, project, phase, ...rest } = task;
       const { error } = await supabase.from("tasks").insert({
         ...rest,
         title: `${task.title} (copy)`,
@@ -181,7 +198,7 @@ export function TaskList({
     }
   };
 
-  const getRecurrenceLabel = (task: any) => {
+  const getRecurrenceLabel = (task: TaskListItem) => {
     if (!task.recurrence_rules) return null;
     const config = rruleToConfig(task.recurrence_rules, task.recurrence_timezone);
     if (!config || config.frequency === "none") return null;
@@ -261,7 +278,7 @@ export function TaskList({
     }
   };
 
-  const renderTaskGroup = (groupTasks: any[], label: string) => {
+  const renderTaskGroup = (groupTasks: TaskListItem[], label: string) => {
     if (groupTasks.length === 0) return null;
 
     return (

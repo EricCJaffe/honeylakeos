@@ -146,32 +146,35 @@ export default function CalendarPage() {
 
     // Add regular events
     regularEvents.forEach((event) => {
+      if (!event?.id || !event?.start_at) return;
       events.push({
         ...event,
         isRecurring: false,
-        attendeeCount: event.event_attendees?.length || 0,
+        attendeeCount: Array.isArray(event.event_attendees) ? event.event_attendees.length : 0,
       });
     });
 
     // Add recurring occurrences
     recurringOccurrences.forEach((occ: any) => {
-      if (!occ.is_exception) {
-        events.push({
-          id: occ.is_override ? occ.override_event_id : `${occ.event.id}-${occ.occurrence_date}`,
-          title: occ.event.title,
-          start_at: occ.occurrence_date,
-          end_at: occ.event.end_at,
-          color: occ.event.color,
-          all_day: occ.event.all_day,
-          isRecurring: true,
-          seriesEventId: occ.event.id,
-          occurrenceDate: new Date(occ.occurrence_date),
-          event: occ.event,
-          project_id: occ.event.project_id,
-          project: occ.event.project || null,
-          attendeeCount: 0, // Recurring events don't have attendees fetched here
-        });
-      }
+      if (!occ || occ.is_exception || !occ.event?.id || !occ.occurrence_date) return;
+      const occurrenceTime = new Date(occ.occurrence_date).getTime();
+      if (Number.isNaN(occurrenceTime)) return;
+
+      events.push({
+        id: occ.is_override ? occ.override_event_id : `${occ.event.id}-${occ.occurrence_date}`,
+        title: occ.event.title,
+        start_at: occ.occurrence_date,
+        end_at: occ.event.end_at,
+        color: occ.event.color,
+        all_day: occ.event.all_day,
+        isRecurring: true,
+        seriesEventId: occ.event.id,
+        occurrenceDate: new Date(occ.occurrence_date),
+        event: occ.event,
+        project_id: occ.event.project_id,
+        project: occ.event.project || null,
+        attendeeCount: 0, // Recurring events don't have attendees fetched here
+      });
     });
 
     // Sort by start_at
@@ -191,7 +194,10 @@ export default function CalendarPage() {
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   const getEventsForDay = (date: Date) => {
-    return filteredEvents.filter((event) => isSameDay(new Date(event.start_at), date));
+    return filteredEvents.filter((event) => {
+      const eventDate = new Date(event.start_at);
+      return !Number.isNaN(eventDate.getTime()) && isSameDay(eventDate, date);
+    });
   };
 
   const handleCreate = () => {

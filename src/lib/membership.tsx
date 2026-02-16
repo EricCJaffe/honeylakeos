@@ -57,6 +57,8 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
   const [loading, setLoading] = useState(true);
 
   const fetchMemberships = useCallback(async () => {
+    setLoading(true);
+
     if (!user) {
       setMemberships([]);
       setSiteMemberships([]);
@@ -66,6 +68,8 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
     }
 
     try {
+      let validMemberships: Membership[] = [];
+
       // Fetch company memberships with company details
       const { data: membershipData, error: membershipError } = await supabase
         .from("memberships")
@@ -94,7 +98,7 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
       if (membershipError) {
         console.error("Error fetching memberships:", membershipError);
       } else {
-        const validMemberships = (membershipData || [])
+        validMemberships = (membershipData || [])
           .filter((m) => m.company !== null && typeof m.company === 'object')
           .map(m => ({
             id: m.id,
@@ -138,13 +142,14 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
         .single();
 
       if (!profileError && profileData?.active_company_id) {
-        setActiveCompanyId(profileData.active_company_id);
-      } else if (membershipData && membershipData.length > 0) {
-        // Default to first company
-        const firstCompany = membershipData[0];
-        if (firstCompany?.company_id) {
-          setActiveCompanyId(firstCompany.company_id);
+        const hasProfileCompany = validMemberships.some((m) => m.company_id === profileData.active_company_id);
+        if (hasProfileCompany) {
+          setActiveCompanyId(profileData.active_company_id);
+        } else {
+          setActiveCompanyId(validMemberships[0]?.company_id ?? null);
         }
+      } else {
+        setActiveCompanyId(validMemberships[0]?.company_id ?? null);
       }
     } catch (err) {
       console.error("Error in fetchMemberships:", err);
@@ -158,6 +163,20 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
       fetchMemberships();
     }
   }, [authLoading, fetchMemberships]);
+
+  // Self-heal stale active company values when membership set changes.
+  useEffect(() => {
+    if (!memberships.length) {
+      if (activeCompanyId !== null) {
+        setActiveCompanyId(null);
+      }
+      return;
+    }
+
+    if (!activeCompanyId || !memberships.some((m) => m.company_id === activeCompanyId)) {
+      setActiveCompanyId(memberships[0].company_id);
+    }
+  }, [activeCompanyId, memberships]);
 
   const setActiveCompany = async (companyId: string) => {
     if (!user) return;

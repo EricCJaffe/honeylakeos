@@ -61,6 +61,15 @@ import type { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
 
 type Project = Tables<"projects">;
+type LinkedClient = {
+  id: string;
+  name?: string | null;
+  org_name?: string | null;
+  person_full_name?: string | null;
+};
+
+const getClientDisplayName = (client: LinkedClient | null | undefined) =>
+  client?.org_name || client?.person_full_name || client?.name || "Unnamed client";
 
 export default function ProjectsPage() {
   const { activeCompanyId, isCompanyAdmin, loading: membershipLoading } = useActiveCompany();
@@ -116,18 +125,18 @@ export default function ProjectsPage() {
       if (linksError) throw linksError;
 
       const clientIds = Array.from(new Set((links || []).map((l) => l.to_id).filter(Boolean)));
-      let clientById = new Map<string, any>();
+      let clientById = new Map<string, LinkedClient>();
       if (clientIds.length) {
         const { data: clients, error: clientsError } = await supabase
           .from("crm_clients")
-          .select("id, person_full_name, org_name")
+          .select("*")
           .eq("company_id", activeCompanyId)
           .in("id", clientIds);
         if (clientsError) throw clientsError;
-        clientById = new Map((clients || []).map((c) => [c.id, c]));
+        clientById = new Map((clients || []).map((c) => [c.id, c as LinkedClient]));
       }
 
-      const byProject = new Map<string, any>();
+      const byProject = new Map<string, LinkedClient>();
       for (const l of links || []) {
         if (!l?.from_id || !l?.to_id) continue;
         const client = clientById.get(l.to_id);
@@ -135,16 +144,12 @@ export default function ProjectsPage() {
         byProject.set(l.from_id, client);
       }
 
-      // Also return the distinct linked clients so the filter dropdown has options.
-      const linkedClients = Array.from(clientById.values());
-
       return {
         projects: (data as any[]).map((p) => ({
           ...p,
           linked_crm_client: byProject.get(p.id) || null,
         })),
-        linkedClients,
-      } as any;
+      };
     },
     enabled: !!activeCompanyId,
   });
@@ -158,13 +163,13 @@ export default function ProjectsPage() {
       if (!activeCompanyId) return [];
       const { data, error } = await supabase
         .from("crm_clients")
-        .select("id, person_full_name, org_name")
+        .select("*")
         .eq("company_id", activeCompanyId)
         .is("archived_at", null)
-        .order("org_name", { ascending: true });
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return (data || []) as LinkedClient[];
     },
     enabled: !!activeCompanyId,
   });
@@ -487,9 +492,9 @@ export default function ProjectsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Clients</SelectItem>
-                {allClients.map((c: any) => (
+                {allClients.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
-                    {c.org_name || c.person_full_name || 'Unnamed client'}
+                    {getClientDisplayName(c)}
                   </SelectItem>
                 ))}
               </SelectContent>
