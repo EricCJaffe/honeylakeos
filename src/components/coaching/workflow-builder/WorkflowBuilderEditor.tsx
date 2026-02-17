@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,6 +41,7 @@ import {
 } from "@/hooks/useOrgWorkflows";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { supabase } from "@/integrations/supabase/client";
+import { useAiReadiness } from "@/hooks/useAiReadiness";
 import { FormBaseKeySelector } from "@/components/forms/FormBaseKeySelector";
 import { FormPreview } from "@/components/forms/FormLauncher";
 import { 
@@ -200,6 +202,7 @@ export function WorkflowBuilderEditor({
   const [aiPrompt, setAiPrompt] = React.useState("");
   const [aiDraft, setAiDraft] = React.useState<AiWorkflowDraft | null>(null);
   const [isGeneratingAi, setIsGeneratingAi] = React.useState(false);
+  const aiReadiness = useAiReadiness("workflow_copilot", showAiDialog);
   
   // Sync local steps with fetched data
   React.useEffect(() => {
@@ -290,6 +293,10 @@ export function WorkflowBuilderEditor({
     }
     if (!aiPrompt.trim()) {
       toast.error("Enter a prompt describing the workflow you want");
+      return;
+    }
+    if (aiReadiness.data && !aiReadiness.data.available) {
+      toast.error(aiReadiness.data.reason);
       return;
     }
 
@@ -570,6 +577,26 @@ export function WorkflowBuilderEditor({
           </DialogHeader>
 
           <div className="space-y-4 py-2">
+            {aiReadiness.data && (
+              <Alert variant={aiReadiness.data.available ? "default" : "destructive"}>
+                <AlertTitle>
+                  {aiReadiness.data.available ? "AI Ready" : "AI Blocked"}
+                </AlertTitle>
+                <AlertDescription>
+                  {aiReadiness.data.reason}
+                  {aiReadiness.data.dailyUsed !== null && aiReadiness.data.dailyBudget !== null && (
+                    <span className="block mt-1">
+                      Daily usage: {aiReadiness.data.dailyUsed.toLocaleString()} / {aiReadiness.data.dailyBudget.toLocaleString()} tokens
+                    </span>
+                  )}
+                  {aiReadiness.data.monthlyUsed !== null && aiReadiness.data.monthlyBudget !== null && (
+                    <span className="block">
+                      Monthly usage: {aiReadiness.data.monthlyUsed.toLocaleString()} / {aiReadiness.data.monthlyBudget.toLocaleString()} tokens
+                    </span>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
             <div className="space-y-2">
               <Label htmlFor="aiPrompt">Prompt</Label>
               <Textarea
@@ -602,9 +629,9 @@ export function WorkflowBuilderEditor({
             <Button
               variant="outline"
               onClick={handleGenerateAiDraft}
-              disabled={isGeneratingAi || !aiPrompt.trim()}
+              disabled={isGeneratingAi || !aiPrompt.trim() || aiReadiness.isLoading || (aiReadiness.data ? !aiReadiness.data.available : false)}
             >
-              {isGeneratingAi ? "Generating..." : "Generate Draft"}
+              {isGeneratingAi ? "Generating..." : aiReadiness.isLoading ? "Checking..." : "Generate Draft"}
             </Button>
             <Button
               onClick={handleApplyAiDraft}

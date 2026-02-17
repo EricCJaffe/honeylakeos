@@ -16,6 +16,7 @@ type AiRequestBody = {
   model?: string;
   temperature?: number;
   maxOutputTokens?: number;
+  checkOnly?: boolean;
 };
 
 type CompanyAiSettings = {
@@ -327,7 +328,13 @@ Deno.serve(async (req) => {
         metadata: { reason: "AI feature is disabled for this company" },
       });
 
-      return jsonResponse({ error: "AI feature is disabled for this company" }, 403);
+      return jsonResponse({
+        error: "AI feature is disabled for this company",
+        readiness: {
+          available: false,
+          reason: "AI feature is disabled for this company",
+        },
+      }, 403);
     }
 
     const { data: integration } = await serviceClient
@@ -338,7 +345,13 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!integration?.is_enabled) {
-      return jsonResponse({ error: "OpenAI integration is not enabled for this company" }, 400);
+      return jsonResponse({
+        error: "OpenAI integration is not enabled for this company",
+        readiness: {
+          available: false,
+          reason: "OpenAI integration is not enabled for this company",
+        },
+      }, 400);
     }
 
     const { data: companySecret } = await serviceClient
@@ -366,7 +379,13 @@ Deno.serve(async (req) => {
     }
 
     if (!encryptedKey) {
-      return jsonResponse({ error: "OpenAI API key is not configured" }, 400);
+      return jsonResponse({
+        error: "OpenAI API key is not configured",
+        readiness: {
+          available: false,
+          reason: "OpenAI API key is not configured",
+        },
+      }, 400);
     }
 
     const openAiApiKey = await decryptSecretValue(encryptedKey);
@@ -425,7 +444,17 @@ Deno.serve(async (req) => {
         },
       });
 
-      return jsonResponse({ error: "Daily AI token budget exceeded" }, 429);
+      return jsonResponse({
+        error: "Daily AI token budget exceeded",
+        readiness: {
+          available: false,
+          reason: "Daily AI token budget exceeded",
+          dailyUsed: usedToday,
+          dailyBudget: typedSettings.daily_token_budget,
+          monthlyUsed: usedMonth,
+          monthlyBudget: typedSettings.monthly_token_budget,
+        },
+      }, 429);
     }
 
     if (usedMonth + projectedTotalTokens > typedSettings.monthly_token_budget) {
@@ -448,7 +477,30 @@ Deno.serve(async (req) => {
         },
       });
 
-      return jsonResponse({ error: "Monthly AI token budget exceeded" }, 429);
+      return jsonResponse({
+        error: "Monthly AI token budget exceeded",
+        readiness: {
+          available: false,
+          reason: "Monthly AI token budget exceeded",
+          dailyUsed: usedToday,
+          dailyBudget: typedSettings.daily_token_budget,
+          monthlyUsed: usedMonth,
+          monthlyBudget: typedSettings.monthly_token_budget,
+        },
+      }, 429);
+    }
+
+    if (body.checkOnly === true) {
+      return jsonResponse({
+        readiness: {
+          available: true,
+          reason: "AI is ready",
+          dailyUsed: usedToday,
+          dailyBudget: typedSettings.daily_token_budget,
+          monthlyUsed: usedMonth,
+          monthlyBudget: typedSettings.monthly_token_budget,
+        },
+      });
     }
 
     const response = await fetch("https://api.openai.com/v1/responses", {
