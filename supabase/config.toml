@@ -1,9 +1,12 @@
-project_id = "swcuoeacnpieqyerllrb"
+project_id = "umsibvxethuebdyjamxi"
 
 [functions.ai-gateway]
 verify_jwt = true
 
 [functions.ai-embed-content]
+verify_jwt = true
+
+[functions.manage-integration-secret]
 verify_jwt = true
 
 [functions.get-finance-metrics]
