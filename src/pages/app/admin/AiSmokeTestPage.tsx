@@ -61,14 +61,46 @@ function toMessage(error: unknown): string {
   return String(error);
 }
 
-function parseReadinessReason(payload: unknown): string {
+function parseReadinessReason(payload: unknown): string | null {
   if (payload && typeof payload === "object") {
     const p = payload as Record<string, unknown>;
     const readiness = p.readiness as Record<string, unknown> | undefined;
     if (readiness && typeof readiness.reason === "string") return readiness.reason;
     if (typeof p.error === "string") return p.error;
   }
-  return "No reason provided";
+  return null;
+}
+
+function getProjectRefFromUrl(): string | null {
+  try {
+    const url = new URL(import.meta.env.VITE_SUPABASE_URL as string);
+    return url.hostname.split(".")[0] || null;
+  } catch {
+    return null;
+  }
+}
+
+function describeInvokeFailure(error: unknown, payload?: unknown): string {
+  const payloadReason = parseReadinessReason(payload);
+  if (payloadReason) return payloadReason;
+
+  const rawMessage = toMessage(error);
+  const message = rawMessage.toLowerCase();
+  const anyError = error as { context?: { status?: number; statusText?: string } } | null;
+  const status = anyError?.context?.status;
+  const projectRef = getProjectRefFromUrl();
+
+  if (status === 404 || message.includes("not found") || message.includes("does not exist")) {
+    return `Edge Function not found in project ${projectRef ?? "(unknown project)"}. Deploy ai-gateway/manage-integration-secret to this project.`;
+  }
+  if (message.includes("failed to send a request to the edge function")) {
+    return `Edge Function unreachable for project ${projectRef ?? "(unknown project)"}. Verify function deployment, auth, and CORS/network access.`;
+  }
+  if (status) {
+    return `Edge Function request failed (${status}${anyError?.context?.statusText ? ` ${anyError.context.statusText}` : ""}): ${rawMessage}`;
+  }
+
+  return rawMessage;
 }
 
 export default function AiSmokeTestPage() {
@@ -128,14 +160,14 @@ export default function AiSmokeTestPage() {
       });
 
       if (error) {
-        const reason = parseReadinessReason(data) || toMessage(error);
+        const reason = describeInvokeFailure(error, data);
         updateCheck("gateway-workflow", { status: "fail", detail: reason, meta: { error: toMessage(error), payload: data } });
       } else {
         const available = ((data as Record<string, unknown>)?.readiness as Record<string, unknown> | undefined)?.available === true;
         const reason = parseReadinessReason(data);
         updateCheck("gateway-workflow", {
           status: available ? "pass" : "warn",
-          detail: available ? "Ready" : reason,
+          detail: available ? "Ready" : reason || "Readiness check did not provide a reason",
           meta: { payload: data },
         });
       }
@@ -156,14 +188,14 @@ export default function AiSmokeTestPage() {
       });
 
       if (error) {
-        const reason = parseReadinessReason(data) || toMessage(error);
+        const reason = describeInvokeFailure(error, data);
         updateCheck("gateway-template", { status: "fail", detail: reason, meta: { error: toMessage(error), payload: data } });
       } else {
         const available = ((data as Record<string, unknown>)?.readiness as Record<string, unknown> | undefined)?.available === true;
         const reason = parseReadinessReason(data);
         updateCheck("gateway-template", {
           status: available ? "pass" : "warn",
-          detail: available ? "Ready" : reason,
+          detail: available ? "Ready" : reason || "Readiness check did not provide a reason",
           meta: { payload: data },
         });
       }
@@ -186,7 +218,7 @@ export default function AiSmokeTestPage() {
       if (error) {
         updateCheck("secret-check", {
           status: "fail",
-          detail: toMessage(error),
+          detail: describeInvokeFailure(error, data),
           meta: { error: toMessage(error), payload: data },
         });
       } else {
@@ -238,7 +270,7 @@ export default function AiSmokeTestPage() {
       if (error) {
         setLiveGenerationStatus({
           status: "fail",
-          detail: parseReadinessReason(data) || toMessage(error),
+          detail: describeInvokeFailure(error, data),
         });
         return;
       }

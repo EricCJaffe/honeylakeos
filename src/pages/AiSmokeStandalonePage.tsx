@@ -11,19 +11,50 @@ type SmokeCheck = {
   detail?: string;
 };
 
-function parseReason(payload: unknown): string {
+function parseReason(payload: unknown): string | null {
   if (payload && typeof payload === "object") {
     const p = payload as Record<string, unknown>;
     const r = p.readiness as Record<string, unknown> | undefined;
     if (r && typeof r.reason === "string") return r.reason;
     if (typeof p.error === "string") return p.error;
   }
-  return "No reason provided";
+  return null;
 }
 
 function toMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   return String(error);
+}
+
+function getProjectRefFromUrl(): string | null {
+  try {
+    const url = new URL(import.meta.env.VITE_SUPABASE_URL as string);
+    return url.hostname.split(".")[0] || null;
+  } catch {
+    return null;
+  }
+}
+
+function describeInvokeFailure(error: unknown, payload?: unknown): string {
+  const payloadReason = parseReason(payload);
+  if (payloadReason) return payloadReason;
+
+  const rawMessage = toMessage(error);
+  const message = rawMessage.toLowerCase();
+  const anyError = error as { name?: string; context?: { status?: number; statusText?: string } } | null;
+  const status = anyError?.context?.status;
+  const projectRef = getProjectRefFromUrl();
+
+  if (status === 404 || message.includes("not found") || message.includes("does not exist")) {
+    return `Edge Function not found in project ${projectRef ?? "(unknown project)"}. Deploy ai-gateway/manage-integration-secret to this project.`;
+  }
+  if (message.includes("failed to send a request to the edge function")) {
+    return `Edge Function unreachable for project ${projectRef ?? "(unknown project)"}. Verify function deployment, auth, and CORS/network access.`;
+  }
+  if (status) {
+    return `Edge Function request failed (${status}${anyError?.context?.statusText ? ` ${anyError.context.statusText}` : ""}): ${rawMessage}`;
+  }
+  return rawMessage;
 }
 
 export default function AiSmokeStandalonePage() {
@@ -45,9 +76,20 @@ export default function AiSmokeStandalonePage() {
   const run = async () => {
     if (!activeCompanyId) return;
     setIsRunning(true);
-    setChecks((prev) => prev.map((c) => ({ ...c, status: "pending", detail: undefined })));
+    const nextChecks: SmokeCheck[] = checks.map((c) => ({ ...c, status: "pending", detail: undefined }));
+    setChecks(nextChecks);
 
-    patch("workflow", { status: "running" });
+    const patchLocal = (id: string, next: Partial<SmokeCheck>) => {
+      for (let i = 0; i < nextChecks.length; i += 1) {
+        if (nextChecks[i].id === id) {
+          nextChecks[i] = { ...nextChecks[i], ...next };
+          break;
+        }
+      }
+      patch(id, next);
+    };
+
+    patchLocal("workflow", { status: "running" });
     let workflowPayload: unknown = null;
     try {
       const { data, error } = await supabase.functions.invoke("ai-gateway", {
@@ -60,16 +102,19 @@ export default function AiSmokeStandalonePage() {
       });
       workflowPayload = data;
       if (error) {
-        patch("workflow", { status: "fail", detail: parseReason(data) || toMessage(error) });
+        patchLocal("workflow", { status: "fail", detail: describeInvokeFailure(error, data) });
       } else {
         const ok = ((data as Record<string, unknown>)?.readiness as Record<string, unknown> | undefined)?.available === true;
-        patch("workflow", { status: ok ? "pass" : "warn", detail: parseReason(data) });
+        patchLocal("workflow", {
+          status: ok ? "pass" : "warn",
+          detail: parseReason(data) || (ok ? "Ready" : "Readiness check did not provide a reason"),
+        });
       }
     } catch (e) {
-      patch("workflow", { status: "fail", detail: toMessage(e) });
+      patchLocal("workflow", { status: "fail", detail: describeInvokeFailure(e) });
     }
 
-    patch("template", { status: "running" });
+    patchLocal("template", { status: "running" });
     let templatePayload: unknown = null;
     try {
       const { data, error } = await supabase.functions.invoke("ai-gateway", {
@@ -82,16 +127,19 @@ export default function AiSmokeStandalonePage() {
       });
       templatePayload = data;
       if (error) {
-        patch("template", { status: "fail", detail: parseReason(data) || toMessage(error) });
+        patchLocal("template", { status: "fail", detail: describeInvokeFailure(error, data) });
       } else {
         const ok = ((data as Record<string, unknown>)?.readiness as Record<string, unknown> | undefined)?.available === true;
-        patch("template", { status: ok ? "pass" : "warn", detail: parseReason(data) });
+        patchLocal("template", {
+          status: ok ? "pass" : "warn",
+          detail: parseReason(data) || (ok ? "Ready" : "Readiness check did not provide a reason"),
+        });
       }
     } catch (e) {
-      patch("template", { status: "fail", detail: toMessage(e) });
+      patchLocal("template", { status: "fail", detail: describeInvokeFailure(e) });
     }
 
-    patch("key", { status: "running" });
+    patchLocal("key", { status: "running" });
     let keyPayload: unknown = null;
     try {
       const { data, error } = await supabase.functions.invoke("manage-integration-secret", {
@@ -104,19 +152,20 @@ export default function AiSmokeStandalonePage() {
       });
       keyPayload = data;
       if (error) {
-        patch("key", { status: "fail", detail: toMessage(error) });
+        patchLocal("key", { status: "fail", detail: describeInvokeFailure(error, data) });
       } else {
         const configured = (data as { configured?: boolean } | null)?.configured === true;
-        patch("key", { status: configured ? "pass" : "warn", detail: configured ? "Configured" : "Not configured" });
+        patchLocal("key", { status: configured ? "pass" : "warn", detail: configured ? "Configured" : "Not configured" });
       }
     } catch (e) {
-      patch("key", { status: "fail", detail: toMessage(e) });
+      patchLocal("key", { status: "fail", detail: describeInvokeFailure(e) });
     }
 
     setDiagnostics({
       timestamp: new Date().toISOString(),
       activeCompanyId,
-      checks,
+      checks: nextChecks,
+      supabaseProjectRef: getProjectRefFromUrl(),
       payloads: {
         workflowPayload,
         templatePayload,
