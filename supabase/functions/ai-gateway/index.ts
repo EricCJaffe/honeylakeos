@@ -54,6 +54,32 @@ function jsonResponse(payload: unknown, status = 200): Response {
   });
 }
 
+function toErrorMetadata(error: unknown): Record<string, unknown> {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    };
+  }
+
+  if (typeof error === "string") {
+    return { message: error };
+  }
+
+  try {
+    return {
+      message: "Non-Error thrown",
+      serialized: JSON.stringify(error),
+    };
+  } catch {
+    return {
+      message: "Non-Error thrown (unserializable)",
+      type: typeof error,
+    };
+  }
+}
+
 function truncateText(input: string, maxChars: number): string {
   if (input.length <= maxChars) return input;
   return `${input.slice(0, maxChars)}\n\n[truncated]`;
@@ -415,7 +441,33 @@ Deno.serve(async (req) => {
       }, 400);
     }
 
-    const openAiApiKey = await decryptSecretValue(encryptedKey);
+    let openAiApiKey: string;
+    try {
+      openAiApiKey = await decryptSecretValue(encryptedKey);
+    } catch (error) {
+      const errMeta = toErrorMetadata(error);
+      await serviceClient.from("ai_usage_logs").insert({
+        request_id: requestId,
+        company_id: companyId,
+        user_id: userId,
+        provider_key: "openai",
+        feature_key: taskType,
+        model: modelUsed,
+        latency_ms: Date.now() - start,
+        status: "error",
+        error_code: "secret_decrypt_failed",
+        metadata: errMeta,
+      });
+
+      return jsonResponse({
+        error: "OpenAI API key decrypt failed",
+        readiness: {
+          available: false,
+          reason: "OpenAI API key decrypt failed. Re-save credentials and verify INTEGRATION_SECRET_KEY.",
+        },
+        details: errMeta,
+      }, 500);
+    }
 
     modelUsed =
       body.model ||
@@ -655,6 +707,7 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error("ai-gateway error", error);
+    const errMeta = toErrorMetadata(error);
 
     if (companyId && taskType) {
       await serviceClient.from("ai_usage_logs").insert({
@@ -667,9 +720,7 @@ Deno.serve(async (req) => {
         latency_ms: Date.now() - start,
         status: "error",
         error_code: "internal_error",
-        metadata: {
-          message: error instanceof Error ? error.message : "Unknown error",
-        },
+        metadata: errMeta,
       });
     }
 
