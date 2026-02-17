@@ -36,6 +36,15 @@ const promptPathByTask: Record<TaskType, string> = {
   insight_summary: "./prompts/insight-summary.system.md",
 };
 
+const fallbackPromptByTask: Record<TaskType, string> = {
+  workflow_copilot:
+    "You are a workflow copilot. Return strict JSON only with keys: title, description, trigger_type, steps[]. Each step must include step_type, title, assignee_type, and may include instructions and due_offset_days.",
+  template_copilot:
+    "You are a template copilot. Return strict JSON only with keys: title, description, category, required_modules[], fields[]. Each field must include label, field_type, is_required, sort_order, and optional helper_text/options.",
+  insight_summary:
+    "You are an insight summarizer. Return strict JSON only with keys: summary, risks[], opportunities[], recommended_actions[].",
+};
+
 const promptCache = new Map<TaskType, string>();
 
 function jsonResponse(payload: unknown, status = 200): Response {
@@ -194,7 +203,14 @@ async function loadSystemPrompt(taskType: TaskType): Promise<string> {
   if (cached) return cached;
 
   const path = promptPathByTask[taskType];
-  const content = await Deno.readTextFile(new URL(path, import.meta.url));
+  let content: string;
+  try {
+    content = await Deno.readTextFile(new URL(path, import.meta.url));
+  } catch {
+    // Some edge deployments may not include adjacent prompt files in bundle.
+    // Keep runtime alive with a strict fallback prompt.
+    content = fallbackPromptByTask[taskType];
+  }
   promptCache.set(taskType, content);
   return content;
 }
