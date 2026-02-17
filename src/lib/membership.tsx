@@ -49,12 +49,26 @@ interface MembershipContextType {
 
 const MembershipContext = createContext<MembershipContextType | undefined>(undefined);
 
+type CompanyLite = Membership["company"];
+
 export function MembershipProvider({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const [memberships, setMemberships] = useState<Membership[]>([]);
   const [siteMemberships, setSiteMemberships] = useState<SiteMembership[]>([]);
   const [activeCompanyId, setActiveCompanyId] = useState<string | null>(null);
+  const [activeCompanyRecord, setActiveCompanyRecord] = useState<CompanyLite | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const fetchCompanyById = useCallback(async (companyId: string): Promise<CompanyLite | null> => {
+    const { data, error } = await supabase
+      .from("companies")
+      .select("id, name, logo_url, status, finance_mode")
+      .eq("id", companyId)
+      .maybeSingle();
+
+    if (error || !data) return null;
+    return data as CompanyLite;
+  }, []);
 
   const fetchMemberships = useCallback(async () => {
     setLoading(true);
@@ -63,6 +77,7 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
       setMemberships([]);
       setSiteMemberships([]);
       setActiveCompanyId(null);
+      setActiveCompanyRecord(null);
       setLoading(false);
       return;
     }
@@ -133,6 +148,10 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
       } else {
         setSiteMemberships(siteData || []);
       }
+      const effectiveSiteMemberships = siteData || [];
+      const isSiteAdminUser = effectiveSiteMemberships.some(
+        (sm) => sm.role === "site_admin" || sm.role === "super_admin"
+      );
 
       // Fetch active company from profile
       const { data: profileData, error: profileError } = await supabase
@@ -145,18 +164,25 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
         const hasProfileCompany = validMemberships.some((m) => m.company_id === profileData.active_company_id);
         if (hasProfileCompany) {
           setActiveCompanyId(profileData.active_company_id);
+          setActiveCompanyRecord(null);
+        } else if (isSiteAdminUser) {
+          setActiveCompanyId(profileData.active_company_id);
+          const fetchedCompany = await fetchCompanyById(profileData.active_company_id);
+          setActiveCompanyRecord(fetchedCompany);
         } else {
           setActiveCompanyId(validMemberships[0]?.company_id ?? null);
+          setActiveCompanyRecord(null);
         }
       } else {
         setActiveCompanyId(validMemberships[0]?.company_id ?? null);
+        setActiveCompanyRecord(null);
       }
     } catch (err) {
       console.error("Error in fetchMemberships:", err);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [fetchCompanyById, user]);
 
   useEffect(() => {
     if (!authLoading) {
@@ -166,17 +192,29 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
 
   // Self-heal stale active company values when membership set changes.
   useEffect(() => {
+    const hasSiteLevelAdmin = siteMemberships.some(
+      (sm) => sm.role === "site_admin" || sm.role === "super_admin"
+    );
     if (!memberships.length) {
-      if (activeCompanyId !== null) {
+      if (activeCompanyId !== null && !hasSiteLevelAdmin) {
         setActiveCompanyId(null);
+        setActiveCompanyRecord(null);
       }
       return;
     }
 
-    if (!activeCompanyId || !memberships.some((m) => m.company_id === activeCompanyId)) {
+    if (!activeCompanyId) {
       setActiveCompanyId(memberships[0].company_id);
+      setActiveCompanyRecord(null);
+      return;
     }
-  }, [activeCompanyId, memberships]);
+
+    const hasMembershipForActiveCompany = memberships.some((m) => m.company_id === activeCompanyId);
+    if (!hasMembershipForActiveCompany && !hasSiteLevelAdmin) {
+      setActiveCompanyId(memberships[0].company_id);
+      setActiveCompanyRecord(null);
+    }
+  }, [activeCompanyId, memberships, siteMemberships]);
 
   const setActiveCompany = async (companyId: string) => {
     if (!user) return;
@@ -192,9 +230,16 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
     }
 
     setActiveCompanyId(companyId);
+    const membershipCompany = memberships.find((m) => m.company_id === companyId)?.company || null;
+    if (membershipCompany) {
+      setActiveCompanyRecord(null);
+    } else {
+      const fetchedCompany = await fetchCompanyById(companyId);
+      setActiveCompanyRecord(fetchedCompany);
+    }
   };
 
-  const activeCompany = memberships.find(m => m.company_id === activeCompanyId)?.company || null;
+  const activeCompany = memberships.find(m => m.company_id === activeCompanyId)?.company || activeCompanyRecord;
   const activeMembership = memberships.find(m => m.company_id === activeCompanyId) || null;
   
   const isSuperAdmin = siteMemberships.some(sm => sm.role === "super_admin");

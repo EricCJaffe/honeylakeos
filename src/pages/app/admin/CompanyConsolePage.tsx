@@ -1,11 +1,14 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMembership } from "@/lib/membership";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Building2,
   UserCog,
@@ -98,10 +101,25 @@ const adminSections = [
 ];
 
 export default function CompanyConsolePage() {
-  const { isCompanyAdmin, isSiteAdmin, isSuperAdmin, activeCompanyId, activeCompany } = useMembership();
+  const { isCompanyAdmin, isSiteAdmin, isSuperAdmin, activeCompanyId, activeCompany, setActiveCompany } = useMembership();
   const queryClient = useQueryClient();
   const previousCompanyId = useRef<string | null>(null);
+  const [switchingCompanyId, setSwitchingCompanyId] = useState<string | null>(null);
   const hasAccess = isCompanyAdmin || isSiteAdmin || isSuperAdmin;
+  const canSelectAnyCompany = isSiteAdmin || isSuperAdmin;
+
+  const { data: allCompanies = [] } = useQuery({
+    queryKey: ["admin-companies-selector"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("companies")
+        .select("id, name")
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: canSelectAnyCompany,
+  });
 
   // Invalidate company-scoped queries when active company changes
   useEffect(() => {
@@ -133,7 +151,7 @@ export default function CompanyConsolePage() {
     );
   }
 
-  if (!activeCompanyId) {
+  if (!activeCompanyId && !canSelectAnyCompany) {
     return (
       <div className="p-6">
         <EmptyState
@@ -155,7 +173,7 @@ export default function CompanyConsolePage() {
       <div className="flex items-center gap-2 mb-6">
         <Badge variant="secondary" className="gap-1">
           <Building2 className="h-3 w-3" />
-          {activeCompany?.name}
+          {activeCompany?.name || "No company selected"}
         </Badge>
         <Badge variant="outline" className="gap-1">
           <ShieldCheck className="h-3 w-3" />
@@ -163,6 +181,64 @@ export default function CompanyConsolePage() {
         </Badge>
       </div>
 
+      {canSelectAnyCompany && (
+        <Card className="mb-6">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base">Admin Company Context</CardTitle>
+            <CardDescription>
+              Select a company to manage all company admin settings without switching user accounts.
+            </CardDescription>
+            <div className="pt-2">
+              <Label htmlFor="admin-company-select" className="sr-only">
+                Select company
+              </Label>
+              <Select
+                value={switchingCompanyId ?? activeCompanyId ?? undefined}
+                onValueChange={async (companyId) => {
+                  if (!companyId || companyId === activeCompanyId) return;
+                  setSwitchingCompanyId(companyId);
+                  try {
+                    await setActiveCompany(companyId);
+                    queryClient.invalidateQueries({ queryKey: ["company-settings"] });
+                    queryClient.invalidateQueries({ queryKey: ["company-modules"] });
+                    queryClient.invalidateQueries({ queryKey: ["capability-settings"] });
+                    queryClient.invalidateQueries({ queryKey: ["memberships"] });
+                    queryClient.invalidateQueries({ queryKey: ["employees"] });
+                    queryClient.invalidateQueries({ queryKey: ["groups"] });
+                    queryClient.invalidateQueries({ queryKey: ["locations"] });
+                    queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
+                  } finally {
+                    setSwitchingCompanyId(null);
+                  }
+                }}
+                disabled={allCompanies.length === 0 || !!switchingCompanyId}
+              >
+                <SelectTrigger id="admin-company-select" className="w-full md:w-[420px]">
+                  <SelectValue placeholder="Select company context" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allCompanies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardHeader>
+        </Card>
+      )}
+
+      {!activeCompanyId ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>No Company Selected</CardTitle>
+            <CardDescription>
+              Choose a company above to load company administration panels.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      ) : (
       <Tabs defaultValue="company" className="space-y-6">
         <TabsList className="flex-wrap h-auto gap-1 p-1 bg-muted/50">
           {adminSections.map((section) => (
@@ -208,6 +284,7 @@ export default function CompanyConsolePage() {
           </TabsContent>
         ))}
       </Tabs>
+      )}
     </div>
   );
 }
