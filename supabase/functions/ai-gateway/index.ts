@@ -255,14 +255,17 @@ async function getTokenUsageInWindow(
   startIso: string,
   endIso: string,
 ): Promise<number> {
-  const { data, error } = await serviceClient.rpc("company_ai_token_usage", {
-    p_company_id: companyId,
-    p_start: startIso,
-    p_end: endIso,
-  });
+  const { data, error } = await serviceClient
+    .from("ai_usage_logs")
+    .select("total_tokens")
+    .eq("company_id", companyId)
+    .eq("status", "success")
+    .gte("created_at", startIso)
+    .lt("created_at", endIso);
 
   if (error) throw error;
-  return typeof data === "number" ? data : Number(data ?? 0);
+
+  return (data || []).reduce((sum, row) => sum + Number(row.total_tokens ?? 0), 0);
 }
 
 Deno.serve(async (req) => {
