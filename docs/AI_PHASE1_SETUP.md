@@ -2,6 +2,25 @@
 
 This document describes the AI foundation added in Phase 1.
 
+## Phase 1 execution checklist (must complete)
+
+1. Apply DB migrations including:
+   - `supabase/migrations/20260216200000_ai_foundation_phase1.sql`
+2. Deploy edge functions:
+   - `manage-integration-secret`
+   - `ai-gateway`
+3. Set edge secrets (Supabase project settings):
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `INTEGRATION_SECRET_KEY` (strong random value, 16+ chars)
+4. Configure OpenAI integration for each target company:
+   - Enable `company_integrations.provider_key = 'openai'`
+   - Store `api_key` via `manage-integration-secret`
+5. Enable company AI flags in `company_ai_settings`:
+   - `ai_enabled = true`
+   - feature flags as needed (`workflow_copilot_enabled`, `template_copilot_enabled`, `insights_enabled`)
+
 ## What was added
 
 - Supabase migration: `supabase/migrations/20260216200000_ai_foundation_phase1.sql`

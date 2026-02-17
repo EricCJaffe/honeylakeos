@@ -23,6 +23,8 @@ type CompanyAiSettings = {
   insights_enabled: boolean;
   workflow_copilot_enabled: boolean;
   template_copilot_enabled: boolean;
+  daily_token_budget: number;
+  monthly_token_budget: number;
   max_prompt_tokens: number;
   max_completion_tokens: number;
 };
@@ -52,6 +54,23 @@ function truncateRaw(input: string, maxChars: number): string {
   return input.slice(0, maxChars);
 }
 
+function clampInteger(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, Math.floor(value)));
+}
+
+function startOfUtcDay(date = new Date()): string {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())).toISOString();
+}
+
+function startOfUtcMonth(date = new Date()): string {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1)).toISOString();
+}
+
+function estimateTokens(text: string): number {
+  // Conservative char->token estimate for budget gating.
+  return Math.ceil(text.length / 4);
+}
+
 function extractOutputText(responsePayload: Record<string, unknown>): string {
   if (typeof responsePayload.output_text === "string" && responsePayload.output_text.length > 0) {
     return responsePayload.output_text;
@@ -77,6 +96,98 @@ function extractOutputText(responsePayload: Record<string, unknown>): string {
   return textParts.join("\n").trim();
 }
 
+function tryParseJsonFromModelOutput(output: string): unknown {
+  const trimmed = output.trim();
+
+  if (trimmed.startsWith("```") && trimmed.endsWith("```")) {
+    const withoutFence = trimmed.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+    return JSON.parse(withoutFence);
+  }
+
+  return JSON.parse(trimmed);
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function validateWorkflowOutput(obj: Record<string, unknown>): string | null {
+  if (typeof obj.title !== "string" || !obj.title.trim()) return "title must be a non-empty string";
+  if (typeof obj.description !== "string") return "description must be a string";
+  if (typeof obj.trigger_type !== "string" || !obj.trigger_type.trim()) return "trigger_type must be a non-empty string";
+  if (!Array.isArray(obj.steps)) return "steps must be an array";
+
+  for (const [index, step] of obj.steps.entries()) {
+    if (!isPlainObject(step)) return `steps[${index}] must be an object`;
+    if (typeof step.step_type !== "string" || !step.step_type.trim()) return `steps[${index}].step_type must be a non-empty string`;
+    if (typeof step.title !== "string" || !step.title.trim()) return `steps[${index}].title must be a non-empty string`;
+    if (typeof step.assignee_type !== "string" || !step.assignee_type.trim()) return `steps[${index}].assignee_type must be a non-empty string`;
+    if (step.instructions !== undefined && typeof step.instructions !== "string") return `steps[${index}].instructions must be a string when present`;
+    if (step.due_offset_days !== undefined && typeof step.due_offset_days !== "number") return `steps[${index}].due_offset_days must be a number when present`;
+  }
+
+  return null;
+}
+
+function validateTemplateOutput(obj: Record<string, unknown>): string | null {
+  if (typeof obj.title !== "string" || !obj.title.trim()) return "title must be a non-empty string";
+  if (typeof obj.description !== "string") return "description must be a string";
+  if (typeof obj.category !== "string" || !obj.category.trim()) return "category must be a non-empty string";
+  if (!isStringArray(obj.required_modules)) return "required_modules must be an array of strings";
+  if (!Array.isArray(obj.fields)) return "fields must be an array";
+
+  for (const [index, field] of obj.fields.entries()) {
+    if (!isPlainObject(field)) return `fields[${index}] must be an object`;
+    if (typeof field.label !== "string" || !field.label.trim()) return `fields[${index}].label must be a non-empty string`;
+    if (typeof field.field_type !== "string" || !field.field_type.trim()) return `fields[${index}].field_type must be a non-empty string`;
+    if (typeof field.is_required !== "boolean") return `fields[${index}].is_required must be a boolean`;
+    if (field.helper_text !== undefined && typeof field.helper_text !== "string") return `fields[${index}].helper_text must be a string when present`;
+    if (field.options !== undefined && !isStringArray(field.options)) return `fields[${index}].options must be a string array when present`;
+    if (typeof field.sort_order !== "number") return `fields[${index}].sort_order must be a number`;
+  }
+
+  return null;
+}
+
+function validateInsightOutput(obj: Record<string, unknown>): string | null {
+  if (typeof obj.summary !== "string") return "summary must be a string";
+  if (!isStringArray(obj.risks)) return "risks must be an array of strings";
+  if (!isStringArray(obj.opportunities)) return "opportunities must be an array of strings";
+  if (!isStringArray(obj.recommended_actions)) return "recommended_actions must be an array of strings";
+  return null;
+}
+
+function validateOutputByTask(taskType: TaskType, outputText: string): { ok: true; parsed: Record<string, unknown> } | { ok: false; error: string } {
+  let parsed: unknown;
+
+  try {
+    parsed = tryParseJsonFromModelOutput(outputText);
+  } catch {
+    return { ok: false, error: "Model output is not valid JSON" };
+  }
+
+  if (!isPlainObject(parsed)) {
+    return { ok: false, error: "Model output must be a JSON object" };
+  }
+
+  const validationError =
+    taskType === "workflow_copilot"
+      ? validateWorkflowOutput(parsed)
+      : taskType === "template_copilot"
+        ? validateTemplateOutput(parsed)
+        : validateInsightOutput(parsed);
+
+  if (validationError) {
+    return { ok: false, error: validationError };
+  }
+
+  return { ok: true, parsed };
+}
+
 async function loadSystemPrompt(taskType: TaskType): Promise<string> {
   const cached = promptCache.get(taskType);
   if (cached) return cached;
@@ -95,8 +206,20 @@ function isFeatureEnabled(taskType: TaskType, settings: CompanyAiSettings): bool
   return false;
 }
 
-function clampInteger(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, Math.floor(value)));
+async function getTokenUsageInWindow(
+  serviceClient: ReturnType<typeof createClient>,
+  companyId: string,
+  startIso: string,
+  endIso: string,
+): Promise<number> {
+  const { data, error } = await serviceClient.rpc("company_ai_token_usage", {
+    p_company_id: companyId,
+    p_start: startIso,
+    p_end: endIso,
+  });
+
+  if (error) throw error;
+  return typeof data === "number" ? data : Number(data ?? 0);
 }
 
 Deno.serve(async (req) => {
@@ -106,6 +229,7 @@ Deno.serve(async (req) => {
 
   const requestId = crypto.randomUUID();
   const start = Date.now();
+  const nowIso = new Date().toISOString();
 
   let companyId: string | null = null;
   let userId: string | null = null;
@@ -183,11 +307,13 @@ Deno.serve(async (req) => {
 
     const { data: aiSettings } = await serviceClient
       .from("company_ai_settings")
-      .select("ai_enabled, insights_enabled, workflow_copilot_enabled, template_copilot_enabled, max_prompt_tokens, max_completion_tokens")
+      .select("ai_enabled, insights_enabled, workflow_copilot_enabled, template_copilot_enabled, daily_token_budget, monthly_token_budget, max_prompt_tokens, max_completion_tokens")
       .eq("company_id", companyId)
       .maybeSingle();
 
-    if (!aiSettings || !isFeatureEnabled(taskType, aiSettings as CompanyAiSettings)) {
+    const typedSettings = aiSettings as CompanyAiSettings | null;
+
+    if (!typedSettings || !isFeatureEnabled(taskType, typedSettings)) {
       await serviceClient.from("ai_usage_logs").insert({
         request_id: requestId,
         company_id: companyId,
@@ -252,11 +378,11 @@ Deno.serve(async (req) => {
 
     const temperature = typeof body.temperature === "number" ? Math.max(0, Math.min(1, body.temperature)) : 0.2;
     const maxOutputTokens = clampInteger(
-      body.maxOutputTokens ?? aiSettings.max_completion_tokens ?? 1200,
+      body.maxOutputTokens ?? typedSettings.max_completion_tokens ?? 1200,
       64,
-      aiSettings.max_completion_tokens ?? 1200,
+      typedSettings.max_completion_tokens ?? 1200,
     );
-    const maxPromptChars = clampInteger((aiSettings.max_prompt_tokens ?? 6000) * 4, 1024, 120000);
+    const maxPromptChars = clampInteger((typedSettings.max_prompt_tokens ?? 6000) * 4, 1024, 120000);
 
     const systemPrompt = await loadSystemPrompt(taskType);
 
@@ -270,6 +396,60 @@ Deno.serve(async (req) => {
     };
 
     const userPayloadText = truncateRaw(JSON.stringify(userPayload), maxPromptChars);
+
+    const estimatedInputTokens = estimateTokens(systemPrompt) + estimateTokens(userPayloadText);
+    const projectedTotalTokens = estimatedInputTokens + maxOutputTokens;
+
+    const [usedToday, usedMonth] = await Promise.all([
+      getTokenUsageInWindow(serviceClient, companyId, startOfUtcDay(), nowIso),
+      getTokenUsageInWindow(serviceClient, companyId, startOfUtcMonth(), nowIso),
+    ]);
+
+    if (usedToday + projectedTotalTokens > typedSettings.daily_token_budget) {
+      await serviceClient.from("ai_usage_logs").insert({
+        request_id: requestId,
+        company_id: companyId,
+        user_id: userId,
+        provider_key: "openai",
+        feature_key: taskType,
+        model: modelUsed,
+        prompt_tokens: estimatedInputTokens,
+        completion_tokens: maxOutputTokens,
+        total_tokens: projectedTotalTokens,
+        latency_ms: Date.now() - start,
+        status: "blocked",
+        error_code: "daily_token_budget_exceeded",
+        metadata: {
+          used_today: usedToday,
+          daily_budget: typedSettings.daily_token_budget,
+        },
+      });
+
+      return jsonResponse({ error: "Daily AI token budget exceeded" }, 429);
+    }
+
+    if (usedMonth + projectedTotalTokens > typedSettings.monthly_token_budget) {
+      await serviceClient.from("ai_usage_logs").insert({
+        request_id: requestId,
+        company_id: companyId,
+        user_id: userId,
+        provider_key: "openai",
+        feature_key: taskType,
+        model: modelUsed,
+        prompt_tokens: estimatedInputTokens,
+        completion_tokens: maxOutputTokens,
+        total_tokens: projectedTotalTokens,
+        latency_ms: Date.now() - start,
+        status: "blocked",
+        error_code: "monthly_token_budget_exceeded",
+        metadata: {
+          used_month: usedMonth,
+          monthly_budget: typedSettings.monthly_token_budget,
+        },
+      });
+
+      return jsonResponse({ error: "Monthly AI token budget exceeded" }, 429);
+    }
 
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
@@ -297,9 +477,12 @@ Deno.serve(async (req) => {
     const payload = (await response.json()) as Record<string, unknown>;
 
     const usage = (payload.usage as Record<string, unknown> | undefined) ?? {};
-    const promptTokens = typeof usage.input_tokens === "number" ? usage.input_tokens : null;
+    const promptTokens = typeof usage.input_tokens === "number" ? usage.input_tokens : estimatedInputTokens;
     const completionTokens = typeof usage.output_tokens === "number" ? usage.output_tokens : null;
-    const totalTokens = typeof usage.total_tokens === "number" ? usage.total_tokens : null;
+    const totalTokens =
+      typeof usage.total_tokens === "number"
+        ? usage.total_tokens
+        : promptTokens + (completionTokens ?? 0);
 
     if (!response.ok) {
       await serviceClient.from("ai_usage_logs").insert({
@@ -331,6 +514,36 @@ Deno.serve(async (req) => {
     }
 
     const outputText = extractOutputText(payload);
+    const schemaValidation = validateOutputByTask(taskType, outputText);
+
+    if (!schemaValidation.ok) {
+      await serviceClient.from("ai_usage_logs").insert({
+        request_id: requestId,
+        company_id: companyId,
+        user_id: userId,
+        provider_key: "openai",
+        feature_key: taskType,
+        model: modelUsed,
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens,
+        total_tokens: totalTokens,
+        latency_ms: Date.now() - start,
+        status: "error",
+        error_code: "invalid_output_schema",
+        metadata: {
+          validation_error: schemaValidation.error,
+          output_preview: truncateText(outputText, 1200),
+        },
+      });
+
+      return jsonResponse(
+        {
+          error: "Model output failed schema validation",
+          details: schemaValidation.error,
+        },
+        502,
+      );
+    }
 
     await serviceClient.from("ai_usage_logs").insert({
       request_id: requestId,
@@ -354,6 +567,7 @@ Deno.serve(async (req) => {
       requestId,
       model: modelUsed,
       outputText,
+      outputJson: schemaValidation.parsed,
       usage: {
         promptTokens,
         completionTokens,
