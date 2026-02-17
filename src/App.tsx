@@ -122,6 +122,7 @@ const ExportsPage = React.lazy(() => import("@/pages/app/reports/ExportsPage"));
 const RunDetailPage = React.lazy(() => import("@/pages/app/workflows/RunDetailPage"));
 const ValidationDashboardPage = React.lazy(() => import("@/pages/app/admin/ValidationDashboardPage"));
 const PilotCompanyDetailPage = React.lazy(() => import("@/pages/app/admin/PilotCompanyDetailPage"));
+const AiSmokeTestPage = React.lazy(() => import("@/pages/app/admin/AiSmokeTestPage"));
 const IntegrationsPage = React.lazy(() => import("@/pages/app/integrations/IntegrationsPage"));
 const DepartmentsPage = React.lazy(() => import("@/pages/app/departments/DepartmentsPage"));
 const DepartmentDetailPage = React.lazy(() => import("@/pages/app/departments/DepartmentDetailPage"));
@@ -297,6 +298,7 @@ function App() {
                     <Route path="admin/site-console" element={<SiteConsolePage />} />
                     <Route path="admin/validation" element={<ValidationDashboardPage />} />
                     <Route path="admin/validation/:companyId" element={<PilotCompanyDetailPage />} />
+                    <Route path="admin/ai-smoke" element={<AiSmokeTestPage />} />
                     <Route path="admin/coaching-inspector" element={<CoachingInspectorPage />} />
                     <Route path="admin/coaching-debug" element={<CoachingDebugPage />} />
                     <Route path="admin/sites" element={<SitesPage />} />
