@@ -37,6 +37,21 @@ export interface OrgWorkflowStep {
   updated_at: string;
 }
 
+export interface ReplaceOrgWorkflowFromAiInput {
+  workflowId: string;
+  workflow: {
+    name: string;
+    description: string | null;
+  };
+  steps: Array<{
+    step_type: string;
+    title: string;
+    description: string | null;
+    default_assignee: "coach" | "manager" | "member" | "member_admin" | "member_user" | "org_admin" | "unassigned";
+    due_offset_days: number | null;
+  }>;
+}
+
 // Fetch org workflows
 export function useOrgWorkflows(coachingOrgId: string | null) {
   return useQuery({
@@ -412,6 +427,64 @@ export function useOrgWorkflowMutations(coachingOrgId: string | null) {
       toast.error(`Failed to restore workflow: ${error.message}`);
     },
   });
+
+  // Replace workflow + steps from AI draft
+  const replaceWorkflowFromAi = useMutation({
+    mutationFn: async (input: ReplaceOrgWorkflowFromAiInput) => {
+      const { workflowId, workflow, steps } = input;
+
+      const { error: workflowError } = await supabase
+        .from("coaching_org_workflows")
+        .update({
+          name: workflow.name,
+          description: workflow.description,
+        })
+        .eq("id", workflowId);
+
+      if (workflowError) throw workflowError;
+
+      const { error: deleteError } = await supabase
+        .from("coaching_org_workflow_steps")
+        .delete()
+        .eq("org_workflow_id", workflowId);
+
+      if (deleteError) throw deleteError;
+
+      if (steps.length > 0) {
+        const inserts = steps.map((step, index) => ({
+          org_workflow_id: workflowId,
+          source_pack_step_id: null,
+          step_order: index + 1,
+          step_type: step.step_type,
+          title: step.title,
+          description: step.description,
+          is_optional: false,
+          is_disabled: false,
+          attached_form_template_key: null,
+          attached_form_base_key: null,
+          default_assignee: step.default_assignee,
+          due_offset_days: step.due_offset_days,
+          cadence_days: null,
+        }));
+
+        const { error: insertError } = await supabase
+          .from("coaching_org_workflow_steps")
+          .insert(inserts);
+
+        if (insertError) throw insertError;
+      }
+
+      return { workflowId };
+    },
+    onSuccess: ({ workflowId }) => {
+      queryClient.invalidateQueries({ queryKey: ["org-workflows", coachingOrgId] });
+      queryClient.invalidateQueries({ queryKey: ["org-workflow", workflowId] });
+      toast.success("AI workflow draft applied");
+    },
+    onError: (error) => {
+      toast.error(`Failed to apply AI workflow draft: ${error.message}`);
+    },
+  });
   
   return {
     seedFromPack,
@@ -419,5 +492,6 @@ export function useOrgWorkflowMutations(coachingOrgId: string | null) {
     updateStep,
     reorderSteps,
     restoreFromPack,
+    replaceWorkflowFromAi,
   };
 }

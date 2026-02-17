@@ -1,4 +1,5 @@
 import * as React from "react";
+import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,8 @@ import {
   useOrgWorkflowMutations,
   OrgWorkflowStep 
 } from "@/hooks/useOrgWorkflows";
+import { useActiveCompany } from "@/hooks/useActiveCompany";
+import { supabase } from "@/integrations/supabase/client";
 import { FormBaseKeySelector } from "@/components/forms/FormBaseKeySelector";
 import { FormPreview } from "@/components/forms/FormLauncher";
 import { 
@@ -49,6 +52,7 @@ import {
   EyeOff,
   RotateCcw,
   Save,
+  Sparkles,
   FileText,
   CheckSquare,
   Calendar,
@@ -98,11 +102,92 @@ const ASSIGNEE_OPTIONS = [
   { value: "member_user", label: "Member User" },
 ];
 
+interface AiDraftStep {
+  step_type: string;
+  title: string;
+  instructions?: string;
+  assignee_type: string;
+  due_offset_days?: number;
+}
+
+interface AiWorkflowDraft {
+  title: string;
+  description: string;
+  trigger_type: string;
+  steps: AiDraftStep[];
+}
+
+function mapAiStepTypeToOrgStepType(stepType: string): "task" | "form" | "meeting" | "note" | "milestone" {
+  const normalized = stepType.trim().toLowerCase();
+  if (normalized.includes("form")) return "form";
+  if (normalized.includes("calendar") || normalized.includes("meeting")) return "meeting";
+  if (normalized.includes("note")) return "note";
+  if (normalized.includes("milestone") || normalized.includes("project")) return "milestone";
+  return "task";
+}
+
+function mapAiAssigneeToOrgAssignee(
+  assigneeType: string,
+): "coach" | "manager" | "member" | "member_admin" | "member_user" | "org_admin" | "unassigned" {
+  const normalized = assigneeType.trim().toLowerCase();
+  if (normalized === "coach") return "coach";
+  if (normalized === "manager") return "manager";
+  if (normalized === "member") return "member";
+  if (normalized === "member_admin") return "member_admin";
+  if (normalized === "member_user") return "member_user";
+  if (normalized === "org_admin" || normalized === "company_admin") return "org_admin";
+  return "unassigned";
+}
+
+function parseAiWorkflowDraft(value: unknown): AiWorkflowDraft {
+  if (!value || typeof value !== "object") {
+    throw new Error("AI returned an invalid draft payload");
+  }
+  const draft = value as Record<string, unknown>;
+  if (typeof draft.title !== "string" || !draft.title.trim()) {
+    throw new Error("AI draft is missing a valid title");
+  }
+  if (typeof draft.description !== "string") {
+    throw new Error("AI draft is missing a valid description");
+  }
+  if (typeof draft.trigger_type !== "string") {
+    throw new Error("AI draft is missing a valid trigger_type");
+  }
+  if (!Array.isArray(draft.steps) || draft.steps.length === 0) {
+    throw new Error("AI draft must include at least one step");
+  }
+
+  const steps = draft.steps.map((step, index) => {
+    if (!step || typeof step !== "object") {
+      throw new Error(`AI draft step ${index + 1} is invalid`);
+    }
+    const s = step as Record<string, unknown>;
+    if (typeof s.step_type !== "string" || typeof s.title !== "string" || typeof s.assignee_type !== "string") {
+      throw new Error(`AI draft step ${index + 1} is missing required fields`);
+    }
+    return {
+      step_type: s.step_type,
+      title: s.title,
+      instructions: typeof s.instructions === "string" ? s.instructions : undefined,
+      assignee_type: s.assignee_type,
+      due_offset_days: typeof s.due_offset_days === "number" ? s.due_offset_days : undefined,
+    };
+  });
+
+  return {
+    title: draft.title,
+    description: draft.description,
+    trigger_type: draft.trigger_type,
+    steps,
+  };
+}
+
 export function WorkflowBuilderEditor({ 
   workflowId, 
   coachingOrgId,
   onBack 
 }: WorkflowBuilderEditorProps) {
+  const { activeCompanyId } = useActiveCompany();
   const { data, isLoading } = useOrgWorkflow(workflowId);
   const mutations = useOrgWorkflowMutations(coachingOrgId);
   
@@ -111,6 +196,10 @@ export function WorkflowBuilderEditor({
   const [localSteps, setLocalSteps] = React.useState<OrgWorkflowStep[]>([]);
   const [hasReordered, setHasReordered] = React.useState(false);
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
+  const [showAiDialog, setShowAiDialog] = React.useState(false);
+  const [aiPrompt, setAiPrompt] = React.useState("");
+  const [aiDraft, setAiDraft] = React.useState<AiWorkflowDraft | null>(null);
+  const [isGeneratingAi, setIsGeneratingAi] = React.useState(false);
   
   // Sync local steps with fetched data
   React.useEffect(() => {
@@ -192,6 +281,83 @@ export function WorkflowBuilderEditor({
     await mutations.restoreFromPack.mutateAsync({ workflowId });
     setShowRestoreDialog(false);
   };
+
+  const handleGenerateAiDraft = async () => {
+    if (!workflow) return;
+    if (!activeCompanyId) {
+      toast.error("Select an active company before using AI generation");
+      return;
+    }
+    if (!aiPrompt.trim()) {
+      toast.error("Enter a prompt describing the workflow you want");
+      return;
+    }
+
+    setIsGeneratingAi(true);
+    try {
+      const { data: response, error } = await supabase.functions.invoke("ai-gateway", {
+        body: {
+          companyId: activeCompanyId,
+          taskType: "workflow_copilot",
+          userPrompt: aiPrompt.trim(),
+          context: {
+            workflowType: workflow.workflow_type,
+            allowedStepTypes: ["task", "form", "meeting", "note", "milestone"],
+            allowedAssignees: ASSIGNEE_OPTIONS.map((option) => option.value),
+            currentWorkflow: {
+              name: workflow.name,
+              description: workflow.description,
+              stepCount: localSteps.length,
+              steps: localSteps.map((step) => ({
+                title: step.title,
+                step_type: step.step_type,
+                assignee: step.default_assignee,
+                due_offset_days: step.due_offset_days,
+              })),
+            },
+          },
+        },
+      });
+
+      if (error) throw error;
+      const outputJson = (response as { outputJson?: unknown } | null)?.outputJson;
+      if (!outputJson) {
+        throw new Error("AI response did not include structured output");
+      }
+
+      const parsed = parseAiWorkflowDraft(outputJson);
+      setAiDraft(parsed);
+      toast.success("AI draft generated");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to generate AI draft";
+      toast.error(message);
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  };
+
+  const handleApplyAiDraft = async () => {
+    if (!aiDraft) return;
+
+    await mutations.replaceWorkflowFromAi.mutateAsync({
+      workflowId,
+      workflow: {
+        name: aiDraft.title.trim(),
+        description: aiDraft.description.trim() || null,
+      },
+      steps: aiDraft.steps.map((step) => ({
+        step_type: mapAiStepTypeToOrgStepType(step.step_type),
+        title: step.title.trim(),
+        description: step.instructions?.trim() || null,
+        default_assignee: mapAiAssigneeToOrgAssignee(step.assignee_type),
+        due_offset_days: typeof step.due_offset_days === "number" ? Math.max(0, Math.floor(step.due_offset_days)) : null,
+      })),
+    });
+
+    setShowAiDialog(false);
+    setAiDraft(null);
+    setAiPrompt("");
+  };
   
   if (isLoading) {
     return (
@@ -244,6 +410,14 @@ export function WorkflowBuilderEditor({
           )}
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowAiDialog(true)}
+            disabled={isLocked || !canEditSteps}
+          >
+            <Sparkles className="mr-2 h-4 w-4" />
+            Generate with AI
+          </Button>
           {workflow.source_pack_template_id && (
             <Button 
               variant="outline" 
@@ -384,6 +558,63 @@ export function WorkflowBuilderEditor({
         onSave={handleSaveStep}
         isPending={mutations.updateStep.isPending}
       />
+
+      {/* AI Generate Dialog */}
+      <Dialog open={showAiDialog} onOpenChange={setShowAiDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Generate Workflow Draft with AI</DialogTitle>
+            <DialogDescription>
+              Describe the workflow outcome and AI will draft steps you can apply to this template.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="aiPrompt">Prompt</Label>
+              <Textarea
+                id="aiPrompt"
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="Example: Build a quarterly client health-check workflow with prep form, review meeting, and follow-up tasks."
+                rows={4}
+              />
+            </div>
+
+            {aiDraft && (
+              <div className="rounded-md border p-3 space-y-2">
+                <p className="font-medium">{aiDraft.title}</p>
+                {aiDraft.description && (
+                  <p className="text-sm text-muted-foreground">{aiDraft.description}</p>
+                )}
+                <div className="space-y-1">
+                  {aiDraft.steps.map((step, index) => (
+                    <div key={`${step.title}-${index}`} className="text-sm">
+                      {index + 1}. {step.title} ({mapAiStepTypeToOrgStepType(step.step_type)})
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={handleGenerateAiDraft}
+              disabled={isGeneratingAi || !aiPrompt.trim()}
+            >
+              {isGeneratingAi ? "Generating..." : "Generate Draft"}
+            </Button>
+            <Button
+              onClick={handleApplyAiDraft}
+              disabled={!aiDraft || mutations.replaceWorkflowFromAi.isPending}
+            >
+              {mutations.replaceWorkflowFromAi.isPending ? "Applying..." : "Apply Draft"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       {/* Restore Confirmation */}
       <AlertDialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
