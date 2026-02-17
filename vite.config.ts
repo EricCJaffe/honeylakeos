@@ -29,7 +29,9 @@ export default defineConfig(({ mode }) => ({
           if (id.includes("@supabase")) return "vendor-supabase";
           if (id.includes("@tanstack")) return "vendor-query";
           if (id.includes("framer-motion")) return "vendor-motion";
-          if (id.includes("@radix-ui")) return "vendor-radix";
+          // Keep Radix with React to avoid runtime ordering/interoperability issues
+          // seen in some hardened browser environments (SES/lockdown).
+          if (id.includes("@radix-ui")) return "vendor-react";
           if (id.includes("lucide-react")) return "vendor-icons";
           if (id.includes("date-fns")) return "vendor-date-fns";
           if (id.includes("prosemirror")) return "vendor-prosemirror";

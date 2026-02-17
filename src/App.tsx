@@ -18,6 +18,7 @@ const PricingPage = React.lazy(() => import("@/pages/public/PricingPage"));
 const AboutPage = React.lazy(() => import("@/pages/public/AboutPage"));
 const ContactPage = React.lazy(() => import("@/pages/public/ContactPage"));
 const PublicFormPage = React.lazy(() => import("@/pages/public/PublicFormPage"));
+const AiSmokeStandalonePage = React.lazy(() => import("@/pages/AiSmokeStandalonePage"));
 const LoginPage = React.lazy(() => import("@/pages/auth/LoginPage"));
 const SignUpPage = React.lazy(() => import("@/pages/auth/SignUpPage"));
 const ResetPasswordPage = React.lazy(() => import("@/pages/auth/ResetPasswordPage"));
@@ -173,6 +174,16 @@ function App() {
                   
                   {/* Invite Route */}
                   <Route path="/invite" element={<InvitePage />} />
+
+                  {/* Standalone admin utility route outside app shell */}
+                  <Route
+                    path="/ai-smoke"
+                    element={
+                      <ProtectedRoute>
+                        <AiSmokeStandalonePage />
+                      </ProtectedRoute>
+                    }
+                  />
                   
                   {/* Company Selection */}
                   <Route
