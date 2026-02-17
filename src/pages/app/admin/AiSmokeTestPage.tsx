@@ -14,7 +14,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useMembership } from "@/lib/membership";
 import { toast } from "sonner";
@@ -364,7 +363,7 @@ export default function AiSmokeTestPage() {
           <CardDescription>Share this JSON when reporting any smoke-test failure.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Separator className="mb-3" />
+          <div className="mb-3 h-px w-full bg-border" />
           <pre className="text-xs bg-muted p-3 rounded overflow-auto max-h-[360px]">
             {JSON.stringify(diagnostics, null, 2)}
           </pre>
