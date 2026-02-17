@@ -1,4 +1,7 @@
 project_id = "swcuoeacnpieqyerllrb"
 
+[functions.ai-gateway]
+verify_jwt = true
+
 [functions.get-finance-metrics]
 verify_jwt = false

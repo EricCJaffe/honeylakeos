@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { encryptSecretValue } from "../_shared/secrets.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -109,26 +110,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Simple encryption key (in production, use Vault or env-based encryption)
-    const encryptionKey = Deno.env.get("INTEGRATION_SECRET_KEY") || "default-dev-key-change-in-prod";
-
-    // Simple XOR-based obfuscation (replace with proper encryption in production)
-    const obfuscate = (text: string): string => {
-      const encoder = new TextEncoder();
-      const keyBytes = encoder.encode(encryptionKey);
-      const textBytes = encoder.encode(text);
-      const result = new Uint8Array(textBytes.length);
-      for (let i = 0; i < textBytes.length; i++) {
-        result[i] = textBytes[i] ^ keyBytes[i % keyBytes.length];
-      }
-      return btoa(String.fromCharCode(...result));
-    };
-
     // Handle actions
     if (action === "set" && secrets) {
       // Upsert each secret
       for (const [secretKey, secretValue] of Object.entries(secrets)) {
-        const encryptedValue = obfuscate(secretValue);
+        const encryptedValue = await encryptSecretValue(secretValue);
 
         const { error } = await serviceClient
           .from("integration_secrets")
