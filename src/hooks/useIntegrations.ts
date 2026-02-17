@@ -41,6 +41,7 @@ export interface SiteIntegration {
 
 // Provider capability descriptions (static for now)
 export const providerCapabilities: Record<string, string> = {
+  openai: "AI copilots + insights",
   zapier: "Triggers + Actions (coming soon)",
   plaid: "Bank connections + transactions (coming soon)",
   planning_center: "People + Giving sync (coming soon)",
@@ -48,6 +49,9 @@ export const providerCapabilities: Record<string, string> = {
 
 // Provider secret field definitions
 export const providerSecretFields: Record<string, { key: string; label: string; type: "text" | "password" }[]> = {
+  openai: [
+    { key: "api_key", label: "API Key", type: "password" },
+  ],
   zapier: [
     { key: "api_key", label: "API Key", type: "password" },
   ],

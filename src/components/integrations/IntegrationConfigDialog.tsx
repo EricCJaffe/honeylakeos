@@ -44,6 +44,8 @@ export function IntegrationConfigDialog({
   const deleteSecrets = useDeleteIntegrationSecrets();
 
   const handleSave = async () => {
+    if (secretFields.length === 0) return;
+
     // Validate all required fields are filled
     const hasAllFields = secretFields.every((f) => values[f.key]?.trim());
     if (!hasAllFields) return;
@@ -96,7 +98,11 @@ export function IntegrationConfigDialog({
         </Alert>
 
         <div className="space-y-4 py-4">
-          {secretFields.map((field) => (
+          {secretFields.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No credential fields are defined for this provider yet.
+            </p>
+          ) : secretFields.map((field) => (
             <div key={field.key} className="space-y-2">
               <Label htmlFor={field.key}>{field.label}</Label>
               <Input
@@ -150,7 +156,11 @@ export function IntegrationConfigDialog({
               </Button>
               <Button
                 onClick={handleSave}
-                disabled={saveSecrets.isPending || !secretFields.every((f) => values[f.key]?.trim())}
+                disabled={
+                  saveSecrets.isPending ||
+                  secretFields.length === 0 ||
+                  !secretFields.every((f) => values[f.key]?.trim())
+                }
               >
                 {saveSecrets.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 {isConfigured ? "Update" : "Save"} Credentials
