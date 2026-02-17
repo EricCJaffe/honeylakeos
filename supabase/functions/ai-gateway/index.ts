@@ -285,7 +285,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Company not found" }, 404);
     }
 
-    const [{ data: membership }, { data: siteMembership }] = await Promise.all([
+    const [{ data: membership }, { data: siteMembershipScoped }, { data: siteMembershipGlobal }] = await Promise.all([
       userClient
         .from("memberships")
         .select("id")
@@ -300,10 +300,21 @@ Deno.serve(async (req) => {
         .eq("user_id", userId)
         .in("role", ["site_admin", "super_admin"])
         .maybeSingle(),
+      userClient
+        .from("site_memberships")
+        .select("id")
+        .eq("user_id", userId)
+        .in("role", ["site_admin", "super_admin"])
+        .maybeSingle(),
     ]);
 
-    if (!membership && !siteMembership) {
-      return jsonResponse({ error: "Forbidden" }, 403);
+    // Keep ai-gateway permission behavior aligned with manage-integration-secret:
+    // allow company membership OR scoped site admin OR global site admin.
+    if (!membership && !siteMembershipScoped && !siteMembershipGlobal) {
+      return jsonResponse({
+        error: "Forbidden",
+        reason: "User lacks active company membership and site-admin privileges",
+      }, 403);
     }
 
     const { data: aiSettings } = await serviceClient
