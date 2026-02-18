@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, BookOpen, ChevronRight, Tag } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
@@ -7,11 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useKbCategories, useKbArticles, useSearchKbArticles } from "@/hooks/useSupportCenter";
+import { useMembership } from "@/lib/membership";
+import { useCompanyModuleFlags } from "@/core/modules";
 
 export default function KnowledgeBasePage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+
+  // Visibility context
+  const { isCompanyAdmin, isSiteAdmin, isSuperAdmin } = useMembership();
+  const { isModuleEnabled } = useCompanyModuleFlags();
 
   const { data: categories, isLoading: categoriesLoading } = useKbCategories();
   const { data: articles, isLoading: articlesLoading } = useKbArticles({
@@ -20,7 +26,32 @@ export default function KnowledgeBasePage() {
   });
   const { data: searchResults } = useSearchKbArticles(searchQuery);
 
-  const displayArticles = searchQuery.length >= 2 ? searchResults : articles;
+  // Determine which articles the current user should see
+  const filterByVisibility = useMemo(() => {
+    const userIsAdmin = isCompanyAdmin || isSiteAdmin || isSuperAdmin;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (list: any[] | undefined) => {
+      if (!list) return [];
+      return list.filter((article) => {
+        // Module gate: empty = show to all; otherwise require at least one enabled module
+        const modules: string[] = article.visible_to_modules ?? [];
+        if (modules.length > 0 && !modules.some((m: string) => isModuleEnabled(m as never))) {
+          return false;
+        }
+        // Role gate: empty = show to all; otherwise require matching role
+        const roles: string[] = article.visible_to_roles ?? [];
+        if (roles.length > 0) {
+          if (roles.includes("company_admin") && !userIsAdmin) return false;
+          if (roles.includes("site_admin") && !(isSiteAdmin || isSuperAdmin)) return false;
+        }
+        return true;
+      });
+    };
+  }, [isCompanyAdmin, isSiteAdmin, isSuperAdmin, isModuleEnabled]);
+
+  const visibleArticles = filterByVisibility(articles);
+  const visibleSearchResults = filterByVisibility(searchResults);
+  const displayArticles = searchQuery.length >= 2 ? visibleSearchResults : visibleArticles;
   const isLoading = categoriesLoading || articlesLoading;
 
   const getExcerpt = (body: string | null, maxLength = 150) => {
@@ -32,7 +63,7 @@ export default function KnowledgeBasePage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Knowledge Base"
+        title="Help Center"
         description="Find answers to common questions and learn how to use the platform"
       />
 
@@ -63,7 +94,7 @@ export default function KnowledgeBasePage() {
             <>
               <button
                 onClick={() => setSelectedCategoryId(null)}
-                className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
                   selectedCategoryId === null
                     ? "bg-primary text-primary-foreground"
                     : "hover:bg-muted"
@@ -75,7 +106,7 @@ export default function KnowledgeBasePage() {
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategoryId(category.id)}
-                  className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                  className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
                     selectedCategoryId === category.id
                       ? "bg-primary text-primary-foreground"
                       : "hover:bg-muted"
@@ -101,7 +132,7 @@ export default function KnowledgeBasePage() {
                 </Card>
               ))}
             </div>
-          ) : displayArticles && displayArticles.length > 0 ? (
+          ) : displayArticles.length > 0 ? (
             displayArticles.map((article) => (
               <Card
                 key={article.id}
@@ -111,8 +142,8 @@ export default function KnowledgeBasePage() {
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <BookOpen className="h-4 w-4 text-primary" />
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <BookOpen className="h-4 w-4 text-primary flex-shrink-0" />
                         {article.title}
                       </CardTitle>
                       {article.category && (
@@ -121,7 +152,7 @@ export default function KnowledgeBasePage() {
                         </Badge>
                       )}
                     </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -132,7 +163,7 @@ export default function KnowledgeBasePage() {
                     <div className="flex items-center gap-2 mt-3">
                       <Tag className="h-3 w-3 text-muted-foreground" />
                       <div className="flex flex-wrap gap-1">
-                        {article.tags.slice(0, 5).map((tag) => (
+                        {article.tags.slice(0, 5).map((tag: string) => (
                           <Badge key={tag} variant="outline" className="text-xs">
                             {tag}
                           </Badge>
