@@ -95,6 +95,7 @@ const ChartOfAccountsPage = React.lazy(() => import("@/pages/app/finance/ChartOf
 const DonorsPage = React.lazy(() => import("@/pages/app/donors/DonorsPage"));
 const NotFound = React.lazy(() => import("@/pages/NotFound"));
 const WorkflowsPage = React.lazy(() => import("@/pages/app/workflows/WorkflowsPage"));
+const BoardMeetingsPage = React.lazy(() => import("@/pages/app/board/BoardMeetingsPage"));
 const WorkflowDetailPage = React.lazy(() => import("@/pages/app/workflows/WorkflowDetailPage"));
 const FormDetailPage = React.lazy(() => import("@/pages/app/workflows/FormDetailPage"));
 const FormSubmitPage = React.lazy(() => import("@/pages/app/workflows/FormSubmitPage"));
@@ -194,6 +195,7 @@ function App() {
                     <Route path="forms/submissions" element={<FormSubmissionsListPage />} />
                     <Route path="forms/submissions/:submissionId" element={<FormSubmissionDetailPage />} />
                     <Route path="workflows" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><WorkflowsPage /></ModuleGuard>} />
+                    <Route path="board" element={<ModuleGuard moduleKey="board_meetings" moduleName="Board Meetings"><BoardMeetingsPage /></ModuleGuard>} />
                     <Route path="workflows/:workflowId" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><WorkflowDetailPage /></ModuleGuard>} />
                     <Route path="workflows/forms/:formId" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><FormDetailPage /></ModuleGuard>} />
                     <Route path="workflows/forms/:formId/submit" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><FormSubmitPage /></ModuleGuard>} />

@@ -25,7 +25,8 @@ export type ModuleKey =
   | "donors"
   | "finance"
   | "reports"
-  | "departments";
+  | "departments"
+  | "board_meetings";
 
 interface ModuleAccessResult {
   /** Whether the module is enabled for the company */

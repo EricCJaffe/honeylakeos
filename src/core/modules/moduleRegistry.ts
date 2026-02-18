@@ -20,6 +20,7 @@ export type ModuleId =
   | "groups"
   | "locations"
   | "departments"
+  | "board_meetings"
   | "forms"
   | "workflows"
   | "lms"
@@ -159,6 +160,19 @@ export const MODULE_REGISTRY: Record<ModuleId, ModuleDefinition> = {
     defaultEnabled: true,
     isCore: true,
     navOrder: 70,
+    navSection: "main",
+  },
+  board_meetings: {
+    id: "board_meetings",
+    name: "Board Meetings",
+    description: "Board meeting management, agendas, voting, and minutes",
+    routePrefix: "/app/board",
+    navLabel: "Board Meetings",
+    icon: Building,
+    requiredRoles: ["member"],
+    defaultEnabled: false,
+    isCore: false,
+    navOrder: 85,
     navSection: "main",
   },
   departments: {
@@ -425,6 +439,7 @@ export function legacyModuleKeyToModuleId(moduleKey: string): ModuleId | undefin
     groups: "groups",
     locations: "locations",
     departments: "departments",
+    board_meetings: "board_meetings",
     crm: "crm",
     external_contacts: "contacts",
     forms: "forms",
