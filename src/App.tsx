@@ -78,16 +78,6 @@ const CrmPage = React.lazy(() => import("@/pages/app/crm/CrmPage"));
 const CrmDetailPage = React.lazy(() => import("@/pages/app/crm/CrmDetailPage"));
 const ExternalContactsPage = React.lazy(() => import("@/pages/app/contacts/ExternalContactsPage"));
 const ExternalContactDetailPage = React.lazy(() => import("@/pages/app/contacts/ExternalContactDetailPage"));
-const CoachesPage = React.lazy(() => import("@/pages/app/coaches/CoachesPage"));
-const CoachDetailPage = React.lazy(() => import("@/pages/app/coaches/CoachDetailPage"));
-const CoachingPage = React.lazy(() => import("@/pages/app/coaching/CoachingPage"));
-const CoachHomePage = React.lazy(() => import("@/pages/app/coaching/CoachHomePage"));
-const CoachDashboardPage = React.lazy(() => import("@/pages/app/coaching/CoachDashboardPage"));
-const CoachClientViewPage = React.lazy(() => import("@/pages/app/coaching/CoachClientViewPage"));
-const CoachingClientDetailPage = React.lazy(() => import("@/pages/app/coaching/ClientDetailPage"));
-const RecommendationFormPage = React.lazy(() => import("@/pages/app/coaching/RecommendationFormPage"));
-const PlaybooksPage = React.lazy(() => import("@/pages/app/coaching/PlaybooksPage"));
-const CoachRequestsInbox = React.lazy(() => import("@/pages/app/coaching/CoachRequestsInbox"));
 const PlansUsagePage = React.lazy(() => import("@/pages/app/admin/PlansUsagePage"));
 const KnowledgeBasePage = React.lazy(() => import("@/pages/app/support/KnowledgeBasePage"));
 const ArticleDetailPage = React.lazy(() => import("@/pages/app/support/ArticleDetailPage"));
@@ -127,15 +117,6 @@ const AiSmokeTestPage = React.lazy(() => import("@/pages/app/admin/AiSmokeTestPa
 const IntegrationsPage = React.lazy(() => import("@/pages/app/integrations/IntegrationsPage"));
 const DepartmentsPage = React.lazy(() => import("@/pages/app/departments/DepartmentsPage"));
 const DepartmentDetailPage = React.lazy(() => import("@/pages/app/departments/DepartmentDetailPage"));
-const CoachingInspectorPage = React.lazy(() => import("@/pages/app/admin/CoachingInspectorPage"));
-const CoachingDebugPage = React.lazy(() => import("@/pages/app/admin/CoachingDebugPage"));
-const OrgAdminDashboard = React.lazy(() => import("@/pages/app/coaching/OrgAdminDashboard"));
-const OrgSettingsPage = React.lazy(() => import("@/pages/app/coaching/OrgSettingsPage"));
-const WorkflowBuilderPage = React.lazy(() => import("@/pages/app/coaching/WorkflowBuilderPage"));
-const ManagerDashboard = React.lazy(() => import("@/pages/app/coaching/ManagerDashboard"));
-const MemberDashboard = React.lazy(() => import("@/pages/app/coaching/MemberDashboard"));
-const CoachFacilitatorDashboardPage = React.lazy(() => import("@/pages/app/coaching/CoachFacilitatorDashboardPage"));
-const CoachingAdminDashboardPage = React.lazy(() => import("@/pages/app/coaching/CoachingAdminDashboardPage"));
 const TemplateFormPage = React.lazy(() => import("@/pages/app/forms/TemplateFormPage"));
 const FormSubmissionsListPage = React.lazy(() => import("@/pages/app/forms/FormSubmissionsListPage"));
 const FormSubmissionDetailPage = React.lazy(() => import("@/pages/app/forms/FormSubmissionDetailPage"));
@@ -248,24 +229,6 @@ function App() {
                     <Route path="crm/:clientId" element={<ModuleGuard moduleKey="crm" moduleName="CRM"><CrmDetailPage /></ModuleGuard>} />
                     <Route path="contacts" element={<ModuleGuard moduleKey="crm" moduleName="Contacts"><ExternalContactsPage /></ModuleGuard>} />
                     <Route path="contacts/:contactId" element={<ModuleGuard moduleKey="crm" moduleName="Contacts"><ExternalContactDetailPage /></ModuleGuard>} />
-                    <Route path="coaches" element={<ModuleGuard moduleKey="coaches" moduleName="Coaches"><CoachesPage /></ModuleGuard>} />
-                    <Route path="coaches/:coachId" element={<ModuleGuard moduleKey="coaches" moduleName="Coaches"><CoachDetailPage /></ModuleGuard>} />
-                    <Route path="coaching" element={<CoachingPage />} />
-                    <Route path="coaching/home" element={<CoachHomePage />} />
-                    <Route path="coaching/dashboard" element={<CoachDashboardPage />} />
-                    <Route path="coaching/clients/:clientId" element={<CoachClientViewPage />} />
-                    <Route path="coaching/engagements/:engagementId" element={<CoachingClientDetailPage />} />
-                    <Route path="coaching/recommendations/new" element={<RecommendationFormPage />} />
-                    <Route path="coaching/playbooks" element={<PlaybooksPage />} />
-                    <Route path="coaching/requests" element={<CoachRequestsInbox />} />
-                    <Route path="coaching/org" element={<OrgAdminDashboard />} />
-                    <Route path="coaching/org/settings" element={<OrgSettingsPage />} />
-                    <Route path="coaching/org/workflows" element={<WorkflowBuilderPage />} />
-                    <Route path="coaching/org/workflows/:workflowId" element={<WorkflowBuilderPage />} />
-                    <Route path="coaching/coach" element={<CoachFacilitatorDashboardPage />} />
-                    <Route path="coaching/manager" element={<ManagerDashboard />} />
-                    <Route path="coaching/member" element={<MemberDashboard />} />
-                    <Route path="coaching/admin" element={<CoachingAdminDashboardPage />} />
                     <Route path="support/kb" element={<KnowledgeBasePage />} />
                     <Route path="support/kb/:articleId" element={<ArticleDetailPage />} />
                     <Route path="support/kb/admin" element={<KbAdminPage />} />
@@ -310,8 +273,6 @@ function App() {
                     <Route path="admin/validation" element={<ValidationDashboardPage />} />
                     <Route path="admin/validation/:companyId" element={<PilotCompanyDetailPage />} />
                     <Route path="admin/ai-smoke" element={<AiSmokeTestPage />} />
-                    <Route path="admin/coaching-inspector" element={<CoachingInspectorPage />} />
-                    <Route path="admin/coaching-debug" element={<CoachingDebugPage />} />
                     <Route path="admin/sites" element={<SitesPage />} />
                     <Route path="admin/companies" element={<CompaniesPage />} />
                     <Route path="admin/users" element={<UsersPage />} />

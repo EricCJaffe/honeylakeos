@@ -1,13 +1,12 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { Settings, ChevronRight, Building2, Briefcase } from "lucide-react";
+import { Settings, ChevronRight, Building2 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Logo } from "@/components/Logo";
 import { useMembership } from "@/lib/membership";
 import { useCompanyModules } from "@/hooks/useCompanyModules";
 import { useCompanyTerminology } from "@/hooks/useCompanyTerminology";
 import { useNavState } from "@/hooks/useNavState";
-import { useCoachingRoles } from "@/hooks/useCoachingRoles";
 import { useCompanyModuleFlags, legacyModuleKeyToModuleId } from "@/core/modules";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -26,7 +25,6 @@ import {
 import {
   getNavigationSections,
   adminNavItems,
-  coachingNavItems,
   getSectionForRoute,
   type NavItem,
   type NavSection,
@@ -41,7 +39,6 @@ export function AppSidebar() {
   const { isModuleEnabled: isModuleFlagEnabled, isSafeMode } = useCompanyModuleFlags();
   const { getPlural } = useCompanyTerminology();
   const { isExpanded, toggleSection, expandSection } = useNavState();
-  const coachingRoles = useCoachingRoles();
   const collapsed = state === "collapsed";
   
   // Get navigation sections based on finance mode
@@ -293,148 +290,7 @@ export function AppSidebar() {
                         </NavLink>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={isActive(adminNavItems.coachingInspector.url)}
-                        tooltip={adminNavItems.coachingInspector.title}
-                      >
-                        <NavLink
-                          to={adminNavItems.coachingInspector.url}
-                          className="flex items-center gap-3"
-                          activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                        >
-                          <adminNavItems.coachingInspector.icon className="h-4 w-4" />
-                          <span>{adminNavItems.coachingInspector.title}</span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
                   </>
-                )}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </CollapsibleContent>
-        </Collapsible>
-      </SidebarGroup>
-    );
-  };
-
-  // Render coaching section
-  const renderCoachingSection = () => {
-    if (!coachingRoles.showCoachingSection) return null;
-
-    const coachingExpanded = isExpanded("coaching");
-    
-    // Determine which items to show based on coaching roles
-    const showOrgDashboard = coachingRoles.companyHasCoachingOrg && (isCompanyAdmin || coachingRoles.isOrgAdmin);
-    const showCoachDashboard = coachingRoles.isCoachLike || coachingRoles.isOrgAdmin || coachingRoles.isManager;
-    const showMemberDashboard = coachingRoles.companyHasCoachingOrg || coachingRoles.isMember;
-    const showAdminDashboard = showSiteAdmin;
-
-    // Don't show section if no items would be visible
-    if (!showOrgDashboard && !showCoachDashboard && !showMemberDashboard && !showAdminDashboard) {
-      return null;
-    }
-
-    return (
-      <SidebarGroup>
-        <Collapsible open={coachingExpanded} onOpenChange={() => toggleSection("coaching")}>
-          <CollapsibleTrigger asChild>
-            <SidebarMenuButton
-              className="w-full justify-between"
-              tooltip="Coaching"
-            >
-              <div className="flex items-center gap-3">
-                <Briefcase className="h-4 w-4" />
-                <span className="text-xs uppercase tracking-wider font-medium">
-                  Coaching
-                </span>
-              </div>
-              <ChevronRight
-                className={cn(
-                  "h-4 w-4 transition-transform duration-200",
-                  coachingExpanded && "rotate-90"
-                )}
-              />
-            </SidebarMenuButton>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <SidebarGroupContent className="pl-4 pt-1">
-              <SidebarMenu>
-                {showOrgDashboard && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive(coachingNavItems.orgDashboard.url)}
-                      tooltip={coachingNavItems.orgDashboard.title}
-                    >
-                      <NavLink
-                        to={coachingNavItems.orgDashboard.url}
-                        className="flex items-center gap-3"
-                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                      >
-                        <coachingNavItems.orgDashboard.icon className="h-4 w-4" />
-                        <span>{coachingNavItems.orgDashboard.title}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-
-                {showCoachDashboard && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive(coachingNavItems.coachDashboard.url)}
-                      tooltip={coachingNavItems.coachDashboard.title}
-                    >
-                      <NavLink
-                        to={coachingNavItems.coachDashboard.url}
-                        className="flex items-center gap-3"
-                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                      >
-                        <coachingNavItems.coachDashboard.icon className="h-4 w-4" />
-                        <span>{coachingNavItems.coachDashboard.title}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-
-                {showMemberDashboard && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive(coachingNavItems.memberDashboard.url)}
-                      tooltip={coachingNavItems.memberDashboard.title}
-                    >
-                      <NavLink
-                        to={coachingNavItems.memberDashboard.url}
-                        className="flex items-center gap-3"
-                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                      >
-                        <coachingNavItems.memberDashboard.icon className="h-4 w-4" />
-                        <span>{coachingNavItems.memberDashboard.title}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-
-                {showAdminDashboard && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive(coachingNavItems.adminDashboard.url)}
-                      tooltip={coachingNavItems.adminDashboard.title}
-                    >
-                      <NavLink
-                        to={coachingNavItems.adminDashboard.url}
-                        className="flex items-center gap-3"
-                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                      >
-                        <coachingNavItems.adminDashboard.icon className="h-4 w-4" />
-                        <span>{coachingNavItems.adminDashboard.title}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
                 )}
               </SidebarMenu>
             </SidebarGroupContent>
@@ -468,9 +324,6 @@ export function AppSidebar() {
       <SidebarContent className="px-2">
         {/* Render all navigation sections */}
         {navigationSections.map(renderSection)}
-
-        {/* Coaching section */}
-        {renderCoachingSection()}
 
         {/* Admin section */}
         {renderAdminSection()}

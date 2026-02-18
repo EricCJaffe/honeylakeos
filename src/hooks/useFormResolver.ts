@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveCompany } from "./useActiveCompany";
-import { useCoachingRole } from "./useCoachingRole";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -27,22 +26,6 @@ interface FormResolutionResult {
   isLoading: boolean;
   error: Error | null;
   refetch: () => void;
-}
-
-/**
- * Get the program key for a coaching org
- */
-async function getOrgProgramKey(coachingOrgId: string | null): Promise<string> {
-  if (!coachingOrgId) return "generic";
-  
-  const { data, error } = await supabase
-    .from("coaching_orgs")
-    .select("program_key")
-    .eq("id", coachingOrgId)
-    .single();
-  
-  if (error || !data) return "generic";
-  return data.program_key || "generic";
 }
 
 /**
@@ -127,20 +110,15 @@ async function resolveFormByBaseKey(
  * Hook to resolve a form by base key with program pack fallback
  */
 export function useResolvedForm(
-  baseKey: string | null,
-  coachingOrgId?: string | null
+  baseKey: string | null
 ): FormResolutionResult {
-  const { activeCoachingOrgId } = useCoachingRole();
   const { activeCompanyId } = useActiveCompany();
-  const orgId = coachingOrgId ?? activeCoachingOrgId;
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["resolved-form", baseKey, orgId, activeCompanyId],
+    queryKey: ["resolved-form", baseKey, activeCompanyId],
     queryFn: async () => {
       if (!baseKey) return null;
-      
-      const programKey = await getOrgProgramKey(orgId);
-      return resolveFormByBaseKey(baseKey, programKey, activeCompanyId);
+      return resolveFormByBaseKey(baseKey, "generic", activeCompanyId);
     },
     enabled: !!baseKey,
     staleTime: 10 * 60 * 1000,
@@ -155,59 +133,13 @@ export function useResolvedForm(
 }
 
 /**
- * Hook to resolve a form for a specific engagement context
- */
-export function useEngagementResolvedForm(
-  baseKey: string | null,
-  engagementId: string | null
-): FormResolutionResult {
-  const { activeCompanyId } = useActiveCompany();
-
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["engagement-resolved-form", baseKey, engagementId],
-    queryFn: async () => {
-      if (!baseKey || !engagementId) return null;
-
-      // Get engagement's coaching org and program key
-      const { data: engagement } = await supabase
-        .from("coaching_org_engagements")
-        .select("coaching_org_id, program_key_snapshot")
-        .eq("id", engagementId)
-        .single();
-
-      if (!engagement) return null;
-
-      // Use snapshot if available, otherwise resolve from org
-      let programKey = engagement.program_key_snapshot;
-      if (!programKey) {
-        programKey = await getOrgProgramKey(engagement.coaching_org_id);
-      }
-
-      return resolveFormByBaseKey(baseKey, programKey, activeCompanyId);
-    },
-    enabled: !!baseKey && !!engagementId,
-    staleTime: 10 * 60 * 1000,
-  });
-
-  return {
-    form: data ?? null,
-    isLoading,
-    error: error as Error | null,
-    refetch,
-  };
-}
-
-/**
  * Hook to list all available form base keys with their resolved variants
  */
-export function useAvailableFormBaseKeys(coachingOrgId?: string | null) {
-  const { activeCoachingOrgId } = useCoachingRole();
-  const orgId = coachingOrgId ?? activeCoachingOrgId;
-
+export function useAvailableFormBaseKeys() {
   return useQuery({
-    queryKey: ["available-form-base-keys", orgId],
+    queryKey: ["available-form-base-keys"],
     queryFn: async () => {
-      const programKey = await getOrgProgramKey(orgId);
+      const programKey = "generic";
 
       // Get all active forms
       const { data: forms, error } = await supabase

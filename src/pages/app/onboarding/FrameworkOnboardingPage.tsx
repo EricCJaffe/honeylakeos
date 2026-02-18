@@ -11,13 +11,11 @@ import { useMembership } from "@/lib/membership";
 import { 
   useOnboardingState, 
   useOnboardingMutations, 
-  useCoachingEngagementForOnboarding,
   ONBOARDING_STEPS,
   STEP_LABELS,
   type OnboardingStep 
 } from "@/hooks/useOnboardingState";
 import { useFrameworks, useFramework, useFrameworkMutations, useCompanyActiveFramework } from "@/hooks/useFrameworks";
-import { usePendingRecommendations } from "@/hooks/useCoaching";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,10 +40,8 @@ export default function FrameworkOnboardingPage() {
   
   const { data: onboardingState, isLoading: stateLoading } = useOnboardingState();
   const { initializeOnboarding, updateStep, completeOnboarding, skipOnboarding } = useOnboardingMutations();
-  const { data: coachEngagement } = useCoachingEngagementForOnboarding();
   const { data: frameworksData, isLoading: frameworksLoading } = useFrameworks();
   const { data: activeFramework } = useCompanyActiveFramework();
-  const { data: pendingRecommendations } = usePendingRecommendations();
 
   // Extract system templates from frameworks data
   const systemTemplates = frameworksData?.systemTemplates?.filter(f => f.status === "published") || [];
@@ -70,9 +66,9 @@ export default function FrameworkOnboardingPage() {
   // Initialize onboarding if not exists
   useEffect(() => {
     if (!stateLoading && !onboardingState && activeCompanyId && isCompanyAdmin) {
-      initializeOnboarding.mutate(coachEngagement?.id);
+      initializeOnboarding.mutate(undefined);
     }
-  }, [stateLoading, onboardingState, activeCompanyId, isCompanyAdmin, coachEngagement]);
+  }, [stateLoading, onboardingState, activeCompanyId, isCompanyAdmin]);
 
   // Set framework from active framework if exists
   useEffect(() => {
@@ -81,13 +77,12 @@ export default function FrameworkOnboardingPage() {
     }
   }, [activeFramework]);
 
-  // (Removed duplicate systemTemplates line - now defined above)
-  const hasCoach = !!coachEngagement;
-  const hasPendingRecommendations = (pendingRecommendations?.length || 0) > 0;
+  const hasCoach = false;
+  const hasPendingRecommendations = false;
 
   // Filter steps based on context
   const availableSteps = ONBOARDING_STEPS.filter(step => {
-    if (step === "coach_recommendations" && !hasCoach) return false;
+    if (step === "coach_recommendations") return false;
     return true;
   });
 
@@ -268,8 +263,8 @@ export default function FrameworkOnboardingPage() {
 
             {currentStep === "core_setup" && (
               <StepCoreSetup
-                hasCoach={hasCoach}
-                coachOrgName={(coachEngagement as any)?.coaching_org?.name}
+                hasCoach={false}
+                coachOrgName={undefined}
               />
             )}
 
@@ -281,17 +276,11 @@ export default function FrameworkOnboardingPage() {
               />
             )}
 
-            {currentStep === "coach_recommendations" && (
-              <StepCoachRecommendations
-                recommendations={pendingRecommendations || []}
-              />
-            )}
-
             {currentStep === "final_review" && (
               <StepFinalReview
                 frameworkDetails={frameworkDetails}
                 activationChoices={activationChoices}
-                hasCoach={hasCoach}
+                hasCoach={false}
               />
             )}
           </motion.div>

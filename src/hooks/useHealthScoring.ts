@@ -257,8 +257,10 @@ export function useCompanyHealthScore() {
   });
 }
 
-// Hook for coach to see client health scores
-export function useClientHealthScores(engagementIds: string[]) {
+// Coaching-specific health functions removed (coaching module not in use)
+
+// Stub kept for type compatibility — not used
+function useClientHealthScores(engagementIds: string[]) {
   return useQuery({
     queryKey: ["client-health-scores", engagementIds],
     queryFn: async () => {
@@ -372,8 +374,8 @@ export function useClientHealthScores(engagementIds: string[]) {
   });
 }
 
-// Hook for coaching org rollup view
-export function useCoachingOrgHealthRollup() {
+// Stub kept for type compatibility — not used
+function useCoachingOrgHealthRollup() {
   const { activeCompanyId } = useActiveCompany();
 
   return useQuery({

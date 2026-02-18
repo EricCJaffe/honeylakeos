@@ -9,8 +9,6 @@ import { useMembership } from "@/lib/membership";
  * Note: "external_contacts" is not a separate module - it uses the "crm" module.
  */
 export type ModuleKey =
-  | "coaches"
-  | "coaching" // New coaching org hierarchy module
   | "forms"
   | "projects"
   | "tasks"
@@ -177,7 +175,6 @@ export const PREMIUM_MODULES: ModuleKey[] = [
   "workflows",
   "lms",
   "crm",
-  "coaches",
   "sales",
   "donors",
 ];

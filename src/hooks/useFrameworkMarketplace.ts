@@ -46,38 +46,9 @@ export function useMarketplaceFrameworks() {
 
       if (systemError) throw systemError;
 
-      // Fetch coach org frameworks shared via engagements
-      const { data: engagements, error: engError } = await supabase
-        .from("coaching_engagements")
-        .select("coaching_org_company_id")
-        .eq("client_company_id", activeCompanyId)
-        .is("archived_at", null);
-
-      if (engError) throw engError;
-
-      const coachOrgIds = [...new Set(engagements?.map(e => e.coaching_org_company_id) || [])];
-      
-      let coachRecommended: MarketplaceFramework[] = [];
-      if (coachOrgIds.length > 0) {
-        const { data: coachFrameworks, error: coachError } = await supabase
-          .from("frameworks")
-          .select(`
-            *,
-            owner_company:companies!frameworks_owner_company_id_fkey(id, name)
-          `)
-          .eq("owner_type", "coach_org")
-          .eq("status", "published")
-          .eq("marketplace_visibility", "coach_org_clients")
-          .in("owner_company_id", coachOrgIds)
-          .is("archived_at", null);
-
-        if (coachError) throw coachError;
-        coachRecommended = (coachFrameworks || []) as MarketplaceFramework[];
-      }
-
       return {
         systemTemplates: (systemTemplates || []) as MarketplaceFramework[],
-        coachRecommended,
+        coachRecommended: [] as MarketplaceFramework[],
       };
     },
     enabled: !!activeCompanyId,

@@ -683,28 +683,13 @@ export function useUsageCounts() {
     enabled: !!activeCompanyId,
   });
 
-  const { data: clientCount, isLoading: clientsLoading } = useQuery({
-    queryKey: ["usage-count-clients", activeCompanyId],
-    queryFn: async () => {
-      if (!activeCompanyId) return 0;
-      const { count, error } = await supabase
-        .from("coaching_engagements")
-        .select("*", { count: "exact", head: true })
-        .eq("coaching_org_company_id", activeCompanyId)
-        .is("archived_at", null);
-      if (error) throw error;
-      return count || 0;
-    },
-    enabled: !!activeCompanyId,
-  });
-
   return {
-    isLoading: usersLoading || frameworksLoading || publishedLoading || clientsLoading,
+    isLoading: usersLoading || frameworksLoading || publishedLoading,
     counts: {
       users: userCount ?? 0,
       frameworks: frameworkCount ?? 0,
       publishedFrameworks: publishedFrameworkCount ?? 0,
-      clients: clientCount ?? 0,
+      clients: 0,
     },
   };
 }

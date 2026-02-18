@@ -7,7 +7,6 @@ import {
   FileText,
   Users,
   Contact,
-  UserCheck,
   Heart,
   TrendingUp,
   BookOpen,
@@ -32,9 +31,6 @@ import {
   Workflow,
   Inbox,
   Briefcase,
-  UserCog,
-  UsersRound,
-  Settings2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ModuleKey } from "@/hooks/useModuleAccess";
@@ -174,7 +170,6 @@ export const baseNavigationSections: NavSection[] = [
     icon: GraduationCap,
     items: [
       { key: "lms", title: "LMS", url: "/app/lms", icon: BookOpen, moduleKey: "lms" },
-      { key: "coaches", title: "Coaches", url: "/app/coaches", icon: UserCheck, moduleKey: "coaches" },
       { key: "framework", title: "Framework", url: "/app/framework", icon: Compass },
     ],
     hideIfEmpty: true,
@@ -249,42 +244,6 @@ export const adminNavItems = {
     title: "Site Console",
     url: "/app/admin/site-console",
     icon: Shield,
-  },
-  coachingInspector: {
-    key: "coaching-inspector",
-    title: "Coaching Inspector",
-    url: "/app/admin/coaching-inspector",
-    icon: Users,
-  },
-};
-
-/**
- * Coaching navigation items - shown based on coaching roles
- */
-export const coachingNavItems = {
-  orgDashboard: {
-    key: "coaching-org",
-    title: "Org Dashboard",
-    url: "/app/coaching/org",
-    icon: Building2,
-  },
-  coachDashboard: {
-    key: "coaching-coach",
-    title: "Coach Dashboard",
-    url: "/app/coaching/coach",
-    icon: UserCog,
-  },
-  memberDashboard: {
-    key: "coaching-member",
-    title: "Member Dashboard",
-    url: "/app/coaching/member",
-    icon: UsersRound,
-  },
-  adminDashboard: {
-    key: "coaching-admin",
-    title: "Coaching Admin",
-    url: "/app/coaching/admin",
-    icon: Settings2,
   },
 };
 

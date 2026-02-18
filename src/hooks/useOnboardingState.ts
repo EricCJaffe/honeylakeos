@@ -212,29 +212,3 @@ export function useOnboardingMutations() {
   };
 }
 
-// Hook to check if company has a coaching engagement
-export function useCoachingEngagementForOnboarding() {
-  const { activeCompanyId } = useActiveCompany();
-
-  return useQuery({
-    queryKey: ["coaching-engagement-for-onboarding", activeCompanyId],
-    queryFn: async () => {
-      if (!activeCompanyId) return null;
-
-      const { data, error } = await supabase
-        .from("coaching_engagements")
-        .select(`
-          *,
-          coaching_org:companies!coaching_engagements_coaching_org_company_id_fkey(id, name)
-        `)
-        .eq("client_company_id", activeCompanyId)
-        .eq("engagement_status", "active")
-        .is("archived_at", null)
-        .maybeSingle();
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!activeCompanyId,
-  });
-}

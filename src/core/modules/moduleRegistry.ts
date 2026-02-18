@@ -5,7 +5,7 @@
  * Used by navigation, route guards, and admin UI.
  */
 
-import { LucideIcon, LayoutDashboard, Users, FolderKanban, CheckSquare, FileText, ClipboardList, GitBranch, GraduationCap, DollarSign, Settings, Calendar, MapPin, Building, Megaphone, BarChart3, Handshake, BookOpen, Contact } from "lucide-react";
+import { LucideIcon, LayoutDashboard, Users, FolderKanban, CheckSquare, FileText, ClipboardList, GitBranch, GraduationCap, DollarSign, Settings, Calendar, MapPin, Building, Megaphone, BarChart3, Handshake, Contact } from "lucide-react";
 
 // ============= TYPES =============
 
@@ -21,7 +21,6 @@ export type ModuleId =
   | "locations"
   | "forms"
   | "workflows"
-  | "coaching"
   | "lms"
   | "finance"
   | "reports"
@@ -265,19 +264,6 @@ export const MODULE_REGISTRY: Record<ModuleId, ModuleDefinition> = {
     navOrder: 300,
     navSection: "learning",
   },
-  coaching: {
-    id: "coaching",
-    name: "Coaching",
-    description: "Coaching and mentorship",
-    routePrefix: "/app/coaching",
-    navLabel: "Coaching",
-    icon: BookOpen,
-    requiredRoles: ["member"],
-    defaultEnabled: false,
-    isCore: false,
-    navOrder: 310,
-    navSection: "learning",
-  },
   admin: {
     id: "admin",
     name: "Admin",
@@ -432,7 +418,6 @@ export function legacyModuleKeyToModuleId(moduleKey: string): ModuleId | undefin
     finance: "finance",
     reports: "reports",
     lms: "lms",
-    coaching: "coaching",
   };
   return mapping[moduleKey];
 }

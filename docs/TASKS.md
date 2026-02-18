@@ -7,6 +7,9 @@
 - [ ] Send invite to admin email on coaching org creation (`src/hooks/useCoachingData.ts:508`).
 - [ ] Filter coaching engagements by manager's assigned coaches (`src/pages/app/coaching/ManagerDashboard.tsx:27`).
 - [ ] Set up `sop-review-reminders` on a cron schedule (not yet documented or wired).
+- [ ] Test login to Honey Lake as a company — verify auth and app load work end-to-end.
+- [ ] Set the modules Honey Lake will be using — configure feature flags in `feature_flags` table for their company.
+- [ ] Build and add the patient exit survey workflow for Honey Lake — new workflow in `/app/workflows`.
 
 ## Backlog
 - [ ] Stripe payment integration (currently stubbed).

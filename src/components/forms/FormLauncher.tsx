@@ -5,15 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useResolvedForm, useEngagementResolvedForm, type ResolvedForm } from "@/hooks/useFormResolver";
+import { useResolvedForm, type ResolvedForm } from "@/hooks/useFormResolver";
 
 interface FormLauncherProps {
   /** Base form key (without program prefix) */
   baseKey: string;
-  /** Optional engagement context for resolution */
-  engagementId?: string | null;
-  /** Optional coaching org context (overrides active org) */
-  coachingOrgId?: string | null;
   /** Callback when form is launched */
   onLaunch?: (form: ResolvedForm) => void;
   /** Show as inline button or card */
@@ -26,15 +22,9 @@ interface FormLauncherProps {
 
 /**
  * FormLauncher - Resolves and launches a form by base key
- * 
- * Uses program pack resolution to find the correct form variant:
- * 1. {program_key}_{base_key}
- * 2. generic_{base_key} (fallback)
  */
 export function FormLauncher({
   baseKey,
-  engagementId,
-  coachingOrgId,
   onLaunch,
   variant = "button",
   buttonLabel,
@@ -42,19 +32,7 @@ export function FormLauncher({
 }: FormLauncherProps) {
   const navigate = useNavigate();
 
-  // Use engagement-scoped resolution if engagement is provided
-  const engagementResolver = useEngagementResolvedForm(
-    engagementId ? baseKey : null,
-    engagementId || null
-  );
-  
-  // Otherwise use org-scoped resolution
-  const orgResolver = useResolvedForm(
-    !engagementId ? baseKey : null,
-    coachingOrgId
-  );
-
-  const { form, isLoading, error } = engagementId ? engagementResolver : orgResolver;
+  const { form, isLoading, error } = useResolvedForm(baseKey);
 
   const handleLaunch = () => {
     if (!form) return;
@@ -135,26 +113,13 @@ export function FormLauncher({
 interface FormPreviewProps {
   /** Base form key */
   baseKey: string;
-  /** Optional engagement context */
-  engagementId?: string | null;
-  /** Optional coaching org context */
-  coachingOrgId?: string | null;
 }
 
 /**
  * FormPreview - Shows form metadata with resolution info
  */
-export function FormPreview({ baseKey, engagementId, coachingOrgId }: FormPreviewProps) {
-  const engagementResolver = useEngagementResolvedForm(
-    engagementId ? baseKey : null,
-    engagementId || null
-  );
-  const orgResolver = useResolvedForm(
-    !engagementId ? baseKey : null,
-    coachingOrgId
-  );
-
-  const { form, isLoading, error } = engagementId ? engagementResolver : orgResolver;
+export function FormPreview({ baseKey }: FormPreviewProps) {
+  const { form, isLoading, error } = useResolvedForm(baseKey);
 
   if (isLoading) {
     return (
@@ -191,10 +156,6 @@ export function FormPreview({ baseKey, engagementId, coachingOrgId }: FormPrevie
 interface ResolvedFormLinkProps {
   /** Base form key */
   baseKey: string;
-  /** Engagement context for resolution */
-  engagementId?: string | null;
-  /** Coaching org context */
-  coachingOrgId?: string | null;
   /** Link text (defaults to form title) */
   children?: React.ReactNode;
   /** Additional CSS classes */
@@ -206,22 +167,11 @@ interface ResolvedFormLinkProps {
  */
 export function ResolvedFormLink({
   baseKey,
-  engagementId,
-  coachingOrgId,
   children,
   className,
 }: ResolvedFormLinkProps) {
   const navigate = useNavigate();
-  const engagementResolver = useEngagementResolvedForm(
-    engagementId ? baseKey : null,
-    engagementId || null
-  );
-  const orgResolver = useResolvedForm(
-    !engagementId ? baseKey : null,
-    coachingOrgId
-  );
-
-  const { form, isLoading } = engagementId ? engagementResolver : orgResolver;
+  const { form, isLoading } = useResolvedForm(baseKey);
 
   if (isLoading || !form) return null;
 
