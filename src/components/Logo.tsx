@@ -1,34 +1,37 @@
-import { BookOpen } from "lucide-react";
-
 interface LogoProps {
   className?: string;
+  /** When false (collapsed sidebar), render a compact version */
   showText?: boolean;
   size?: "sm" | "md" | "lg";
 }
 
-export function Logo({ className = "", showText = true, size = "md" }: LogoProps) {
-  const sizeClasses = {
-    sm: "h-5 w-5",
-    md: "h-6 w-6",
-    lg: "h-7 w-7",
-  };
+const heightMap = {
+  sm: "h-6",
+  md: "h-8",
+  lg: "h-10",
+};
 
-  const textSizes = {
-    sm: "text-base",
-    md: "text-lg",
-    lg: "text-xl",
-  };
+export function Logo({ className = "", showText = true, size = "md" }: LogoProps) {
+  // Collapsed sidebar: show nothing (company name appears below as context)
+  if (!showText) {
+    return (
+      <div className={`flex items-center justify-center ${className}`}>
+        <img
+          src="/logo.svg"
+          alt="Honey Lake Clinic"
+          className={`${heightMap[size]} w-auto`}
+        />
+      </div>
+    );
+  }
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      <div className="bg-primary rounded-md p-1.5">
-        <BookOpen className={`${sizeClasses[size]} text-primary-foreground`} />
-      </div>
-      {showText && (
-        <span className={`font-semibold ${textSizes[size]} text-foreground`}>
-          Honey Lake
-        </span>
-      )}
+    <div className={`flex items-center ${className}`}>
+      <img
+        src="/logo.svg"
+        alt="Honey Lake Clinic"
+        className={`${heightMap[size]} w-auto`}
+      />
     </div>
   );
 }

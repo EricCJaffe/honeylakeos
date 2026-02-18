@@ -52,7 +52,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith("/app/documents/")) return "Document Details";
   
   // Fallback
-  return "Honey Lake";
+  return "Honey Lake Clinic";
 }
 
 export function AppTopbar() {
