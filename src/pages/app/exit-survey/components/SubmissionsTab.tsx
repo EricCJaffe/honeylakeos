@@ -4,14 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import {
   useExitSurveySubmissions,
   useExitSurveySubmissionDetail,
   useActiveExitSurvey,
+  useExitSurveyAlerts,
+  useExitSurveyAlertComments,
+  useExitSurveyMutations,
   type ExitSurveySubmission,
+  type ExitSurveyAlert,
   type DateFilter,
 } from "@/hooks/useExitSurvey";
-import { Search, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Eye, AlertTriangle, Send, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 
 const DATE_FILTERS: { label: string; value: DateFilter }[] = [
@@ -63,6 +68,133 @@ function ScoreHeatmap({ submissionId }: { submissionId: string }) {
             title={`Score: ${r.score}`}
             className={`w-3 h-3 rounded-sm ${opacity}`}
           />
+        );
+      })}
+    </div>
+  );
+}
+
+const ALERT_STATUS_LABELS: Record<ExitSurveyAlert["status"], string> = {
+  pending: "Pending",
+  acknowledged: "Acknowledged",
+  reviewed: "Reviewed",
+  action_taken: "Action Taken",
+  resolved: "Resolved",
+};
+
+const ALERT_STATUS_COLORS: Record<ExitSurveyAlert["status"], string> = {
+  pending: "bg-red-100 text-red-700 border-red-200",
+  acknowledged: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  reviewed: "bg-blue-100 text-blue-700 border-blue-200",
+  action_taken: "bg-purple-100 text-purple-700 border-purple-200",
+  resolved: "bg-green-100 text-green-700 border-green-200",
+};
+
+function AlertCommentThread({ alertId, isResolved }: { alertId: string; isResolved: boolean }) {
+  const { data: comments, isLoading } = useExitSurveyAlertComments(alertId);
+  const { addAlertComment } = useExitSurveyMutations();
+  const [draft, setDraft] = useState("");
+
+  function handleSubmit() {
+    const text = draft.trim();
+    if (!text) return;
+    addAlertComment.mutate({ alertId, comment: text });
+    setDraft("");
+  }
+
+  return (
+    <div className="space-y-2 mt-2">
+      {isLoading ? (
+        <Skeleton className="h-6 w-full" />
+      ) : (comments || []).length > 0 ? (
+        <div className="space-y-1.5">
+          {(comments || []).map((c) => (
+            <div key={c.id} className="bg-muted/30 border rounded px-2.5 py-1.5">
+              <div className="flex items-baseline gap-2 mb-0.5">
+                <span className="text-xs font-medium">{c.author_name || "Team member"}</span>
+                <span className="text-xs text-muted-foreground">
+                  {format(new Date(c.created_at), "MMM d, yyyy 'at' h:mm a")}
+                </span>
+              </div>
+              <p className="text-xs whitespace-pre-wrap">{c.comment}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground italic">No comments yet.</p>
+      )}
+      {!isResolved && (
+        <div className="flex gap-2 items-start">
+          <Textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Add a comment..."
+            rows={2}
+            className="resize-none text-xs flex-1"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit();
+            }}
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleSubmit}
+            disabled={!draft.trim() || addAlertComment.isPending}
+            className="shrink-0 mt-0.5 h-7 w-7 p-0"
+          >
+            <Send className="w-3 h-3" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SubmissionAlerts({ submissionId }: { submissionId: string }) {
+  const { data: allAlerts } = useExitSurveyAlerts();
+  const { questions } = useActiveExitSurvey();
+  const questionMap = Object.fromEntries((questions.data || []).map((q) => [q.id, q]));
+  const [expandedAlert, setExpandedAlert] = useState<string | null>(null);
+
+  const alerts = (allAlerts || []).filter((a) => a.submission_id === submissionId);
+  if (alerts.length === 0) return null;
+
+  return (
+    <div className="space-y-2 mb-5">
+      <h4 className="text-sm font-semibold flex items-center gap-1.5">
+        <AlertTriangle className="w-4 h-4 text-red-500" />
+        Alerts ({alerts.length})
+      </h4>
+      {alerts.map((alert) => {
+        const q = questionMap[alert.question_id];
+        const isExpanded = expandedAlert === alert.id;
+        const isResolved = alert.status === "resolved";
+        return (
+          <div key={alert.id} className="border rounded-md overflow-hidden">
+            <button
+              type="button"
+              className="w-full text-left px-3 py-2 flex items-start gap-2 hover:bg-muted/10"
+              onClick={() => setExpandedAlert(isExpanded ? null : alert.id)}
+            >
+              <span className="text-xs text-red-600 font-bold shrink-0 mt-0.5">
+                {alert.score}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs line-clamp-1">{q?.text ?? "Unknown question"}</p>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
+                <Badge variant="outline" className={`text-xs ${ALERT_STATUS_COLORS[alert.status]}`}>
+                  {ALERT_STATUS_LABELS[alert.status]}
+                </Badge>
+              </div>
+            </button>
+            {isExpanded && (
+              <div className="border-t bg-muted/5 px-3 py-2">
+                <AlertCommentThread alertId={alert.id} isResolved={isResolved} />
+              </div>
+            )}
+          </div>
         );
       })}
     </div>
@@ -327,7 +459,7 @@ function SubmissionDetailSheet({
 
         {/* Providers */}
         {(submission.psych_provider || submission.primary_therapist || submission.case_manager) && (
-          <div className="space-y-2">
+          <div className="space-y-2 mb-5">
             <h4 className="text-sm font-semibold">Care Team</h4>
             {submission.psych_provider && (
               <p className="text-xs text-muted-foreground">
@@ -346,6 +478,9 @@ function SubmissionDetailSheet({
             )}
           </div>
         )}
+
+        {/* Alerts + comments */}
+        <SubmissionAlerts submissionId={submission.id} />
       </SheetContent>
     </Sheet>
   );
