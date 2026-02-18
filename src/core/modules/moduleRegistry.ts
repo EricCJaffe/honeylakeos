@@ -5,7 +5,7 @@
  * Used by navigation, route guards, and admin UI.
  */
 
-import { LucideIcon, LayoutDashboard, Users, FolderKanban, CheckSquare, FileText, ClipboardList, GitBranch, GraduationCap, DollarSign, Settings, Calendar, MapPin, Building, Building2, Megaphone, BarChart3, Handshake, Contact } from "lucide-react";
+import { LucideIcon, LayoutDashboard, Users, FolderKanban, CheckSquare, FileText, ClipboardList, GitBranch, GraduationCap, DollarSign, Settings, Calendar, MapPin, Building, Building2, Megaphone, BarChart3, Handshake, Contact, ClipboardCheck } from "lucide-react";
 
 // ============= TYPES =============
 
@@ -21,6 +21,7 @@ export type ModuleId =
   | "locations"
   | "departments"
   | "board_meetings"
+  | "exit_survey"
   | "forms"
   | "workflows"
   | "lms"
@@ -186,6 +187,19 @@ export const MODULE_REGISTRY: Record<ModuleId, ModuleDefinition> = {
     defaultEnabled: true,
     isCore: false,
     navOrder: 80,
+    navSection: "main",
+  },
+  exit_survey: {
+    id: "exit_survey",
+    name: "Exit Survey",
+    description: "Patient exit survey management and analytics",
+    routePrefix: "/app/exit-survey",
+    navLabel: "Exit Survey",
+    icon: ClipboardCheck,
+    requiredRoles: ["member"],
+    defaultEnabled: true,
+    isCore: false,
+    navOrder: 88,
     navSection: "main",
   },
   crm: {
@@ -440,6 +454,7 @@ export function legacyModuleKeyToModuleId(moduleKey: string): ModuleId | undefin
     locations: "locations",
     departments: "departments",
     board_meetings: "board_meetings",
+    exit_survey: "exit_survey",
     crm: "crm",
     external_contacts: "contacts",
     forms: "forms",
