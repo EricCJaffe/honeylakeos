@@ -17,3 +17,13 @@ Reference:
 - `docs/DECISIONS/README.md`
 - `docs/TASKS.md`
 - `docs/OWNERSHIP.md`
+
+AI:
+- `docs/AI_PHASE1_SETUP.md`
+- `docs/AI_PHASE2_SETUP.md`
+
+Architecture Decisions:
+- `docs/DECISIONS/0001-client-spa-supabase.md`
+- `docs/DECISIONS/0002-module-gating.md`
+- `docs/DECISIONS/0003-ai-gateway-architecture.md`
+- `docs/DECISIONS/0004-vercel-spa-deployment.md`
