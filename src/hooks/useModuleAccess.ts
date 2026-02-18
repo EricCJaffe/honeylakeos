@@ -24,7 +24,8 @@ export type ModuleKey =
   | "sales"
   | "donors"
   | "finance"
-  | "reports";
+  | "reports"
+  | "departments";
 
 interface ModuleAccessResult {
   /** Whether the module is enabled for the company */
@@ -164,6 +165,7 @@ export const CORE_MODULES: ModuleKey[] = [
   "locations",
   "finance",
   "reports",
+  "departments",
 ];
 
 /**

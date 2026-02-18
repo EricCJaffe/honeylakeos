@@ -54,7 +54,7 @@ export function FeatureFlagsPanel() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Feature Modules</CardTitle>
+          <CardTitle>Modules</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">No company selected.</p>
@@ -67,7 +67,7 @@ export function FeatureFlagsPanel() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Feature Modules</CardTitle>
+          <CardTitle>Modules</CardTitle>
           <CardDescription>Loading module settings...</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -83,7 +83,7 @@ export function FeatureFlagsPanel() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Feature Modules</CardTitle>
+          <CardTitle>Modules</CardTitle>
         </CardHeader>
         <CardContent>
           <Alert variant="destructive">
@@ -100,7 +100,7 @@ export function FeatureFlagsPanel() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Feature Modules</CardTitle>
+        <CardTitle>Modules</CardTitle>
         <CardDescription>
           Enable or disable modules for your organization. Core modules cannot be disabled.
         </CardDescription>

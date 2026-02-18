@@ -30,8 +30,6 @@ import EmployeesPanel from "./company-console/EmployeesPanel";
 import AuditLogPanel from "./company-console/AuditLogPanel";
 import GroupsPanel from "./company-console/GroupsPanel";
 import LocationsPanel from "./company-console/LocationsPanel";
-import CompanyModulesPanel from "./company-console/ModulesPanel";
-import ModuleChecklistPanel from "./company-console/ModuleChecklistPanel";
 import TerminologyPanel from "./company-console/TerminologyPanel";
 import { CapabilitySettingsPanel } from "./company-console/CapabilitySettingsPanel";
 import DepartmentsPanel from "./company-console/DepartmentsPanel";
@@ -271,13 +269,7 @@ export default function CompanyConsolePage() {
             {section.id === "departments" && <DepartmentsPanel />}
             {section.id === "groups" && <GroupsPanel />}
             {section.id === "locations" && <LocationsPanel />}
-            {section.id === "modules" && (
-              <>
-                <FeatureFlagsPanel />
-                <CompanyModulesPanel />
-                <ModuleChecklistPanel />
-              </>
-            )}
+            {section.id === "modules" && <FeatureFlagsPanel />}
             {section.id === "capabilities" && <CapabilitySettingsPanel />}
             {section.id === "terminology" && <TerminologyPanel />}
             {section.id === "audit" && <AuditLogPanel />}

@@ -5,11 +5,11 @@
  * Used by navigation, route guards, and admin UI.
  */
 
-import { LucideIcon, LayoutDashboard, Users, FolderKanban, CheckSquare, FileText, ClipboardList, GitBranch, GraduationCap, DollarSign, Settings, Calendar, MapPin, Building, Megaphone, BarChart3, Handshake, Contact } from "lucide-react";
+import { LucideIcon, LayoutDashboard, Users, FolderKanban, CheckSquare, FileText, ClipboardList, GitBranch, GraduationCap, DollarSign, Settings, Calendar, MapPin, Building, Building2, Megaphone, BarChart3, Handshake, Contact } from "lucide-react";
 
 // ============= TYPES =============
 
-export type ModuleId = 
+export type ModuleId =
   | "core"
   | "crm"
   | "projects"
@@ -19,6 +19,7 @@ export type ModuleId =
   | "calendar"
   | "groups"
   | "locations"
+  | "departments"
   | "forms"
   | "workflows"
   | "lms"
@@ -158,6 +159,19 @@ export const MODULE_REGISTRY: Record<ModuleId, ModuleDefinition> = {
     defaultEnabled: true,
     isCore: true,
     navOrder: 70,
+    navSection: "main",
+  },
+  departments: {
+    id: "departments",
+    name: "Departments",
+    description: "Department directory and structure",
+    routePrefix: "/app/departments",
+    navLabel: "Departments",
+    icon: Building2,
+    requiredRoles: ["member"],
+    defaultEnabled: true,
+    isCore: false,
+    navOrder: 80,
     navSection: "main",
   },
   crm: {
@@ -410,6 +424,7 @@ export function legacyModuleKeyToModuleId(moduleKey: string): ModuleId | undefin
     documents: "docs",
     groups: "groups",
     locations: "locations",
+    departments: "departments",
     crm: "crm",
     external_contacts: "contacts",
     forms: "forms",

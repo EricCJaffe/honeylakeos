@@ -133,8 +133,9 @@ export const baseNavigationSections: NavSection[] = [
     title: "Departments",
     icon: Building2,
     items: [
-      { key: "departments", title: "Departments", url: "/app/departments", icon: Building2 },
+      { key: "departments", title: "Departments", url: "/app/departments", icon: Building2, moduleKey: "departments" },
     ],
+    hideIfEmpty: true,
   },
   {
     key: "work",
@@ -170,7 +171,7 @@ export const baseNavigationSections: NavSection[] = [
     icon: GraduationCap,
     items: [
       { key: "lms", title: "LMS", url: "/app/lms", icon: BookOpen, moduleKey: "lms" },
-      { key: "framework", title: "Framework", url: "/app/framework", icon: Compass },
+      { key: "framework", title: "Framework", url: "/app/framework", icon: Compass, moduleKey: "lms" },
     ],
     hideIfEmpty: true,
   },
