@@ -26,6 +26,11 @@ DROP TABLE IF EXISTS coach_profiles CASCADE;
 ALTER TABLE companies
   DROP COLUMN IF EXISTS created_by_coaching_org_id;
 
+-- Drop RLS policies that reference coaching_engagement_id before dropping the column
+DROP POLICY IF EXISTS notes_coaching_select ON notes;
+DROP POLICY IF EXISTS notes_coaching_insert ON notes;
+DROP POLICY IF EXISTS notes_coaching_update ON notes;
+
 ALTER TABLE notes
   DROP COLUMN IF EXISTS coaching_engagement_id;
 

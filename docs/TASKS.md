@@ -3,9 +3,6 @@
 ## Active
 - [ ] Enable leaked password protection in Supabase Auth.
 - [ ] Run final smoke test with a real coach account.
-- [ ] Confirm module kill-switch behavior for Coaching and Frameworks in production.
-- [ ] Send invite to admin email on coaching org creation (`src/hooks/useCoachingData.ts:508`).
-- [ ] Filter coaching engagements by manager's assigned coaches (`src/pages/app/coaching/ManagerDashboard.tsx:27`).
 - [ ] Set up `sop-review-reminders` on a cron schedule (not yet documented or wired).
 - [ ] Test login to Honey Lake as a company — verify auth and app load work end-to-end.
 - [ ] Set the modules Honey Lake will be using — configure feature flags in `feature_flags` table for their company.
@@ -28,7 +25,7 @@
 - [ ] Virus scanning on attachment uploads (`src/hooks/useAttachments.ts:68`).
 
 ## Done
-- [ ] (Empty)
+- [x] Remove coaching and coaches modules from the codebase (2026-02-18).
 
 ## Conventions
 - Keep tasks small and outcome-focused.
