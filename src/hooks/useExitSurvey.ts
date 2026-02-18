@@ -103,6 +103,15 @@ export type ExitSurveySetting = {
 
 export type DateFilter = "30d" | "90d" | "6mo" | "12mo" | "all";
 
+export type ExitSurveyAlertComment = {
+  id: string;
+  alert_id: string;
+  author_id: string | null;
+  author_name: string | null;
+  comment: string;
+  created_at: string;
+};
+
 // ============================================================
 // Read hooks
 // ============================================================
@@ -276,6 +285,23 @@ export function useExitSurveySettings() {
   });
 }
 
+export function useExitSurveyAlertComments(alertId: string | null) {
+  return useQuery({
+    queryKey: ["exit-survey-alert-comments", alertId],
+    queryFn: async () => {
+      if (!alertId) return [];
+      const { data, error } = await supabase
+        .from("exit_survey_alert_comments")
+        .select("*")
+        .eq("alert_id", alertId)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data || []) as ExitSurveyAlertComment[];
+    },
+    enabled: !!alertId,
+  });
+}
+
 // ============================================================
 // KPI computed hook
 // ============================================================
@@ -406,5 +432,34 @@ export function useExitSurveyMutations() {
     },
   });
 
-  return { updateAlertStatus, updateQuestion, updateSettings };
+  const addAlertComment = useMutation({
+    mutationFn: async ({
+      alertId,
+      comment,
+      authorName,
+    }: {
+      alertId: string;
+      comment: string;
+      authorName?: string;
+    }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from("exit_survey_alert_comments")
+        .insert({
+          alert_id: alertId,
+          comment,
+          author_id: user?.id ?? null,
+          author_name: authorName || user?.email || null,
+        });
+      if (error) throw error;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["exit-survey-alert-comments", variables.alertId] });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Failed to add comment", description: err.message, variant: "destructive" });
+    },
+  });
+
+  return { updateAlertStatus, updateQuestion, updateSettings, addAlertComment };
 }
