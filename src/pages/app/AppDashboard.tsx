@@ -1,14 +1,6 @@
 import * as React from "react";
 import { motion } from "framer-motion";
-import { 
-  LayoutDashboard, 
-  CheckCircle2, 
-  Calendar, 
-  FileText, 
-  MessageSquare, 
-  Globe, 
-  Workflow, 
-  BookOpen,
+import {
   ArrowRight,
   Pin,
   Clock,
@@ -27,16 +19,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { TaskFormDialog } from "./tasks/TaskFormDialog";
 import DeferredTasksPanel from "./admin/site-console/DeferredTasksPanel";
 
-const modules = [
-  { icon: LayoutDashboard, name: "Projects", href: "/app/projects", description: "Manage your projects" },
-  { icon: CheckCircle2, name: "Tasks", href: "/app/tasks", description: "Track your tasks" },
-  { icon: Calendar, name: "Calendar", href: "/app/calendar", description: "View your schedule" },
-  { icon: FileText, name: "Documents", href: "/app/documents", description: "Organize files" },
-  { icon: MessageSquare, name: "Notes", href: "/app/notes", description: "Capture ideas" },
-  { icon: Globe, name: "Forms", href: "/app/forms", description: "Build forms" },
-  { icon: Workflow, name: "Workflows", href: "/app/workflows", description: "Automate processes" },
-  { icon: BookOpen, name: "LMS", href: "/app/lms", description: "Learning management" },
-];
 
 type Task = {
   id: string;
@@ -322,38 +304,6 @@ export default function AppDashboard() {
         </Card>
       </motion.div>
 
-      {/* Modules Grid */}
-      <div className="mb-8">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Modules</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {modules.map((module, index) => (
-            <motion.div
-              key={module.name}
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.05 }}
-            >
-              <Link to={module.href}>
-                <Card className="h-full border-border hover:border-primary/50 hover:shadow-sm transition-all group cursor-pointer">
-                  <CardHeader className="pb-2">
-                    <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary/15 transition-colors">
-                      <module.icon className="h-4 w-4 text-primary" />
-                    </div>
-                    <CardTitle className="text-sm flex items-center justify-between">
-                      {module.name}
-                      <ArrowRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <p className="text-xs text-muted-foreground">{module.description}</p>
-                  </CardContent>
-                </Card>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
       {/* Recent Activity Placeholder */}
       <Card className="border-border">
         <CardHeader className="pb-3">
@@ -361,7 +311,7 @@ export default function AppDashboard() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-sm">
-            No recent activity to display. Start by exploring the modules above.
+            No recent activity to display.
           </p>
         </CardContent>
       </Card>
