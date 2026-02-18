@@ -24,6 +24,10 @@ Start here:
 - \`docs/RUNBOOK.md\`
 
 Reference:
+- \`docs/API.md\`
+- \`docs/ARCHITECTURE.md\`
+- \`docs/CONTRIBUTING.md\`
+- \`docs/DEPLOYMENT.md\`
 - \`docs/SUPABASE.md\`
 - \`docs/INTEGRATIONS.md\`
 - \`docs/RELEASES.md\`
@@ -79,6 +83,61 @@ write_if_missing "$DOCS_DIR/WORKFLOWS.md" "\
 ## Deploy
 - Primary deploy path:
 - Any environment-specific notes:
+"
+
+write_if_missing "$DOCS_DIR/API.md" "\
+# API
+
+## Overview
+- Internal APIs and key endpoints.
+
+## Auth
+- Auth mechanism and tokens.
+
+## Errors
+- Error shapes and status codes.
+"
+
+write_if_missing "$DOCS_DIR/ARCHITECTURE.md" "\
+# Architecture
+
+## Summary
+- High-level architecture and data flow.
+
+## Key Components
+- Entry points, providers, and core modules.
+
+## Risks
+- Known high-risk dependencies or single points of failure.
+"
+
+write_if_missing "$DOCS_DIR/CONTRIBUTING.md" "\
+# Contributing
+
+## Setup
+- Install dependencies.
+- Run the dev server.
+
+## Quality
+- Lint and tests to run before PRs.
+
+## Conventions
+- Code style and naming conventions.
+"
+
+write_if_missing "$DOCS_DIR/DEPLOYMENT.md" "\
+# Deployment
+
+## Environments
+- Staging:
+- Production:
+
+## Steps
+- Build:
+- Deploy:
+
+## Rollback
+- How to revert or rollback a release.
 "
 
 write_if_missing "$DOCS_DIR/SUPABASE.md" "\
