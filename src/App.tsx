@@ -3,20 +3,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/lib/theme";
 import { AuthProvider } from "@/lib/auth";
 import { MembershipProvider } from "@/lib/membership";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ModuleGuard } from "@/components/ModuleGuard";
 import { AppErrorBoundary } from "@/core/errors";
-import { PublicLayout } from "@/components/layout/PublicLayout";
 import { AppLayout } from "@/components/layout/AppLayout";
-const HomePage = React.lazy(() => import("@/pages/public/HomePage"));
-const FeaturesPage = React.lazy(() => import("@/pages/public/FeaturesPage"));
-const PricingPage = React.lazy(() => import("@/pages/public/PricingPage"));
-const AboutPage = React.lazy(() => import("@/pages/public/AboutPage"));
-const ContactPage = React.lazy(() => import("@/pages/public/ContactPage"));
 const PublicFormPage = React.lazy(() => import("@/pages/public/PublicFormPage"));
 const AiSmokeStandalonePage = React.lazy(() => import("@/pages/AiSmokeStandalonePage"));
 const LoginPage = React.lazy(() => import("@/pages/auth/LoginPage"));
@@ -136,15 +130,9 @@ function App() {
                 <BrowserRouter>
                   <React.Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Loading...</div>}>
                   <Routes>
-                  {/* Public Routes */}
-                  <Route element={<PublicLayout />}>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/features" element={<FeaturesPage />} />
-                    <Route path="/pricing" element={<PricingPage />} />
-                    <Route path="/about" element={<AboutPage />} />
-                    <Route path="/contact" element={<ContactPage />} />
-                  </Route>
-                  
+                  {/* Root redirects to login */}
+                  <Route path="/" element={<Navigate to="/login" replace />} />
+
                   {/* Public Form Route (no auth required) */}
                   <Route path="/f/:token" element={<PublicFormPage />} />
                   
