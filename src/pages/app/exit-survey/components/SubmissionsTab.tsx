@@ -27,6 +27,23 @@ const DATE_FILTERS: { label: string; value: DateFilter }[] = [
   { label: "All", value: "all" },
 ];
 
+// ---- 3-state status helpers (mirrors AlertsTab) ----
+type VisibleStatus = "pending" | "acknowledged" | "resolved";
+
+const VISIBLE_STATUSES: { value: VisibleStatus; label: string; activeColor: string }[] = [
+  { value: "pending",      label: "Pending",      activeColor: "bg-red-100 text-red-700 border-red-300" },
+  { value: "acknowledged", label: "Acknowledged",  activeColor: "bg-yellow-100 text-yellow-700 border-yellow-300" },
+  { value: "resolved",     label: "Completed",     activeColor: "bg-green-100 text-green-700 border-green-300" },
+];
+
+function toVisible(status: ExitSurveyAlert["status"]): VisibleStatus {
+  if (status === "resolved") return "resolved";
+  if (status === "acknowledged" || status === "reviewed" || status === "action_taken") return "acknowledged";
+  return "pending";
+}
+
+// ---- Sub-components ----
+
 function ScoreBadge({ score }: { score: number | null }) {
   if (score === null) return <span className="text-xs text-muted-foreground">—</span>;
   const color =
@@ -42,7 +59,6 @@ function ScoreBadge({ score }: { score: number | null }) {
   );
 }
 
-/** 26-square heatmap showing scores */
 function ScoreHeatmap({ submissionId }: { submissionId: string }) {
   const { data: responses } = useExitSurveySubmissionDetail(submissionId);
   const sorted = (responses || [])
@@ -52,45 +68,21 @@ function ScoreHeatmap({ submissionId }: { submissionId: string }) {
   return (
     <div className="flex flex-wrap gap-0.5">
       {sorted.map((r) => {
-        const opacity =
-          r.score === 5
-            ? "bg-green-500"
-            : r.score === 4
-            ? "bg-teal-400"
-            : r.score === 3
-            ? "bg-yellow-400"
-            : r.score === 2
-            ? "bg-orange-400"
-            : "bg-red-500";
+        const color =
+          r.score === 5 ? "bg-green-500"
+          : r.score === 4 ? "bg-teal-400"
+          : r.score === 3 ? "bg-yellow-400"
+          : r.score === 2 ? "bg-orange-400"
+          : "bg-red-500";
         return (
-          <div
-            key={r.id}
-            title={`Score: ${r.score}`}
-            className={`w-3 h-3 rounded-sm ${opacity}`}
-          />
+          <div key={r.id} title={`Score: ${r.score}`} className={`w-3 h-3 rounded-sm ${color}`} />
         );
       })}
     </div>
   );
 }
 
-const ALERT_STATUS_LABELS: Record<ExitSurveyAlert["status"], string> = {
-  pending: "Pending",
-  acknowledged: "Acknowledged",
-  reviewed: "Reviewed",
-  action_taken: "Action Taken",
-  resolved: "Resolved",
-};
-
-const ALERT_STATUS_COLORS: Record<ExitSurveyAlert["status"], string> = {
-  pending: "bg-red-100 text-red-700 border-red-200",
-  acknowledged: "bg-yellow-100 text-yellow-700 border-yellow-200",
-  reviewed: "bg-blue-100 text-blue-700 border-blue-200",
-  action_taken: "bg-purple-100 text-purple-700 border-purple-200",
-  resolved: "bg-green-100 text-green-700 border-green-200",
-};
-
-function AlertCommentThread({ alertId, isResolved }: { alertId: string; isResolved: boolean }) {
+function AlertCommentThread({ alertId, isCompleted }: { alertId: string; isCompleted: boolean }) {
   const { data: comments, isLoading } = useExitSurveyAlertComments(alertId);
   const { addAlertComment } = useExitSurveyMutations();
   const [draft, setDraft] = useState("");
@@ -103,17 +95,17 @@ function AlertCommentThread({ alertId, isResolved }: { alertId: string; isResolv
   }
 
   return (
-    <div className="space-y-2 mt-2">
+    <div className="space-y-2">
       {isLoading ? (
         <Skeleton className="h-6 w-full" />
       ) : (comments || []).length > 0 ? (
         <div className="space-y-1.5">
           {(comments || []).map((c) => (
-            <div key={c.id} className="bg-muted/30 border rounded px-2.5 py-1.5">
+            <div key={c.id} className="bg-background border rounded px-2.5 py-1.5">
               <div className="flex items-baseline gap-2 mb-0.5">
                 <span className="text-xs font-medium">{c.author_name || "Team member"}</span>
                 <span className="text-xs text-muted-foreground">
-                  {format(new Date(c.created_at), "MMM d, yyyy 'at' h:mm a")}
+                  {format(new Date(c.created_at), "MMM d 'at' h:mm a")}
                 </span>
               </div>
               <p className="text-xs whitespace-pre-wrap">{c.comment}</p>
@@ -123,7 +115,7 @@ function AlertCommentThread({ alertId, isResolved }: { alertId: string; isResolv
       ) : (
         <p className="text-xs text-muted-foreground italic">No comments yet.</p>
       )}
-      {!isResolved && (
+      {!isCompleted && (
         <div className="flex gap-2 items-start">
           <Textarea
             value={draft}
@@ -150,56 +142,7 @@ function AlertCommentThread({ alertId, isResolved }: { alertId: string; isResolv
   );
 }
 
-function SubmissionAlerts({ submissionId }: { submissionId: string }) {
-  const { data: allAlerts } = useExitSurveyAlerts();
-  const { questions } = useActiveExitSurvey();
-  const questionMap = Object.fromEntries((questions.data || []).map((q) => [q.id, q]));
-  const [expandedAlert, setExpandedAlert] = useState<string | null>(null);
-
-  const alerts = (allAlerts || []).filter((a) => a.submission_id === submissionId);
-  if (alerts.length === 0) return null;
-
-  return (
-    <div className="space-y-2 mb-5">
-      <h4 className="text-sm font-semibold flex items-center gap-1.5">
-        <AlertTriangle className="w-4 h-4 text-red-500" />
-        Alerts ({alerts.length})
-      </h4>
-      {alerts.map((alert) => {
-        const q = questionMap[alert.question_id];
-        const isExpanded = expandedAlert === alert.id;
-        const isResolved = alert.status === "resolved";
-        return (
-          <div key={alert.id} className="border rounded-md overflow-hidden">
-            <button
-              type="button"
-              className="w-full text-left px-3 py-2 flex items-start gap-2 hover:bg-muted/10"
-              onClick={() => setExpandedAlert(isExpanded ? null : alert.id)}
-            >
-              <span className="text-xs text-red-600 font-bold shrink-0 mt-0.5">
-                {alert.score}
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs line-clamp-1">{q?.text ?? "Unknown question"}</p>
-              </div>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
-                <Badge variant="outline" className={`text-xs ${ALERT_STATUS_COLORS[alert.status]}`}>
-                  {ALERT_STATUS_LABELS[alert.status]}
-                </Badge>
-              </div>
-            </button>
-            {isExpanded && (
-              <div className="border-t bg-muted/5 px-3 py-2">
-                <AlertCommentThread alertId={alert.id} isResolved={isResolved} />
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+// ---- Main tab ----
 
 export function SubmissionsTab() {
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
@@ -323,23 +266,11 @@ export function SubmissionsTab() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => p - 1)}
-            disabled={page === 1}
-          >
+          <Button variant="outline" size="sm" onClick={() => setPage((p) => p - 1)} disabled={page === 1}>
             <ChevronLeft className="w-4 h-4 mr-1" /> Previous
           </Button>
-          <span className="text-sm text-muted-foreground">
-            Page {page} of {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => p + 1)}
-            disabled={page === totalPages}
-          >
+          <span className="text-sm text-muted-foreground">Page {page} of {totalPages}</span>
+          <Button variant="outline" size="sm" onClick={() => setPage((p) => p + 1)} disabled={page === totalPages}>
             Next <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
         </div>
@@ -354,6 +285,8 @@ export function SubmissionsTab() {
   );
 }
 
+// ---- Detail sheet ----
+
 function SubmissionDetailSheet({
   submission,
   onClose,
@@ -363,7 +296,30 @@ function SubmissionDetailSheet({
 }) {
   const { data: responses } = useExitSurveySubmissionDetail(submission?.id ?? null);
   const { questions } = useActiveExitSurvey();
+  const { data: allAlerts } = useExitSurveyAlerts();
+  const { updateAlertStatus } = useExitSurveyMutations();
   const questionMap = Object.fromEntries((questions.data || []).map((q) => [q.id, q]));
+
+  // Map question_id → alert for this submission (only active alerts)
+  const alertByQuestionId: Record<string, ExitSurveyAlert> = {};
+  if (submission && allAlerts) {
+    for (const a of allAlerts) {
+      if (a.submission_id === submission.id) {
+        alertByQuestionId[a.question_id] = a as ExitSurveyAlert;
+      }
+    }
+  }
+
+  // Track which alert threads are expanded
+  const [expandedAlerts, setExpandedAlerts] = useState<Record<string, boolean>>({});
+
+  function toggleAlertThread(alertId: string) {
+    setExpandedAlerts((prev) => ({ ...prev, [alertId]: !prev[alertId] }));
+  }
+
+  function handleSetStatus(alertId: string, next: VisibleStatus) {
+    updateAlertStatus.mutate({ alertId, status: next === "resolved" ? "resolved" : next });
+  }
 
   if (!submission) return null;
 
@@ -401,19 +357,33 @@ function SubmissionDetailSheet({
           ))}
         </div>
 
-        {/* Individual responses */}
+        {/* Individual responses — alerts inline */}
         <div className="space-y-3 mb-5">
           <h4 className="text-sm font-semibold">Responses</h4>
           {(responses || []).map((r) => {
             const q = questionMap[r.question_id];
+            const alert = alertByQuestionId[r.question_id];
+            const isCompleted = alert ? toVisible(alert.status) === "resolved" : false;
+            const threadOpen = alert ? !!expandedAlerts[alert.id] : false;
+            const visible = alert ? toVisible(alert.status) : null;
+
             return (
-              <div key={r.id} className="border rounded-md p-3">
+              <div
+                key={r.id}
+                className={`border rounded-md p-3 ${alert ? "border-red-200 bg-red-50/30" : ""}`}
+              >
+                {/* Response header */}
                 <div className="flex items-start gap-2">
                   <span className="text-xs text-muted-foreground w-5 shrink-0">
                     {q?.question_number ?? "?"}
                   </span>
                   <div className="flex-1">
-                    <p className="text-xs text-foreground mb-1">{q?.text ?? r.question_id}</p>
+                    <div className="flex items-start gap-2 mb-1">
+                      <p className="text-xs text-foreground flex-1">{q?.text ?? r.question_id}</p>
+                      {alert && (
+                        <AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" title="Alert triggered" />
+                      )}
+                    </div>
                     {r.score !== null && (
                       <Badge
                         variant="outline"
@@ -433,6 +403,44 @@ function SubmissionDetailSheet({
                     )}
                   </div>
                 </div>
+
+                {/* Inline alert controls — status + comments toggle */}
+                {alert && (
+                  <div className="mt-3 pt-2 border-t border-red-100 space-y-2">
+                    {/* Status buttons */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-muted-foreground">Status:</span>
+                      {VISIBLE_STATUSES.map((s) => (
+                        <button
+                          key={s.value}
+                          type="button"
+                          onClick={() => handleSetStatus(alert.id, s.value)}
+                          className={`px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors ${
+                            visible === s.value
+                              ? s.activeColor + " ring-1 ring-offset-1 ring-current"
+                              : "border-border text-muted-foreground bg-background hover:bg-muted"
+                          }`}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
+                      {/* Comments toggle */}
+                      <button
+                        type="button"
+                        onClick={() => toggleAlertThread(alert.id)}
+                        className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        {threadOpen ? "Hide" : "Comments"}
+                      </button>
+                    </div>
+
+                    {/* Comment thread */}
+                    {threadOpen && (
+                      <AlertCommentThread alertId={alert.id} isCompleted={isCompleted} />
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -459,7 +467,7 @@ function SubmissionDetailSheet({
 
         {/* Providers */}
         {(submission.psych_provider || submission.primary_therapist || submission.case_manager) && (
-          <div className="space-y-2 mb-5">
+          <div className="space-y-2">
             <h4 className="text-sm font-semibold">Care Team</h4>
             {submission.psych_provider && (
               <p className="text-xs text-muted-foreground">
@@ -478,9 +486,6 @@ function SubmissionDetailSheet({
             )}
           </div>
         )}
-
-        {/* Alerts + comments */}
-        <SubmissionAlerts submissionId={submission.id} />
       </SheetContent>
     </Sheet>
   );

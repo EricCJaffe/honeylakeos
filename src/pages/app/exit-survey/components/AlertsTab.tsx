@@ -6,22 +6,24 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   useExitSurveyAlerts,
   useExitSurveyMutations,
+  useExitSurveyAlertComments,
   type ExitSurveyAlert,
 } from "@/hooks/useExitSurvey";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import { AlertTriangle, CheckCircle, ClipboardCheck, CheckCheck } from "lucide-react";
+import { AlertTriangle, CheckCircle, CheckCheck, MessageSquare, Send } from "lucide-react";
 
-const STATUS_ORDER: ExitSurveyAlert["status"][] = [
-  "pending",
-  "acknowledged",
-  "reviewed",
-  "action_taken",
-  "resolved",
+// Three user-facing states. DB enum has 5; we map acknowledged/reviewed/action_taken → acknowledged.
+type VisibleStatus = "pending" | "acknowledged" | "resolved";
+
+const VISIBLE_STATUSES: { value: VisibleStatus; label: string; color: string }[] = [
+  { value: "pending",      label: "Pending",      color: "border-red-300 text-red-700 bg-red-50 hover:bg-red-100" },
+  { value: "acknowledged", label: "Acknowledged",  color: "border-yellow-300 text-yellow-700 bg-yellow-50 hover:bg-yellow-100" },
+  { value: "resolved",     label: "Completed",     color: "border-green-300 text-green-700 bg-green-50 hover:bg-green-100" },
 ];
 
 const STATUS_CONFIG: Record<
-  ExitSurveyAlert["status"],
+  VisibleStatus,
   { label: string; color: string; icon: React.ReactNode }
 > = {
   pending: {
@@ -34,22 +36,18 @@ const STATUS_CONFIG: Record<
     color: "bg-yellow-100 text-yellow-700 border-yellow-200",
     icon: <CheckCircle className="w-3.5 h-3.5" />,
   },
-  reviewed: {
-    label: "Reviewed",
-    color: "bg-blue-100 text-blue-700 border-blue-200",
-    icon: <ClipboardCheck className="w-3.5 h-3.5" />,
-  },
-  action_taken: {
-    label: "Action Taken",
-    color: "bg-purple-100 text-purple-700 border-purple-200",
+  resolved: {
+    label: "Completed",
+    color: "bg-green-100 text-green-700 border-green-200",
     icon: <CheckCheck className="w-3.5 h-3.5" />,
   },
-  resolved: {
-    label: "Resolved",
-    color: "bg-green-100 text-green-700 border-green-200",
-    icon: <CheckCircle className="w-3.5 h-3.5" />,
-  },
 };
+
+function toVisible(status: ExitSurveyAlert["status"]): VisibleStatus {
+  if (status === "resolved") return "resolved";
+  if (status === "acknowledged" || status === "reviewed" || status === "action_taken") return "acknowledged";
+  return "pending";
+}
 
 const PRIORITY_CONFIG: Record<ExitSurveyAlert["priority"], string> = {
   high: "bg-red-500 text-white",
@@ -71,60 +69,120 @@ type AlertWithRelations = ExitSurveyAlert & {
   } | null;
 };
 
+function AlertCommentThread({ alertId, isCompleted }: { alertId: string; isCompleted: boolean }) {
+  const { data: comments, isLoading } = useExitSurveyAlertComments(alertId);
+  const { addAlertComment } = useExitSurveyMutations();
+  const [draft, setDraft] = useState("");
+
+  function handleSubmit() {
+    const text = draft.trim();
+    if (!text) return;
+    addAlertComment.mutate({ alertId, comment: text });
+    setDraft("");
+  }
+
+  return (
+    <div className="space-y-3">
+      {isLoading ? (
+        <Skeleton className="h-8 w-full" />
+      ) : (comments || []).length > 0 ? (
+        <div className="space-y-2">
+          {(comments || []).map((c) => (
+            <div key={c.id} className="bg-white border rounded-md px-3 py-2">
+              <div className="flex items-baseline gap-2 mb-0.5">
+                <span className="text-xs font-medium text-foreground">
+                  {c.author_name || "Team member"}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {format(new Date(c.created_at), "MMM d, yyyy 'at' h:mm a")}
+                </span>
+              </div>
+              <p className="text-sm whitespace-pre-wrap">{c.comment}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground italic">No comments yet.</p>
+      )}
+
+      {!isCompleted && (
+        <div className="flex gap-2 items-start">
+          <Textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Add a comment..."
+            rows={2}
+            className="resize-none text-sm flex-1"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit();
+            }}
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleSubmit}
+            disabled={!draft.trim() || addAlertComment.isPending}
+            className="shrink-0 mt-0.5"
+          >
+            <Send className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AlertsTab() {
   const { data: alerts, isLoading } = useExitSurveyAlerts();
   const { updateAlertStatus } = useExitSurveyMutations();
   const [expandedAlert, setExpandedAlert] = useState<string | null>(null);
-  const [resolutionNotes, setResolutionNotes] = useState<Record<string, string>>({});
 
   const alertList = (alerts || []) as AlertWithRelations[];
 
-  // Sort: pending first, then by score ascending, then by date
-  const sorted = [...alertList].sort((a, b) => {
-    const statusDiff = STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status);
-    if (statusDiff !== 0) return statusDiff;
-    return a.score - b.score;
-  });
+  // KPI counts across all alerts (including completed)
+  const pendingCount     = alertList.filter((a) => toVisible(a.status) === "pending").length;
+  const acknowledgedCount = alertList.filter((a) => toVisible(a.status) === "acknowledged").length;
+  const completedCount   = alertList.filter((a) => toVisible(a.status) === "resolved").length;
 
-  // Count by status
-  const countByStatus = STATUS_ORDER.reduce(
-    (acc, s) => ({ ...acc, [s]: alertList.filter((a) => a.status === s).length }),
-    {} as Record<string, number>
-  );
+  // Active list — hide completed
+  const activeAlerts = [...alertList]
+    .filter((a) => toVisible(a.status) !== "resolved")
+    .sort((a, b) => {
+      const vA = toVisible(a.status) === "pending" ? 0 : 1;
+      const vB = toVisible(b.status) === "pending" ? 0 : 1;
+      if (vA !== vB) return vA - vB;
+      return a.score - b.score;
+    });
 
-  function nextStatus(status: ExitSurveyAlert["status"]): ExitSurveyAlert["status"] | null {
-    const idx = STATUS_ORDER.indexOf(status);
-    return idx < STATUS_ORDER.length - 1 ? STATUS_ORDER[idx + 1] : null;
-  }
-
-  function handleAdvance(alert: AlertWithRelations) {
-    const next = nextStatus(alert.status);
-    if (!next) return;
-    const notes = next === "resolved" ? resolutionNotes[alert.id] : undefined;
-    updateAlertStatus.mutate({ alertId: alert.id, status: next, notes });
+  function handleSetStatus(alertId: string, next: VisibleStatus) {
+    updateAlertStatus.mutate({ alertId, status: next === "resolved" ? "resolved" : next });
   }
 
   return (
     <div className="space-y-6">
-      {/* Status KPI cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {(["pending", "acknowledged", "reviewed", "action_taken"] as const).map((s) => {
-          const cfg = STATUS_CONFIG[s];
+      {/* KPI cards */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { key: "pending" as VisibleStatus,      count: pendingCount },
+          { key: "acknowledged" as VisibleStatus,  count: acknowledgedCount },
+          { key: "resolved" as VisibleStatus,      count: completedCount },
+        ].map(({ key, count }) => {
+          const cfg = STATUS_CONFIG[key];
           return (
-            <Card key={s}>
+            <Card key={key}>
               <CardContent className="pt-4 pb-3">
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`p-1 rounded border ${cfg.color}`}>{cfg.icon}</span>
                   <span className="text-xs text-muted-foreground">{cfg.label}</span>
                 </div>
-                <p className="text-2xl font-bold">{countByStatus[s] ?? 0}</p>
+                <p className="text-2xl font-bold">{count}</p>
               </CardContent>
             </Card>
           );
         })}
       </div>
 
-      {/* Alert list */}
+      {/* Alert list — only active (non-completed) */}
       <div className="space-y-3">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
@@ -133,15 +191,15 @@ export function AlertsTab() {
               <Skeleton className="h-3 w-1/3" />
             </div>
           ))
-        ) : sorted.length === 0 ? (
+        ) : activeAlerts.length === 0 ? (
           <div className="border rounded-lg p-10 text-center text-muted-foreground text-sm">
-            No alerts. All scores are above threshold.
+            No open alerts. All scores are above threshold.
           </div>
         ) : (
-          sorted.map((alert) => {
-            const statusCfg = STATUS_CONFIG[alert.status];
+          activeAlerts.map((alert) => {
+            const visible = toVisible(alert.status);
+            const statusCfg = STATUS_CONFIG[visible];
             const isExpanded = expandedAlert === alert.id;
-            const next = nextStatus(alert.status);
             const submission = alert.exit_survey_submissions;
             const question = alert.exit_survey_questions;
             const patientName =
@@ -150,19 +208,14 @@ export function AlertsTab() {
                 : "Anonymous";
 
             return (
-              <div
-                key={alert.id}
-                className="border rounded-lg overflow-hidden"
-              >
+              <div key={alert.id} className="border rounded-lg overflow-hidden">
+                {/* Header row */}
                 <div
                   className="flex items-start gap-3 p-4 cursor-pointer hover:bg-muted/10"
                   onClick={() => setExpandedAlert(isExpanded ? null : alert.id)}
                 >
-                  {/* Priority dot */}
                   <span
-                    className={`mt-1 w-2.5 h-2.5 rounded-full shrink-0 ${
-                      PRIORITY_CONFIG[alert.priority]
-                    }`}
+                    className={`mt-1 w-2.5 h-2.5 rounded-full shrink-0 ${PRIORITY_CONFIG[alert.priority]}`}
                     title={`Priority: ${alert.priority}`}
                   />
 
@@ -191,43 +244,55 @@ export function AlertsTab() {
                     </div>
                   </div>
 
-                  <Badge variant="outline" className={`text-xs shrink-0 ${statusCfg.color}`}>
-                    {statusCfg.label}
-                  </Badge>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
+                    <Badge variant="outline" className={`text-xs ${statusCfg.color}`}>
+                      {statusCfg.label}
+                    </Badge>
+                  </div>
                 </div>
 
-                {/* Expanded actions */}
+                {/* Expanded panel */}
                 {isExpanded && (
-                  <div className="border-t bg-muted/5 p-4 space-y-3">
-                    {alert.status === "action_taken" && (
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Resolution notes (optional)</p>
-                        <Textarea
-                          value={resolutionNotes[alert.id] ?? ""}
-                          onChange={(e) =>
-                            setResolutionNotes((prev) => ({ ...prev, [alert.id]: e.target.value }))
-                          }
-                          placeholder="Describe what action was taken..."
-                          rows={2}
-                          className="resize-none text-sm"
-                        />
+                  <div className="border-t bg-muted/5 p-4 space-y-4">
+                    {/* Status selector */}
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                        Status
+                      </p>
+                      <div className="flex gap-2">
+                        {VISIBLE_STATUSES.map((s) => (
+                          <button
+                            key={s.value}
+                            type="button"
+                            onClick={() => handleSetStatus(alert.id, s.value)}
+                            disabled={updateAlertStatus.isPending}
+                            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                              visible === s.value
+                                ? s.color + " ring-2 ring-offset-1 ring-current"
+                                : "border-border text-muted-foreground bg-background hover:bg-muted"
+                            }`}
+                          >
+                            {s.label}
+                          </button>
+                        ))}
                       </div>
-                    )}
+                    </div>
+
+                    {/* Comments thread */}
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                        Comments
+                      </p>
+                      <AlertCommentThread alertId={alert.id} isCompleted={visible === "resolved"} />
+                    </div>
+
+                    {/* Saved resolution notes (legacy) */}
                     {alert.resolution_notes && (
                       <div className="rounded-md bg-muted p-3">
                         <p className="text-xs text-muted-foreground mb-1">Resolution notes:</p>
                         <p className="text-sm">{alert.resolution_notes}</p>
                       </div>
-                    )}
-                    {next && (
-                      <Button
-                        size="sm"
-                        onClick={() => handleAdvance(alert)}
-                        disabled={updateAlertStatus.isPending}
-                        className="bg-teal-600 hover:bg-teal-700 text-white"
-                      >
-                        Mark as {STATUS_CONFIG[next].label}
-                      </Button>
                     )}
                   </div>
                 )}
