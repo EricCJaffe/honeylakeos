@@ -13,6 +13,7 @@ Set in `.env` (local) or Vercel project environment settings.
 | `VITE_SUPABASE_URL` | Yes | Supabase project URL (e.g. `https://<project>.supabase.co`) |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Yes | Supabase anon/publishable key (JWT). Non-standard name; equivalent to the Supabase anon key. |
 | `VITE_SUPABASE_PROJECT_ID` | No | Project ref ID; used by health/admin diagnostics pages. |
+| `VITE_ENABLE_DEV_TOOLS` | No | Enables dev-only tooling pages when set to `true` (in addition to `import.meta.env.DEV`). |
 
 **Note**: Never put service role keys or integration secrets in `VITE_*` variables — they are bundled into the client JS.
 
@@ -28,9 +29,9 @@ Set in the Supabase dashboard under **Project Settings → Edge Functions → Se
 | `SUPABASE_ANON_KEY` | Yes | `ai-gateway`, `ai-embed-content` | Injected automatically by Supabase runtime. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Most functions | Full DB access; required for admin operations. |
 | `INTEGRATION_SECRET_KEY` | Yes | `_shared/secrets.ts`, `manage-integration-secret` | AES-GCM key for encrypting integration API keys. Must be 16+ chars. Rotate with care — changing it breaks existing encrypted secrets. |
-| `RESEND_API_KEY` | Yes | `send-employee-invite-email` | Resend transactional email API key. |
-| `APP_URL` | No | `send-employee-invite-email` | Base URL for links in emails (e.g. `https://app.honeylakeos.com`). |
-| `EMAIL_FROM` | No | `send-employee-invite-email` | Sender address. Defaults to `BusinessOS <onboarding@resend.dev>`. |
+| `RESEND_API_KEY` | Yes | `send-employee-invite-email`, `exit-survey-notify`, `exit-survey-weekly-digest`, `exit-survey-reminders` | Resend transactional email API key. |
+| `APP_URL` | Yes | `send-employee-invite-email` (required), `exit-survey-notify` (optional), `exit-survey-weekly-digest`, `exit-survey-reminders` | Base URL for links in emails (e.g. `https://app.honeylakeos.com`). |
+| `EMAIL_FROM` | No | `send-employee-invite-email`, `exit-survey-notify`, `exit-survey-weekly-digest`, `exit-survey-reminders` | Sender address. Defaults to `BusinessOS <onboarding@resend.dev>` for invites and `Honey Lake Clinic <noreply@honeylake.clinic>` for exit survey alerts. |
 
 ---
 

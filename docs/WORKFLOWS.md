@@ -30,6 +30,13 @@ supabase functions deploy               # deploy all edge functions
 supabase db diff --schema public        # diff local vs remote schema
 ```
 
+## Exit Survey Jobs (Manual Run)
+```bash
+supabase functions deploy exit-survey-weekly-digest exit-survey-reminders
+supabase functions invoke exit-survey-weekly-digest --body '{"company_id":"<company_id>"}'
+supabase functions invoke exit-survey-reminders --body '{"company_id":"<company_id>"}'
+```
+
 ## Deploy (Vercel)
 - Push to `main` branch — Vercel auto-deploys.
 - `vercel.json` contains a single SPA catch-all rewrite rule (`/* → /index.html`).

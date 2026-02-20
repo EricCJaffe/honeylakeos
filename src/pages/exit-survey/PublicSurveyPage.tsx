@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -64,13 +64,29 @@ export default function PublicSurveyPage() {
   const scoredQuestions = questions.filter((q) => q.type === "scored");
   const openEndedQuestions = questions.filter((q) => q.type === "open_ended");
 
-  // Steps: intro(0), scored questions(1..n), providers(n+1), open-ended(n+2)
+  const scoredGroups = useMemo(() => {
+    const groups: { category: string; questions: Question[] }[] = [];
+    const indexByCategory = new Map<string, number>();
+
+    for (const q of scoredQuestions) {
+      const key = q.category || "General";
+      if (!indexByCategory.has(key)) {
+        indexByCategory.set(key, groups.length);
+        groups.push({ category: key, questions: [] });
+      }
+      groups[indexByCategory.get(key)!].questions.push(q);
+    }
+
+    return groups;
+  }, [scoredQuestions]);
+
+  // Steps: intro(0), category sections(1..n), providers(n+1), open-ended(n+2)
   const INTRO_STEP = 0;
-  const SCORED_START = 1;
-  const SCORED_END = scoredQuestions.length;
-  const PROVIDERS_STEP = scoredQuestions.length + 1;
-  const OPEN_ENDED_STEP = scoredQuestions.length + 2;
-  const totalSteps = scoredQuestions.length + 3; // intro + scored + providers + open-ended
+  const CATEGORY_START = 1;
+  const CATEGORY_END = scoredGroups.length;
+  const PROVIDERS_STEP = scoredGroups.length + 1;
+  const OPEN_ENDED_STEP = scoredGroups.length + 2;
+  const totalSteps = scoredGroups.length + 3; // intro + categories + providers + open-ended
 
   useEffect(() => {
     async function fetchSurvey() {
@@ -111,9 +127,10 @@ export default function PublicSurveyPage() {
 
   function canAdvance() {
     if (currentIndex === INTRO_STEP) return true;
-    if (currentIndex >= SCORED_START && currentIndex <= SCORED_END) {
-      const q = scoredQuestions[currentIndex - SCORED_START];
-      return q ? !!responses[q.id]?.score : true;
+    if (currentIndex >= CATEGORY_START && currentIndex <= CATEGORY_END) {
+      const group = scoredGroups[currentIndex - CATEGORY_START];
+      if (!group) return true;
+      return group.questions.every((q) => !!responses[q.id]?.score);
     }
     return true;
   }
@@ -204,10 +221,6 @@ export default function PublicSurveyPage() {
     );
   }
 
-  const currentScoredQuestion = currentIndex >= SCORED_START && currentIndex <= SCORED_END
-    ? scoredQuestions[currentIndex - SCORED_START]
-    : null;
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-blue-50 flex flex-col">
       {/* Header */}
@@ -221,8 +234,8 @@ export default function PublicSurveyPage() {
         <div className="bg-white border-b px-4 py-2">
           <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
             <span>
-              {currentIndex <= SCORED_END
-                ? `Question ${currentIndex} of ${scoredQuestions.length}`
+              {currentIndex >= CATEGORY_START && currentIndex <= CATEGORY_END
+                ? `Section ${currentIndex} of ${scoredGroups.length}`
                 : currentIndex === PROVIDERS_STEP
                 ? "Provider Information"
                 : "Final Questions"}
@@ -290,74 +303,80 @@ export default function PublicSurveyPage() {
               </motion.div>
             )}
 
-            {/* Scored question step */}
-            {currentScoredQuestion && (
+            {/* Category section step */}
+            {currentIndex >= CATEGORY_START && currentIndex <= CATEGORY_END && (
               <motion.div
-                key={`q-${currentScoredQuestion.id}`}
+                key={`cat-${currentIndex}`}
                 initial={{ opacity: 0, x: 40 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -40 }}
                 transition={{ duration: 0.25 }}
                 className="bg-white rounded-2xl shadow-md p-8"
               >
-                <div className="mb-2">
-                  <span className="text-xs font-medium text-teal-600 uppercase tracking-wide">
-                    {currentScoredQuestion.category}
-                  </span>
-                </div>
-                <p className="text-lg font-semibold text-gray-800 mb-6 leading-snug">
-                  {currentScoredQuestion.text}
-                </p>
+                {(() => {
+                  const group = scoredGroups[currentIndex - CATEGORY_START];
+                  return (
+                    <>
+                      <div className="mb-4">
+                        <span className="text-xs font-medium text-teal-600 uppercase tracking-wide">
+                          {group?.category ?? "General"}
+                        </span>
+                      </div>
 
-                {/* Rating buttons */}
-                <div className="flex gap-2 mb-5 flex-wrap">
-                  {[1, 2, 3, 4, 5].map((val) => {
-                    const selected = responses[currentScoredQuestion.id]?.score === val;
-                    return (
-                      <button
-                        key={val}
-                        onClick={() => setScore(currentScoredQuestion.id, val)}
-                        className={`flex-1 min-w-[52px] min-h-[52px] rounded-xl border-2 font-bold text-lg transition-all duration-150
-                          ${selected
-                            ? RATING_SELECTED[val]
-                            : RATING_COLORS[val]
-                          }`}
-                      >
-                        {val}
-                      </button>
-                    );
-                  })}
-                </div>
+                      <div className="space-y-6 mb-6">
+                        {(group?.questions ?? []).map((q) => (
+                          <div key={q.id} className="border rounded-xl p-4">
+                            <p className="text-sm font-semibold text-gray-800 mb-3 leading-snug">
+                              {q.text}
+                            </p>
 
-                {/* Label row */}
-                <div className="flex justify-between text-xs text-gray-400 mb-5">
-                  <span>Strongly Disagree</span>
-                  <span>Strongly Agree</span>
-                </div>
+                            {/* Rating buttons */}
+                            <div className="flex gap-2 mb-3 flex-wrap">
+                              {[1, 2, 3, 4, 5].map((val) => {
+                                const selected = responses[q.id]?.score === val;
+                                return (
+                                  <button
+                                    key={val}
+                                    onClick={() => setScore(q.id, val)}
+                                    className={`flex-1 min-w-[48px] min-h-[48px] rounded-lg border-2 font-bold text-base transition-all duration-150
+                                      ${selected
+                                        ? RATING_SELECTED[val]
+                                        : RATING_COLORS[val]
+                                      }`}
+                                  >
+                                    {val}
+                                  </button>
+                                );
+                              })}
+                            </div>
 
-                {/* Comment box — shown when score <= 3 */}
-                <AnimatePresence>
-                  {responses[currentScoredQuestion.id]?.score !== undefined &&
-                    responses[currentScoredQuestion.id].score! <= 3 && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <Label className="text-sm text-gray-600 mb-1 block">
-                        Would you like to share more? (Optional)
-                      </Label>
-                      <Textarea
-                        placeholder="Please tell us more..."
-                        value={responses[currentScoredQuestion.id]?.comment ?? ""}
-                        onChange={(e) => setComment(currentScoredQuestion.id, e.target.value)}
-                        className="resize-none mb-4"
-                        rows={3}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                            {/* Label row */}
+                            <div className="flex justify-between text-xs text-gray-400 mb-3">
+                              <span>Strongly Disagree</span>
+                              <span>Strongly Agree</span>
+                            </div>
+
+                            {/* Comment box — optional for Q3–Q26 */}
+                            {q.question_number >= 3 && q.question_number <= 26 && (
+                              <>
+                                <Label className="text-xs text-gray-600 mb-1 block">
+                                  Would you like to share more? (Optional)
+                                </Label>
+                                <Textarea
+                                  placeholder="Please tell us more..."
+                                  value={responses[q.id]?.comment ?? ""}
+                                  onChange={(e) => setComment(q.id, e.target.value)}
+                                  className="resize-none"
+                                  rows={3}
+                                />
+                              </>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
 
                 {/* Navigation */}
                 <div className="flex gap-3">
@@ -369,7 +388,7 @@ export default function PublicSurveyPage() {
                     disabled={!canAdvance()}
                     className="flex-1 bg-teal-600 hover:bg-teal-700 text-white h-11"
                   >
-                    {currentIndex === SCORED_END ? "Continue" : "Next"}
+                    {currentIndex === CATEGORY_END ? "Continue" : "Next"}
                     <ChevronRight className="ml-2 w-4 h-4" />
                   </Button>
                 </div>

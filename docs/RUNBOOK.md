@@ -8,28 +8,20 @@
   - Auth has an 8-second failsafe — if it fires, the user lands on a logged-out state without an error. Check browser console for `supabase.auth.getSession failed`.
 - **Fix**: correct env vars and redeploy, or restore Supabase project if paused.
 
-## 2. Module Access Missing
+## 2. Module Access Missing / Safe Mode
 - **Symptom**: module nav items or pages are absent or show "Module Disabled".
 - **Checks**:
   - Check `feature_flags` table for the company — a row with `enabled = false` disables the module.
-  - Check RLS policies in Supabase if data is also inaccessible.
   - If flags fail to load (network error), the system enters safe mode: only core modules show.
-- **Fix**: insert or update the flag row in `feature_flags`; verify RLS allows the membership role.
-
-## 3. Data Not Loading
-- **Symptom**: lists are empty, console shows Supabase errors, or queries return 0 rows unexpectedly.
-- **Checks**:
-  - Open browser DevTools → Network; look for Supabase REST/realtime errors (401, 403, 500).
   - Confirm the user has an active membership for the active company (`memberships` table, `status = active`).
-  - Verify `profiles.active_company_id` is set for the user.
-- **Fix**: ensure membership is active; check RLS policies; check Supabase logs under `Logs → API`.
+- **Fix**: insert or update the flag row in `feature_flags`; verify memberships are active; check Supabase logs under `Logs → API` if flags fail to load.
 
-## 4. AI Gateway Errors
-- **Symptom**: AI copilot features fail silently or return errors; `/admin/ai-smoke` shows failures.
+## 3. Edge Function Failures (AI, Emails, Finance)
+- **Symptom**: AI copilot errors, invite/exit-survey emails fail, or finance metrics return 401/500.
 - **Checks**:
-  - Verify `INTEGRATION_SECRET_KEY` is set in Supabase edge function secrets.
-  - Check `company_integrations` has an `openai` row with `is_enabled = true` for the company.
-  - Check `company_ai_settings` has `ai_enabled = true`.
-  - Run the AI smoke test: `/app/admin/ai-smoke` or `/ai-smoke`.
-  - Check edge function logs: Supabase dashboard → `Logs → Edge Functions → ai-gateway`.
-- **Fix**: re-store the API key via `manage-integration-secret`; confirm `INTEGRATION_SECRET_KEY` has not changed since the key was stored (changing it breaks existing encrypted secrets).
+  - AI: `INTEGRATION_SECRET_KEY` set; `company_integrations.openai` enabled; `company_ai_settings.ai_enabled = true`.
+  - Email: `RESEND_API_KEY`, `APP_URL`, and optional `EMAIL_FROM` set for `send-employee-invite-email`, `exit-survey-notify`, `exit-survey-weekly-digest`, `exit-survey-reminders`.
+  - Weekly/reminder emails: ensure cron scheduler calls the functions with `{ "company_id": "<id>" }`.
+  - Finance: requests to `get-finance-metrics` include an Authorization header (JWT).
+  - Check edge function logs: Supabase dashboard → `Logs → Edge Functions`.
+- **Fix**: re-store integration keys via `manage-integration-secret`; set missing secrets; retry with valid JWT for finance calls.

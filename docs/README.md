@@ -27,3 +27,5 @@ Architecture Decisions:
 - `docs/DECISIONS/0002-module-gating.md`
 - `docs/DECISIONS/0003-ai-gateway-architecture.md`
 - `docs/DECISIONS/0004-vercel-spa-deployment.md`
+- `docs/DECISIONS/0005-edge-functions-privileged-ops.md`
+- `docs/DECISIONS/0006-resend-transactional-email.md`

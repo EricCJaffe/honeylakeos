@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-  const { signIn, user, loading } = useAuth();
+  const { signIn, signInWithMicrosoft, user, loading } = useAuth();
 
   useEffect(() => {
     if (!loading && user) {
@@ -65,6 +65,21 @@ export default function LoginPage() {
           <Link to="/" className="inline-block mb-8"><Logo /></Link>
           <h1 className="text-2xl font-bold text-foreground mb-2">Sign in to your account</h1>
           <p className="text-muted-foreground mb-6 text-sm">Enter your credentials to continue</p>
+          <div className="mb-4">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={async () => {
+                const { error } = await signInWithMicrosoft();
+                if (error) {
+                  toast.error(error.message);
+                }
+              }}
+            >
+              Sign in with Microsoft
+            </Button>
+          </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>

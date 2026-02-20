@@ -6,17 +6,27 @@
 - **Key storage**: Encrypted with AES-GCM via `manage-integration-secret`; stored in `company_integrations` per company.
 - **Provider key**: `openai` in `integration_providers` table.
 - **Models used**: Configured per prompt; currently gpt-4 class (see ai-gateway for defaults).
-- **OpenAI is the only supported AI provider** — multi-provider support is not currently planned.
 - **Setup**: `docs/AI_PHASE1_SETUP.md`
 
 ## Resend (Active)
-- **Purpose**: Transactional email (employee invites).
-- **Edge function**: `send-employee-invite-email`
+- **Purpose**: Transactional email (employee invites, exit survey alerts).
+- **Edge functions**: `send-employee-invite-email`, `exit-survey-notify`
 - **Secret required**: `RESEND_API_KEY` (set in Supabase edge function secrets).
-- **Sender**: configurable via `EMAIL_FROM` secret; defaults to `BusinessOS <onboarding@resend.dev>`.
+- **Sender**: configurable via `EMAIL_FROM` secret; defaults to `BusinessOS <onboarding@resend.dev>` for invites and `Honey Lake Clinic <noreply@honeylake.clinic>` for exit survey alerts.
+
+## Microsoft 365 SSO (Active)
+- **Purpose**: Single sign-on for staff using work emails.
+- **How**: Supabase OAuth provider `azure` (Microsoft) with `signInWithOAuth`.
+- **Setup**: Configure the Azure provider in Supabase Auth settings.
+
+## Zapier (Planned)
+- Triggers + Actions integration. Listed in `integration_providers` and UI scaffolding, but no edge functions yet.
 
 ## Plaid (Planned)
-- Banking/finance integration; not yet implemented. Referenced in backlog.
+- Banking/finance integration. Listed in `integration_providers` and UI scaffolding, but no edge functions yet.
+
+## Planning Center (Planned)
+- People + Giving sync. Listed in `integration_providers` and UI scaffolding, but no edge functions yet.
 
 ## SOP Review Reminders (Active)
 - **Purpose**: Scheduled reminders for SOP document reviews.

@@ -98,6 +98,7 @@ const WorkflowsPage = React.lazy(() => import("@/pages/app/workflows/WorkflowsPa
 const BoardMeetingsPage = React.lazy(() => import("@/pages/app/board/BoardMeetingsPage"));
 const PublicSurveyPage = React.lazy(() => import("@/pages/exit-survey/PublicSurveyPage"));
 const ExitSurveyDashboardPage = React.lazy(() => import("@/pages/app/exit-survey/ExitSurveyDashboardPage"));
+const ExitSurveySubmissionPage = React.lazy(() => import("@/pages/app/exit-survey/ExitSurveySubmissionPage"));
 const WorkflowDetailPage = React.lazy(() => import("@/pages/app/workflows/WorkflowDetailPage"));
 const FormDetailPage = React.lazy(() => import("@/pages/app/workflows/FormDetailPage"));
 const FormSubmitPage = React.lazy(() => import("@/pages/app/workflows/FormSubmitPage"));
@@ -202,6 +203,14 @@ function App() {
                     <Route path="workflows" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><WorkflowsPage /></ModuleGuard>} />
                     <Route path="board" element={<ModuleGuard moduleKey="board_meetings" moduleName="Board Meetings"><BoardMeetingsPage /></ModuleGuard>} />
                     <Route path="exit-survey" element={<ExitSurveyDashboardPage />} />
+                    <Route
+                      path="exit-survey/submissions/:submissionId"
+                      element={
+                        <ModuleGuard moduleKey="exit_survey" moduleName="Exit Survey">
+                          <ExitSurveySubmissionPage />
+                        </ModuleGuard>
+                      }
+                    />
                     <Route path="exit-survey/*" element={<ExitSurveyDashboardPage />} />
                     <Route path="workflows/:workflowId" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><WorkflowDetailPage /></ModuleGuard>} />
                     <Route path="workflows/forms/:formId" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><FormDetailPage /></ModuleGuard>} />

@@ -30,7 +30,10 @@
 | `ai-embed-content` | Yes | Generates OpenAI embeddings and stores in `ai_document_chunks` |
 | `manage-integration-secret` | Yes | Encrypts (AES-GCM) and stores integration API keys in `company_integrations` |
 | `send-employee-invite-email` | Yes | Sends invite emails via Resend |
-| `get-finance-metrics` | No | Finance dashboard metrics (no JWT — called with anon key) |
+| `exit-survey-notify` | No | Sends Resend alerts for exit survey low-score notifications |
+| `exit-survey-weekly-digest` | No | Sends weekly exit survey summaries to question owners (Resend) |
+| `exit-survey-reminders` | No | Sends reminder emails for open exit survey alerts (Resend) |
+| `get-finance-metrics` | Yes | Finance dashboard metrics (requires Authorization header) |
 | `create-backup` | Yes | Exports schema + data to backup store |
 | `restore-backup` | Yes | Restores from a backup |
 | `sop-review-reminders` | Yes | Sends scheduled SOP review reminder emails |
@@ -41,6 +44,9 @@
 - `ai_document_chunks` — vector embedding store (`vector(1536)`).
 - `match_ai_document_chunks(...)` — RPC for similarity search / RAG retrieval.
 - `company_integrations` — stores encrypted API keys per provider per company.
+
+## Backups
+- `create-backup` and `restore-backup` read/write backups in the `company-backups` storage bucket.
 
 ## Schema References
 - Snapshot: `docs/SCHEMA_SNAPSHOT.md`

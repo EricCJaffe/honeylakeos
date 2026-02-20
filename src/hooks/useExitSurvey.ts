@@ -218,6 +218,23 @@ export function useExitSurveySubmissionDetail(submissionId: string | null) {
   });
 }
 
+export function useExitSurveySubmission(submissionId: string | null) {
+  return useQuery({
+    queryKey: ["exit-survey-submission", submissionId],
+    queryFn: async () => {
+      if (!submissionId) return null;
+      const { data, error } = await supabase
+        .from("exit_survey_submissions")
+        .select("*")
+        .eq("id", submissionId)
+        .single();
+      if (error) throw error;
+      return data as ExitSurveySubmission;
+    },
+    enabled: !!submissionId,
+  });
+}
+
 export function useExitSurveyAlerts(status?: ExitSurveyAlert["status"]) {
   const { activeCompanyId } = useMembership();
 
@@ -461,5 +478,22 @@ export function useExitSurveyMutations() {
     },
   });
 
-  return { updateAlertStatus, updateQuestion, updateSettings, addAlertComment };
+  const assignAlert = useMutation({
+    mutationFn: async ({ alertId, assignedTo }: { alertId: string; assignedTo: string | null }) => {
+      const { error } = await supabase
+        .from("exit_survey_alerts")
+        .update({ assigned_to: assignedTo })
+        .eq("id", alertId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["exit-survey-alerts"] });
+      toast({ title: "Assignee updated" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Failed to update assignee", description: err.message, variant: "destructive" });
+    },
+  });
+
+  return { updateAlertStatus, updateQuestion, updateSettings, addAlertComment, assignAlert };
 }

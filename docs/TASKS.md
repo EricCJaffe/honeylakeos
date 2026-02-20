@@ -2,6 +2,15 @@
 
 ## Active
 - [ ] Enable leaked password protection in Supabase Auth.
+- [ ] Test the email invite flow in production (edge function is deployed; needs live testing).
+- [ ] Customize production email templates for branding.
+- [ ] Schedule `exit-survey-weekly-digest` (weekly) and `exit-survey-reminders` (every 48–72 hours) via cron/scheduler.
+- [ ] Define department color configuration (per-deployment mapping vs fixed palette) and implement in leadership dashboard.
+- [ ] Decide whether leadership feedback should be stored as structured fields (schema) vs. comment text; add migration if structured.
+- [ ] Confirm scheduler details: where cron will run (Supabase scheduled functions vs external) and exact day/time/timezone.
+- [ ] Confirm weekly digest recipients: question owners only vs a configured distribution list.
+- [ ] Confirm reminder routing: assigned user vs owner/admin fallback for open alerts.
+- [ ] Confirm whether department colors are standardized across deployments or configurable per company/department.
 - [ ] Run final smoke test with a real coach account.
 - [ ] Set up `sop-review-reminders` on a cron schedule (not yet documented or wired).
 - [ ] Test login to Honey Lake as a company — verify auth and app load work end-to-end.

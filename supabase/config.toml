@@ -11,3 +11,9 @@ verify_jwt = true
 
 [functions.get-finance-metrics]
 verify_jwt = false
+
+[functions.exit-survey-weekly-digest]
+verify_jwt = false
+
+[functions.exit-survey-reminders]
+verify_jwt = false

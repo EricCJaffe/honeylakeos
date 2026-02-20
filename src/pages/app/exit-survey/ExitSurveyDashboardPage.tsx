@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/PageHeader";
 import { ClipboardCheck } from "lucide-react";
@@ -13,7 +14,7 @@ import { PdfExportButton } from "./components/PdfExportButton";
 
 const TABS = [
   { value: "overview", label: "Overview" },
-  { value: "trends", label: "Trends" },
+  { value: "trends", label: "Leadership" },
   { value: "submissions", label: "Submissions" },
   { value: "alerts", label: "Alerts" },
   { value: "preview", label: "Preview" },
@@ -22,7 +23,24 @@ const TABS = [
 ] as const;
 
 export default function ExitSurveyDashboardPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<string>("overview");
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab && TABS.some((t) => t.value === tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+  function handleTabChange(next: string) {
+    setActiveTab(next);
+    if (TABS.some((t) => t.value === next)) {
+      const params = new URLSearchParams(searchParams);
+      params.set("tab", next);
+      setSearchParams(params, { replace: true });
+    }
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -34,7 +52,7 @@ export default function ExitSurveyDashboardPage() {
       />
 
       <div className="flex-1 overflow-auto p-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="mb-6 flex-wrap h-auto gap-1 bg-muted/50 p-1">
             {TABS.map((t) => (
               <TabsTrigger key={t.value} value={t.value} className="text-sm">

@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   useExitSurveyAlerts,
   useExitSurveyMutations,
@@ -10,8 +11,11 @@ import {
   type ExitSurveyAlert,
 } from "@/hooks/useExitSurvey";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { useMembership } from "@/lib/membership";
+import { useCompanyMembers } from "@/hooks/useCompanyMembers";
 import { format } from "date-fns";
-import { AlertTriangle, CheckCircle, CheckCheck, MessageSquare, Send } from "lucide-react";
+import { AlertTriangle, CheckCircle, CheckCheck, MessageSquare } from "lucide-react";
 
 // Three user-facing states. DB enum has 5; we map acknowledged/reviewed/action_taken → acknowledged.
 type VisibleStatus = "pending" | "acknowledged" | "resolved";
@@ -69,16 +73,39 @@ type AlertWithRelations = ExitSurveyAlert & {
   } | null;
 };
 
-function AlertCommentThread({ alertId, isCompleted }: { alertId: string; isCompleted: boolean }) {
+function AlertCommentThread({
+  alertId,
+  isCompleted,
+  canComplete,
+}: {
+  alertId: string;
+  isCompleted: boolean;
+  canComplete: boolean;
+}) {
   const { data: comments, isLoading } = useExitSurveyAlertComments(alertId);
   const { addAlertComment } = useExitSurveyMutations();
-  const [draft, setDraft] = useState("");
+  const [leadershipPerspective, setLeadershipPerspective] = useState("");
+  const [actionsTaken, setActionsTaken] = useState("");
+  const [preventativeMeasures, setPreventativeMeasures] = useState("");
+  const [additionalComments, setAdditionalComments] = useState("");
 
   function handleSubmit() {
-    const text = draft.trim();
-    if (!text) return;
-    addAlertComment.mutate({ alertId, comment: text });
-    setDraft("");
+    const sections = [
+      ["Leadership Perspective", leadershipPerspective],
+      ["Actions Taken", actionsTaken],
+      ["Preventative Measures", preventativeMeasures],
+      ["Additional Comments", additionalComments],
+    ]
+      .filter(([, value]) => value.trim())
+      .map(([label, value]) => `${label}:\n${value.trim()}`);
+
+    if (!sections.length) return;
+
+    addAlertComment.mutate({ alertId, comment: sections.join("\n\n") });
+    setLeadershipPerspective("");
+    setActionsTaken("");
+    setPreventativeMeasures("");
+    setAdditionalComments("");
   }
 
   return (
@@ -102,30 +129,62 @@ function AlertCommentThread({ alertId, isCompleted }: { alertId: string; isCompl
           ))}
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground italic">No comments yet.</p>
+        <p className="text-xs text-muted-foreground italic">No feedback yet.</p>
       )}
 
       {!isCompleted && (
-        <div className="flex gap-2 items-start">
+        <div className="space-y-2">
           <Textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="Add a comment..."
+            value={leadershipPerspective}
+            onChange={(e) => setLeadershipPerspective(e.target.value)}
+            placeholder="Leadership perspective"
             rows={2}
-            className="resize-none text-sm flex-1"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit();
-            }}
+            className="resize-none text-sm"
           />
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleSubmit}
-            disabled={!draft.trim() || addAlertComment.isPending}
-            className="shrink-0 mt-0.5"
-          >
-            <Send className="w-3.5 h-3.5" />
-          </Button>
+          <Textarea
+            value={actionsTaken}
+            onChange={(e) => setActionsTaken(e.target.value)}
+            placeholder="Actions taken"
+            rows={2}
+            className="resize-none text-sm"
+          />
+          <Textarea
+            value={preventativeMeasures}
+            onChange={(e) => setPreventativeMeasures(e.target.value)}
+            placeholder="Preventative measures"
+            rows={2}
+            className="resize-none text-sm"
+          />
+          <Textarea
+            value={additionalComments}
+            onChange={(e) => setAdditionalComments(e.target.value)}
+            placeholder="Additional comments"
+            rows={2}
+            className="resize-none text-sm"
+          />
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleSubmit}
+              disabled={
+                addAlertComment.isPending ||
+                !(
+                  leadershipPerspective.trim() ||
+                  actionsTaken.trim() ||
+                  preventativeMeasures.trim() ||
+                  additionalComments.trim()
+                )
+              }
+            >
+              Submit Feedback
+            </Button>
+            {!canComplete && (
+              <span className="text-xs text-muted-foreground">
+                Admin review required to complete.
+              </span>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -133,11 +192,15 @@ function AlertCommentThread({ alertId, isCompleted }: { alertId: string; isCompl
 }
 
 export function AlertsTab() {
+  const { isCompanyAdmin, isSiteAdmin } = useMembership();
+  const { toast } = useToast();
   const { data: alerts, isLoading } = useExitSurveyAlerts();
-  const { updateAlertStatus } = useExitSurveyMutations();
+  const { updateAlertStatus, assignAlert } = useExitSurveyMutations();
+  const members = useCompanyMembers();
   const [expandedAlert, setExpandedAlert] = useState<string | null>(null);
 
   const alertList = (alerts || []) as AlertWithRelations[];
+  const memberMap = new Map((members.data || []).map((m) => [m.user_id, m]));
 
   // KPI counts across all alerts (including completed)
   const pendingCount     = alertList.filter((a) => toVisible(a.status) === "pending").length;
@@ -155,6 +218,15 @@ export function AlertsTab() {
     });
 
   function handleSetStatus(alertId: string, next: VisibleStatus) {
+    const canComplete = isCompanyAdmin || isSiteAdmin;
+    if (next === "resolved" && !canComplete) {
+      toast({
+        title: "Admin review required",
+        description: "Only admins can mark this task as completed.",
+        variant: "destructive",
+      });
+      return;
+    }
     updateAlertStatus.mutate({ alertId, status: next === "resolved" ? "resolved" : next });
   }
 
@@ -266,7 +338,10 @@ export function AlertsTab() {
                             key={s.value}
                             type="button"
                             onClick={() => handleSetStatus(alert.id, s.value)}
-                            disabled={updateAlertStatus.isPending}
+                            disabled={
+                              updateAlertStatus.isPending ||
+                              (s.value === "resolved" && !(isCompanyAdmin || isSiteAdmin))
+                            }
                             className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                               visible === s.value
                                 ? s.color + " ring-2 ring-offset-1 ring-current"
@@ -279,12 +354,50 @@ export function AlertsTab() {
                       </div>
                     </div>
 
+                    {/* Assignee selector */}
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                        Assignee
+                      </p>
+                      {isCompanyAdmin || isSiteAdmin ? (
+                        <Select
+                          value={alert.assigned_to ?? "unassigned"}
+                          onValueChange={(value) => {
+                            assignAlert.mutate({
+                              alertId: alert.id,
+                              assignedTo: value === "unassigned" ? null : value,
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="w-64">
+                            <SelectValue placeholder="Select assignee" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="unassigned">Admin (default)</SelectItem>
+                            {(members.data || []).map((m) => (
+                              <SelectItem key={m.user_id} value={m.user_id}>
+                                {m.full_name || m.email}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          {alert.assigned_to ? memberMap.get(alert.assigned_to)?.full_name || memberMap.get(alert.assigned_to)?.email : "Admin (default)"}
+                        </p>
+                      )}
+                    </div>
+
                     {/* Comments thread */}
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                        Comments
+                        Leadership Feedback
                       </p>
-                      <AlertCommentThread alertId={alert.id} isCompleted={visible === "resolved"} />
+                      <AlertCommentThread
+                        alertId={alert.id}
+                        isCompleted={visible === "resolved"}
+                        canComplete={isCompanyAdmin || isSiteAdmin}
+                      />
                     </div>
 
                     {/* Saved resolution notes (legacy) */}

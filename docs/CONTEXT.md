@@ -1,7 +1,7 @@
 # Project Context
 
 ## Purpose
-HoneylakeOS is a multi-module web application built on React and Supabase. It includes public marketing pages, authentication, and a large authenticated app surface with role-based access and module feature flags. The product is a coach-led operating system for coaching orgs, client companies, and solo coaches.
+HoneylakeOS is a multi-module web application built on React and Supabase. It includes public pages, authentication, and a large authenticated app surface with role-based access and module feature flags. The product targets coaching orgs, client companies, and solo coaches with an operating system for programs, operations, and learning.
 
 ## Tech Stack
 - Vite 5 + React 18 + TypeScript
@@ -18,10 +18,13 @@ HoneylakeOS is a multi-module web application built on React and Supabase. It in
 - `src/App.tsx` — wires providers and defines the full route map (~100+ routes).
 
 ## Routing Structure
-- **Public**: `src/pages/public/*` — wrapped in `PublicLayout`; no auth required.
+- **Public**: `src/pages/public/*` — no auth required.
 - **Auth**: `/login`, `/signup`, `/auth/reset` — standalone pages.
 - **App**: `/app/*` — wrapped in `ProtectedRoute` + `AppLayout`; all routes require authentication.
 - **Public form**: `/f/:token` — token-based public form submission (no auth).
+- **Public exit survey**: `/exit-survey` — public patient survey page (no auth).
+- **Invite**: `/invite` — token-based invite acceptance.
+- **Exit survey detail**: `/app/exit-survey/submissions/:submissionId` — full-page response viewer.
 - **Utility**: `/ai-smoke` — protected standalone diagnostic page outside the app shell.
 - Layouts live in `src/components/layout/*`.
 
@@ -42,7 +45,11 @@ All module definitions live in `src/core/modules/moduleRegistry.ts`.
 `core`, `tasks`, `projects`, `calendar`, `notes`, `docs` (Documents), `groups`, `locations`, `admin`
 
 ### Optional modules (per-company feature flags)
-`crm`, `contacts`, `forms`, `workflows`, `announcements`, `finance`, `reports`, `lms`, `coaching`
+`departments`, `board_meetings`, `exit_survey`, `crm`, `contacts`, `forms`, `workflows`, `announcements`, `finance`, `reports`, `lms`
+
+Default enablement (from `moduleRegistry`):
+- **Default enabled**: `departments`, `exit_survey`
+- **Default disabled**: `board_meetings`, `crm`, `contacts`, `forms`, `workflows`, `announcements`, `finance`, `reports`, `lms`
 
 ### How flags work
 - Flags are stored in the `feature_flags` Supabase table.
