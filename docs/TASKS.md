@@ -12,6 +12,7 @@
 - [ ] Confirm reminder routing: assigned user vs owner/admin fallback for open alerts.
 - [ ] Confirm whether department colors are standardized across deployments or configurable per company/department.
 - [ ] Run final smoke test with a real coach account.
+- [ ] Fix crash when opening Exit Survey → Leadership tab (Trends screen). Error: `Cannot read properties of undefined (reading 'avg')`.
 - [ ] SECURITY/HIPAA: Review low-hanging security hardening options and decide what can be shipped now vs Phase 2.
 - [ ] SECURITY/HIPAA: Confirm data classification (PHI/PII scope) and required compliance targets; document in `docs/SECURITY_ADVISOR_NOTES.md` or new compliance doc.
 

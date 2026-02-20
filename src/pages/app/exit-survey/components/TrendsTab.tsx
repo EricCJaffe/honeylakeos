@@ -333,7 +333,7 @@ export function TrendsTab() {
                 const current = statsQuery.data?.current[q.id];
                 const previous = statsQuery.data?.previous[q.id];
                 const delta =
-                  current?.avg !== null && previous?.avg !== null
+                  current?.avg != null && previous?.avg != null
                     ? parseFloat((current.avg - previous.avg).toFixed(2))
                     : null;
 
@@ -344,7 +344,7 @@ export function TrendsTab() {
                       <div className="flex-1">
                         <div className="flex items-start justify-between gap-2">
                           <p className="text-sm font-medium">{q.text}</p>
-                          {current ? (
+                          {current && current.avg != null ? (
                             <div className="flex items-center gap-2">
                               <ScoreBadge score={current.avg} />
                               {delta !== null && (
