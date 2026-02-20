@@ -229,6 +229,9 @@ export function TrendsTab() {
             {t.label}
           </Button>
         ))}
+        <Button asChild size="sm" variant="outline" className="ml-auto">
+          <Link to="/app/exit-survey?tab=submissions">View Submissions</Link>
+        </Button>
         {timeframe === "custom" && (
           <div className="flex items-center gap-2 ml-2">
             <input
@@ -259,6 +262,8 @@ export function TrendsTab() {
           <div className="p-4 space-y-2">
             {statsQuery.isLoading ? (
               <Skeleton className="h-6 w-full" />
+            ) : !range ? (
+              <p className="text-xs text-muted-foreground">Select a valid date range.</p>
             ) : trendingUp.length ? (
               trendingUp.map((t) => (
                 <div key={t.id} className="flex items-center justify-between text-sm">
@@ -282,6 +287,8 @@ export function TrendsTab() {
           <div className="p-4 space-y-2">
             {statsQuery.isLoading ? (
               <Skeleton className="h-6 w-full" />
+            ) : !range ? (
+              <p className="text-xs text-muted-foreground">Select a valid date range.</p>
             ) : trendingDown.length ? (
               trendingDown.map((t) => (
                 <div key={t.id} className="flex items-center justify-between text-sm">
@@ -300,13 +307,26 @@ export function TrendsTab() {
 
       {/* Department groups */}
       <div className="space-y-4">
-        {groupedByDepartment.map((group, index) => (
+        {statsQuery.isLoading ? (
+          <Skeleton className="h-32 w-full" />
+        ) : !range ? (
+          <div className="rounded-lg border bg-white p-6 text-sm text-muted-foreground">
+            Select a valid date range to view leadership trends.
+          </div>
+        ) : groupedByDepartment.length === 0 ? (
+          <div className="rounded-lg border bg-white p-6 text-sm text-muted-foreground">
+            No scored questions configured yet.
+          </div>
+        ) : (
+          groupedByDepartment.map((group, index) => (
           <div key={group.department} className="rounded-lg border bg-white">
             <div className="border-b px-4 py-2 flex items-center gap-2 bg-muted/30">
               <Badge variant="outline" className={`text-xs ${getDepartmentColor(group.department, index)}`}>
                 {group.department}
               </Badge>
-              <span className="text-xs text-muted-foreground">Department summary</span>
+              <span className="text-xs text-muted-foreground">
+                Department summary (colors are provisional pending configuration)
+              </span>
             </div>
             <div className="p-4 space-y-4">
               {group.questions.map((q) => {
@@ -364,7 +384,8 @@ export function TrendsTab() {
               })}
             </div>
           </div>
-        ))}
+        ))
+        )}
       </div>
     </div>
   );

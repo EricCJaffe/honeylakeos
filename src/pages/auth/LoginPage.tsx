@@ -79,6 +79,9 @@ export default function LoginPage() {
             >
               Sign in with Microsoft
             </Button>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Use your work email associated with your Microsoft 365 account.
+            </p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">

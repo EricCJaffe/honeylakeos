@@ -37,6 +37,8 @@ supabase functions invoke exit-survey-weekly-digest --body '{"company_id":"<comp
 supabase functions invoke exit-survey-reminders --body '{"company_id":"<company_id>"}'
 ```
 
+Scheduler required: configure a weekly cron for `exit-survey-weekly-digest` and a 48–72 hour cadence for `exit-survey-reminders`.
+
 ## Deploy (Vercel)
 - Push to `main` branch — Vercel auto-deploys.
 - `vercel.json` contains a single SPA catch-all rewrite rule (`/* → /index.html`).
