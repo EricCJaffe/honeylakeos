@@ -8,6 +8,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveExitSurvey } from "@/hooks/useExitSurvey";
 import { useMembership } from "@/lib/membership";
 import { ArrowUp, ArrowDown } from "lucide-react";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from "recharts";
 
 const TIMEFRAMES = [
   { label: "30 Days", value: "30d", days: 30 },
@@ -15,6 +24,13 @@ const TIMEFRAMES = [
   { label: "180 Days", value: "180d", days: 180 },
   { label: "1 Year", value: "1y", days: 365 },
   { label: "Custom", value: "custom", days: null },
+] as const;
+
+const ROLLING_RANGES = [
+  { key: "30d", label: "Last 30d", days: 30 },
+  { key: "90d", label: "90d", days: 90 },
+  { key: "180d", label: "180d", days: 180 },
+  { key: "1y", label: "1y", days: 365 },
 ] as const;
 
 type TimeframeValue = (typeof TIMEFRAMES)[number]["value"];
@@ -157,6 +173,27 @@ function computeStats(rows: ResponseRow[]): Record<string, QuestionStat> {
   return stats;
 }
 
+function computeDailySeries(rows: ResponseRow[]) {
+  const buckets = new Map<string, { total: number; count: number }>();
+  for (const row of rows) {
+    if (row.score === null) continue;
+    const submittedAt = row.exit_survey_submissions?.submitted_at;
+    if (!submittedAt) continue;
+    const day = submittedAt.split("T")[0];
+    const entry = buckets.get(day) || { total: 0, count: 0 };
+    entry.total += row.score;
+    entry.count += 1;
+    buckets.set(day, entry);
+  }
+
+  return Array.from(buckets.entries())
+    .map(([day, entry]) => ({
+      day,
+      avg: entry.count ? parseFloat((entry.total / entry.count).toFixed(2)) : null,
+    }))
+    .sort((a, b) => a.day.localeCompare(b.day));
+}
+
 export function TrendsTab() {
   const { activeCompanyId } = useMembership();
   const { questions } = useActiveExitSurvey();
@@ -175,9 +212,24 @@ export function TrendsTab() {
         fetchResponsesForRange(activeCompanyId, range.start.toISOString(), range.end.toISOString()),
         fetchResponsesForRange(activeCompanyId, prevRange.start.toISOString(), prevRange.end.toISOString()),
       ]);
+      const rollingResponses = await Promise.all(
+        ROLLING_RANGES.map((r) => {
+          const now = new Date();
+          const end = new Date(now);
+          end.setHours(23, 59, 59, 999);
+          const start = new Date(now);
+          start.setDate(start.getDate() - r.days);
+          start.setHours(0, 0, 0, 0);
+          return fetchResponsesForRange(activeCompanyId, start.toISOString(), end.toISOString());
+        })
+      );
       return {
         current: computeStats(currentRows),
         previous: computeStats(prevRows),
+        currentRows,
+        rolling: Object.fromEntries(
+          ROLLING_RANGES.map((r, idx) => [r.key, computeStats(rollingResponses[idx])])
+        ) as Record<string, Record<string, QuestionStat>>,
       };
     },
     enabled: !!activeCompanyId && !!range && !!prevRange,
@@ -214,6 +266,11 @@ export function TrendsTab() {
   const trendingUp = trendList.filter((t) => t.delta > 0.05).sort((a, b) => b.delta - a.delta);
   const trendingDown = trendList.filter((t) => t.delta < -0.05).sort((a, b) => a.delta - b.delta);
 
+  const chartData = useMemo(() => {
+    if (!statsQuery.data?.currentRows) return [];
+    return computeDailySeries(statsQuery.data.currentRows);
+  }, [statsQuery.data]);
+
   return (
     <div className="space-y-6">
       {/* Timeframe filters */}
@@ -248,6 +305,49 @@ export function TrendsTab() {
               className="h-8 rounded-md border px-2 text-xs"
             />
           </div>
+        )}
+      </div>
+
+      {/* Score trend chart */}
+      <div className="rounded-lg border bg-white p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold">Score Trend (Selected Range)</h3>
+          {range && (
+            <span className="text-xs text-muted-foreground">
+              {range.start.toLocaleDateString()} – {range.end.toLocaleDateString()}
+            </span>
+          )}
+        </div>
+        {statsQuery.isLoading ? (
+          <Skeleton className="h-48 w-full" />
+        ) : !range ? (
+          <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
+            Select a valid date range.
+          </div>
+        ) : chartData.length === 0 ? (
+          <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
+            No surveys in this range.
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis
+                dataKey="day"
+                tick={{ fontSize: 10 }}
+                tickFormatter={(value: string) => {
+                  const [y, m, d] = value.split("-");
+                  return `${m}/${d}`;
+                }}
+              />
+              <YAxis domain={[1, 5]} tick={{ fontSize: 10 }} />
+              <Tooltip
+                formatter={(value: number) => [typeof value === "number" ? value.toFixed(2) : value, "Avg Score"]}
+                labelFormatter={(label: string) => `Date: ${label}`}
+              />
+              <Line type="monotone" dataKey="avg" stroke="#0f766e" strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
         )}
       </div>
 
@@ -302,6 +402,73 @@ export function TrendsTab() {
               <p className="text-xs text-muted-foreground">No questions trending down.</p>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Rolling averages by question */}
+      <div className="rounded-lg border bg-white overflow-hidden">
+        <div className="border-b px-4 py-2 bg-muted/30">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Rolling Averages By Question
+          </span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/20">
+                <th className="text-left px-4 py-2 font-medium text-muted-foreground">#</th>
+                <th className="text-left px-4 py-2 font-medium text-muted-foreground">Question</th>
+                {ROLLING_RANGES.map((r) => (
+                  <th key={r.key} className="text-center px-3 py-2 font-medium text-muted-foreground">
+                    {r.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {statsQuery.isLoading ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-4">
+                    <Skeleton className="h-4 w-full" />
+                  </td>
+                </tr>
+              ) : (
+                scoredQuestions.map((q) => {
+                  const rolling = statsQuery.data?.rolling || {};
+                  const last30 = rolling["30d"]?.[q.id]?.avg ?? null;
+                  const last90 = rolling["90d"]?.[q.id]?.avg ?? null;
+                  const arrow =
+                    last30 != null && last90 != null
+                      ? last30 > last90
+                        ? "up"
+                        : last30 < last90
+                        ? "down"
+                        : "flat"
+                      : "flat";
+
+                  return (
+                    <tr key={q.id} className="border-b hover:bg-muted/10">
+                      <td className="px-4 py-2 text-muted-foreground">{q.question_number}</td>
+                      <td className="px-4 py-2 text-xs max-w-xs truncate">{q.text}</td>
+                      {ROLLING_RANGES.map((r) => {
+                        const score = rolling[r.key]?.[q.id]?.avg ?? null;
+                        return (
+                          <td key={r.key} className="px-3 py-2 text-center">
+                            <div className="inline-flex items-center gap-1 justify-center">
+                              <ScoreBadge score={score} />
+                              {r.key === "30d" && arrow !== "flat" && (
+                                <TrendArrow delta={arrow === "up" ? 1 : -1} showValue={false} />
+                              )}
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -406,18 +573,18 @@ function ScoreBadge({ score }: { score: number | null }) {
   );
 }
 
-function TrendArrow({ delta }: { delta: number }) {
+function TrendArrow({ delta, showValue = true }: { delta: number; showValue?: boolean }) {
   if (delta > 0) {
     return (
       <span className="flex items-center text-xs font-semibold text-green-600">
-        <ArrowUp className="w-3 h-3 mr-1" /> {delta.toFixed(2)}
+        <ArrowUp className="w-3 h-3 mr-1" /> {showValue ? delta.toFixed(2) : ""}
       </span>
     );
   }
   if (delta < 0) {
     return (
       <span className="flex items-center text-xs font-semibold text-red-600">
-        <ArrowDown className="w-3 h-3 mr-1" /> {delta.toFixed(2)}
+        <ArrowDown className="w-3 h-3 mr-1" /> {showValue ? delta.toFixed(2) : ""}
       </span>
     );
   }

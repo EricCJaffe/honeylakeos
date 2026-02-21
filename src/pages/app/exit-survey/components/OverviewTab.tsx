@@ -1,15 +1,11 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  useActiveExitSurvey,
   useExitSurveyKPIs,
   useExitSurveyAlerts,
   type DateFilter,
-  type ExitSurveyQuestion,
 } from "@/hooks/useExitSurvey";
-import { ChevronDown, ChevronUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const DATE_FILTERS: { label: string; value: DateFilter }[] = [
@@ -19,15 +15,6 @@ const DATE_FILTERS: { label: string; value: DateFilter }[] = [
   { label: "Last 12 Months", value: "12mo" },
   { label: "All Time", value: "all" },
 ];
-
-const CATEGORY_COLORS: Record<string, string> = {
-  KPI: "bg-purple-100 text-purple-700 border-purple-200",
-  Admissions: "bg-blue-100 text-blue-700 border-blue-200",
-  "Patient Services": "bg-teal-100 text-teal-700 border-teal-200",
-  "Treatment Team": "bg-green-100 text-green-700 border-green-200",
-  "Treatment Program": "bg-indigo-100 text-indigo-700 border-indigo-200",
-  Facility: "bg-orange-100 text-orange-700 border-orange-200",
-};
 
 function ScoreBadge({ score }: { score: number | null }) {
   if (score === null) return <span className="text-xs text-muted-foreground">—</span>;
@@ -70,11 +57,9 @@ function KpiCard({
 
 export function OverviewTab() {
   const [dateFilter, setDateFilter] = useState<DateFilter>("30d");
-  const { questions } = useActiveExitSurvey();
   const kpis = useExitSurveyKPIs(dateFilter);
   const alerts = useExitSurveyAlerts("pending");
 
-  const scoredQuestions = (questions.data || []).filter((q) => q.type === "scored");
   const pendingAlertCount = (alerts.data || []).length;
 
   const overallColor =
@@ -127,97 +112,6 @@ export function OverviewTab() {
         />
       </div>
 
-      {/* Questions table */}
-      <div className="rounded-lg border overflow-hidden">
-        <div className="bg-muted/40 px-4 py-2 border-b">
-          <h3 className="text-sm font-semibold text-foreground">Question Scores</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/20">
-                <th className="text-left px-4 py-2 font-medium text-muted-foreground w-8">#</th>
-                <th className="text-left px-4 py-2 font-medium text-muted-foreground">Question</th>
-                <th className="text-left px-3 py-2 font-medium text-muted-foreground">Category</th>
-                <th className="text-center px-3 py-2 font-medium text-muted-foreground">Dept</th>
-              </tr>
-            </thead>
-            <tbody>
-              {questions.isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-b">
-                    <td colSpan={4} className="px-4 py-2">
-                      <Skeleton className="h-4 w-full" />
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                scoredQuestions.map((q) => (
-                  <QuestionRow key={q.id} question={q} />
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
-  );
-}
-
-function QuestionRow({ question }: { question: ExitSurveyQuestion }) {
-  const [expanded, setExpanded] = useState(false);
-  const catColor = CATEGORY_COLORS[question.category] ?? "bg-gray-100 text-gray-700";
-
-  return (
-    <>
-      <tr
-        className="border-b hover:bg-muted/20 cursor-pointer"
-        onClick={() => setExpanded((e) => !e)}
-      >
-        <td className="px-4 py-3 text-muted-foreground">{question.question_number}</td>
-        <td className="px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="line-clamp-2">{question.text}</span>
-            {expanded ? (
-              <ChevronUp className="w-3 h-3 text-muted-foreground shrink-0" />
-            ) : (
-              <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0" />
-            )}
-          </div>
-        </td>
-        <td className="px-3 py-3">
-          <Badge variant="outline" className={`text-xs ${catColor}`}>
-            {question.category}
-          </Badge>
-        </td>
-        <td className="px-3 py-3 text-xs text-muted-foreground text-center">
-          {question.department ?? "—"}
-        </td>
-      </tr>
-      {expanded && (
-        <tr className="bg-muted/10 border-b">
-          <td colSpan={4} className="px-4 py-3">
-            <div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground">
-              <div>
-                <span className="font-medium text-foreground">Owner:</span>{" "}
-                {question.owner_name ?? "—"}
-              </div>
-              <div>
-                <span className="font-medium text-foreground">Email:</span>{" "}
-                {question.owner_email ?? "—"}
-              </div>
-              <div>
-                <span className="font-medium text-foreground">Alert threshold:</span>{" "}
-                Score ≤ {question.comment_threshold ?? 3}
-              </div>
-              <div>
-                <span className="font-medium text-foreground">Version:</span>{" "}
-                {question.version}
-              </div>
-            </div>
-          </td>
-        </tr>
-      )}
-    </>
   );
 }
