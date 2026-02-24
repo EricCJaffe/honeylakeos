@@ -260,23 +260,6 @@ export function useExitSurveyAlerts(status?: ExitSurveyAlert["status"]) {
   });
 }
 
-export function useExitSurveySubmissionAlerts(submissionId: string | null) {
-  return useQuery({
-    queryKey: ["exit-survey-submission-alerts", submissionId],
-    queryFn: async () => {
-      if (!submissionId) return [];
-      const { data, error } = await supabase
-        .from("exit_survey_alerts")
-        .select("*, exit_survey_questions(text, category, department, owner_name)")
-        .eq("submission_id", submissionId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!submissionId,
-  });
-}
-
 export function useExitSurveyTrends(periodType: string = "monthly") {
   const { activeCompanyId } = useMembership();
 
