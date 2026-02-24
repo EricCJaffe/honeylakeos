@@ -117,7 +117,7 @@ async function fetchResponsesForRange(
   const { data, error } = await supabase
     .from("exit_survey_responses")
     .select(
-      "id, question_id, submission_id, score, comment, exit_survey_submissions!inner(submitted_at, patient_first_name, patient_last_name, company_id)"
+      "id, question_id, submission_id, score, comment, exit_survey_submissions!inner(submitted_at, patient_first_name, patient_last_name)"
     )
     .eq("exit_survey_submissions.company_id", companyId)
     .gte("exit_survey_submissions.submitted_at", startISO)
