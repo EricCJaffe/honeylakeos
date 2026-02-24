@@ -49,6 +49,30 @@ function toVisible(status: ExitSurveyAlert["status"]): VisibleStatus {
   return "pending";
 }
 
+const COMMENT_TYPES = [
+  { value: "leadership", label: "Leadership Perspective", color: "bg-purple-100 text-purple-700 border-purple-200" },
+  { value: "actions", label: "Actions Taken", color: "bg-blue-100 text-blue-700 border-blue-200" },
+  { value: "preventative", label: "Preventative Measures", color: "bg-green-100 text-green-700 border-green-200" },
+  { value: "general", label: "General Comment", color: "bg-gray-100 text-gray-700 border-gray-200" },
+] as const;
+
+function parseCommentType(comment: string): { type: string; text: string } {
+  const match = comment.match(/^\[(.*?)\]\s*/);
+  if (match) {
+    const typeLabel = match[1];
+    const type = COMMENT_TYPES.find(t => t.label === typeLabel);
+    return {
+      type: type?.value || "general",
+      text: comment.slice(match[0].length),
+    };
+  }
+  // Check for old format with "Label:\n" pattern
+  if (comment.includes("Leadership Perspective:")) return { type: "leadership", text: comment };
+  if (comment.includes("Actions Taken:")) return { type: "actions", text: comment };
+  if (comment.includes("Preventative Measures:")) return { type: "preventative", text: comment };
+  return { type: "general", text: comment };
+}
+
 function AlertCommentThread({
   alertId,
   isCompleted,
@@ -58,100 +82,95 @@ function AlertCommentThread({
 }) {
   const { data: comments, isLoading } = useExitSurveyAlertComments(alertId);
   const { addAlertComment } = useExitSurveyMutations();
-  const [leadershipPerspective, setLeadershipPerspective] = useState("");
-  const [actionsTaken, setActionsTaken] = useState("");
-  const [preventativeMeasures, setPreventativeMeasures] = useState("");
-  const [additionalComments, setAdditionalComments] = useState("");
+  const [commentType, setCommentType] = useState<string>("general");
+  const [commentText, setCommentText] = useState("");
 
   function handleSubmit() {
-    const sections = [
-      ["Leadership Perspective", leadershipPerspective],
-      ["Actions Taken", actionsTaken],
-      ["Preventative Measures", preventativeMeasures],
-      ["Additional Comments", additionalComments],
-    ]
-      .filter(([, value]) => value.trim())
-      .map(([label, value]) => `${label}:\n${value.trim()}`);
+    if (!commentText.trim()) return;
 
-    if (!sections.length) return;
+    const selectedType = COMMENT_TYPES.find(t => t.value === commentType);
+    const formattedComment = `[${selectedType?.label}] ${commentText.trim()}`;
 
-    addAlertComment.mutate({ alertId, comment: sections.join("\n\n") });
-    setLeadershipPerspective("");
-    setActionsTaken("");
-    setPreventativeMeasures("");
-    setAdditionalComments("");
+    addAlertComment.mutate({ alertId, comment: formattedComment });
+    setCommentText("");
+    setCommentType("general");
   }
 
   return (
     <div className="space-y-3">
+      {/* Comment Thread */}
       {isLoading ? (
         <Skeleton className="h-8 w-full" />
       ) : (comments || []).length > 0 ? (
-        <div className="space-y-2">
-          {(comments || []).map((c) => (
-            <div key={c.id} className="bg-white border rounded-md px-3 py-2">
-              <div className="flex items-baseline gap-2 mb-0.5">
-                <span className="text-xs font-medium text-foreground">
-                  {c.author_name || "Team member"}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {format(new Date(c.created_at), "MMM d, yyyy 'at' h:mm a")}
-                </span>
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          {(comments || []).map((c) => {
+            const { type, text } = parseCommentType(c.comment);
+            const typeConfig = COMMENT_TYPES.find(t => t.value === type) || COMMENT_TYPES[3];
+
+            return (
+              <div key={c.id} className="bg-muted/30 border rounded-md p-3">
+                <div className="flex items-start gap-2 mb-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-semibold text-foreground">
+                        {c.author_name || "Team member"}
+                      </span>
+                      <Badge variant="outline" className={`text-xs ${typeConfig.color} border`}>
+                        {typeConfig.label}
+                      </Badge>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {format(new Date(c.created_at), "MMM d, yyyy 'at' h:mm a")}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{text}</p>
               </div>
-              <p className="text-sm whitespace-pre-wrap">{c.comment}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground italic">No feedback yet.</p>
+        <p className="text-xs text-muted-foreground italic py-4 text-center">
+          No comments yet. Be the first to add feedback!
+        </p>
       )}
 
+      {/* Add Comment Form */}
       {!isCompleted && (
-        <div className="space-y-2">
+        <div className="border-t pt-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <Select value={commentType} onValueChange={setCommentType}>
+              <SelectTrigger className="w-[200px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {COMMENT_TYPES.map((type) => (
+                  <SelectItem key={type.value} value={type.value} className="text-xs">
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <Textarea
-            value={leadershipPerspective}
-            onChange={(e) => setLeadershipPerspective(e.target.value)}
-            placeholder="Leadership perspective"
-            rows={2}
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            placeholder="Add your comment here..."
+            rows={3}
             className="resize-none text-sm"
           />
-          <Textarea
-            value={actionsTaken}
-            onChange={(e) => setActionsTaken(e.target.value)}
-            placeholder="Actions taken"
-            rows={2}
-            className="resize-none text-sm"
-          />
-          <Textarea
-            value={preventativeMeasures}
-            onChange={(e) => setPreventativeMeasures(e.target.value)}
-            placeholder="Preventative measures"
-            rows={2}
-            className="resize-none text-sm"
-          />
-          <Textarea
-            value={additionalComments}
-            onChange={(e) => setAdditionalComments(e.target.value)}
-            placeholder="Additional comments"
-            rows={2}
-            className="resize-none text-sm"
-          />
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleSubmit}
-            disabled={
-              addAlertComment.isPending ||
-              !(
-                leadershipPerspective.trim() ||
-                actionsTaken.trim() ||
-                preventativeMeasures.trim() ||
-                additionalComments.trim()
-              )
-            }
-          >
-            Submit Feedback
-          </Button>
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-muted-foreground">
+              {commentText.length > 0 && `${commentText.length} characters`}
+            </span>
+            <Button
+              size="sm"
+              onClick={handleSubmit}
+              disabled={addAlertComment.isPending || !commentText.trim()}
+            >
+              Add Comment
+            </Button>
+          </div>
         </div>
       )}
     </div>
@@ -292,7 +311,7 @@ export default function ExitSurveySubmissionPage() {
                               onClick={() => setExpandedAlert(isExpanded ? null : alert.id)}
                               className="ml-auto text-xs h-7"
                             >
-                              {isExpanded ? "Hide" : "Show"} Feedback
+                              {isExpanded ? "Hide" : "View"} Comments
                             </Button>
                           </div>
 
