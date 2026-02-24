@@ -117,7 +117,7 @@ async function fetchResponsesForRange(
   const { data, error } = await supabase
     .from("exit_survey_responses")
     .select(
-      "id, question_id, submission_id, score, comment, exit_survey_submissions(submitted_at, patient_first_name, patient_last_name)"
+      "id, question_id, submission_id, score, comment, exit_survey_submissions!inner(submitted_at, patient_first_name, patient_last_name, company_id)"
     )
     .eq("exit_survey_submissions.company_id", companyId)
     .gte("exit_survey_submissions.submitted_at", startISO)
@@ -256,8 +256,8 @@ export function TrendsTab() {
   const trendList = useMemo(() => {
     if (!statsQuery.data) return [] as { id: string; delta: number; avg: number | null; text: string }[];
     return scoredQuestions.map((q) => {
-      const current = statsQuery.data.current[q.id]?.avg ?? null;
-      const previous = statsQuery.data.previous[q.id]?.avg ?? null;
+      const current = statsQuery.data?.current?.[q.id]?.avg ?? null;
+      const previous = statsQuery.data?.previous?.[q.id]?.avg ?? null;
       const delta = current !== null && previous !== null ? parseFloat((current - previous).toFixed(2)) : 0;
       return { id: q.id, delta, avg: current, text: q.text };
     });

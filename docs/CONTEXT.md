@@ -69,6 +69,21 @@ Default enablement (from `moduleRegistry`):
 - **Usage logging**: all AI calls logged to `ai_usage_logs`.
 - See `docs/AI_PHASE1_SETUP.md` and `docs/AI_PHASE2_SETUP.md` for setup steps.
 
+## Exit Survey Module
+- **Status**: Completed February 2026.
+- **Public form**: `/exit-survey` — no auth required; token-based patient survey.
+- **Admin dashboard**: `/app/exit-survey` — 7 tabs: Overview, Submissions, Alerts, Trends, Questions, Settings, Leadership.
+- **Alert system**: Low-score responses (≤ threshold) auto-create alerts; assigned users receive email notifications via `exit-survey-notify` edge function.
+- **Comment threads**: Alerts support threaded comments stored in `exit_survey_alert_comments` table.
+- **Scheduled jobs**: Weekly digest (`exit-survey-weekly-digest`) and reminders (`exit-survey-reminders`) require cron setup.
+- **Historical data**: 333 submissions imported from August 2024 – January 2026 via `scripts/import-exit-survey-history.ts` (already run).
+- See `exit-survey.md` in project memory for full details.
+
+## Scripts
+- `scripts/import-exit-survey-history.ts` — one-time historical data import for exit surveys (already executed).
+- `scripts/init-context.sh` — creates standard docs structure.
+- Run TypeScript scripts via `npx tsx scripts/<name>.ts`.
+
 ## Testing
 - Vitest configured in `vitest.config.ts`.
 - Smoke test: `src/core/runtime/safety.smoke.test.ts`.

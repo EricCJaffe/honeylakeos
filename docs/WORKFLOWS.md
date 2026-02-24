@@ -17,6 +17,11 @@ npm run test:smoke  # run only src/core/runtime/safety.smoke.test.ts
 npm run lint        # ESLint
 ```
 
+## Scripts
+```bash
+npx tsx scripts/<name>.ts  # run TypeScript scripts (e.g., import-exit-survey-history.ts)
+```
+
 ## Env Vars
 Copy `.env` to `.env.local` for local overrides. Required keys — see `docs/ENVIRONMENT.md` for details.
 

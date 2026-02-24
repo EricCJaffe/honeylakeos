@@ -29,3 +29,4 @@ Architecture Decisions:
 - `docs/DECISIONS/0004-vercel-spa-deployment.md`
 - `docs/DECISIONS/0005-edge-functions-privileged-ops.md`
 - `docs/DECISIONS/0006-resend-transactional-email.md`
+- `docs/DECISIONS/0007-exit-survey-architecture.md`
