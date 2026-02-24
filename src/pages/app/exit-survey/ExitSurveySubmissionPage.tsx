@@ -1,15 +1,162 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, AlertTriangle, CheckCircle, CheckCheck } from "lucide-react";
 import {
   useActiveExitSurvey,
   useExitSurveySubmission,
   useExitSurveySubmissionDetail,
+  useExitSurveySubmissionAlerts,
+  useExitSurveyAlertComments,
+  useExitSurveyMutations,
+  type ExitSurveyAlert,
 } from "@/hooks/useExitSurvey";
+import { useMembership } from "@/lib/membership";
+import { useCompanyMembers } from "@/hooks/useCompanyMembers";
+import { format } from "date-fns";
+
+type VisibleStatus = "pending" | "acknowledged" | "resolved";
+
+const STATUS_CONFIG: Record<
+  VisibleStatus,
+  { label: string; color: string; icon: React.ReactNode }
+> = {
+  pending: {
+    label: "Pending",
+    color: "bg-red-100 text-red-700 border-red-200",
+    icon: <AlertTriangle className="w-3.5 h-3.5" />,
+  },
+  acknowledged: {
+    label: "Acknowledged",
+    color: "bg-yellow-100 text-yellow-700 border-yellow-200",
+    icon: <CheckCircle className="w-3.5 h-3.5" />,
+  },
+  resolved: {
+    label: "Completed",
+    color: "bg-green-100 text-green-700 border-green-200",
+    icon: <CheckCheck className="w-3.5 h-3.5" />,
+  },
+};
+
+function toVisible(status: ExitSurveyAlert["status"]): VisibleStatus {
+  if (status === "resolved") return "resolved";
+  if (status === "acknowledged" || status === "reviewed" || status === "action_taken") return "acknowledged";
+  return "pending";
+}
+
+function AlertCommentThread({
+  alertId,
+  isCompleted,
+}: {
+  alertId: string;
+  isCompleted: boolean;
+}) {
+  const { data: comments, isLoading } = useExitSurveyAlertComments(alertId);
+  const { addAlertComment } = useExitSurveyMutations();
+  const [leadershipPerspective, setLeadershipPerspective] = useState("");
+  const [actionsTaken, setActionsTaken] = useState("");
+  const [preventativeMeasures, setPreventativeMeasures] = useState("");
+  const [additionalComments, setAdditionalComments] = useState("");
+
+  function handleSubmit() {
+    const sections = [
+      ["Leadership Perspective", leadershipPerspective],
+      ["Actions Taken", actionsTaken],
+      ["Preventative Measures", preventativeMeasures],
+      ["Additional Comments", additionalComments],
+    ]
+      .filter(([, value]) => value.trim())
+      .map(([label, value]) => `${label}:\n${value.trim()}`);
+
+    if (!sections.length) return;
+
+    addAlertComment.mutate({ alertId, comment: sections.join("\n\n") });
+    setLeadershipPerspective("");
+    setActionsTaken("");
+    setPreventativeMeasures("");
+    setAdditionalComments("");
+  }
+
+  return (
+    <div className="space-y-3">
+      {isLoading ? (
+        <Skeleton className="h-8 w-full" />
+      ) : (comments || []).length > 0 ? (
+        <div className="space-y-2">
+          {(comments || []).map((c) => (
+            <div key={c.id} className="bg-white border rounded-md px-3 py-2">
+              <div className="flex items-baseline gap-2 mb-0.5">
+                <span className="text-xs font-medium text-foreground">
+                  {c.author_name || "Team member"}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {format(new Date(c.created_at), "MMM d, yyyy 'at' h:mm a")}
+                </span>
+              </div>
+              <p className="text-sm whitespace-pre-wrap">{c.comment}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground italic">No feedback yet.</p>
+      )}
+
+      {!isCompleted && (
+        <div className="space-y-2">
+          <Textarea
+            value={leadershipPerspective}
+            onChange={(e) => setLeadershipPerspective(e.target.value)}
+            placeholder="Leadership perspective"
+            rows={2}
+            className="resize-none text-sm"
+          />
+          <Textarea
+            value={actionsTaken}
+            onChange={(e) => setActionsTaken(e.target.value)}
+            placeholder="Actions taken"
+            rows={2}
+            className="resize-none text-sm"
+          />
+          <Textarea
+            value={preventativeMeasures}
+            onChange={(e) => setPreventativeMeasures(e.target.value)}
+            placeholder="Preventative measures"
+            rows={2}
+            className="resize-none text-sm"
+          />
+          <Textarea
+            value={additionalComments}
+            onChange={(e) => setAdditionalComments(e.target.value)}
+            placeholder="Additional comments"
+            rows={2}
+            className="resize-none text-sm"
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleSubmit}
+            disabled={
+              addAlertComment.isPending ||
+              !(
+                leadershipPerspective.trim() ||
+                actionsTaken.trim() ||
+                preventativeMeasures.trim() ||
+                additionalComments.trim()
+              )
+            }
+          >
+            Submit Feedback
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ExitSurveySubmissionPage() {
   const navigate = useNavigate();
@@ -17,6 +164,13 @@ export default function ExitSurveySubmissionPage() {
   const submission = useExitSurveySubmission(submissionId ?? null);
   const responses = useExitSurveySubmissionDetail(submissionId ?? null);
   const { questions } = useActiveExitSurvey();
+  const { data: alerts, isLoading: alertsLoading } = useExitSurveySubmissionAlerts(submissionId ?? null);
+  const { updateAlertStatus, assignAlert } = useExitSurveyMutations();
+  const { isCompanyAdmin, isSiteAdmin } = useMembership();
+  const members = useCompanyMembers();
+  const [expandedAlert, setExpandedAlert] = useState<string | null>(null);
+
+  const canComplete = isCompanyAdmin || isSiteAdmin;
 
   const questionMap = useMemo(() => {
     return new Map((questions.data || []).map((q) => [q.id, q]));
@@ -115,6 +269,98 @@ export default function ExitSurveySubmissionPage() {
                 </div>
               </div>
             ))}
+
+            {/* Alerts */}
+            {alerts && alerts.length > 0 && (
+              <div className="rounded-lg border bg-white">
+                <div className="border-b px-4 py-2 bg-muted/30">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Low Score Alerts
+                  </span>
+                </div>
+                <div className="p-4 space-y-3">
+                  {alerts.map((alert) => {
+                    const visibleStatus = toVisible(alert.status);
+                    const config = STATUS_CONFIG[visibleStatus];
+                    const isExpanded = expandedAlert === alert.id;
+
+                    return (
+                      <div key={alert.id} className="border rounded-md">
+                        <div className="p-3">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex-1">
+                              <p className="text-sm font-medium mb-1">
+                                {alert.exit_survey_questions?.text || "Question"}
+                              </p>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                {alert.exit_survey_questions?.department && (
+                                  <span className="px-2 py-0.5 bg-muted rounded-full">
+                                    {alert.exit_survey_questions.department}
+                                  </span>
+                                )}
+                                <span>Score: {alert.score}</span>
+                                <span>•</span>
+                                <span>{format(new Date(alert.created_at), "MMM d, yyyy")}</span>
+                              </div>
+                            </div>
+                            <Badge variant="outline" className={`${config.color} border flex items-center gap-1`}>
+                              {config.icon}
+                              {config.label}
+                            </Badge>
+                          </div>
+
+                          <div className="flex items-center gap-2 mb-2">
+                            {canComplete && (
+                              <Select
+                                value={visibleStatus}
+                                onValueChange={(val: VisibleStatus) => {
+                                  const dbStatus: ExitSurveyAlert["status"] =
+                                    val === "resolved" ? "resolved" : val === "acknowledged" ? "acknowledged" : "pending";
+                                  updateAlertStatus.mutate({ alertId: alert.id, status: dbStatus });
+                                }}
+                              >
+                                <SelectTrigger className="h-7 text-xs w-[140px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="acknowledged">Acknowledged</SelectItem>
+                                  <SelectItem value="resolved">Completed</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+
+                            {alert.assigned_to && (
+                              <span className="text-xs text-muted-foreground">
+                                Assigned to: {members.data?.find((m) => m.user_id === alert.assigned_to)?.full_name || "Unknown"}
+                              </span>
+                            )}
+
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setExpandedAlert(isExpanded ? null : alert.id)}
+                              className="ml-auto text-xs h-7"
+                            >
+                              {isExpanded ? "Hide" : "Show"} Feedback
+                            </Button>
+                          </div>
+
+                          {isExpanded && (
+                            <div className="mt-3 pt-3 border-t">
+                              <AlertCommentThread
+                                alertId={alert.id}
+                                isCompleted={visibleStatus === "resolved"}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Open-ended */}
             {(submission.data?.open_ended_improvement || submission.data?.open_ended_positive) && (
