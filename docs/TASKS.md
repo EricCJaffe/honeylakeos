@@ -1,12 +1,10 @@
 # Tasks
 
 ## Active
-- [ ] Enable leaked password protection in Supabase Auth.
 - [ ] Test the email invite flow in production (edge function is deployed; needs live testing).
 - [ ] Customize production email templates for branding.
 - [ ] Schedule `exit-survey-weekly-digest` (weekly) and `exit-survey-reminders` (every 48–72 hours) via cron/scheduler.
 - [ ] Define department color configuration (per-deployment mapping vs fixed palette) and implement in leadership dashboard.
-- [ ] Decide whether leadership feedback should be stored as structured fields (schema) vs. comment text; add migration if structured.
 - [ ] Confirm scheduler details: where cron will run (Supabase scheduled functions vs external) and exact day/time/timezone.
 - [ ] Confirm weekly digest recipients: question owners only vs a configured distribution list.
 - [ ] Confirm reminder routing: assigned user vs owner/admin fallback for open alerts.
@@ -57,6 +55,11 @@
 ## Done
 - [x] Remove coaching and coaches modules from the codebase (2026-02-18).
 - [x] Fix crash when opening Exit Survey → Leadership tab (Trends screen). Error: `Cannot read properties of undefined (reading 'avg')` (2026-02-24).
+- [x] Fix data filtering on Leadership tab using PostgREST `!inner` hint for proper date range queries (2026-02-24).
+- [x] Add alert and comment functionality to submission detail pages (2026-02-24).
+- [x] Redesign alert comments as intuitive thread-style interface with type selection (2026-02-24).
+- [x] Enable leaked password protection in Supabase Auth (2026-02-24).
+- [x] Decide whether leadership feedback should be stored as structured fields vs comment text - using comment text with type prefixes for flexibility (2026-02-24).
 
 ## Conventions
 - Keep tasks small and outcome-focused.
