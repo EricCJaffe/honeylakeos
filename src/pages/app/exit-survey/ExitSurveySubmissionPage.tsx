@@ -76,14 +76,24 @@ function parseCommentType(comment: string): { type: string; text: string } {
 function AlertCommentThread({
   alertId,
   isCompleted,
+  isAssignedUser = false, // TODO: Pass this from parent when implementing workflow notifications
 }: {
   alertId: string;
   isCompleted: boolean;
+  isAssignedUser?: boolean;
 }) {
   const { data: comments, isLoading } = useExitSurveyAlertComments(alertId);
   const { addAlertComment } = useExitSurveyMutations();
   const [commentType, setCommentType] = useState<string>("general");
   const [commentText, setCommentText] = useState("");
+
+  // TODO: When implementing workflow notifications:
+  // - If isAssignedUser is true, show a form with REQUIRED fields:
+  //   * Actions Taken (required)
+  //   * Preventative Measures (required)
+  //   * General Comment (optional)
+  // - Only allow marking as "resolved" after assigned user completes form
+  // - Leadership and other users can add any comment type freely
 
   function handleSubmit() {
     if (!commentText.trim()) return;
@@ -311,7 +321,7 @@ export default function ExitSurveySubmissionPage() {
                               onClick={() => setExpandedAlert(isExpanded ? null : alert.id)}
                               className="ml-auto text-xs h-7"
                             >
-                              {isExpanded ? "Hide" : "View"} Comments
+                              {isExpanded ? "Hide" : "View/Add"} Comments
                             </Button>
                           </div>
 
