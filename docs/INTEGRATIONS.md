@@ -9,10 +9,17 @@
 - **Setup**: `docs/AI_PHASE1_SETUP.md`
 
 ## Resend (Active)
-- **Purpose**: Transactional email (employee invites, exit survey alerts).
-- **Edge functions**: `send-employee-invite-email`, `exit-survey-notify`
-- **Secret required**: `RESEND_API_KEY` (set in Supabase edge function secrets).
-- **Sender**: configurable via `EMAIL_FROM` secret; defaults to `BusinessOS <onboarding@resend.dev>` for invites and `Honey Lake Clinic <noreply@honeylake.clinic>` for exit survey alerts.
+- **Purpose**: Transactional email (employee invites, exit survey alerts, weekly digests, reminders).
+- **Edge functions**:
+  - `send-employee-invite-email` (tested ✅)
+  - `exit-survey-notify`
+  - `exit-survey-weekly-digest`
+  - `exit-survey-reminders`
+- **Secrets required** (set in Supabase edge function secrets):
+  - `RESEND_API_KEY` - API key from resend.com
+  - `APP_URL` - Production app URL (e.g., `https://honeylakeos-git-main-ericcjaffes-projects.vercel.app`)
+  - `EMAIL_FROM` - Sender address (e.g., `Honey Lake Clinic <onboarding@resend.dev>`)
+- **Status**: Integration tested and operational as of 2026-02-24.
 
 ## Microsoft 365 SSO (Active)
 - **Purpose**: Single sign-on for staff using work emails.

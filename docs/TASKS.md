@@ -1,7 +1,6 @@
 # Tasks
 
 ## Active
-- [ ] Test the email invite flow in production (edge function is deployed; needs live testing).
 - [ ] Customize production email templates for branding.
 - [ ] Schedule `exit-survey-weekly-digest` (weekly) and `exit-survey-reminders` (every 48–72 hours) via cron/scheduler.
 - [ ] Define department color configuration (per-deployment mapping vs fixed palette) and implement in leadership dashboard.
@@ -60,6 +59,7 @@
 - [x] Redesign alert comments as intuitive thread-style interface with type selection (2026-02-24).
 - [x] Enable leaked password protection in Supabase Auth (2026-02-24).
 - [x] Decide whether leadership feedback should be stored as structured fields vs comment text - using comment text with type prefixes for flexibility (2026-02-24).
+- [x] Test the email invite flow in production with Resend integration (2026-02-24).
 
 ## Conventions
 - Keep tasks small and outcome-focused.
