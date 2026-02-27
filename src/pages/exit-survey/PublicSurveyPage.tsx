@@ -194,7 +194,7 @@ export default function PublicSurveyPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-cyan-50 via-white to-teal-100">
         <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
       </div>
     );
@@ -202,11 +202,11 @@ export default function PublicSurveyPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-teal-50 to-blue-50 px-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-cyan-50 via-white to-teal-100 px-4">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="bg-white rounded-2xl shadow-lg p-10 max-w-md w-full text-center"
+          className="bg-white rounded-3xl border border-teal-100 shadow-lg p-10 max-w-md w-full text-center"
         >
           <CheckCircle2 className="w-16 h-16 text-teal-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-800 mb-3">Thank You!</h1>
@@ -222,11 +222,17 @@ export default function PublicSurveyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-blue-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-teal-100 flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b px-4 py-3 flex items-center gap-3">
-        <img src="/hlc-logo.svg" alt="Honey Lake Clinic" className="h-8 w-auto" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-        <span className="font-semibold text-gray-700">Exit Survey</span>
+      <div className="bg-white/95 backdrop-blur border-b px-4 py-3 md:px-8 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <img src="/hlc-logo.svg" alt="Honey Lake Clinic" className="h-8 w-auto" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+          <div>
+            <p className="font-semibold text-gray-800 leading-none">Honey Lake Clinic</p>
+            <p className="text-xs text-gray-500">Patient Exit Survey</p>
+          </div>
+        </div>
+        <p className="hidden md:block text-xs text-gray-500">Estimated completion: 5 minutes</p>
       </div>
 
       {/* Progress bar */}
@@ -252,7 +258,7 @@ export default function PublicSurveyPage() {
       )}
 
       {/* Content */}
-      <div className="flex-1 flex items-center justify-center p-4">
+      <div className="flex-1 flex items-center justify-center p-4 md:p-6">
         <div className="w-full max-w-lg">
           <AnimatePresence mode="wait">
 
@@ -263,7 +269,7 @@ export default function PublicSurveyPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="bg-white rounded-2xl shadow-md p-8"
+                className="bg-white rounded-3xl border border-teal-100 shadow-md p-8"
               >
                 <h1 className="text-2xl font-bold text-gray-800 mb-3">Patient Exit Survey</h1>
                 <p className="text-gray-600 mb-6">
@@ -311,7 +317,7 @@ export default function PublicSurveyPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -40 }}
                 transition={{ duration: 0.25 }}
-                className="bg-white rounded-2xl shadow-md p-8"
+                className="bg-white rounded-3xl border border-teal-100 shadow-md p-8"
               >
                 {(() => {
                   const group = scoredGroups[currentIndex - CATEGORY_START];
@@ -356,8 +362,8 @@ export default function PublicSurveyPage() {
                               <span>Strongly Agree</span>
                             </div>
 
-                            {/* Comment box — optional for Q3–Q26 */}
-                            {q.question_number >= 3 && q.question_number <= 26 && (
+                            {/* Comment box — optional after selecting any score */}
+                            {responses[q.id]?.score !== undefined && (
                               <>
                                 <Label className="text-xs text-gray-600 mb-1 block">
                                   Would you like to share more? (Optional)
@@ -402,7 +408,7 @@ export default function PublicSurveyPage() {
                 initial={{ opacity: 0, x: 40 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -40 }}
-                className="bg-white rounded-2xl shadow-md p-8"
+                className="bg-white rounded-3xl border border-teal-100 shadow-md p-8"
               >
                 <h2 className="text-xl font-bold text-gray-800 mb-2">Your Care Team</h2>
                 <p className="text-sm text-gray-500 mb-5">Optional — helps us route your feedback</p>
@@ -456,7 +462,7 @@ export default function PublicSurveyPage() {
                 initial={{ opacity: 0, x: 40 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -40 }}
-                className="bg-white rounded-2xl shadow-md p-8"
+                className="bg-white rounded-3xl border border-teal-100 shadow-md p-8"
               >
                 <h2 className="text-xl font-bold text-gray-800 mb-5">Final Questions</h2>
                 <div className="space-y-5 mb-6">
@@ -496,6 +502,11 @@ export default function PublicSurveyPage() {
 
           </AnimatePresence>
         </div>
+      </div>
+
+      <div className="px-4 py-3 md:px-8 border-t bg-white/80 text-xs text-gray-500 flex flex-col md:flex-row md:items-center md:justify-between gap-1">
+        <span>Your responses are securely submitted to Honey Lake Clinic.</span>
+        <span>Need assistance? Please contact your care team.</span>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,19 +26,18 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import {
   History,
-  Search,
   Filter,
   X,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Calendar as CalendarIcon,
   User,
-  FileText,
   Download,
   Loader2,
 } from 'lucide-react';
-import { useAuditLogViewer, useAuditEntityTypes, AuditLogEntry } from '@/hooks/useAuditLogViewer';
-import { format, formatDistanceToNow } from 'date-fns';
+import { useAuditLogViewer, useAuditEntityTypes } from '@/hooks/useAuditLogViewer';
+import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
 function ActionBadge({ action }: { action: string }) {
@@ -122,6 +121,11 @@ export function AuditLogViewer() {
 
   const { data: entityTypes } = useAuditEntityTypes();
   const [showFilters, setShowFilters] = useState(false);
+  const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
+  const actionTypes = useMemo(
+    () => [...new Set(logs.map((log) => log.action))].sort(),
+    [logs]
+  );
 
   const hasActiveFilters = Object.values(filters).some((v) => v !== undefined && v !== '');
 
@@ -212,6 +216,23 @@ export function AuditLogViewer() {
               </SelectContent>
             </Select>
 
+            <Select
+              value={filters.action || 'all'}
+              onValueChange={(v) => updateFilters({ action: v === 'all' ? undefined : v })}
+            >
+              <SelectTrigger className="w-[240px] h-9">
+                <SelectValue placeholder="Action" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All actions</SelectItem>
+                {actionTypes.map((action) => (
+                  <SelectItem key={action} value={action}>
+                    {action}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="h-9">
@@ -282,40 +303,61 @@ export function AuditLogViewer() {
                 <TableHead>Entity Type</TableHead>
                 <TableHead>Entity ID</TableHead>
                 <TableHead>Actor</TableHead>
+                <TableHead className="w-[40px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {logs.map((log) => (
-                <TableRow key={log.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">
-                        {format(new Date(log.created_at), 'MMM d, yyyy')}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {format(new Date(log.created_at), 'h:mm:ss a')}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <ActionBadge action={log.action} />
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{log.entity_type}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <EntityLink entityType={log.entity_type} entityId={log.entity_id} />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">
-                        {log.actor_email || 'System'}
-                      </span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {logs.map((log) => {
+                const isExpanded = expandedLogId === log.id;
+                return (
+                  <Fragment key={log.id}>
+                    <TableRow className="cursor-pointer" onClick={() => setExpandedLogId(isExpanded ? null : log.id)}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">
+                            {format(new Date(log.created_at), 'MMM d, yyyy')}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {format(new Date(log.created_at), 'h:mm:ss a')}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <ActionBadge action={log.action} />
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{log.entity_type}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <EntityLink entityType={log.entity_type} entityId={log.entity_id} />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            {log.actor_email || 'System'}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                      </TableCell>
+                    </TableRow>
+                    {isExpanded && (
+                      <TableRow>
+                        <TableCell colSpan={6}>
+                          <div className="rounded-md bg-muted/50 p-3">
+                            <p className="mb-2 text-xs font-medium text-muted-foreground">Metadata</p>
+                            <pre className="max-h-64 overflow-auto whitespace-pre-wrap text-xs">
+                              {JSON.stringify(log.metadata ?? {}, null, 2)}
+                            </pre>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </Fragment>
+                );
+              })}
             </TableBody>
           </Table>
         )}

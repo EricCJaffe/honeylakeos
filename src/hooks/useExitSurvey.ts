@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMembership } from "@/lib/membership";
 import { useToast } from "@/hooks/use-toast";
+import { useAuditLog } from "@/hooks/useAuditLog";
 
 // ============================================================
 // Types
@@ -101,7 +102,8 @@ export type ExitSurveySetting = {
   updated_at: string;
 };
 
-export type DateFilter = "30d" | "90d" | "6mo" | "12mo" | "all";
+export type DateFilter = "30d" | "90d" | "6mo" | "12mo" | "all" | "custom";
+export type DateRangeFilter = { start: string; end: string };
 
 export type ExitSurveyAlertComment = {
   id: string;
@@ -110,6 +112,22 @@ export type ExitSurveyAlertComment = {
   author_name: string | null;
   comment: string;
   created_at: string;
+};
+
+export type ExitSurveyEmailTemplate = {
+  id: string;
+  company_id: string;
+  trigger_key: string;
+  name: string;
+  description: string | null;
+  subject_template: string;
+  html_template: string;
+  text_template: string | null;
+  variables: string[] | null;
+  is_active: boolean;
+  is_system: boolean;
+  created_at: string;
+  updated_at: string;
 };
 
 // ============================================================
@@ -235,11 +253,15 @@ export function useExitSurveySubmission(submissionId: string | null) {
   });
 }
 
-export function useExitSurveyAlerts(status?: ExitSurveyAlert["status"]) {
+export function useExitSurveyAlerts(
+  status?: ExitSurveyAlert["status"],
+  filters?: { createdAtRange?: DateRangeFilter | null }
+) {
   const { activeCompanyId } = useMembership();
+  const createdAtRange = filters?.createdAtRange ?? null;
 
   return useQuery({
-    queryKey: ["exit-survey-alerts", activeCompanyId, status],
+    queryKey: ["exit-survey-alerts", activeCompanyId, status, createdAtRange?.start ?? null, createdAtRange?.end ?? null],
     queryFn: async () => {
       if (!activeCompanyId) return [];
       let query = supabase
@@ -250,6 +272,12 @@ export function useExitSurveyAlerts(status?: ExitSurveyAlert["status"]) {
 
       if (status) {
         query = query.eq("status", status);
+      }
+      if (createdAtRange?.start) {
+        query = query.gte("created_at", createdAtRange.start);
+      }
+      if (createdAtRange?.end) {
+        query = query.lte("created_at", createdAtRange.end);
       }
 
       const { data, error } = await query;
@@ -319,6 +347,25 @@ export function useExitSurveySettings() {
   });
 }
 
+export function useExitSurveyEmailTemplates() {
+  const { activeCompanyId } = useMembership();
+
+  return useQuery({
+    queryKey: ["exit-survey-email-templates", activeCompanyId],
+    queryFn: async () => {
+      if (!activeCompanyId) return [];
+      const { data, error } = await supabase
+        .from("exit_survey_email_templates")
+        .select("*")
+        .eq("company_id", activeCompanyId)
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return (data || []) as ExitSurveyEmailTemplate[];
+    },
+    enabled: !!activeCompanyId,
+  });
+}
+
 export function useExitSurveyAlertComments(alertId: string | null) {
   return useQuery({
     queryKey: ["exit-survey-alert-comments", alertId],
@@ -340,11 +387,11 @@ export function useExitSurveyAlertComments(alertId: string | null) {
 // KPI computed hook
 // ============================================================
 
-export function useExitSurveyKPIs(dateFilter: DateFilter = "30d") {
+export function useExitSurveyKPIs(dateFilter: DateFilter = "30d", customRange?: DateRangeFilter | null) {
   const { activeCompanyId } = useMembership();
 
   return useQuery({
-    queryKey: ["exit-survey-kpis", activeCompanyId, dateFilter],
+    queryKey: ["exit-survey-kpis", activeCompanyId, dateFilter, customRange?.start ?? null, customRange?.end ?? null],
     queryFn: async () => {
       if (!activeCompanyId) return null;
 
@@ -353,7 +400,11 @@ export function useExitSurveyKPIs(dateFilter: DateFilter = "30d") {
         .select("overall_average, kpi_avg")
         .eq("company_id", activeCompanyId);
 
-      if (dateFilter !== "all") {
+      if (dateFilter === "custom" && customRange?.start && customRange?.end) {
+        query = query
+          .gte("submitted_at", customRange.start)
+          .lte("submitted_at", customRange.end);
+      } else if (dateFilter !== "all") {
         const cutoff = new Date();
         if (dateFilter === "30d") cutoff.setDate(cutoff.getDate() - 30);
         else if (dateFilter === "90d") cutoff.setDate(cutoff.getDate() - 90);
@@ -381,7 +432,7 @@ export function useExitSurveyKPIs(dateFilter: DateFilter = "30d") {
 
       return { count, overallAvg: parseFloat(overallAvg.toFixed(2)), feelBetterPct, recommendPct };
     },
-    enabled: !!activeCompanyId,
+    enabled: !!activeCompanyId && (dateFilter !== "custom" || (!!customRange?.start && !!customRange?.end)),
   });
 }
 
@@ -393,6 +444,7 @@ export function useExitSurveyMutations() {
   const queryClient = useQueryClient();
   const { activeCompanyId } = useMembership();
   const { toast } = useToast();
+  const { log: auditLog } = useAuditLog(activeCompanyId);
 
   const updateAlertStatus = useMutation({
     mutationFn: async ({
@@ -414,6 +466,11 @@ export function useExitSurveyMutations() {
         .update(updates)
         .eq("id", alertId);
       if (error) throw error;
+
+      await auditLog("exit_survey.alert_status_updated", "exit_survey_alert", alertId, {
+        status,
+        has_notes: Boolean(notes),
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["exit-survey-alerts"] });
@@ -437,6 +494,10 @@ export function useExitSurveyMutations() {
         .update(updates)
         .eq("id", questionId);
       if (error) throw error;
+
+      await auditLog("exit_survey.question_updated", "exit_survey_question", questionId, {
+        changed_fields: Object.keys(updates),
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["exit-survey-questions", activeCompanyId] });
@@ -456,6 +517,44 @@ export function useExitSurveyMutations() {
         .eq("company_id", activeCompanyId)
         .eq("key", key);
       if (error) throw error;
+
+      await auditLog("exit_survey.settings_updated", "exit_survey_setting", activeCompanyId, {
+        key,
+        value,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["exit-survey-settings", activeCompanyId] });
+      toast({ title: "Settings saved" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Failed to save settings", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const saveSettingsBatch = useMutation({
+    mutationFn: async (items: Array<{ key: string; value: string; category?: string | null }>) => {
+      if (!activeCompanyId) throw new Error("No active company");
+      if (!items.length) return;
+
+      const now = new Date().toISOString();
+      const payload = items.map((item) => ({
+        company_id: activeCompanyId,
+        key: item.key,
+        value: item.value,
+        category: item.category ?? "automation",
+        updated_at: now,
+      }));
+
+      const { error } = await supabase
+        .from("exit_survey_settings")
+        .upsert(payload, { onConflict: "company_id,key" });
+      if (error) throw error;
+
+      await auditLog("exit_survey.settings_batch_saved", "exit_survey_setting", activeCompanyId, {
+        keys: items.map((item) => item.key),
+        count: items.length,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["exit-survey-settings", activeCompanyId] });
@@ -486,6 +585,10 @@ export function useExitSurveyMutations() {
           author_name: authorName || user?.email || null,
         });
       if (error) throw error;
+
+      await auditLog("exit_survey.alert_comment_added", "exit_survey_alert", alertId, {
+        comment_length: comment.length,
+      });
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["exit-survey-alert-comments", variables.alertId] });
@@ -502,6 +605,10 @@ export function useExitSurveyMutations() {
         .update({ assigned_to: assignedTo })
         .eq("id", alertId);
       if (error) throw error;
+
+      await auditLog("exit_survey.alert_assigned", "exit_survey_alert", alertId, {
+        assigned_to: assignedTo,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["exit-survey-alerts"] });
@@ -512,5 +619,193 @@ export function useExitSurveyMutations() {
     },
   });
 
-  return { updateAlertStatus, updateQuestion, updateSettings, addAlertComment, assignAlert };
+  const upsertEmailTemplate = useMutation({
+    mutationFn: async (input: {
+      id?: string;
+      trigger_key: string;
+      name: string;
+      description?: string | null;
+      subject_template: string;
+      html_template: string;
+      text_template?: string | null;
+      variables?: string[] | null;
+      is_active?: boolean;
+      is_system?: boolean;
+    }) => {
+      if (!activeCompanyId) throw new Error("No active company");
+      const payload = {
+        company_id: activeCompanyId,
+        trigger_key: input.trigger_key,
+        name: input.name,
+        description: input.description ?? null,
+        subject_template: input.subject_template,
+        html_template: input.html_template,
+        text_template: input.text_template ?? null,
+        variables: input.variables ?? [],
+        is_active: input.is_active ?? true,
+        is_system: input.is_system ?? false,
+      };
+
+      if (input.id) {
+        const { data, error } = await supabase
+          .from("exit_survey_email_templates")
+          .update(payload)
+          .eq("id", input.id)
+          .select("id, trigger_key, name")
+          .single();
+        if (error) throw error;
+
+        await auditLog("exit_survey.email_template_updated", "exit_survey_email_template", input.id, {
+          trigger_key: data?.trigger_key ?? input.trigger_key,
+          name: data?.name ?? input.name,
+          changed_fields: Object.keys(input),
+        });
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("exit_survey_email_templates")
+        .insert(payload)
+        .select("id, trigger_key, name")
+        .single();
+      if (error) throw error;
+
+      await auditLog("exit_survey.email_template_created", "exit_survey_email_template", data.id, {
+        trigger_key: data.trigger_key,
+        name: data.name,
+        is_system: payload.is_system,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["exit-survey-email-templates", activeCompanyId] });
+      toast({ title: "Email template saved" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Failed to save email template", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const deleteEmailTemplate = useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      const { data: template, error: fetchError } = await supabase
+        .from("exit_survey_email_templates")
+        .select("id, trigger_key, name")
+        .eq("id", id)
+        .single();
+      if (fetchError) throw fetchError;
+
+      const { error } = await supabase.from("exit_survey_email_templates").delete().eq("id", id);
+      if (error) throw error;
+
+      await auditLog("exit_survey.email_template_deleted", "exit_survey_email_template", id, {
+        trigger_key: template.trigger_key,
+        name: template.name,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["exit-survey-email-templates", activeCompanyId] });
+      toast({ title: "Email template deleted" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Failed to delete email template", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const sendEmailTemplateTest = useMutation({
+    mutationFn: async (input: {
+      company_id: string;
+      trigger_key: string;
+      template_name?: string;
+      to_email: string;
+      subject_template: string;
+      html_template: string;
+      text_template?: string | null;
+      sample_variables?: Record<string, string>;
+    }) => {
+      const { data, error } = await supabase.functions.invoke("exit-survey-send-test-email", {
+        body: input,
+      });
+      if (error) throw error;
+      if (!data?.success) {
+        throw new Error(data?.error || "Failed to send test email");
+      }
+
+      await auditLog("exit_survey.email_test_sent", "exit_survey_email_template", input.company_id, {
+        trigger_key: input.trigger_key,
+        template_name: input.template_name ?? null,
+        to_email: input.to_email,
+      });
+      return data;
+    },
+    onSuccess: () => {
+      toast({ title: "Test email sent" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Failed to send test email", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const runAutomationTriggerTest = useMutation({
+    mutationFn: async (input: { trigger: "weekly_digest" | "alert_reminder" | "all"; dryRun?: boolean }) => {
+      if (!activeCompanyId) throw new Error("No active company");
+      if (input.dryRun) {
+        const { data, error } = await supabase.functions.invoke("exit-survey-scheduler", {
+          body: {
+            mode: input.trigger === "weekly_digest" ? "weekly" : input.trigger === "alert_reminder" ? "reminders" : "all",
+            company_ids: [activeCompanyId],
+            dry_run: true,
+          },
+        });
+        if (error) throw error;
+        if (data?.success === false) throw new Error(data?.error || "Scheduler dry-run failed");
+        return data;
+      }
+
+      if (input.trigger === "weekly_digest" || input.trigger === "all") {
+        const { data, error } = await supabase.functions.invoke("exit-survey-weekly-digest", {
+          body: { company_id: activeCompanyId },
+        });
+        if (error) throw error;
+        if (data?.success === false) throw new Error(data?.error || "Weekly digest test failed");
+      }
+
+      if (input.trigger === "alert_reminder" || input.trigger === "all") {
+        const { data, error } = await supabase.functions.invoke("exit-survey-reminders", {
+          body: { company_id: activeCompanyId },
+        });
+        if (error) throw error;
+        if (data?.success === false) throw new Error(data?.error || "Reminder test failed");
+      }
+
+      await auditLog("exit_survey.automation_test_triggered", "exit_survey_setting", activeCompanyId, {
+        trigger: input.trigger,
+        dry_run: Boolean(input.dryRun),
+      });
+    },
+    onSuccess: (_data, variables) => {
+      const label =
+        variables.trigger === "weekly_digest"
+          ? "Weekly Digest"
+          : variables.trigger === "alert_reminder"
+            ? "Follow-Up Reminder"
+            : "All Triggers";
+      toast({ title: `${label} test started` });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Automation test failed", description: err.message, variant: "destructive" });
+    },
+  });
+
+  return {
+    updateAlertStatus,
+    updateQuestion,
+    updateSettings,
+    saveSettingsBatch,
+    addAlertComment,
+    assignAlert,
+    upsertEmailTemplate,
+    deleteEmailTemplate,
+    sendEmailTemplateTest,
+    runAutomationTriggerTest,
+  };
 }

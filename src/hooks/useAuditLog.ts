@@ -275,7 +275,19 @@ export type AuditAction =
   | "announcement.created"
   | "announcement.updated"
   | "announcement.published"
-  | "announcement.archived";
+  | "announcement.archived"
+  // Exit survey actions
+  | "exit_survey.question_updated"
+  | "exit_survey.settings_updated"
+  | "exit_survey.settings_batch_saved"
+  | "exit_survey.email_template_created"
+  | "exit_survey.email_template_updated"
+  | "exit_survey.email_template_deleted"
+  | "exit_survey.email_test_sent"
+  | "exit_survey.automation_test_triggered"
+  | "exit_survey.alert_status_updated"
+  | "exit_survey.alert_assigned"
+  | "exit_survey.alert_comment_added";
 
 export type EntityType =
   | "employee"
@@ -338,7 +350,12 @@ export type EntityType =
   | "department"
   | "resource"
   | "ticket"
-  | "announcement";
+  | "announcement"
+  | "exit_survey_question"
+  | "exit_survey_setting"
+  | "exit_survey_email_template"
+  | "exit_survey_alert"
+  | "exit_survey_submission";
 
 interface LogAuditEventParams {
   companyId: string;

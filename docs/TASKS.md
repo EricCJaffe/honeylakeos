@@ -1,16 +1,17 @@
 # Tasks
 
 ## Active
-- [ ] Customize production email templates for branding.
-- [ ] Schedule `exit-survey-weekly-digest` (weekly) and `exit-survey-reminders` (every 48–72 hours) via cron/scheduler.
+- [ ] Activate production cron for `exit-survey-scheduler` (recommended every 15 minutes with `{ "mode": "all" }`).
 - [ ] Define department color configuration (per-deployment mapping vs fixed palette) and implement in leadership dashboard.
-- [ ] Confirm scheduler details: where cron will run (Supabase scheduled functions vs external) and exact day/time/timezone.
 - [ ] Confirm weekly digest recipients: question owners only vs a configured distribution list.
 - [ ] Confirm reminder routing: assigned user vs owner/admin fallback for open alerts.
 - [ ] Confirm whether department colors are standardized across deployments or configurable per company/department.
 - [ ] Run final smoke test with a real coach account.
+- [ ] Pre-go-live: from `/app/admin/employees`, send manual invites to seeded exit-survey owners so they become auth users (do not bulk invite).
 - [ ] SECURITY/HIPAA: Review low-hanging security hardening options and decide what can be shipped now vs Phase 2.
 - [ ] SECURITY/HIPAA: Confirm data classification (PHI/PII scope) and required compliance targets; document in `docs/SECURITY_ADVISOR_NOTES.md` or new compliance doc.
+- [ ] SECURITY/HIPAA: Add audit logging for high-sensitivity read events (submission detail view, patient profile lookups) after retention policy decision.
+- [ ] SECURITY/HIPAA: Add audit trail filters for actor email and action prefix presets (exit_survey.*, employee.*, integration.*).
 
 ## Discussion (Security / HIPAA / PII)
 - [ ] Decide where cron runs (Supabase Scheduled Functions vs external) and confirm logging/monitoring for scheduled jobs.
@@ -33,7 +34,6 @@
 - [ ] Set up `sop-review-reminders` on a cron schedule (not yet documented or wired).
 - [ ] Test login to Honey Lake as a company — verify auth and app load work end-to-end.
 - [ ] Set the modules Honey Lake will be using — configure feature flags in `feature_flags` table for their company.
-- [ ] Build and add the patient exit survey workflow for Honey Lake — new workflow in `/app/workflows`.
 
 ## Backlog
 - [ ] Stripe payment integration (currently stubbed).
@@ -52,6 +52,13 @@
 - [ ] Virus scanning on attachment uploads (`src/hooks/useAttachments.ts:68`).
 
 ## Done
+- [x] Add branding to customer-facing public patient exit survey form (`/exit-survey`) including logo, typography, colors, and footer treatment (2026-02-27).
+- [x] Upgrade admin audit log views to the paginated `AuditLogViewer` in Company Console + `/app/admin/audit-log` (2026-02-27).
+- [x] Add exit-survey audit events for settings/template changes, assignment actions, and test trigger runs (2026-02-27).
+- [x] Build and add the patient exit survey workflow for Honey Lake in `/app/workflows` with assignment-email trigger support (2026-02-27).
+- [x] Implement `exit-survey-scheduler` dispatcher and set reminder cadence to 72 hours (2026-02-27).
+- [x] Wire scheduler to Exit Survey Settings automation controls (enable toggles, day/time/timezone, once-per-day local-date guard) (2026-02-27).
+- [x] Add AI-assisted editing for exit survey email templates (plain-language prompt -> updated subject/body draft) (2026-02-27).
 - [x] Remove coaching and coaches modules from the codebase (2026-02-18).
 - [x] Fix crash when opening Exit Survey → Leadership tab (Trends screen). Error: `Cannot read properties of undefined (reading 'avg')` (2026-02-24).
 - [x] Fix data filtering on Leadership tab using PostgREST `!inner` hint for proper date range queries (2026-02-24).
@@ -60,6 +67,7 @@
 - [x] Enable leaked password protection in Supabase Auth (2026-02-24).
 - [x] Decide whether leadership feedback should be stored as structured fields vs comment text - using comment text with type prefixes for flexibility (2026-02-24).
 - [x] Test the email invite flow in production with Resend integration (2026-02-24).
+- [x] Customize exit survey email templates for branding with per-trigger HTML/text variables editable in Settings (2026-02-27).
 
 ## Conventions
 - Keep tasks small and outcome-focused.
