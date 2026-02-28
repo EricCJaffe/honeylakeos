@@ -1,5 +1,13 @@
 # Tasks
 
+## HIPAA Program (Special)
+- [x] SECURITY/HIPAA: Review low-hanging security hardening options and define shipped-now vs Phase 2 scope (`docs/HIPAA_COMPLIANCE_BASELINE.md`) (2026-02-27).
+- [x] SECURITY/HIPAA: Confirm data classification (PHI/PII scope) and required compliance targets (`docs/HIPAA_COMPLIANCE_BASELINE.md`) (2026-02-27).
+- [ ] SECURITY/HIPAA: Add audit logging for high-sensitivity read events (submission detail view, patient profile lookups) after retention policy decision.
+- [ ] SECURITY/HIPAA: Add audit trail filters for actor email in audit viewer.
+- [ ] SECURITY/HIPAA: Decide retention/deletion policy for survey submissions, alerts, and exports.
+- [ ] SECURITY/HIPAA: Decide secure email content policy (PHI in emails vs summary-only).
+
 ## Active
 - [ ] Activate production cron for `exit-survey-scheduler` (recommended every 15 minutes with `{ "mode": "all" }`).
 - [ ] Define department color configuration (per-deployment mapping vs fixed palette) and implement in leadership dashboard.
@@ -8,11 +16,6 @@
 - [ ] Confirm whether department colors are standardized across deployments or configurable per company/department.
 - [ ] Run final smoke test with a real coach account.
 - [ ] Pre-go-live: from `/app/admin/employees`, send manual invites to seeded exit-survey owners so they become auth users (do not bulk invite).
-- [ ] SECURITY/HIPAA: Review low-hanging security hardening options and decide what can be shipped now vs Phase 2.
-- [ ] SECURITY/HIPAA: Confirm data classification (PHI/PII scope) and required compliance targets; document in `docs/SECURITY_ADVISOR_NOTES.md` or new compliance doc.
-- [ ] SECURITY/HIPAA: Add audit logging for high-sensitivity read events (submission detail view, patient profile lookups) after retention policy decision.
-- [ ] SECURITY/HIPAA: Add audit trail filters for actor email and action prefix presets (exit_survey.*, employee.*, integration.*).
-- [ ] 2026-02-28 reminder: copy `docs/WORKFLOW_2_COMPUTERS.md` baseline process into other active project repos.
 
 ## Discussion (Security / HIPAA / PII)
 - [ ] Decide where cron runs (Supabase Scheduled Functions vs external) and confirm logging/monitoring for scheduled jobs.
@@ -37,25 +40,19 @@
 - [ ] Set the modules Honey Lake will be using — configure feature flags in `feature_flags` table for their company.
 
 ## Backlog
-- [ ] Stripe payment integration (currently stubbed).
 - [ ] Recommendation history view.
 - [ ] Framework diff viewer for version comparison.
 - [ ] Advanced reporting dashboard.
 - [ ] Email notifications for recommendations.
-- [ ] Coaching team management page.
 - [ ] Framework concept/cadence counts on dashboard.
-- [ ] Automated health score snapshots (historical trends).
-- [ ] Public framework marketplace.
-- [ ] Usage-based billing.
-- [ ] Multi-framework support per company.
-- [ ] External calendar sync (Google, Outlook).
-- [ ] Plaid banking integration.
 - [ ] Virus scanning on attachment uploads (`src/hooks/useAttachments.ts:68`).
 
 ## Done
 - [x] Add branding to customer-facing public patient exit survey form (`/exit-survey`) including logo, typography, colors, and footer treatment (2026-02-27).
 - [x] Upgrade admin audit log views to the paginated `AuditLogViewer` in Company Console + `/app/admin/audit-log` (2026-02-27).
 - [x] Add exit-survey audit events for settings/template changes, assignment actions, and test trigger runs (2026-02-27).
+- [x] Add audit action-prefix presets in audit viewer (`exit_survey.*`, `employee.*`, `integration.*`) (2026-02-27).
+- [x] 2026-02-28 reminder complete: copied `docs/WORKFLOW_2_COMPUTERS.md` baseline process for reuse across projects (2026-02-27).
 - [x] Build and add the patient exit survey workflow for Honey Lake in `/app/workflows` with assignment-email trigger support (2026-02-27).
 - [x] Implement `exit-survey-scheduler` dispatcher and set reminder cadence to 72 hours (2026-02-27).
 - [x] Wire scheduler to Exit Survey Settings automation controls (enable toggles, day/time/timezone, once-per-day local-date guard) (2026-02-27).
@@ -69,6 +66,14 @@
 - [x] Decide whether leadership feedback should be stored as structured fields vs comment text - using comment text with type prefixes for flexibility (2026-02-24).
 - [x] Test the email invite flow in production with Resend integration (2026-02-24).
 - [x] Customize exit survey email templates for branding with per-trigger HTML/text variables editable in Settings (2026-02-27).
+- [x] De-scoped: Stripe payment integration (not needed) (2026-02-27).
+- [x] De-scoped: Coaching team management page (not needed) (2026-02-27).
+- [x] De-scoped: Automated health score snapshots (not needed) (2026-02-27).
+- [x] De-scoped: Public framework marketplace (not needed) (2026-02-27).
+- [x] De-scoped: Usage-based billing (not needed) (2026-02-27).
+- [x] De-scoped: Multi-framework support per company (not needed) (2026-02-27).
+- [x] De-scoped: External calendar sync (Google, Outlook) (not needed) (2026-02-27).
+- [x] De-scoped: Plaid banking integration (not needed) (2026-02-27).
 
 ## Conventions
 - Keep tasks small and outcome-focused.
