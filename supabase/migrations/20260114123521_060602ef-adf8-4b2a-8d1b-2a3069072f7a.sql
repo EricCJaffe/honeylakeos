@@ -13,15 +13,12 @@ CREATE TABLE public.employee_invites (
   accepted_at timestamptz NULL,
   accepted_by uuid NULL
 );
-
 -- Create index for token lookups
 CREATE INDEX idx_employee_invites_token ON public.employee_invites(token);
 CREATE INDEX idx_employee_invites_email ON public.employee_invites(email);
 CREATE INDEX idx_employee_invites_employee_id ON public.employee_invites(employee_id);
-
 -- 2) Enable RLS
 ALTER TABLE public.employee_invites ENABLE ROW LEVEL SECURITY;
-
 -- SELECT: company/site/super admins can view invites for their company
 CREATE POLICY "employee_invites_select_admin"
 ON public.employee_invites
@@ -32,7 +29,6 @@ USING (
   is_site_admin((SELECT site_id FROM public.companies WHERE id = company_id)) OR
   is_super_admin()
 );
-
 -- INSERT: company/site/super admins can create invites
 CREATE POLICY "employee_invites_insert_admin"
 ON public.employee_invites
@@ -43,7 +39,6 @@ WITH CHECK (
   is_site_admin((SELECT site_id FROM public.companies WHERE id = company_id)) OR
   is_super_admin()
 );
-
 -- UPDATE: company/site/super admins can revoke invites
 CREATE POLICY "employee_invites_update_admin"
 ON public.employee_invites
@@ -54,7 +49,6 @@ USING (
   is_site_admin((SELECT site_id FROM public.companies WHERE id = company_id)) OR
   is_super_admin()
 );
-
 -- 3) Helper RPC: create_employee_invite
 CREATE OR REPLACE FUNCTION public.create_employee_invite(
   p_employee_id uuid,
@@ -169,7 +163,6 @@ BEGIN
     v_expires_at;
 END;
 $$;
-
 -- 4) Acceptance hook: accept_employee_invites_on_profile_upsert
 CREATE OR REPLACE FUNCTION public.accept_employee_invites_on_profile_upsert()
 RETURNS trigger
@@ -231,11 +224,9 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
 -- Add unique constraint on memberships for upsert
 CREATE UNIQUE INDEX IF NOT EXISTS idx_memberships_company_user 
 ON public.memberships(company_id, user_id);
-
 -- Create the trigger (drop existing one first if it exists, to update logic)
 DROP TRIGGER IF EXISTS trigger_accept_employee_invites ON public.profiles;
 CREATE TRIGGER trigger_accept_employee_invites

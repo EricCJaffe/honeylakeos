@@ -1,29 +1,22 @@
 -- Add owner_user_id to tasks (with default to created_by for existing rows)
 ALTER TABLE public.tasks 
 ADD COLUMN IF NOT EXISTS owner_user_id UUID;
-
 -- Backfill: set owner to created_by for existing tasks
 UPDATE public.tasks SET owner_user_id = created_by WHERE owner_user_id IS NULL AND created_by IS NOT NULL;
-
 -- Add owner_user_id to notes
 ALTER TABLE public.notes 
 ADD COLUMN IF NOT EXISTS owner_user_id UUID;
-
 -- Backfill notes
 UPDATE public.notes SET owner_user_id = created_by WHERE owner_user_id IS NULL AND created_by IS NOT NULL;
-
 -- Add owner_user_id to documents
 ALTER TABLE public.documents 
 ADD COLUMN IF NOT EXISTS owner_user_id UUID;
-
 -- Backfill documents
 UPDATE public.documents SET owner_user_id = created_by WHERE owner_user_id IS NULL AND created_by IS NOT NULL;
-
 -- Create indexes for ownership queries
 CREATE INDEX IF NOT EXISTS idx_tasks_owner_user_id ON public.tasks(owner_user_id);
 CREATE INDEX IF NOT EXISTS idx_notes_owner_user_id ON public.notes(owner_user_id);
 CREATE INDEX IF NOT EXISTS idx_documents_owner_user_id ON public.documents(owner_user_id);
-
 -- Create the reassign_owner RPC function
 CREATE OR REPLACE FUNCTION public.reassign_owner(
   p_entity TEXT,

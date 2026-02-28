@@ -41,6 +41,17 @@ type AlertRow = {
   } | null;
 };
 
+const REDACTED_PATIENT = "Withheld (PHI-safe mode)";
+const REDACTED_QUESTION = "Question details redacted. Review in dashboard.";
+
+function parseEmailList(value: string | null | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter((email) => email.length > 3 && email.includes("@"));
+}
+
 function formatDate(date: Date) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
@@ -82,6 +93,14 @@ serve(async (req: Request): Promise<Response> => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const resend = new Resend(resendApiKey);
+    const { data: settingsRows } = await supabase
+      .from("exit_survey_settings")
+      .select("key, value")
+      .eq("company_id", company_id)
+      .in("key", ["phi_safe_email_mode", "weekly_digest_recipient_emails"]);
+    const settingsMap = new Map((settingsRows || []).map((row) => [row.key, row.value]));
+    const phiSafeMode = (settingsMap.get("phi_safe_email_mode") ?? "false") === "true";
+    const digestRecipientOverrides = parseEmailList(settingsMap.get("weekly_digest_recipient_emails"));
 
     const now = new Date();
     const weekStart = new Date(now);
@@ -125,7 +144,18 @@ serve(async (req: Request): Promise<Response> => {
       ownerMap.get(key)!.push(q);
     }
 
-    if (ownerMap.size === 0) {
+    const recipientMap = new Map<string, QuestionRow[]>();
+    if (digestRecipientOverrides.length) {
+      for (const recipient of digestRecipientOverrides) {
+        recipientMap.set(recipient, questions);
+      }
+    } else {
+      for (const [ownerEmail, ownerQuestions] of ownerMap.entries()) {
+        recipientMap.set(ownerEmail, ownerQuestions);
+      }
+    }
+
+    if (recipientMap.size === 0) {
       return new Response(
         JSON.stringify({ success: false, error: "No question owners configured." }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -176,10 +206,13 @@ serve(async (req: Request): Promise<Response> => {
 
     const results: Record<string, unknown> = {};
 
-    for (const [ownerEmail, ownerQuestions] of ownerMap.entries()) {
+    const usingOverrideRecipients = digestRecipientOverrides.length > 0;
+    for (const [ownerEmail, ownerQuestions] of recipientMap.entries()) {
       const questionIds = ownerQuestions.map((q) => q.id);
       const ownerAlerts = alerts.filter(
-        (a) => questionIds.includes(a.question_id) && a.exit_survey_questions?.owner_email?.toLowerCase() === ownerEmail
+        (a) =>
+          questionIds.includes(a.question_id) &&
+          (usingOverrideRecipients || a.exit_survey_questions?.owner_email?.toLowerCase() === ownerEmail)
       );
 
       const departmentNames = Array.from(
@@ -189,14 +222,16 @@ serve(async (req: Request): Promise<Response> => {
       const questionRows = ownerQuestions.map((q) => {
         const stats = questionStats.get(q.id);
         const avg = stats && stats.count > 0 ? (stats.total / stats.count).toFixed(2) : "—";
-        return `<tr><td style="padding:4px 8px;">${q.text}</td><td style="padding:4px 8px; text-align:right;">${avg}</td></tr>`;
+        const questionText = phiSafeMode ? REDACTED_QUESTION : q.text;
+        return `<tr><td style="padding:4px 8px;">${questionText}</td><td style="padding:4px 8px; text-align:right;">${avg}</td></tr>`;
       });
 
       const alertItems = ownerAlerts.map((a) => {
-        const patient = getPatientName(a.exit_survey_submissions);
+        const patient = phiSafeMode ? REDACTED_PATIENT : getPatientName(a.exit_survey_submissions);
+        const questionText = phiSafeMode ? REDACTED_QUESTION : (a.exit_survey_questions?.text ?? "Question");
         const link = appUrl ? `${appUrl}/app/exit-survey/submissions/${a.submission_id}` : "#";
         return `<li style="margin-bottom:6px;">
-          <strong>${a.exit_survey_questions?.text ?? "Question"}</strong> — Score ${a.score} (${patient})
+          <strong>${questionText}</strong> — Score ${a.score} (${patient})
           <a href="${link}" style="color:#0f766e; margin-left:6px;">View</a>
         </li>`;
       });

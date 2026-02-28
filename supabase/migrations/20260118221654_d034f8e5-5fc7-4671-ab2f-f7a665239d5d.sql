@@ -1,30 +1,24 @@
 -- Add department_id to projects
 ALTER TABLE public.projects 
 ADD COLUMN IF NOT EXISTS department_id uuid REFERENCES public.departments(id) ON DELETE SET NULL;
-
 -- Add department_id to tasks  
 ALTER TABLE public.tasks
 ADD COLUMN IF NOT EXISTS department_id uuid REFERENCES public.departments(id) ON DELETE SET NULL;
-
 -- Add department_id to notes
 ALTER TABLE public.notes
 ADD COLUMN IF NOT EXISTS department_id uuid REFERENCES public.departments(id) ON DELETE SET NULL;
-
 -- Add department_id to documents
 ALTER TABLE public.documents
 ADD COLUMN IF NOT EXISTS department_id uuid REFERENCES public.departments(id) ON DELETE SET NULL;
-
 -- Add department_id to forms
 ALTER TABLE public.forms
 ADD COLUMN IF NOT EXISTS department_id uuid REFERENCES public.departments(id) ON DELETE SET NULL;
-
 -- Create indexes for efficient filtering
 CREATE INDEX IF NOT EXISTS idx_projects_department_id ON public.projects(department_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_department_id ON public.tasks(department_id);
 CREATE INDEX IF NOT EXISTS idx_notes_department_id ON public.notes(department_id);
 CREATE INDEX IF NOT EXISTS idx_documents_department_id ON public.documents(department_id);
 CREATE INDEX IF NOT EXISTS idx_forms_department_id ON public.forms(department_id);
-
 -- Function to seed default departments for a company (called once per company)
 CREATE OR REPLACE FUNCTION public.seed_default_departments(p_company_id uuid, p_created_by uuid DEFAULT NULL)
 RETURNS void
@@ -49,10 +43,8 @@ BEGIN
   END IF;
 END;
 $$;
-
 -- Update department_members RLS to allow managers to add/remove members in their department
 DROP POLICY IF EXISTS "Department managers can manage their department members" ON public.department_members;
-
 CREATE POLICY "Department managers can manage their department members"
 ON public.department_members
 FOR ALL

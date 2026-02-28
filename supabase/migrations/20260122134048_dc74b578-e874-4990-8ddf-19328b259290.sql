@@ -17,7 +17,6 @@ SET search_path = public
 AS $$
   SELECT auth.uid()
 $$;
-
 -- 2) fn_active_company_id() -> uuid
 CREATE OR REPLACE FUNCTION public.fn_active_company_id()
 RETURNS uuid
@@ -30,7 +29,6 @@ AS $$
   FROM public.profiles 
   WHERE user_id = auth.uid()
 $$;
-
 -- 3) fn_is_site_admin(user_id uuid) -> boolean
 CREATE OR REPLACE FUNCTION public.fn_is_site_admin(_user_id uuid)
 RETURNS boolean
@@ -46,7 +44,6 @@ AS $$
       AND sm.role = 'super_admin'
   )
 $$;
-
 -- 4) fn_is_company_admin(user_id uuid, company_id uuid) -> boolean
 -- FIXED: Use 'company_admin' instead of 'admin'
 CREATE OR REPLACE FUNCTION public.fn_is_company_admin(_user_id uuid, _company_id uuid)
@@ -64,7 +61,6 @@ AS $$
       AND m.role = 'company_admin'
   )
 $$;
-
 -- 5) fn_user_coaching_org_ids(user_id uuid) -> setof uuid
 CREATE OR REPLACE FUNCTION public.fn_user_coaching_org_ids(_user_id uuid)
 RETURNS SETOF uuid
@@ -82,7 +78,6 @@ AS $$
   SELECT coaching_org_id FROM public.coaching_coaches
   WHERE user_id = _user_id AND status = 'active'
 $$;
-
 -- 6) fn_is_coaching_org_admin(user_id uuid, coaching_org_id uuid) -> boolean
 CREATE OR REPLACE FUNCTION public.fn_is_coaching_org_admin(_user_id uuid, _coaching_org_id uuid)
 RETURNS boolean
@@ -102,7 +97,6 @@ AS $$
         AND com.status = 'active'
     )
 $$;
-
 -- 7) fn_is_coaching_manager(user_id uuid, coaching_org_id uuid) -> boolean
 CREATE OR REPLACE FUNCTION public.fn_is_coaching_manager(_user_id uuid, _coaching_org_id uuid)
 RETURNS boolean
@@ -121,7 +115,6 @@ AS $$
         AND cm.status = 'active'
     )
 $$;
-
 -- 8) fn_is_coach(user_id uuid, coaching_org_id uuid) -> boolean
 CREATE OR REPLACE FUNCTION public.fn_is_coach(_user_id uuid, _coaching_org_id uuid)
 RETURNS boolean
@@ -140,7 +133,6 @@ AS $$
         AND cc.status = 'active'
     )
 $$;
-
 -- 9) fn_manager_coach_ids(user_id uuid, coaching_org_id uuid) -> setof uuid
 CREATE OR REPLACE FUNCTION public.fn_manager_coach_ids(_user_id uuid, _coaching_org_id uuid)
 RETURNS SETOF uuid
@@ -163,7 +155,6 @@ AS $$
     AND cm.status = 'active'
     AND cma.status = 'active'
 $$;
-
 -- 10) fn_user_coach_ids(user_id uuid, coaching_org_id uuid) -> setof uuid
 CREATE OR REPLACE FUNCTION public.fn_user_coach_ids(_user_id uuid, _coaching_org_id uuid)
 RETURNS SETOF uuid
@@ -180,7 +171,6 @@ AS $$
   UNION
   SELECT * FROM public.fn_manager_coach_ids(_user_id, _coaching_org_id)
 $$;
-
 -- 11) fn_user_engagement_ids(user_id uuid, coaching_org_id uuid) -> setof uuid
 CREATE OR REPLACE FUNCTION public.fn_user_engagement_ids(_user_id uuid, _coaching_org_id uuid)
 RETURNS SETOF uuid
@@ -202,7 +192,6 @@ AS $$
     AND coea.status = 'active'
     AND coe.status IN ('active', 'suspended')
 $$;
-
 -- 12) fn_has_grant -> boolean
 CREATE OR REPLACE FUNCTION public.fn_has_grant(
   _user_id uuid,
@@ -259,7 +248,6 @@ BEGIN
   END IF;
 END;
 $$;
-
 -- 13) fn_grant_constraints -> jsonb
 CREATE OR REPLACE FUNCTION public.fn_grant_constraints(
   _user_id uuid,
@@ -291,7 +279,6 @@ AS $$
     END DESC
   LIMIT 1
 $$;
-
 -- 14) fn_coaching_scoped_only -> boolean
 CREATE OR REPLACE FUNCTION public.fn_coaching_scoped_only(
   _user_id uuid,
@@ -310,7 +297,6 @@ AS $$
     true
   )
 $$;
-
 -- Helper: Check if user is member of a company
 CREATE OR REPLACE FUNCTION public.fn_is_company_member(_user_id uuid, _company_id uuid)
 RETURNS boolean
@@ -326,7 +312,6 @@ AS $$
       AND m.company_id = _company_id
   )
 $$;
-
 -- Helper: Get coaching org ID from a company
 CREATE OR REPLACE FUNCTION public.fn_get_coaching_org_id(_company_id uuid)
 RETURNS uuid
@@ -337,7 +322,6 @@ SET search_path = public
 AS $$
   SELECT id FROM public.coaching_orgs WHERE company_id = _company_id LIMIT 1
 $$;
-
 -- Helper: Check if user can access engagement
 CREATE OR REPLACE FUNCTION public.fn_can_access_engagement(_user_id uuid, _engagement_id uuid)
 RETURNS boolean
@@ -355,7 +339,6 @@ AS $$
       AND coe.id IN (SELECT public.fn_user_engagement_ids(_user_id, coe.coaching_org_id))
   )
 $$;
-
 -- Helper function to check coaching cross-tenant access
 CREATE OR REPLACE FUNCTION public.fn_has_coaching_access(
   _user_id uuid,
@@ -375,7 +358,6 @@ AS $$
     AND public.fn_can_access_engagement(_user_id, _engagement_id)
     AND public.fn_has_grant(_user_id, _company_id, _module, _min_role, _engagement_id)
 $$;
-
 -- ============================================================
 -- B) ENABLE RLS ON COACHING TABLES
 -- ============================================================
@@ -392,7 +374,6 @@ ALTER TABLE public.coaching_org_group_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coaching_permission_templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coaching_engagement_onboarding ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.access_grants ENABLE ROW LEVEL SECURITY;
-
 -- ============================================================
 -- C) RLS POLICIES
 -- ============================================================
@@ -402,96 +383,80 @@ DROP POLICY IF EXISTS "coaching_orgs_select" ON public.coaching_orgs;
 DROP POLICY IF EXISTS "coaching_orgs_insert" ON public.coaching_orgs;
 DROP POLICY IF EXISTS "coaching_orgs_update" ON public.coaching_orgs;
 DROP POLICY IF EXISTS "coaching_orgs_delete" ON public.coaching_orgs;
-
 CREATE POLICY "coaching_orgs_select" ON public.coaching_orgs
 FOR SELECT USING (
   public.fn_is_site_admin(auth.uid())
   OR id IN (SELECT public.fn_user_coaching_org_ids(auth.uid()))
 );
-
 CREATE POLICY "coaching_orgs_insert" ON public.coaching_orgs
 FOR INSERT WITH CHECK (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_company_admin(auth.uid(), company_id)
 );
-
 CREATE POLICY "coaching_orgs_update" ON public.coaching_orgs
 FOR UPDATE USING (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), id)
 );
-
 CREATE POLICY "coaching_orgs_delete" ON public.coaching_orgs
 FOR DELETE USING (public.fn_is_site_admin(auth.uid()));
-
 -- 2) coaching_org_memberships
 DROP POLICY IF EXISTS "coaching_org_memberships_select" ON public.coaching_org_memberships;
 DROP POLICY IF EXISTS "coaching_org_memberships_insert" ON public.coaching_org_memberships;
 DROP POLICY IF EXISTS "coaching_org_memberships_update" ON public.coaching_org_memberships;
 DROP POLICY IF EXISTS "coaching_org_memberships_delete" ON public.coaching_org_memberships;
-
 CREATE POLICY "coaching_org_memberships_select" ON public.coaching_org_memberships
 FOR SELECT USING (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
   OR user_id = auth.uid()
 );
-
 CREATE POLICY "coaching_org_memberships_insert" ON public.coaching_org_memberships
 FOR INSERT WITH CHECK (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 CREATE POLICY "coaching_org_memberships_update" ON public.coaching_org_memberships
 FOR UPDATE USING (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 CREATE POLICY "coaching_org_memberships_delete" ON public.coaching_org_memberships
 FOR DELETE USING (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 -- 3) coaching_managers
 DROP POLICY IF EXISTS "coaching_managers_select" ON public.coaching_managers;
 DROP POLICY IF EXISTS "coaching_managers_insert" ON public.coaching_managers;
 DROP POLICY IF EXISTS "coaching_managers_update" ON public.coaching_managers;
 DROP POLICY IF EXISTS "coaching_managers_delete" ON public.coaching_managers;
-
 CREATE POLICY "coaching_managers_select" ON public.coaching_managers
 FOR SELECT USING (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
   OR user_id = auth.uid()
 );
-
 CREATE POLICY "coaching_managers_insert" ON public.coaching_managers
 FOR INSERT WITH CHECK (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 CREATE POLICY "coaching_managers_update" ON public.coaching_managers
 FOR UPDATE USING (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 CREATE POLICY "coaching_managers_delete" ON public.coaching_managers
 FOR DELETE USING (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 -- 4) coaching_coaches
 DROP POLICY IF EXISTS "coaching_coaches_select" ON public.coaching_coaches;
 DROP POLICY IF EXISTS "coaching_coaches_insert" ON public.coaching_coaches;
 DROP POLICY IF EXISTS "coaching_coaches_update" ON public.coaching_coaches;
 DROP POLICY IF EXISTS "coaching_coaches_delete" ON public.coaching_coaches;
-
 CREATE POLICY "coaching_coaches_select" ON public.coaching_coaches
 FOR SELECT USING (
   public.fn_is_site_admin(auth.uid())
@@ -499,31 +464,26 @@ FOR SELECT USING (
   OR user_id = auth.uid()
   OR id IN (SELECT public.fn_manager_coach_ids(auth.uid(), coaching_org_id))
 );
-
 CREATE POLICY "coaching_coaches_insert" ON public.coaching_coaches
 FOR INSERT WITH CHECK (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 CREATE POLICY "coaching_coaches_update" ON public.coaching_coaches
 FOR UPDATE USING (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 CREATE POLICY "coaching_coaches_delete" ON public.coaching_coaches
 FOR DELETE USING (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 -- 5) coaching_manager_assignments
 DROP POLICY IF EXISTS "coaching_manager_assignments_select" ON public.coaching_manager_assignments;
 DROP POLICY IF EXISTS "coaching_manager_assignments_insert" ON public.coaching_manager_assignments;
 DROP POLICY IF EXISTS "coaching_manager_assignments_update" ON public.coaching_manager_assignments;
 DROP POLICY IF EXISTS "coaching_manager_assignments_delete" ON public.coaching_manager_assignments;
-
 CREATE POLICY "coaching_manager_assignments_select" ON public.coaching_manager_assignments
 FOR SELECT USING (
   public.fn_is_site_admin(auth.uid())
@@ -531,31 +491,26 @@ FOR SELECT USING (
   OR manager_id IN (SELECT id FROM public.coaching_managers WHERE user_id = auth.uid())
   OR coach_id IN (SELECT id FROM public.coaching_coaches WHERE user_id = auth.uid())
 );
-
 CREATE POLICY "coaching_manager_assignments_insert" ON public.coaching_manager_assignments
 FOR INSERT WITH CHECK (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 CREATE POLICY "coaching_manager_assignments_update" ON public.coaching_manager_assignments
 FOR UPDATE USING (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 CREATE POLICY "coaching_manager_assignments_delete" ON public.coaching_manager_assignments
 FOR DELETE USING (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 -- 6) coaching_org_engagements
 DROP POLICY IF EXISTS "coaching_org_engagements_select" ON public.coaching_org_engagements;
 DROP POLICY IF EXISTS "coaching_org_engagements_insert" ON public.coaching_org_engagements;
 DROP POLICY IF EXISTS "coaching_org_engagements_update" ON public.coaching_org_engagements;
 DROP POLICY IF EXISTS "coaching_org_engagements_delete" ON public.coaching_org_engagements;
-
 CREATE POLICY "coaching_org_engagements_select" ON public.coaching_org_engagements
 FOR SELECT USING (
   public.fn_is_site_admin(auth.uid())
@@ -563,29 +518,24 @@ FOR SELECT USING (
   OR id IN (SELECT public.fn_user_engagement_ids(auth.uid(), coaching_org_id))
   OR (member_company_id = public.fn_active_company_id() AND public.fn_is_company_member(auth.uid(), member_company_id))
 );
-
 CREATE POLICY "coaching_org_engagements_insert" ON public.coaching_org_engagements
 FOR INSERT WITH CHECK (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 CREATE POLICY "coaching_org_engagements_update" ON public.coaching_org_engagements
 FOR UPDATE USING (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
   OR (member_company_id = public.fn_active_company_id() AND public.fn_is_company_admin(auth.uid(), member_company_id))
 );
-
 CREATE POLICY "coaching_org_engagements_delete" ON public.coaching_org_engagements
 FOR DELETE USING (public.fn_is_site_admin(auth.uid()));
-
 -- 7) coaching_org_engagement_assignments
 DROP POLICY IF EXISTS "coaching_org_engagement_assignments_select" ON public.coaching_org_engagement_assignments;
 DROP POLICY IF EXISTS "coaching_org_engagement_assignments_insert" ON public.coaching_org_engagement_assignments;
 DROP POLICY IF EXISTS "coaching_org_engagement_assignments_update" ON public.coaching_org_engagement_assignments;
 DROP POLICY IF EXISTS "coaching_org_engagement_assignments_delete" ON public.coaching_org_engagement_assignments;
-
 CREATE POLICY "coaching_org_engagement_assignments_select" ON public.coaching_org_engagement_assignments
 FOR SELECT USING (
   public.fn_is_site_admin(auth.uid())
@@ -599,7 +549,6 @@ FOR SELECT USING (
       )
   )
 );
-
 CREATE POLICY "coaching_org_engagement_assignments_insert" ON public.coaching_org_engagement_assignments
 FOR INSERT WITH CHECK (
   public.fn_is_site_admin(auth.uid())
@@ -609,7 +558,6 @@ FOR INSERT WITH CHECK (
       AND public.fn_is_coaching_org_admin(auth.uid(), coe.coaching_org_id)
   )
 );
-
 CREATE POLICY "coaching_org_engagement_assignments_update" ON public.coaching_org_engagement_assignments
 FOR UPDATE USING (
   public.fn_is_site_admin(auth.uid())
@@ -619,7 +567,6 @@ FOR UPDATE USING (
       AND public.fn_is_coaching_org_admin(auth.uid(), coe.coaching_org_id)
   )
 );
-
 CREATE POLICY "coaching_org_engagement_assignments_delete" ON public.coaching_org_engagement_assignments
 FOR DELETE USING (
   public.fn_is_site_admin(auth.uid())
@@ -629,46 +576,39 @@ FOR DELETE USING (
       AND public.fn_is_coaching_org_admin(auth.uid(), coe.coaching_org_id)
   )
 );
-
 -- 8) coaching_org_groups
 DROP POLICY IF EXISTS "coaching_org_groups_select" ON public.coaching_org_groups;
 DROP POLICY IF EXISTS "coaching_org_groups_insert" ON public.coaching_org_groups;
 DROP POLICY IF EXISTS "coaching_org_groups_update" ON public.coaching_org_groups;
 DROP POLICY IF EXISTS "coaching_org_groups_delete" ON public.coaching_org_groups;
-
 CREATE POLICY "coaching_org_groups_select" ON public.coaching_org_groups
 FOR SELECT USING (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
   OR coach_id IN (SELECT public.fn_user_coach_ids(auth.uid(), coaching_org_id))
 );
-
 CREATE POLICY "coaching_org_groups_insert" ON public.coaching_org_groups
 FOR INSERT WITH CHECK (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
   OR coach_id IN (SELECT id FROM public.coaching_coaches WHERE user_id = auth.uid() AND status = 'active')
 );
-
 CREATE POLICY "coaching_org_groups_update" ON public.coaching_org_groups
 FOR UPDATE USING (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
   OR coach_id IN (SELECT id FROM public.coaching_coaches WHERE user_id = auth.uid() AND status = 'active')
 );
-
 CREATE POLICY "coaching_org_groups_delete" ON public.coaching_org_groups
 FOR DELETE USING (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 -- 9) coaching_org_group_members
 DROP POLICY IF EXISTS "coaching_org_group_members_select" ON public.coaching_org_group_members;
 DROP POLICY IF EXISTS "coaching_org_group_members_insert" ON public.coaching_org_group_members;
 DROP POLICY IF EXISTS "coaching_org_group_members_update" ON public.coaching_org_group_members;
 DROP POLICY IF EXISTS "coaching_org_group_members_delete" ON public.coaching_org_group_members;
-
 CREATE POLICY "coaching_org_group_members_select" ON public.coaching_org_group_members
 FOR SELECT USING (
   public.fn_is_site_admin(auth.uid())
@@ -682,7 +622,6 @@ FOR SELECT USING (
   )
   OR (member_company_id = public.fn_active_company_id() AND public.fn_is_company_member(auth.uid(), member_company_id))
 );
-
 CREATE POLICY "coaching_org_group_members_insert" ON public.coaching_org_group_members
 FOR INSERT WITH CHECK (
   public.fn_is_site_admin(auth.uid())
@@ -695,7 +634,6 @@ FOR INSERT WITH CHECK (
       )
   )
 );
-
 CREATE POLICY "coaching_org_group_members_update" ON public.coaching_org_group_members
 FOR UPDATE USING (
   public.fn_is_site_admin(auth.uid())
@@ -708,7 +646,6 @@ FOR UPDATE USING (
       )
   )
 );
-
 CREATE POLICY "coaching_org_group_members_delete" ON public.coaching_org_group_members
 FOR DELETE USING (
   public.fn_is_site_admin(auth.uid())
@@ -721,42 +658,35 @@ FOR DELETE USING (
       )
   )
 );
-
 -- 10) coaching_permission_templates
 DROP POLICY IF EXISTS "coaching_permission_templates_select" ON public.coaching_permission_templates;
 DROP POLICY IF EXISTS "coaching_permission_templates_insert" ON public.coaching_permission_templates;
 DROP POLICY IF EXISTS "coaching_permission_templates_update" ON public.coaching_permission_templates;
 DROP POLICY IF EXISTS "coaching_permission_templates_delete" ON public.coaching_permission_templates;
-
 CREATE POLICY "coaching_permission_templates_select" ON public.coaching_permission_templates
 FOR SELECT USING (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 CREATE POLICY "coaching_permission_templates_insert" ON public.coaching_permission_templates
 FOR INSERT WITH CHECK (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 CREATE POLICY "coaching_permission_templates_update" ON public.coaching_permission_templates
 FOR UPDATE USING (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 CREATE POLICY "coaching_permission_templates_delete" ON public.coaching_permission_templates
 FOR DELETE USING (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 -- 11) coaching_engagement_onboarding
 DROP POLICY IF EXISTS "coaching_engagement_onboarding_select" ON public.coaching_engagement_onboarding;
 DROP POLICY IF EXISTS "coaching_engagement_onboarding_insert" ON public.coaching_engagement_onboarding;
 DROP POLICY IF EXISTS "coaching_engagement_onboarding_update" ON public.coaching_engagement_onboarding;
-
 CREATE POLICY "coaching_engagement_onboarding_select" ON public.coaching_engagement_onboarding
 FOR SELECT USING (
   public.fn_is_site_admin(auth.uid())
@@ -767,7 +697,6 @@ FOR SELECT USING (
       AND public.fn_is_coaching_org_admin(auth.uid(), coe.coaching_org_id)
   )
 );
-
 CREATE POLICY "coaching_engagement_onboarding_insert" ON public.coaching_engagement_onboarding
 FOR INSERT WITH CHECK (
   public.fn_is_site_admin(auth.uid())
@@ -777,19 +706,16 @@ FOR INSERT WITH CHECK (
       AND public.fn_is_coaching_org_admin(auth.uid(), coe.coaching_org_id)
   )
 );
-
 CREATE POLICY "coaching_engagement_onboarding_update" ON public.coaching_engagement_onboarding
 FOR UPDATE USING (
   public.fn_is_site_admin(auth.uid())
   OR (member_company_id = public.fn_active_company_id() AND public.fn_is_company_admin(auth.uid(), member_company_id))
 );
-
 -- 12) access_grants
 DROP POLICY IF EXISTS "access_grants_select" ON public.access_grants;
 DROP POLICY IF EXISTS "access_grants_insert" ON public.access_grants;
 DROP POLICY IF EXISTS "access_grants_update" ON public.access_grants;
 DROP POLICY IF EXISTS "access_grants_delete" ON public.access_grants;
-
 CREATE POLICY "access_grants_select" ON public.access_grants
 FOR SELECT USING (
   public.fn_is_site_admin(auth.uid())
@@ -801,25 +727,21 @@ FOR SELECT USING (
     AND public.fn_can_access_engagement(auth.uid(), source_id)
   )
 );
-
 CREATE POLICY "access_grants_insert" ON public.access_grants
 FOR INSERT WITH CHECK (
   public.fn_is_site_admin(auth.uid())
   OR (grantor_company_id = public.fn_active_company_id() AND public.fn_is_company_admin(auth.uid(), grantor_company_id))
 );
-
 CREATE POLICY "access_grants_update" ON public.access_grants
 FOR UPDATE USING (
   public.fn_is_site_admin(auth.uid())
   OR (grantor_company_id = public.fn_active_company_id() AND public.fn_is_company_admin(auth.uid(), grantor_company_id))
 );
-
 CREATE POLICY "access_grants_delete" ON public.access_grants
 FOR DELETE USING (
   public.fn_is_site_admin(auth.uid())
   OR (grantor_company_id = public.fn_active_company_id() AND public.fn_is_company_admin(auth.uid(), grantor_company_id))
 );
-
 -- ============================================================
 -- D) CROSS-MODULE COACHING ACCESS (Tasks/Projects/Notes)
 -- ============================================================
@@ -827,7 +749,6 @@ FOR DELETE USING (
 DROP POLICY IF EXISTS "tasks_coaching_select" ON public.tasks;
 DROP POLICY IF EXISTS "tasks_coaching_insert" ON public.tasks;
 DROP POLICY IF EXISTS "tasks_coaching_update" ON public.tasks;
-
 CREATE POLICY "tasks_coaching_select" ON public.tasks
 FOR SELECT USING (
   company_id = public.fn_active_company_id()
@@ -837,7 +758,6 @@ FOR SELECT USING (
     AND public.fn_has_coaching_access(auth.uid(), company_id, coaching_engagement_id, 'tasks', 'read')
   )
 );
-
 CREATE POLICY "tasks_coaching_insert" ON public.tasks
 FOR INSERT WITH CHECK (
   company_id = public.fn_active_company_id()
@@ -847,7 +767,6 @@ FOR INSERT WITH CHECK (
     AND public.fn_has_coaching_access(auth.uid(), company_id, coaching_engagement_id, 'tasks', 'write')
   )
 );
-
 CREATE POLICY "tasks_coaching_update" ON public.tasks
 FOR UPDATE USING (
   company_id = public.fn_active_company_id()
@@ -857,11 +776,9 @@ FOR UPDATE USING (
     AND public.fn_has_coaching_access(auth.uid(), company_id, coaching_engagement_id, 'tasks', 'write')
   )
 );
-
 DROP POLICY IF EXISTS "projects_coaching_select" ON public.projects;
 DROP POLICY IF EXISTS "projects_coaching_insert" ON public.projects;
 DROP POLICY IF EXISTS "projects_coaching_update" ON public.projects;
-
 CREATE POLICY "projects_coaching_select" ON public.projects
 FOR SELECT USING (
   company_id = public.fn_active_company_id()
@@ -871,7 +788,6 @@ FOR SELECT USING (
     AND public.fn_has_coaching_access(auth.uid(), company_id, coaching_engagement_id, 'projects', 'read')
   )
 );
-
 CREATE POLICY "projects_coaching_insert" ON public.projects
 FOR INSERT WITH CHECK (
   company_id = public.fn_active_company_id()
@@ -881,7 +797,6 @@ FOR INSERT WITH CHECK (
     AND public.fn_has_coaching_access(auth.uid(), company_id, coaching_engagement_id, 'projects', 'write')
   )
 );
-
 CREATE POLICY "projects_coaching_update" ON public.projects
 FOR UPDATE USING (
   company_id = public.fn_active_company_id()
@@ -891,11 +806,9 @@ FOR UPDATE USING (
     AND public.fn_has_coaching_access(auth.uid(), company_id, coaching_engagement_id, 'projects', 'write')
   )
 );
-
 DROP POLICY IF EXISTS "notes_coaching_select" ON public.notes;
 DROP POLICY IF EXISTS "notes_coaching_insert" ON public.notes;
 DROP POLICY IF EXISTS "notes_coaching_update" ON public.notes;
-
 CREATE POLICY "notes_coaching_select" ON public.notes
 FOR SELECT USING (
   company_id = public.fn_active_company_id()
@@ -905,7 +818,6 @@ FOR SELECT USING (
     AND public.fn_has_coaching_access(auth.uid(), company_id, coaching_engagement_id, 'notes', 'read')
   )
 );
-
 CREATE POLICY "notes_coaching_insert" ON public.notes
 FOR INSERT WITH CHECK (
   company_id = public.fn_active_company_id()
@@ -915,7 +827,6 @@ FOR INSERT WITH CHECK (
     AND public.fn_has_coaching_access(auth.uid(), company_id, coaching_engagement_id, 'notes', 'write')
   )
 );
-
 CREATE POLICY "notes_coaching_update" ON public.notes
 FOR UPDATE USING (
   company_id = public.fn_active_company_id()
@@ -925,7 +836,6 @@ FOR UPDATE USING (
     AND public.fn_has_coaching_access(auth.uid(), company_id, coaching_engagement_id, 'notes', 'write')
   )
 );
-
 -- ============================================================
 -- E) DELEGATED PROVISIONING (Companies)
 -- ============================================================
@@ -933,7 +843,6 @@ FOR UPDATE USING (
 DROP POLICY IF EXISTS "companies_coaching_org_select" ON public.companies;
 DROP POLICY IF EXISTS "companies_coaching_org_insert" ON public.companies;
 DROP POLICY IF EXISTS "companies_coaching_org_update" ON public.companies;
-
 CREATE POLICY "companies_coaching_org_select" ON public.companies
 FOR SELECT USING (
   public.fn_is_site_admin(auth.uid())
@@ -947,7 +856,6 @@ FOR SELECT USING (
     )
   )
 );
-
 CREATE POLICY "companies_coaching_org_insert" ON public.companies
 FOR INSERT WITH CHECK (
   public.fn_is_site_admin(auth.uid())
@@ -962,7 +870,6 @@ FOR INSERT WITH CHECK (
     )
   )
 );
-
 CREATE POLICY "companies_coaching_org_update" ON public.companies
 FOR UPDATE USING (
   public.fn_is_site_admin(auth.uid())
@@ -976,7 +883,6 @@ FOR UPDATE USING (
     )
   )
 );
-
 -- ============================================================
 -- F) AUTO-GRANT TRIGGERS
 -- ============================================================
@@ -1050,13 +956,11 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
 DROP TRIGGER IF EXISTS trg_create_default_coaching_grants ON public.coaching_org_engagements;
 CREATE TRIGGER trg_create_default_coaching_grants
   AFTER INSERT ON public.coaching_org_engagements
   FOR EACH ROW
   EXECUTE FUNCTION public.fn_create_default_coaching_grants();
-
 CREATE OR REPLACE FUNCTION public.fn_revoke_coaching_grants_on_end()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -1074,7 +978,6 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
 DROP TRIGGER IF EXISTS trg_revoke_coaching_grants_on_end ON public.coaching_org_engagements;
 CREATE TRIGGER trg_revoke_coaching_grants_on_end
   AFTER UPDATE ON public.coaching_org_engagements

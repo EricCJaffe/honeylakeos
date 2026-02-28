@@ -7,10 +7,8 @@ CREATE TABLE public.sample_data_batches (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   removed_at TIMESTAMPTZ
 );
-
 -- Enable RLS
 ALTER TABLE public.sample_data_batches ENABLE ROW LEVEL SECURITY;
-
 -- RLS policies
 CREATE POLICY "Company admins can manage sample batches"
   ON public.sample_data_batches
@@ -23,55 +21,39 @@ CREATE POLICY "Company admins can manage sample batches"
         AND m.role = 'company_admin'
     )
   );
-
 -- Add sample_batch_id to relevant tables
 ALTER TABLE public.tasks ADD COLUMN sample_batch_id UUID REFERENCES public.sample_data_batches(id) ON DELETE CASCADE;
 ALTER TABLE public.tasks ADD COLUMN is_sample BOOLEAN NOT NULL DEFAULT false;
-
 ALTER TABLE public.projects ADD COLUMN sample_batch_id UUID REFERENCES public.sample_data_batches(id) ON DELETE CASCADE;
 ALTER TABLE public.projects ADD COLUMN is_sample BOOLEAN NOT NULL DEFAULT false;
-
 ALTER TABLE public.crm_clients ADD COLUMN sample_batch_id UUID REFERENCES public.sample_data_batches(id) ON DELETE CASCADE;
 ALTER TABLE public.crm_clients ADD COLUMN is_sample BOOLEAN NOT NULL DEFAULT false;
-
 ALTER TABLE public.sales_opportunities ADD COLUMN sample_batch_id UUID REFERENCES public.sample_data_batches(id) ON DELETE CASCADE;
 ALTER TABLE public.sales_opportunities ADD COLUMN is_sample BOOLEAN NOT NULL DEFAULT false;
-
 ALTER TABLE public.invoices ADD COLUMN sample_batch_id UUID REFERENCES public.sample_data_batches(id) ON DELETE CASCADE;
 ALTER TABLE public.invoices ADD COLUMN is_sample BOOLEAN NOT NULL DEFAULT false;
-
 ALTER TABLE public.reports ADD COLUMN sample_batch_id UUID REFERENCES public.sample_data_batches(id) ON DELETE CASCADE;
 ALTER TABLE public.reports ADD COLUMN is_sample BOOLEAN NOT NULL DEFAULT false;
-
 ALTER TABLE public.donor_profiles ADD COLUMN sample_batch_id UUID REFERENCES public.sample_data_batches(id) ON DELETE CASCADE;
 ALTER TABLE public.donor_profiles ADD COLUMN is_sample BOOLEAN NOT NULL DEFAULT false;
-
 ALTER TABLE public.donations ADD COLUMN sample_batch_id UUID REFERENCES public.sample_data_batches(id) ON DELETE CASCADE;
 ALTER TABLE public.donations ADD COLUMN is_sample BOOLEAN NOT NULL DEFAULT false;
-
 ALTER TABLE public.donor_campaigns ADD COLUMN sample_batch_id UUID REFERENCES public.sample_data_batches(id) ON DELETE CASCADE;
 ALTER TABLE public.donor_campaigns ADD COLUMN is_sample BOOLEAN NOT NULL DEFAULT false;
-
 ALTER TABLE public.receipts ADD COLUMN sample_batch_id UUID REFERENCES public.sample_data_batches(id) ON DELETE CASCADE;
 ALTER TABLE public.receipts ADD COLUMN is_sample BOOLEAN NOT NULL DEFAULT false;
-
 ALTER TABLE public.lms_courses ADD COLUMN sample_batch_id UUID REFERENCES public.sample_data_batches(id) ON DELETE CASCADE;
 ALTER TABLE public.lms_courses ADD COLUMN is_sample BOOLEAN NOT NULL DEFAULT false;
-
 ALTER TABLE public.notes ADD COLUMN sample_batch_id UUID REFERENCES public.sample_data_batches(id) ON DELETE CASCADE;
 ALTER TABLE public.notes ADD COLUMN is_sample BOOLEAN NOT NULL DEFAULT false;
-
 ALTER TABLE public.task_lists ADD COLUMN sample_batch_id UUID REFERENCES public.sample_data_batches(id) ON DELETE CASCADE;
 ALTER TABLE public.task_lists ADD COLUMN is_sample BOOLEAN NOT NULL DEFAULT false;
-
 ALTER TABLE public.project_phases ADD COLUMN sample_batch_id UUID REFERENCES public.sample_data_batches(id) ON DELETE CASCADE;
 ALTER TABLE public.project_phases ADD COLUMN is_sample BOOLEAN NOT NULL DEFAULT false;
-
 -- Create indexes for sample data filtering
 CREATE INDEX idx_tasks_sample ON public.tasks(company_id, is_sample) WHERE is_sample = true;
 CREATE INDEX idx_projects_sample ON public.projects(company_id, is_sample) WHERE is_sample = true;
 CREATE INDEX idx_crm_clients_sample ON public.crm_clients(company_id, is_sample) WHERE is_sample = true;
-
 -- Function to create sample data
 CREATE OR REPLACE FUNCTION public.create_sample_data(
   p_company_id UUID,
@@ -232,7 +214,6 @@ BEGIN
   RETURN v_batch_id;
 END;
 $$;
-
 -- Function to remove sample data
 CREATE OR REPLACE FUNCTION public.remove_sample_data(p_company_id UUID)
 RETURNS BOOLEAN
@@ -276,7 +257,6 @@ BEGIN
   RETURN true;
 END;
 $$;
-
 -- Function to check if company has active sample data
 CREATE OR REPLACE FUNCTION public.has_active_sample_data(p_company_id UUID)
 RETURNS BOOLEAN
@@ -290,7 +270,6 @@ AS $$
     WHERE company_id = p_company_id AND removed_at IS NULL
   );
 $$;
-
 -- Function to get active sample batch info
 CREATE OR REPLACE FUNCTION public.get_active_sample_batch(p_company_id UUID)
 RETURNS TABLE(id UUID, batch_type TEXT, created_at TIMESTAMPTZ)

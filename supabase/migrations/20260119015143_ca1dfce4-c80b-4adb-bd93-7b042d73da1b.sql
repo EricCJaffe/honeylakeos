@@ -30,7 +30,6 @@ BEGIN
     EXECUTE 'DROP POLICY "Admins can delete integration secrets" ON public.integration_secrets';
   END IF;
 END $$;
-
 CREATE POLICY "Admins can read integration secrets"
 ON public.integration_secrets
 FOR SELECT
@@ -40,7 +39,6 @@ USING (
     scope = 'company' AND is_company_admin(scope_id)
   )
 );
-
 CREATE POLICY "Admins can create integration secrets"
 ON public.integration_secrets
 FOR INSERT
@@ -50,7 +48,6 @@ WITH CHECK (
     scope = 'company' AND is_company_admin(scope_id)
   )
 );
-
 CREATE POLICY "Admins can update integration secrets"
 ON public.integration_secrets
 FOR UPDATE
@@ -66,7 +63,6 @@ WITH CHECK (
     scope = 'company' AND is_company_admin(scope_id)
   )
 );
-
 CREATE POLICY "Admins can delete integration secrets"
 ON public.integration_secrets
 FOR DELETE

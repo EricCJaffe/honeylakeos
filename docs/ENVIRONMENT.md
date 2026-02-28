@@ -32,6 +32,8 @@ Set in the Supabase dashboard under **Project Settings → Edge Functions → Se
 | `RESEND_API_KEY` | Yes | `send-employee-invite-email`, `exit-survey-notify`, `exit-survey-weekly-digest`, `exit-survey-reminders` | Resend transactional email API key. |
 | `APP_URL` | Yes | `send-employee-invite-email` (required), `exit-survey-notify` (optional), `exit-survey-weekly-digest`, `exit-survey-reminders` | Base URL for links in emails (e.g. `https://app.honeylakeos.com`). |
 | `EMAIL_FROM` | No | `send-employee-invite-email`, `exit-survey-notify`, `exit-survey-weekly-digest`, `exit-survey-reminders` | Sender address. Defaults to `BusinessOS <onboarding@resend.dev>` for invites and `Honey Lake Clinic <noreply@honeylake.clinic>` for exit survey alerts. |
+| `SOP_REVIEW_SCHEDULER_SECRET` | Recommended | `sop-review-reminders` | Shared secret expected in `x-scheduler-secret` header for scheduled invocations. |
+| `EXIT_SURVEY_RETENTION_SECRET` | Recommended | `exit-survey-retention` | Shared secret for retention scans initiated by scheduler/automation. |
 
 ---
 

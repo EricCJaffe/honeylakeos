@@ -60,7 +60,6 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
 -- 2. Create function to handle folder deletion (move children up, unset docs/notes)
 CREATE OR REPLACE FUNCTION public.handle_folder_delete()
 RETURNS trigger
@@ -87,24 +86,20 @@ BEGIN
   RETURN OLD;
 END;
 $$;
-
 -- 3. Drop the CASCADE constraint and replace with RESTRICT + trigger
 -- First remove the old foreign key
 ALTER TABLE public.folders
 DROP CONSTRAINT IF EXISTS folders_parent_folder_id_fkey;
-
 -- Add new constraint with SET NULL (simpler than RESTRICT + trigger)
 ALTER TABLE public.folders
 ADD CONSTRAINT folders_parent_folder_id_fkey
 FOREIGN KEY (parent_folder_id) REFERENCES folders(id) ON DELETE SET NULL;
-
 -- 4. Create trigger for folder deletion (runs BEFORE delete to handle children and docs/notes)
 DROP TRIGGER IF EXISTS handle_folder_delete_trigger ON public.folders;
 CREATE TRIGGER handle_folder_delete_trigger
 BEFORE DELETE ON public.folders
 FOR EACH ROW
 EXECUTE FUNCTION handle_folder_delete();
-
 -- 5. Add audit trigger for folders
 CREATE OR REPLACE FUNCTION public.audit_folder_changes()
 RETURNS trigger
@@ -141,13 +136,11 @@ BEGIN
   RETURN NULL;
 END;
 $$;
-
 DROP TRIGGER IF EXISTS audit_folder_trigger ON public.folders;
 CREATE TRIGGER audit_folder_trigger
 AFTER INSERT OR UPDATE OR DELETE ON public.folders
 FOR EACH ROW
 EXECUTE FUNCTION audit_folder_changes();
-
 -- 6. Add indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_folders_owner_user_id ON public.folders(owner_user_id) WHERE owner_user_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_folders_parent_folder_id ON public.folders(parent_folder_id) WHERE parent_folder_id IS NOT NULL;

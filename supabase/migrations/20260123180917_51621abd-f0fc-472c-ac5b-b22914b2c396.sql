@@ -12,13 +12,10 @@ CREATE TABLE public.feature_flags (
   updated_by uuid REFERENCES auth.users(id),
   CONSTRAINT feature_flags_company_module_unique UNIQUE (company_id, module_id)
 );
-
 -- Create index for efficient lookups
 CREATE INDEX idx_feature_flags_company_module ON public.feature_flags(company_id, module_id);
-
 -- Enable RLS
 ALTER TABLE public.feature_flags ENABLE ROW LEVEL SECURITY;
-
 -- RLS Policies using existing is_company_member function
 CREATE POLICY "feature_flags_select" ON public.feature_flags
 FOR SELECT
@@ -30,7 +27,6 @@ USING (
     AND status = 'active'
   )
 );
-
 CREATE POLICY "feature_flags_insert" ON public.feature_flags
 FOR INSERT
 TO authenticated
@@ -42,7 +38,6 @@ WITH CHECK (
     AND role = 'company_admin'
   )
 );
-
 CREATE POLICY "feature_flags_update" ON public.feature_flags
 FOR UPDATE
 TO authenticated
@@ -62,7 +57,6 @@ WITH CHECK (
     AND role = 'company_admin'
   )
 );
-
 CREATE POLICY "feature_flags_delete" ON public.feature_flags
 FOR DELETE
 TO authenticated
@@ -74,7 +68,6 @@ USING (
     AND role = 'company_admin'
   )
 );
-
 -- Trigger for updated_at
 CREATE OR REPLACE FUNCTION public.update_feature_flags_updated_at()
 RETURNS TRIGGER
@@ -87,11 +80,9 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
 CREATE TRIGGER trigger_feature_flags_updated_at
   BEFORE UPDATE ON public.feature_flags
   FOR EACH ROW
   EXECUTE FUNCTION public.update_feature_flags_updated_at();
-
 -- Add comment
 COMMENT ON TABLE public.feature_flags IS 'Per-company feature flags for module enablement. Allows disabling modules without affecting data.';

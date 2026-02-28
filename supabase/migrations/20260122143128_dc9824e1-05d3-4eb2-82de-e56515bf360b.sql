@@ -7,31 +7,26 @@ DO $$ BEGIN
   CREATE TYPE public.coaching_resource_type AS ENUM ('link', 'file', 'video', 'document', 'worksheet');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- Enum for resource status
 DO $$ BEGIN
   CREATE TYPE public.coaching_resource_status AS ENUM ('active', 'archived');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- Enum for assignable type
 DO $$ BEGIN
   CREATE TYPE public.coaching_assignable_type AS ENUM ('resource', 'collection');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- Enum for assignment status
 DO $$ BEGIN
   CREATE TYPE public.coaching_assignment_status AS ENUM ('assigned', 'completed', 'cancelled');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- Enum for progress status
 DO $$ BEGIN
   CREATE TYPE public.coaching_progress_status AS ENUM ('not_started', 'viewed', 'completed');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- ============================================================
 -- 1) coaching_resources
 -- ============================================================
@@ -50,12 +45,10 @@ CREATE TABLE IF NOT EXISTS public.coaching_resources (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 CREATE INDEX IF NOT EXISTS idx_coaching_resources_org_status 
   ON public.coaching_resources(coaching_org_id, status);
 CREATE INDEX IF NOT EXISTS idx_coaching_resources_org_program 
   ON public.coaching_resources(coaching_org_id, program_key);
-
 -- ============================================================
 -- 2) coaching_resource_collections
 -- ============================================================
@@ -70,10 +63,8 @@ CREATE TABLE IF NOT EXISTS public.coaching_resource_collections (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(coaching_org_id, name)
 );
-
 CREATE INDEX IF NOT EXISTS idx_coaching_resource_collections_org_status 
   ON public.coaching_resource_collections(coaching_org_id, status);
-
 -- ============================================================
 -- 3) coaching_resource_collection_items
 -- ============================================================
@@ -87,7 +78,6 @@ CREATE TABLE IF NOT EXISTS public.coaching_resource_collection_items (
   UNIQUE(collection_id, resource_id),
   UNIQUE(collection_id, item_order)
 );
-
 -- ============================================================
 -- 4) coaching_resource_assignments
 -- NOTE: Removed coaching_group_id reference since coaching_groups doesn't exist yet
@@ -120,14 +110,12 @@ CREATE TABLE IF NOT EXISTS public.coaching_resource_assignments (
     (assignable_type = 'collection' AND collection_id IS NOT NULL AND resource_id IS NULL)
   )
 );
-
 CREATE INDEX IF NOT EXISTS idx_coaching_resource_assignments_org_status 
   ON public.coaching_resource_assignments(coaching_org_id, status);
 CREATE INDEX IF NOT EXISTS idx_coaching_resource_assignments_engagement 
   ON public.coaching_resource_assignments(coaching_engagement_id, status);
 CREATE INDEX IF NOT EXISTS idx_coaching_resource_assignments_user 
   ON public.coaching_resource_assignments(member_user_id, status);
-
 -- ============================================================
 -- 5) coaching_resource_progress
 -- ============================================================
@@ -142,7 +130,6 @@ CREATE TABLE IF NOT EXISTS public.coaching_resource_progress (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(assignment_id, user_id)
 );
-
 -- ============================================================
 -- Timestamp triggers
 -- ============================================================
@@ -153,42 +140,36 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 DO $$ BEGIN
   CREATE TRIGGER trg_coaching_resources_updated
     BEFORE UPDATE ON public.coaching_resources
     FOR EACH ROW EXECUTE FUNCTION public.fn_update_coaching_resource_timestamp();
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 DO $$ BEGIN
   CREATE TRIGGER trg_coaching_resource_collections_updated
     BEFORE UPDATE ON public.coaching_resource_collections
     FOR EACH ROW EXECUTE FUNCTION public.fn_update_coaching_resource_timestamp();
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 DO $$ BEGIN
   CREATE TRIGGER trg_coaching_resource_collection_items_updated
     BEFORE UPDATE ON public.coaching_resource_collection_items
     FOR EACH ROW EXECUTE FUNCTION public.fn_update_coaching_resource_timestamp();
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 DO $$ BEGIN
   CREATE TRIGGER trg_coaching_resource_assignments_updated
     BEFORE UPDATE ON public.coaching_resource_assignments
     FOR EACH ROW EXECUTE FUNCTION public.fn_update_coaching_resource_timestamp();
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 DO $$ BEGIN
   CREATE TRIGGER trg_coaching_resource_progress_updated
     BEFORE UPDATE ON public.coaching_resource_progress
     FOR EACH ROW EXECUTE FUNCTION public.fn_update_coaching_resource_timestamp();
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- ============================================================
 -- RLS Policies
 -- ============================================================
@@ -199,7 +180,6 @@ ALTER TABLE public.coaching_resource_collections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coaching_resource_collection_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coaching_resource_assignments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coaching_resource_progress ENABLE ROW LEVEL SECURITY;
-
 -- Helper: Check if user can access coaching org resources
 CREATE OR REPLACE FUNCTION public.fn_can_access_coaching_org_resources(p_coaching_org_id UUID)
 RETURNS BOOLEAN AS $$
@@ -237,7 +217,6 @@ BEGIN
   RETURN FALSE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 -- Helper: Check if user can manage coaching org resources (admin/coach)
 CREATE OR REPLACE FUNCTION public.fn_can_manage_coaching_org_resources(p_coaching_org_id UUID)
 RETURNS BOOLEAN AS $$
@@ -265,7 +244,6 @@ BEGIN
   RETURN FALSE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 -- Helper: Check if user has assignment access (member view)
 CREATE OR REPLACE FUNCTION public.fn_can_access_resource_assignment(p_assignment_id UUID)
 RETURNS BOOLEAN AS $$
@@ -306,33 +284,24 @@ BEGIN
   RETURN FALSE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 -- coaching_resources policies
 CREATE POLICY "coaching_resources_select" ON public.coaching_resources
   FOR SELECT USING (public.fn_can_access_coaching_org_resources(coaching_org_id));
-
 CREATE POLICY "coaching_resources_insert" ON public.coaching_resources
   FOR INSERT WITH CHECK (public.fn_can_manage_coaching_org_resources(coaching_org_id));
-
 CREATE POLICY "coaching_resources_update" ON public.coaching_resources
   FOR UPDATE USING (public.fn_can_manage_coaching_org_resources(coaching_org_id));
-
 CREATE POLICY "coaching_resources_delete" ON public.coaching_resources
   FOR DELETE USING (public.fn_can_manage_coaching_org_resources(coaching_org_id));
-
 -- coaching_resource_collections policies
 CREATE POLICY "coaching_resource_collections_select" ON public.coaching_resource_collections
   FOR SELECT USING (public.fn_can_access_coaching_org_resources(coaching_org_id));
-
 CREATE POLICY "coaching_resource_collections_insert" ON public.coaching_resource_collections
   FOR INSERT WITH CHECK (public.fn_can_manage_coaching_org_resources(coaching_org_id));
-
 CREATE POLICY "coaching_resource_collections_update" ON public.coaching_resource_collections
   FOR UPDATE USING (public.fn_can_manage_coaching_org_resources(coaching_org_id));
-
 CREATE POLICY "coaching_resource_collections_delete" ON public.coaching_resource_collections
   FOR DELETE USING (public.fn_can_manage_coaching_org_resources(coaching_org_id));
-
 -- coaching_resource_collection_items policies (inherit from collection)
 CREATE POLICY "coaching_resource_collection_items_select" ON public.coaching_resource_collection_items
   FOR SELECT USING (
@@ -342,7 +311,6 @@ CREATE POLICY "coaching_resource_collection_items_select" ON public.coaching_res
         AND public.fn_can_access_coaching_org_resources(c.coaching_org_id)
     )
   );
-
 CREATE POLICY "coaching_resource_collection_items_insert" ON public.coaching_resource_collection_items
   FOR INSERT WITH CHECK (
     EXISTS (
@@ -351,7 +319,6 @@ CREATE POLICY "coaching_resource_collection_items_insert" ON public.coaching_res
         AND public.fn_can_manage_coaching_org_resources(c.coaching_org_id)
     )
   );
-
 CREATE POLICY "coaching_resource_collection_items_update" ON public.coaching_resource_collection_items
   FOR UPDATE USING (
     EXISTS (
@@ -360,7 +327,6 @@ CREATE POLICY "coaching_resource_collection_items_update" ON public.coaching_res
         AND public.fn_can_manage_coaching_org_resources(c.coaching_org_id)
     )
   );
-
 CREATE POLICY "coaching_resource_collection_items_delete" ON public.coaching_resource_collection_items
   FOR DELETE USING (
     EXISTS (
@@ -369,20 +335,15 @@ CREATE POLICY "coaching_resource_collection_items_delete" ON public.coaching_res
         AND public.fn_can_manage_coaching_org_resources(c.coaching_org_id)
     )
   );
-
 -- coaching_resource_assignments policies
 CREATE POLICY "coaching_resource_assignments_select" ON public.coaching_resource_assignments
   FOR SELECT USING (public.fn_can_access_resource_assignment(id));
-
 CREATE POLICY "coaching_resource_assignments_insert" ON public.coaching_resource_assignments
   FOR INSERT WITH CHECK (public.fn_can_manage_coaching_org_resources(coaching_org_id));
-
 CREATE POLICY "coaching_resource_assignments_update" ON public.coaching_resource_assignments
   FOR UPDATE USING (public.fn_can_manage_coaching_org_resources(coaching_org_id));
-
 CREATE POLICY "coaching_resource_assignments_delete" ON public.coaching_resource_assignments
   FOR DELETE USING (public.fn_can_manage_coaching_org_resources(coaching_org_id));
-
 -- coaching_resource_progress policies
 CREATE POLICY "coaching_resource_progress_select" ON public.coaching_resource_progress
   FOR SELECT USING (
@@ -393,16 +354,13 @@ CREATE POLICY "coaching_resource_progress_select" ON public.coaching_resource_pr
         AND public.fn_can_access_coaching_org_resources(a.coaching_org_id)
     )
   );
-
 CREATE POLICY "coaching_resource_progress_insert" ON public.coaching_resource_progress
   FOR INSERT WITH CHECK (
     user_id = auth.uid() AND
     public.fn_can_access_resource_assignment(assignment_id)
   );
-
 CREATE POLICY "coaching_resource_progress_update" ON public.coaching_resource_progress
   FOR UPDATE USING (user_id = auth.uid());
-
 -- Grant permissions
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.coaching_resources TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.coaching_resource_collections TO authenticated;

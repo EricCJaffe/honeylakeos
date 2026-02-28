@@ -17,3 +17,9 @@ verify_jwt = false
 
 [functions.exit-survey-reminders]
 verify_jwt = false
+
+[functions.exit-survey-retention]
+verify_jwt = false
+
+[functions.sop-review-reminders]
+verify_jwt = false

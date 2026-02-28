@@ -1,6 +1,5 @@
 -- Create status enum for announcements
 CREATE TYPE public.announcement_status AS ENUM ('draft', 'published', 'archived');
-
 -- Create announcements table
 CREATE TABLE public.announcements (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -14,7 +13,6 @@ CREATE TABLE public.announcements (
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
-
 -- Create announcement_reads table
 CREATE TABLE public.announcement_reads (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -24,18 +22,15 @@ CREATE TABLE public.announcement_reads (
   read_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   UNIQUE(announcement_id, user_id)
 );
-
 -- Create indexes
 CREATE INDEX idx_announcements_company_id ON public.announcements(company_id);
 CREATE INDEX idx_announcements_status ON public.announcements(status);
 CREATE INDEX idx_announcements_publish_at ON public.announcements(publish_at);
 CREATE INDEX idx_announcement_reads_announcement_id ON public.announcement_reads(announcement_id);
 CREATE INDEX idx_announcement_reads_user_id ON public.announcement_reads(user_id);
-
 -- Enable RLS
 ALTER TABLE public.announcements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.announcement_reads ENABLE ROW LEVEL SECURITY;
-
 -- RLS for announcements: SELECT - any company member
 CREATE POLICY "Company members can view announcements"
 ON public.announcements
@@ -48,7 +43,6 @@ USING (
     AND m.status = 'active'
   )
 );
-
 -- RLS for announcements: INSERT - company admin only
 CREATE POLICY "Company admins can create announcements"
 ON public.announcements
@@ -62,7 +56,6 @@ WITH CHECK (
     AND m.role = 'company_admin'
   )
 );
-
 -- RLS for announcements: UPDATE - company admin only
 CREATE POLICY "Company admins can update announcements"
 ON public.announcements
@@ -76,7 +69,6 @@ USING (
     AND m.role = 'company_admin'
   )
 );
-
 -- RLS for announcements: DELETE - company admin only
 CREATE POLICY "Company admins can delete announcements"
 ON public.announcements
@@ -90,13 +82,11 @@ USING (
     AND m.role = 'company_admin'
   )
 );
-
 -- RLS for announcement_reads: SELECT - users can see their own reads
 CREATE POLICY "Users can view their own announcement reads"
 ON public.announcement_reads
 FOR SELECT
 USING (user_id = auth.uid());
-
 -- RLS for announcement_reads: INSERT - users can acknowledge announcements
 CREATE POLICY "Users can acknowledge announcements"
 ON public.announcement_reads
@@ -110,7 +100,6 @@ WITH CHECK (
     AND m.status = 'active'
   )
 );
-
 -- Trigger for updated_at
 CREATE TRIGGER update_announcements_updated_at
 BEFORE UPDATE ON public.announcements

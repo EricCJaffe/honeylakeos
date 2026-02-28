@@ -15,10 +15,8 @@ CREATE TABLE public.company_backups (
   restored_at TIMESTAMPTZ,
   restored_by UUID
 );
-
 -- Enable RLS
 ALTER TABLE public.company_backups ENABLE ROW LEVEL SECURITY;
-
 -- RLS policies - Company admins only
 CREATE POLICY "Company admins can view backups"
   ON public.company_backups
@@ -31,7 +29,6 @@ CREATE POLICY "Company admins can view backups"
         AND m.role = 'company_admin'
     )
   );
-
 CREATE POLICY "Company admins can create backups"
   ON public.company_backups
   FOR INSERT
@@ -43,7 +40,6 @@ CREATE POLICY "Company admins can create backups"
         AND m.role = 'company_admin'
     )
   );
-
 CREATE POLICY "Company admins can update backups"
   ON public.company_backups
   FOR UPDATE
@@ -55,11 +51,9 @@ CREATE POLICY "Company admins can update backups"
         AND m.role = 'company_admin'
     )
   );
-
 -- Index for listing backups
 CREATE INDEX idx_company_backups_company_created 
   ON public.company_backups(company_id, created_at DESC);
-
 -- Function to check if manual backup is allowed (rate limiting)
 CREATE OR REPLACE FUNCTION public.can_create_manual_backup(p_company_id UUID)
 RETURNS BOOLEAN
@@ -76,7 +70,6 @@ AS $$
       AND status IN ('pending', 'in_progress', 'completed')
   );
 $$;
-
 -- Function to get backup stats for a company
 CREATE OR REPLACE FUNCTION public.get_backup_stats(p_company_id UUID)
 RETURNS TABLE(
@@ -98,18 +91,10 @@ AS $$
   FROM company_backups
   WHERE company_id = p_company_id;
 $$;
-
 -- Create storage bucket for backups
-DO $$
-BEGIN
-  INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-  VALUES ('company-backups', 'company-backups', false, 104857600, ARRAY['application/json'])
-  ON CONFLICT (id) DO NOTHING;
-EXCEPTION
-  WHEN insufficient_privilege THEN
-    RAISE NOTICE 'Skipping company-backups bucket creation due to insufficient privilege in this environment.';
-END $$;
-
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('company-backups', 'company-backups', false, 104857600, ARRAY['application/json'])
+ON CONFLICT (id) DO NOTHING;
 -- Storage policies for backups bucket
 CREATE POLICY "Company admins can upload backups"
   ON storage.objects
@@ -124,7 +109,6 @@ CREATE POLICY "Company admins can upload backups"
         AND m.role = 'company_admin'
     )
   );
-
 CREATE POLICY "Company admins can read backups"
   ON storage.objects
   FOR SELECT
@@ -137,7 +121,6 @@ CREATE POLICY "Company admins can read backups"
         AND m.role = 'company_admin'
     )
   );
-
 CREATE POLICY "Company admins can delete backups"
   ON storage.objects
   FOR DELETE

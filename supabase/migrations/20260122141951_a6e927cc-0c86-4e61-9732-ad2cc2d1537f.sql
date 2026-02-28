@@ -9,22 +9,18 @@ DO $$ BEGIN
   CREATE TYPE public.health_check_cadence AS ENUM ('ad_hoc', 'monthly', 'quarterly', 'annually');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 DO $$ BEGIN
   CREATE TYPE public.health_check_response_type AS ENUM ('scale_1_5', 'scale_1_10', 'yes_no', 'text', 'number');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 DO $$ BEGIN
   CREATE TYPE public.scorecard_metric_source AS ENUM ('health_check', 'goals', 'tasks');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 DO $$ BEGIN
   CREATE TYPE public.scorecard_subject_type AS ENUM ('leader', 'organization', 'team', 'none');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- B) Health Check Templates
 -- ============================================================
 
@@ -39,10 +35,8 @@ CREATE TABLE IF NOT EXISTS public.coaching_health_check_templates (
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT unique_template_per_org UNIQUE (coaching_org_id, name, subject_type)
 );
-
 CREATE INDEX IF NOT EXISTS idx_health_check_templates_org 
 ON public.coaching_health_check_templates (coaching_org_id, status);
-
 CREATE TABLE IF NOT EXISTS public.coaching_health_check_template_questions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   template_id uuid NOT NULL REFERENCES public.coaching_health_check_templates(id) ON DELETE CASCADE,
@@ -54,10 +48,8 @@ CREATE TABLE IF NOT EXISTS public.coaching_health_check_template_questions (
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT unique_question_order UNIQUE (template_id, question_order)
 );
-
 CREATE INDEX IF NOT EXISTS idx_health_check_template_questions_template 
 ON public.coaching_health_check_template_questions (template_id, question_order);
-
 -- C) Retrofit coaching_health_checks
 -- ============================================================
 
@@ -68,7 +60,6 @@ ADD COLUMN IF NOT EXISTS period_end date,
 ADD COLUMN IF NOT EXISTS submitted_by_user_id uuid,
 ADD COLUMN IF NOT EXISTS submitted_at timestamptz,
 ADD COLUMN IF NOT EXISTS reviewed_by_user_id uuid REFERENCES public.profiles(user_id) ON DELETE SET NULL;
-
 -- Update reviewed_at if not exists (it might already exist as reviewed_at)
 DO $$
 BEGIN
@@ -81,13 +72,10 @@ BEGIN
     ALTER TABLE public.coaching_health_checks ADD COLUMN overall_score numeric;
   END IF;
 END $$;
-
 CREATE INDEX IF NOT EXISTS idx_health_checks_template 
 ON public.coaching_health_checks (template_id);
-
 CREATE INDEX IF NOT EXISTS idx_health_checks_period 
 ON public.coaching_health_checks (coaching_engagement_id, period_start);
-
 -- D) Retrofit coaching_health_check_responses
 -- ============================================================
 
@@ -96,17 +84,14 @@ ADD COLUMN IF NOT EXISTS template_question_id uuid REFERENCES public.coaching_he
 ADD COLUMN IF NOT EXISTS numeric_value numeric,
 ADD COLUMN IF NOT EXISTS text_value text,
 ADD COLUMN IF NOT EXISTS bool_value boolean;
-
 CREATE INDEX IF NOT EXISTS idx_health_check_responses_question 
 ON public.coaching_health_check_responses (template_question_id);
-
 -- E) Retrofit coaching_goals
 -- ============================================================
 
 ALTER TABLE public.coaching_goals
 ADD COLUMN IF NOT EXISTS completed_at timestamptz,
 ADD COLUMN IF NOT EXISTS completed_by_user_id uuid;
-
 -- F) Scorecards
 -- ============================================================
 
@@ -119,10 +104,8 @@ CREATE TABLE IF NOT EXISTS public.coaching_scorecards (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-
 CREATE INDEX IF NOT EXISTS idx_scorecards_org 
 ON public.coaching_scorecards (coaching_org_id, status);
-
 CREATE TABLE IF NOT EXISTS public.coaching_scorecard_metrics (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   scorecard_id uuid NOT NULL REFERENCES public.coaching_scorecards(id) ON DELETE CASCADE,
@@ -133,10 +116,8 @@ CREATE TABLE IF NOT EXISTS public.coaching_scorecard_metrics (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-
 CREATE INDEX IF NOT EXISTS idx_scorecard_metrics_scorecard 
 ON public.coaching_scorecard_metrics (scorecard_id);
-
 -- G) Triggers
 -- ============================================================
 
@@ -144,22 +125,18 @@ DROP TRIGGER IF EXISTS set_updated_at_coaching_health_check_templates ON public.
 CREATE TRIGGER set_updated_at_coaching_health_check_templates
   BEFORE UPDATE ON public.coaching_health_check_templates
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 DROP TRIGGER IF EXISTS set_updated_at_coaching_health_check_template_questions ON public.coaching_health_check_template_questions;
 CREATE TRIGGER set_updated_at_coaching_health_check_template_questions
   BEFORE UPDATE ON public.coaching_health_check_template_questions
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 DROP TRIGGER IF EXISTS set_updated_at_coaching_scorecards ON public.coaching_scorecards;
 CREATE TRIGGER set_updated_at_coaching_scorecards
   BEFORE UPDATE ON public.coaching_scorecards
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 DROP TRIGGER IF EXISTS set_updated_at_coaching_scorecard_metrics ON public.coaching_scorecard_metrics;
 CREATE TRIGGER set_updated_at_coaching_scorecard_metrics
   BEFORE UPDATE ON public.coaching_scorecard_metrics
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 -- Auto-calculate overall_score on health check update
 CREATE OR REPLACE FUNCTION public.fn_calculate_health_check_score()
 RETURNS trigger
@@ -184,12 +161,10 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
 DROP TRIGGER IF EXISTS trg_update_health_check_score ON public.coaching_health_check_responses;
 CREATE TRIGGER trg_update_health_check_score
   AFTER INSERT OR UPDATE OR DELETE ON public.coaching_health_check_responses
   FOR EACH ROW EXECUTE FUNCTION public.fn_calculate_health_check_score();
-
 -- H) Views for Trend Analysis
 -- ============================================================
 
@@ -207,7 +182,6 @@ JOIN public.coaching_health_check_responses r ON r.coaching_health_check_id = hc
 WHERE r.numeric_value IS NOT NULL
   AND hc.status = 'submitted'
 GROUP BY hc.coaching_engagement_id, hc.template_id, r.template_question_id, hc.period_start;
-
 -- Overall score per health check
 CREATE OR REPLACE VIEW public.v_health_check_subject_overall_score AS
 SELECT 
@@ -220,7 +194,6 @@ SELECT
 FROM public.coaching_health_checks hc
 WHERE hc.status = 'submitted'
   AND hc.overall_score IS NOT NULL;
-
 -- Trend delta (current vs prior period)
 CREATE OR REPLACE VIEW public.v_health_check_trend_delta AS
 WITH ranked_scores AS (
@@ -249,7 +222,6 @@ LEFT JOIN ranked_scores prev
   AND prev.subject_type = curr.subject_type 
   AND prev.rn = curr.rn + 1
 WHERE curr.rn = 1;
-
 -- Goal completion rate
 CREATE OR REPLACE VIEW public.v_goal_completion_rate AS
 SELECT 
@@ -266,7 +238,6 @@ SELECT
 FROM public.coaching_goals cg
 JOIN public.coaching_plans cp ON cp.id = cg.coaching_plan_id
 GROUP BY cg.coaching_plan_id, cp.coaching_engagement_id, DATE_TRUNC('month', cg.created_at);
-
 -- Org-level scorecard rollup
 CREATE OR REPLACE VIEW public.v_org_scorecard_rollup AS
 SELECT 
@@ -302,7 +273,6 @@ WHERE hc.subject_type = 'leader'
   AND hc.status = 'submitted'
   AND hc.overall_score IS NOT NULL
 GROUP BY co.id, DATE_TRUNC('quarter', hc.period_start);
-
 -- I) RLS Policies
 -- ============================================================
 
@@ -310,7 +280,6 @@ ALTER TABLE public.coaching_health_check_templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coaching_health_check_template_questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coaching_scorecards ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coaching_scorecard_metrics ENABLE ROW LEVEL SECURITY;
-
 -- Health Check Templates
 CREATE POLICY "hc_templates_select"
 ON public.coaching_health_check_templates FOR SELECT
@@ -327,7 +296,6 @@ USING (
       AND public.fn_is_company_member(auth.uid(), coe.member_company_id)
   )
 );
-
 CREATE POLICY "hc_templates_insert"
 ON public.coaching_health_check_templates FOR INSERT
 TO authenticated
@@ -335,7 +303,6 @@ WITH CHECK (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 CREATE POLICY "hc_templates_update"
 ON public.coaching_health_check_templates FOR UPDATE
 TO authenticated
@@ -347,7 +314,6 @@ WITH CHECK (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 CREATE POLICY "hc_templates_delete"
 ON public.coaching_health_check_templates FOR DELETE
 TO authenticated
@@ -355,7 +321,6 @@ USING (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 -- Template Questions (follow template access)
 CREATE POLICY "hc_template_questions_select"
 ON public.coaching_health_check_template_questions FOR SELECT
@@ -378,7 +343,6 @@ USING (
       )
   )
 );
-
 CREATE POLICY "hc_template_questions_insert"
 ON public.coaching_health_check_template_questions FOR INSERT
 TO authenticated
@@ -392,7 +356,6 @@ WITH CHECK (
       )
   )
 );
-
 CREATE POLICY "hc_template_questions_update"
 ON public.coaching_health_check_template_questions FOR UPDATE
 TO authenticated
@@ -416,7 +379,6 @@ WITH CHECK (
       )
   )
 );
-
 CREATE POLICY "hc_template_questions_delete"
 ON public.coaching_health_check_template_questions FOR DELETE
 TO authenticated
@@ -430,7 +392,6 @@ USING (
       )
   )
 );
-
 -- Scorecards
 CREATE POLICY "scorecards_select"
 ON public.coaching_scorecards FOR SELECT
@@ -441,7 +402,6 @@ USING (
   OR public.fn_is_coaching_manager(auth.uid(), coaching_org_id)
   OR public.fn_is_coach(auth.uid(), coaching_org_id)
 );
-
 CREATE POLICY "scorecards_insert"
 ON public.coaching_scorecards FOR INSERT
 TO authenticated
@@ -449,7 +409,6 @@ WITH CHECK (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 CREATE POLICY "scorecards_update"
 ON public.coaching_scorecards FOR UPDATE
 TO authenticated
@@ -461,7 +420,6 @@ WITH CHECK (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 CREATE POLICY "scorecards_delete"
 ON public.coaching_scorecards FOR DELETE
 TO authenticated
@@ -469,7 +427,6 @@ USING (
   public.fn_is_site_admin(auth.uid())
   OR public.fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
 );
-
 -- Scorecard Metrics
 CREATE POLICY "scorecard_metrics_select"
 ON public.coaching_scorecard_metrics FOR SELECT
@@ -486,7 +443,6 @@ USING (
       )
   )
 );
-
 CREATE POLICY "scorecard_metrics_insert"
 ON public.coaching_scorecard_metrics FOR INSERT
 TO authenticated
@@ -500,7 +456,6 @@ WITH CHECK (
       )
   )
 );
-
 CREATE POLICY "scorecard_metrics_update"
 ON public.coaching_scorecard_metrics FOR UPDATE
 TO authenticated
@@ -524,7 +479,6 @@ WITH CHECK (
       )
   )
 );
-
 CREATE POLICY "scorecard_metrics_delete"
 ON public.coaching_scorecard_metrics FOR DELETE
 TO authenticated

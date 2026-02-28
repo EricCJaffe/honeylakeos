@@ -1,19 +1,6 @@
-
 -- =====================================================
 -- GENERIC COACHING PROGRAM PACK - COMPLETE SEED DATA
 -- =====================================================
-
--- Ensure referenced pack exists for deterministic FK-safe seeding.
-INSERT INTO coaching_program_packs (id, key, name, version, description, is_active)
-VALUES (
-  'cc93b66a-6f8f-4b85-96e5-3aab2127ec44',
-  'generic-seed-pack',
-  'Generic Seed Pack',
-  '1.0',
-  'Seed pack used by migration 20260123144213',
-  true
-)
-ON CONFLICT (id) DO NOTHING;
 
 -- =====================================================
 -- 1. ADD MISSING TERMINOLOGY
@@ -24,7 +11,6 @@ VALUES
   ('cc93b66a-6f8f-4b85-96e5-3aab2127ec44', 'onboarding_label', 'Onboarding'),
   ('cc93b66a-6f8f-4b85-96e5-3aab2127ec44', 'review_label', 'Review')
 ON CONFLICT DO NOTHING;
-
 -- =====================================================
 -- 2. SEED LIFECYCLE WORKFLOWS WITH STEPS
 -- =====================================================
@@ -39,7 +25,6 @@ VALUES (
   'Master lifecycle workflow tracking engagement from creation to completion. Scope: engagement. Owner: org_admin.',
   'active'
 ) ON CONFLICT (id) DO NOTHING;
-
 INSERT INTO coaching_program_pack_workflow_steps (pack_workflow_template_id, step_order, step_type, title, description, default_assignee)
 VALUES 
   ('a0000001-0000-0000-0000-000000000001', 1, 'milestone', 'Engagement Created', 'Initial engagement record created', 'org_admin'),
@@ -49,7 +34,6 @@ VALUES
   ('a0000001-0000-0000-0000-000000000001', 5, 'milestone', 'Periodic Review', 'Regular review cadence in progress', 'coach'),
   ('a0000001-0000-0000-0000-000000000001', 6, 'milestone', 'Engagement Ended', 'Engagement concluded and access revoked', 'org_admin')
 ON CONFLICT DO NOTHING;
-
 -- generic_member_onboarding
 INSERT INTO coaching_program_pack_workflow_templates (id, pack_id, name, workflow_type, description, status)
 VALUES (
@@ -60,14 +44,12 @@ VALUES (
   'Member onboarding workflow including agreement and initial goals. Scope: engagement. Owner: member (company_admin).',
   'active'
 ) ON CONFLICT (id) DO NOTHING;
-
 INSERT INTO coaching_program_pack_workflow_steps (pack_workflow_template_id, step_order, step_type, title, description, default_assignee)
 VALUES 
   ('a0000002-0000-0000-0000-000000000001', 1, 'form', 'Member Info & Agreement', 'Complete member covenant and info form (generic_key_leader_member_covenant)', 'member'),
   ('a0000002-0000-0000-0000-000000000001', 2, 'form', 'Initial Goals / Priorities', 'Define initial goals and priorities (generic_annual_goals_portfolio)', 'member'),
   ('a0000002-0000-0000-0000-000000000001', 3, 'task', 'Orientation Complete', 'Mark orientation as complete', 'member')
 ON CONFLICT DO NOTHING;
-
 -- generic_coach_assignment
 INSERT INTO coaching_program_pack_workflow_templates (id, pack_id, name, workflow_type, description, status)
 VALUES (
@@ -78,14 +60,12 @@ VALUES (
   'Workflow for assigning a coach to an engagement. Scope: engagement. Owner: org_admin/manager.',
   'active'
 ) ON CONFLICT (id) DO NOTHING;
-
 INSERT INTO coaching_program_pack_workflow_steps (pack_workflow_template_id, step_order, step_type, title, description, default_assignee)
 VALUES 
   ('a0000003-0000-0000-0000-000000000001', 1, 'task', 'Coach Selected', 'Select appropriate coach for engagement', 'org_admin'),
   ('a0000003-0000-0000-0000-000000000001', 2, 'task', 'Coach Assigned', 'Formally assign coach to engagement', 'org_admin'),
   ('a0000003-0000-0000-0000-000000000001', 3, 'meeting', 'Intro Scheduled', 'Schedule introduction meeting between coach and member', 'coach')
 ON CONFLICT DO NOTHING;
-
 -- generic_coaching_cadence (repeatable)
 INSERT INTO coaching_program_pack_workflow_templates (id, pack_id, name, workflow_type, description, status)
 VALUES (
@@ -96,7 +76,6 @@ VALUES (
   'Repeatable coaching session workflow. Scope: engagement. Owner: coach. Creates: calendar events, tasks, notes.',
   'active'
 ) ON CONFLICT (id) DO NOTHING;
-
 INSERT INTO coaching_program_pack_workflow_steps (pack_workflow_template_id, step_order, step_type, title, description, default_assignee)
 VALUES 
   ('a0000004-0000-0000-0000-000000000001', 1, 'task', 'Pre-Meeting Prep', 'Coach prepares for upcoming session', 'coach'),
@@ -104,7 +83,6 @@ VALUES
   ('a0000004-0000-0000-0000-000000000001', 3, 'task', 'Commitments Captured', 'Document commitments and action items', 'coach'),
   ('a0000004-0000-0000-0000-000000000001', 4, 'task', 'Follow-Up', 'Complete follow-up tasks from session', 'coach')
 ON CONFLICT DO NOTHING;
-
 -- generic_periodic_review
 INSERT INTO coaching_program_pack_workflow_templates (id, pack_id, name, workflow_type, description, status)
 VALUES (
@@ -115,14 +93,12 @@ VALUES (
   'Periodic progress review workflow. Scope: engagement. Owner: coach/member.',
   'active'
 ) ON CONFLICT (id) DO NOTHING;
-
 INSERT INTO coaching_program_pack_workflow_steps (pack_workflow_template_id, step_order, step_type, title, description, default_assignee)
 VALUES 
   ('a0000005-0000-0000-0000-000000000001', 1, 'task', 'Progress Review', 'Review progress against goals and commitments', 'coach'),
   ('a0000005-0000-0000-0000-000000000001', 2, 'form', 'Health Check', 'Complete health check assessment (generic_key_leader_briefing)', 'member'),
   ('a0000005-0000-0000-0000-000000000001', 3, 'task', 'Updated Priorities', 'Update priorities based on review findings', 'member')
 ON CONFLICT DO NOTHING;
-
 -- =====================================================
 -- 3. ADD MISSING DASHBOARD WIDGETS
 -- =====================================================
@@ -138,7 +114,6 @@ VALUES (
   'coach_assignments',
   '{}'::jsonb
 ) ON CONFLICT DO NOTHING;
-
 -- org_admin: engagement status breakdown
 INSERT INTO coaching_program_pack_dashboard_widgets (pack_id, dashboard_type, widget_key, widget_order, description, data_source, config_json)
 VALUES (
@@ -150,7 +125,6 @@ VALUES (
   'coaching_engagements',
   '{}'::jsonb
 ) ON CONFLICT DO NOTHING;
-
 -- coach: active engagements
 INSERT INTO coaching_program_pack_dashboard_widgets (pack_id, dashboard_type, widget_key, widget_order, description, data_source, config_json)
 VALUES (
@@ -162,7 +136,6 @@ VALUES (
   'coaching_engagements',
   '{}'::jsonb
 ) ON CONFLICT DO NOTHING;
-
 -- coach: overdue commitments
 INSERT INTO coaching_program_pack_dashboard_widgets (pack_id, dashboard_type, widget_key, widget_order, description, data_source, config_json)
 VALUES (
@@ -174,7 +147,6 @@ VALUES (
   'tasks',
   '{"filter": "overdue"}'::jsonb
 ) ON CONFLICT DO NOTHING;
-
 -- coach: inactive engagement alerts
 INSERT INTO coaching_program_pack_dashboard_widgets (pack_id, dashboard_type, widget_key, widget_order, description, data_source, config_json)
 VALUES (
@@ -186,7 +158,6 @@ VALUES (
   'coaching_engagements',
   '{"filter": "inactive"}'::jsonb
 ) ON CONFLICT DO NOTHING;
-
 -- member: assigned coach
 INSERT INTO coaching_program_pack_dashboard_widgets (pack_id, dashboard_type, widget_key, widget_order, description, data_source, config_json)
 VALUES (
@@ -198,7 +169,6 @@ VALUES (
   'coach_assignments',
   '{}'::jsonb
 ) ON CONFLICT DO NOTHING;
-
 -- member: open commitments
 INSERT INTO coaching_program_pack_dashboard_widgets (pack_id, dashboard_type, widget_key, widget_order, description, data_source, config_json)
 VALUES (
@@ -210,7 +180,6 @@ VALUES (
   'tasks',
   '{"filter": "open"}'::jsonb
 ) ON CONFLICT DO NOTHING;
-
 -- member: recent notes
 INSERT INTO coaching_program_pack_dashboard_widgets (pack_id, dashboard_type, widget_key, widget_order, description, data_source, config_json)
 VALUES (

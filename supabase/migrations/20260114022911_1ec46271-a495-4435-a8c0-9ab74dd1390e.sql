@@ -23,6 +23,5 @@ AS $$
     AND c.table_name IN ('folders', 'notes', 'documents', 'entity_acl', 'memberships', 'profiles')
   ORDER BY c.table_name, c.ordinal_position;
 $$;
-
 -- Grant execute to authenticated users only
 GRANT EXECUTE ON FUNCTION public.get_table_columns() TO authenticated;

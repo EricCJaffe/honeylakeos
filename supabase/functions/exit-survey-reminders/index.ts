@@ -25,6 +25,17 @@ type AlertRow = {
   } | null;
 };
 
+const REDACTED_PATIENT = "Withheld (PHI-safe mode)";
+const REDACTED_QUESTION = "Question details redacted. Review in dashboard.";
+
+function parseEmailList(value: string | null | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter((email) => email.length > 3 && email.includes("@"));
+}
+
 function getPatientName(submission?: AlertRow["exit_survey_submissions"]) {
   if (!submission) return "Anonymous";
   const first = submission.patient_first_name ?? "";
@@ -62,6 +73,14 @@ serve(async (req: Request): Promise<Response> => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const resend = new Resend(resendApiKey);
+    const { data: settingsRows } = await supabase
+      .from("exit_survey_settings")
+      .select("key, value")
+      .eq("company_id", company_id)
+      .in("key", ["phi_safe_email_mode", "reminder_recipient_emails"]);
+    const settingsMap = new Map((settingsRows || []).map((row) => [row.key, row.value]));
+    const phiSafeMode = (settingsMap.get("phi_safe_email_mode") ?? "false") === "true";
+    const reminderRecipientOverrides = parseEmailList(settingsMap.get("reminder_recipient_emails"));
 
     const now = new Date();
     const reminderThresholdHours = 48;
@@ -102,7 +121,12 @@ serve(async (req: Request): Promise<Response> => {
       if (ageHours < reminderThresholdHours) continue;
 
       const ownerEmail = alert.exit_survey_questions?.owner_email || adminEmail;
-      if (!ownerEmail) continue;
+      const recipients = reminderRecipientOverrides.length
+        ? reminderRecipientOverrides
+        : ownerEmail
+          ? [ownerEmail]
+          : [];
+      if (!recipients.length) continue;
 
       // Check last reminder comment
       const { data: commentData } = await supabase
@@ -121,13 +145,14 @@ serve(async (req: Request): Promise<Response> => {
         }
       }
 
-      const patientName = getPatientName(alert.exit_survey_submissions);
+      const patientName = phiSafeMode ? REDACTED_PATIENT : getPatientName(alert.exit_survey_submissions);
+      const questionText = phiSafeMode ? REDACTED_QUESTION : (alert.exit_survey_questions?.text ?? "Question");
       const link = appUrl ? `${appUrl}/app/exit-survey/submissions/${alert.submission_id}` : "#";
 
       const html = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; color:#111;">
           <h2 style="margin:0 0 8px;">Reminder: Exit Survey Follow-Up Needed</h2>
-          <p style="margin:0 0 12px;">Question: <strong>${alert.exit_survey_questions?.text ?? "Question"}</strong></p>
+          <p style="margin:0 0 12px;">Question: <strong>${questionText}</strong></p>
           <p style="margin:0 0 12px;">Score: <strong>${alert.score}</strong></p>
           <p style="margin:0 0 12px;">Patient: <strong>${patientName}</strong></p>
           <a href="${link}" style="color:#0f766e;">View response</a>
@@ -137,19 +162,19 @@ serve(async (req: Request): Promise<Response> => {
 
       await resend.emails.send({
         from: emailFrom,
-        to: [ownerEmail],
+        to: recipients,
         subject: "Reminder: Exit Survey Follow-Up Needed",
         html,
       });
 
       await supabase.from("exit_survey_alert_comments").insert({
         alert_id: alert.id,
-        comment: `[Reminder] Follow-up reminder sent to ${ownerEmail} at ${now.toISOString()}`,
+        comment: `[Reminder] Follow-up reminder sent to ${recipients.join(", ")} at ${now.toISOString()}`,
         author_id: null,
         author_name: "System",
       });
 
-      results[alert.id] = { reminded: true, ownerEmail };
+      results[alert.id] = { reminded: true, recipients };
     }
 
     return new Response(

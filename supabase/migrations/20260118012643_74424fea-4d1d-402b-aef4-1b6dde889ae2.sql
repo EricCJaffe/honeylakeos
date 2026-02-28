@@ -10,20 +10,16 @@ CREATE TABLE IF NOT EXISTS public.coach_organizations (
   updated_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE(coach_company_id, client_company_id)
 );
-
 -- Extend reports visibility constraint to include coach_shared
 ALTER TABLE public.reports DROP CONSTRAINT IF EXISTS reports_visibility_check;
 ALTER TABLE public.reports ADD CONSTRAINT reports_visibility_check 
   CHECK (visibility IN ('personal', 'company_shared', 'company_restricted', 'coach_shared'));
-
 -- Enable RLS
 ALTER TABLE public.coach_organizations ENABLE ROW LEVEL SECURITY;
-
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_coach_organizations_coach ON public.coach_organizations(coach_company_id);
 CREATE INDEX IF NOT EXISTS idx_coach_organizations_client ON public.coach_organizations(client_company_id);
 CREATE INDEX IF NOT EXISTS idx_coach_organizations_status ON public.coach_organizations(status);
-
 -- RLS: Company admins of the client company can manage coach relationships
 CREATE POLICY "Client admins can manage coach relationships"
 ON public.coach_organizations FOR ALL
@@ -36,7 +32,6 @@ USING (
     AND m.role = 'company_admin'
   )
 );
-
 -- RLS: Coach company members can view their coach relationships
 CREATE POLICY "Coach company members can view relationships"
 ON public.coach_organizations FOR SELECT
@@ -48,7 +43,6 @@ USING (
     AND m.status = 'active'
   )
 );
-
 -- Create a security definer function to check coach access
 CREATE OR REPLACE FUNCTION public.has_coach_access(
   _user_id uuid,
@@ -70,7 +64,6 @@ AS $$
     AND m.status = 'active'
   )
 $$;
-
 -- Create a function to get coach client metrics (aggregate only, no PII)
 CREATE OR REPLACE FUNCTION public.get_coach_client_metrics(_client_company_id uuid)
 RETURNS jsonb
@@ -132,7 +125,6 @@ BEGIN
   RETURN result;
 END;
 $$;
-
 -- Update trigger for coach_organizations
 CREATE OR REPLACE FUNCTION public.update_coach_organizations_updated_at()
 RETURNS TRIGGER AS $$
@@ -141,7 +133,6 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY INVOKER SET search_path = public;
-
 DROP TRIGGER IF EXISTS update_coach_organizations_updated_at ON public.coach_organizations;
 CREATE TRIGGER update_coach_organizations_updated_at
 BEFORE UPDATE ON public.coach_organizations

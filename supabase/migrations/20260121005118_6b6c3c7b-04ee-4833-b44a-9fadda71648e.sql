@@ -4,14 +4,11 @@
 -- Drop old constraints
 ALTER TABLE public.entity_links DROP CONSTRAINT IF EXISTS valid_from_type;
 ALTER TABLE public.entity_links DROP CONSTRAINT IF EXISTS valid_to_type;
-
 -- Add updated constraints with all entity types
 ALTER TABLE public.entity_links ADD CONSTRAINT valid_from_type 
   CHECK (from_type IN ('task', 'project', 'note', 'document', 'event', 'crm_client', 'external_contact', 'coach_profile', 'sales_opportunity', 'donation'));
-
 ALTER TABLE public.entity_links ADD CONSTRAINT valid_to_type 
   CHECK (to_type IN ('task', 'project', 'note', 'document', 'event', 'crm_client', 'external_contact', 'coach_profile', 'sales_opportunity', 'donation'));
-
 -- Update the helper function to support all entity types
 CREATE OR REPLACE FUNCTION public.get_entity_company_id(p_entity_type text, p_entity_id uuid)
 RETURNS uuid
@@ -50,7 +47,6 @@ BEGIN
   RETURN v_company_id;
 END;
 $$;
-
 -- Update create_entity_link to provide better error messages distinguishing "not found" vs "access denied"
 CREATE OR REPLACE FUNCTION public.create_entity_link(
   p_company_id uuid,

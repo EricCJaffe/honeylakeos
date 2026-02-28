@@ -13,30 +13,24 @@ CREATE TABLE public.employees (
   -- Validation constraint using trigger pattern (avoiding CHECK with mutable expressions)
   CONSTRAINT employees_status_check CHECK (status IN ('active', 'inactive'))
 );
-
 -- 2) Add unique partial indexes (unique constraints with WHERE clause)
 CREATE UNIQUE INDEX employees_company_email_unique 
 ON public.employees (company_id, email) 
 WHERE email IS NOT NULL;
-
 CREATE UNIQUE INDEX employees_company_user_unique 
 ON public.employees (company_id, user_id) 
 WHERE user_id IS NOT NULL;
-
 -- 3) Add employee_id column to memberships
 ALTER TABLE public.memberships 
 ADD COLUMN employee_id uuid NULL REFERENCES public.employees(id);
-
 -- 4) RLS policies on employees
 ALTER TABLE public.employees ENABLE ROW LEVEL SECURITY;
-
 -- SELECT: company members can view employees in their company
 CREATE POLICY "employees_select_company_member"
 ON public.employees
 FOR SELECT
 TO authenticated
 USING (is_company_member(company_id));
-
 -- INSERT: company_admin, site_admin, or super_admin
 CREATE POLICY "employees_insert_admin"
 ON public.employees
@@ -47,7 +41,6 @@ WITH CHECK (
   is_site_admin((SELECT site_id FROM public.companies WHERE id = employees.company_id)) OR
   is_super_admin()
 );
-
 -- UPDATE: company_admin, site_admin, or super_admin
 CREATE POLICY "employees_update_admin"
 ON public.employees
@@ -58,7 +51,6 @@ USING (
   is_site_admin((SELECT site_id FROM public.companies WHERE id = employees.company_id)) OR
   is_super_admin()
 );
-
 -- DELETE: company_admin, site_admin, or super_admin
 CREATE POLICY "employees_delete_admin"
 ON public.employees
@@ -69,7 +61,6 @@ USING (
   is_site_admin((SELECT site_id FROM public.companies WHERE id = employees.company_id)) OR
   is_super_admin()
 );
-
 -- 5) Function to auto-link employee on profile upsert
 CREATE OR REPLACE FUNCTION public.link_employee_on_profile_upsert()
 RETURNS trigger
@@ -97,7 +88,6 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
 -- Trigger on profiles after insert or update of email
 CREATE TRIGGER trigger_link_employee_on_profile_upsert
 AFTER INSERT OR UPDATE OF email ON public.profiles

@@ -1,4 +1,3 @@
-
 -- Add milestone step type
 DO $$
 BEGIN

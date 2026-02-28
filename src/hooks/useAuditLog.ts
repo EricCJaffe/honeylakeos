@@ -287,7 +287,13 @@ export type AuditAction =
   | "exit_survey.automation_test_triggered"
   | "exit_survey.alert_status_updated"
   | "exit_survey.alert_assigned"
-  | "exit_survey.alert_comment_added";
+  | "exit_survey.alert_comment_added"
+  | "exit_survey.submission_viewed"
+  | "exit_survey.submissions_viewed"
+  | "exit_survey.alerts_viewed"
+  | "exit_survey.trends_viewed"
+  | "exit_survey.patient_lookup_searched"
+  | "exit_survey.retention_scan_requested";
 
 export type EntityType =
   | "employee"

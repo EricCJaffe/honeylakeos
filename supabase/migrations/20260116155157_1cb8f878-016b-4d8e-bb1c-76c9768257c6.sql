@@ -9,35 +9,28 @@ CREATE TABLE public.company_terminology (
   updated_by UUID,
   UNIQUE(company_id, term_key)
 );
-
 -- Enable RLS
 ALTER TABLE public.company_terminology ENABLE ROW LEVEL SECURITY;
-
 -- Read: all company members
 CREATE POLICY "Company members can view terminology"
 ON public.company_terminology
 FOR SELECT
 USING (is_company_member(company_id));
-
 -- Write: Company Admin only
 CREATE POLICY "Company admins can insert terminology"
 ON public.company_terminology
 FOR INSERT
 WITH CHECK (is_company_admin(company_id));
-
 CREATE POLICY "Company admins can update terminology"
 ON public.company_terminology
 FOR UPDATE
 USING (is_company_admin(company_id));
-
 CREATE POLICY "Company admins can delete terminology"
 ON public.company_terminology
 FOR DELETE
 USING (is_company_admin(company_id));
-
 -- Create index for fast lookups
 CREATE INDEX idx_company_terminology_company_id ON public.company_terminology(company_id);
-
 -- Add trigger for updated_at
 CREATE TRIGGER update_company_terminology_updated_at
 BEFORE UPDATE ON public.company_terminology

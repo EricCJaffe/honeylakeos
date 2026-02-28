@@ -6,10 +6,8 @@ CREATE TABLE IF NOT EXISTS public.location_members (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   PRIMARY KEY (location_id, user_id)
 );
-
 -- Enable RLS
 ALTER TABLE public.location_members ENABLE ROW LEVEL SECURITY;
-
 -- Create is_location_manager function (mirrors is_group_manager)
 CREATE OR REPLACE FUNCTION public.is_location_manager(p_location_id uuid, p_user_id uuid)
 RETURNS boolean
@@ -26,7 +24,6 @@ AS $$
       AND role = 'manager'
   )
 $$;
-
 -- Create can_delete_location_member function (mirrors can_delete_group_member)
 CREATE OR REPLACE FUNCTION public.can_delete_location_member(p_location_id uuid, p_target_user_id uuid)
 RETURNS boolean
@@ -87,7 +84,6 @@ BEGIN
   RETURN TRUE;
 END;
 $$;
-
 -- Create can_update_location_member_role function
 CREATE OR REPLACE FUNCTION public.can_update_location_member_role(
   p_location_id uuid,
@@ -134,7 +130,6 @@ BEGIN
   RETURN TRUE;
 END;
 $$;
-
 -- RLS Policies
 
 -- SELECT: company members can view location members
@@ -144,7 +139,6 @@ FOR SELECT
 USING (
   is_company_member((SELECT l.company_id FROM public.locations l WHERE l.id = location_members.location_id))
 );
-
 -- INSERT: company admin OR location manager can add members
 CREATE POLICY "location_members_insert_admin_or_manager"
 ON public.location_members
@@ -153,20 +147,17 @@ WITH CHECK (
   is_company_admin((SELECT l.company_id FROM public.locations l WHERE l.id = location_members.location_id))
   OR is_location_manager(location_id, auth.uid())
 );
-
 -- DELETE: use guard function (mirrors groups)
 CREATE POLICY "location_members_delete_guard"
 ON public.location_members
 FOR DELETE
 USING (can_delete_location_member(location_id, user_id));
-
 -- UPDATE: use guard function for role changes
 CREATE POLICY "location_members_update_role_guard"
 ON public.location_members
 FOR UPDATE
 USING (can_update_location_member_role(location_id, user_id, role))
 WITH CHECK (can_update_location_member_role(location_id, user_id, role));
-
 -- Add UPDATE and DELETE policies to locations table
 CREATE POLICY "locations_update_admins"
 ON public.locations
@@ -175,7 +166,6 @@ USING (
   is_company_admin(company_id) 
   OR is_site_admin((SELECT c.site_id FROM public.companies c WHERE c.id = locations.company_id))
 );
-
 CREATE POLICY "locations_delete_admins"
 ON public.locations
 FOR DELETE

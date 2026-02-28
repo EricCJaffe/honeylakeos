@@ -28,7 +28,8 @@
 - **Fix**: re-store integration keys via `manage-integration-secret`; set missing secrets; retry with valid JWT for finance calls.
 
 ## 4. Exit Survey Scheduler (Weekly + Reminders)
-- **Goal**: automate `exit-survey-weekly-digest` and `exit-survey-reminders` for all companies with active exit-survey questions.
+- **Current policy**: cron is intentionally disabled until go-live. Use manual tests from Settings or direct function invokes.
+- **Goal**: automate `exit-survey-weekly-digest` and `exit-survey-reminders` for all companies with active exit-survey questions at go-live.
 - **Dispatcher function**: `exit-survey-scheduler`.
 - **Runtime behavior**:
   - Per-company settings control execution:
@@ -45,14 +46,28 @@
 - **Manual test**:
   - POST to `.../functions/v1/exit-survey-scheduler` with `{ "mode": "all", "dry_run": true }`
   - POST with `{ "mode": "weekly", "company_ids": ["<company-id>"] }` for targeted runs.
-- **Provision cron job**:
+- **Provision cron job (go-live only)**:
   - SQL migration file: `supabase/migrations/20260227181000_schedule_exit_survey_scheduler.sql`
   - If local/remote migration history is diverged, run that SQL directly in Supabase SQL Editor instead of `supabase db push`.
+
+## 4b. SOP Review Scheduler
+- **Function**: `sop-review-reminders`
+- **Current policy**: cron is intentionally disabled until go-live. Use manual dry-run/test invokes only.
+- **Security**:
+  - Set Edge secret `SOP_REVIEW_SCHEDULER_SECRET`.
+  - Scheduled caller must provide matching `x-scheduler-secret` header.
+- **Schedule (go-live only)**:
+  - SQL migration file: `supabase/migrations/20260228152000_schedule_sop_review_reminders.sql`
+  - Default schedule in migration: daily at `14:00 UTC`.
+- **Manual test**:
+  - Invoke with `{\"dry_run\": true}` and verify candidate counts.
+  - Invoke with `{\"dry_run\": false}` in a controlled window after validation.
 
 ## 5. Go-Live Checklist (Exit Survey)
 - **Data + schema**
   - Confirm `exit_survey_email_templates` exists and built-in templates are initialized.
-  - Confirm scheduler cron exists in `cron.job` as `exit-survey-scheduler-every-15m` and `active = true`.
+  - Confirm cron disable migration has been applied in pre-go-live environments: `supabase/migrations/20260228174000_disable_automation_cron_jobs_until_go_live.sql`.
+  - Enable and verify scheduler cron in `cron.job` as `exit-survey-scheduler-every-15m` and `active = true` only during go-live cutover.
   - Confirm latest scheduler/function code is deployed (`exit-survey-scheduler`, `exit-survey-weekly-digest`, `exit-survey-reminders`, `exit-survey-send-assignment`, `exit-survey-send-test-email`).
 - **Settings safety**
   - In Exit Survey -> Settings -> Automation Triggers, verify both toggles are OFF by default.
@@ -98,9 +113,29 @@
   - Email template create/update/delete
   - Test email sends
   - Automation trigger tests
+  - Sensitive view/access events:
+    - `exit_survey.submission_viewed`
+    - `exit_survey.submissions_viewed`
+    - `exit_survey.alerts_viewed`
+    - `exit_survey.trends_viewed`
+    - `exit_survey.patient_lookup_searched`
 - **How to review quickly**:
   - Filter by action prefix `exit_survey.`
   - Expand a row to inspect metadata payload (changed keys, trigger names, recipients, etc.)
   - Export CSV for compliance review packets.
 - **Known gap (tracked in tasks)**:
-  - Read-access events (viewing submission detail/PHI screens) are not yet fully logged and remain a Phase 2 item.
+  - Retention policy enforcement (archive/purge) is currently dry-run scaffolded only.
+
+## 7. Retention Scaffold (Exit Survey)
+- **Function**: `exit-survey-retention`
+- **Purpose**:
+  - Evaluate retention candidates without destructive deletion.
+  - Uses settings keys:
+    - `retention_mode` (`off`, `dry_run`, `archive_only`)
+    - `retention_submissions_days`
+    - `retention_alerts_days`
+    - `retention_exports_days`
+- **Security**:
+  - Set Edge secret `EXIT_SURVEY_RETENTION_SECRET` for scheduled/automated runs.
+- **Manual run**:
+  - POST `{\"company_id\":\"<id>\",\"dry_run\":true}` to inspect candidate counts.

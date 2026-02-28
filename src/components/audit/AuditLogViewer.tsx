@@ -37,13 +37,46 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useAuditLogViewer, useAuditEntityTypes } from '@/hooks/useAuditLogViewer';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
 const ACTION_PREFIX_PRESETS = [
   { label: "Exit Survey", value: "exit_survey." },
   { label: "Employee", value: "employee." },
   { label: "Integration", value: "integration." },
+] as const;
+
+const FILTER_PRESETS = [
+  {
+    label: "PHI Access",
+    apply: () => ({
+      actionPrefix: "exit_survey.",
+      action: undefined,
+      startDate: subDays(new Date(), 7),
+      endDate: new Date(),
+      search: "",
+    }),
+  },
+  {
+    label: "Invite Events",
+    apply: () => ({
+      actionPrefix: "employee.invite.",
+      action: undefined,
+      startDate: subDays(new Date(), 30),
+      endDate: new Date(),
+      search: "",
+    }),
+  },
+  {
+    label: "Exit Survey Ops",
+    apply: () => ({
+      actionPrefix: "exit_survey.",
+      action: undefined,
+      startDate: subDays(new Date(), 30),
+      endDate: new Date(),
+      search: "",
+    }),
+  },
 ] as const;
 
 function ActionBadge({ action }: { action: string }) {
@@ -139,6 +172,16 @@ export function AuditLogViewer() {
     if (logs.length === 0) return;
 
     const headers = ['Timestamp', 'Action', 'Entity Type', 'Entity ID', 'Actor'];
+    const filterSummary = [
+      `generated_at=${new Date().toISOString()}`,
+      `entity_type=${filters.entityType || 'all'}`,
+      `action=${filters.action || filters.actionPrefix || 'all'}`,
+      `actor_email=${filters.actorEmail || 'all'}`,
+      `start_date=${filters.startDate ? filters.startDate.toISOString() : 'none'}`,
+      `end_date=${filters.endDate ? filters.endDate.toISOString() : 'none'}`,
+      `search=${filters.search || 'none'}`,
+      `result_count=${logs.length}`,
+    ];
     const rows = logs.map((log) => [
       format(new Date(log.created_at), 'yyyy-MM-dd HH:mm:ss'),
       log.action,
@@ -147,7 +190,15 @@ export function AuditLogViewer() {
       log.actor_email || 'System',
     ]);
 
-    const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
+    const csv = [
+      ['# Audit Export Metadata'],
+      ...filterSummary.map((line) => [`# ${line}`]),
+      [],
+      headers,
+      ...rows,
+    ]
+      .map((row) => row.join(','))
+      .join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -201,6 +252,15 @@ export function AuditLogViewer() {
                 placeholder="Search..."
                 value={filters.search || ''}
                 onChange={(e) => updateFilters({ search: e.target.value })}
+                className="h-9"
+              />
+            </div>
+
+            <div className="min-w-[220px]">
+              <Input
+                placeholder="Actor email (exact)"
+                value={filters.actorEmail || ''}
+                onChange={(e) => updateFilters({ actorEmail: e.target.value || undefined })}
                 className="h-9"
               />
             </div>
@@ -293,6 +353,19 @@ export function AuditLogViewer() {
         </div>
 
         {/* Prefix presets */}
+        <div className="flex flex-wrap gap-2">
+          {FILTER_PRESETS.map((preset) => (
+            <Button
+              key={preset.label}
+              variant="outline"
+              size="sm"
+              onClick={() => updateFilters(preset.apply())}
+            >
+              {preset.label}
+            </Button>
+          ))}
+        </div>
+
         <div className="flex flex-wrap gap-2">
           {ACTION_PREFIX_PRESETS.map((preset) => {
             const active = filters.actionPrefix === preset.value;

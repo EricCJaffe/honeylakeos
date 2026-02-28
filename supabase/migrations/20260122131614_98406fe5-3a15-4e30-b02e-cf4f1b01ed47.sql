@@ -1,4 +1,3 @@
-
 -- ============================================================
 -- COACHES MODULE RETROFIT: Schema + Relationships + Hierarchy
 -- ============================================================
@@ -12,97 +11,81 @@ DO $$ BEGIN
   CREATE TYPE company_type_enum AS ENUM ('standard', 'coaching_org');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- Coaching org status
 DO $$ BEGIN
   CREATE TYPE coaching_org_status AS ENUM ('active', 'suspended');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- Coaching membership role
 DO $$ BEGIN
   CREATE TYPE coaching_membership_role AS ENUM ('org_admin', 'org_ops', 'org_staff');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- Manager assignment status
 DO $$ BEGIN
   CREATE TYPE manager_assignment_status AS ENUM ('active', 'inactive');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- Engagement status (drop if exists to recreate with correct values)
 DO $$ BEGIN
   CREATE TYPE coaching_engagement_status AS ENUM ('active', 'suspended', 'ended');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- Engagement linkage type
 DO $$ BEGIN
   CREATE TYPE engagement_linkage_type AS ENUM ('provisioned_by_coaching_org', 'invited', 'self_linked');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- Engagement end reason
 DO $$ BEGIN
   CREATE TYPE engagement_end_reason AS ENUM ('member_requested', 'coaching_org_requested', 'nonpayment', 'other');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- Coaching group status
 DO $$ BEGIN
   CREATE TYPE coaching_group_status AS ENUM ('active', 'archived');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- Grant source type
 DO $$ BEGIN
   CREATE TYPE grant_source_type AS ENUM ('coaching_engagement', 'external_advisor', 'other');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- Grant module enum
 DO $$ BEGIN
   CREATE TYPE grant_module AS ENUM ('coaching', 'tasks', 'projects', 'notes', 'docs', 'lms', 'calendar', 'finance', 'crm', 'other');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- Grant role enum
 DO $$ BEGIN
   CREATE TYPE grant_role AS ENUM ('none', 'read', 'comment', 'write', 'admin');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- Grant status
 DO $$ BEGIN
   CREATE TYPE grant_status AS ENUM ('active', 'suspended', 'revoked');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- Onboarding status
 DO $$ BEGIN
   CREATE TYPE coaching_onboarding_status AS ENUM ('pending', 'completed', 'skipped');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- Template status
 DO $$ BEGIN
   CREATE TYPE template_status AS ENUM ('active', 'inactive');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- Company onboarding source
 DO $$ BEGIN
   CREATE TYPE company_onboarding_source AS ENUM ('self_signup', 'invited_by_company', 'invited_by_coaching_org', 'created_by_coaching_org');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- Coaching engagement assignment role
 DO $$ BEGIN
   CREATE TYPE coaching_assignment_role AS ENUM ('primary', 'secondary');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- ------------------------------------------------------------
 -- A) COMPANY TYPE TOGGLE + DELEGATED PROVISIONING METADATA
 -- ------------------------------------------------------------
@@ -110,17 +93,13 @@ END $$;
 -- Add columns to companies table
 ALTER TABLE public.companies 
 ADD COLUMN IF NOT EXISTS company_type company_type_enum NOT NULL DEFAULT 'standard';
-
 ALTER TABLE public.companies 
 ADD COLUMN IF NOT EXISTS created_by_coaching_org_id uuid REFERENCES public.companies(id) ON DELETE SET NULL;
-
 ALTER TABLE public.companies 
 ADD COLUMN IF NOT EXISTS onboarding_source company_onboarding_source;
-
 -- Indexes for companies
 CREATE INDEX IF NOT EXISTS idx_companies_company_type ON public.companies(company_type);
 CREATE INDEX IF NOT EXISTS idx_companies_created_by_coaching_org ON public.companies(created_by_coaching_org_id) WHERE created_by_coaching_org_id IS NOT NULL;
-
 -- ------------------------------------------------------------
 -- B) COACHING ORG CORE TABLES
 -- ------------------------------------------------------------
@@ -135,9 +114,7 @@ CREATE TABLE IF NOT EXISTS public.coaching_orgs (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-
 CREATE INDEX IF NOT EXISTS idx_coaching_orgs_status ON public.coaching_orgs(status);
-
 -- 3) coaching_org_memberships
 CREATE TABLE IF NOT EXISTS public.coaching_org_memberships (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -149,10 +126,8 @@ CREATE TABLE IF NOT EXISTS public.coaching_org_memberships (
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT uq_coaching_org_memberships_user UNIQUE (coaching_org_id, user_id)
 );
-
 CREATE INDEX IF NOT EXISTS idx_coaching_org_memberships_user ON public.coaching_org_memberships(user_id);
 CREATE INDEX IF NOT EXISTS idx_coaching_org_memberships_org_status ON public.coaching_org_memberships(coaching_org_id, status);
-
 -- 4) coaching_managers
 CREATE TABLE IF NOT EXISTS public.coaching_managers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -163,10 +138,8 @@ CREATE TABLE IF NOT EXISTS public.coaching_managers (
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT uq_coaching_managers_user UNIQUE (coaching_org_id, user_id)
 );
-
 CREATE INDEX IF NOT EXISTS idx_coaching_managers_user ON public.coaching_managers(user_id);
 CREATE INDEX IF NOT EXISTS idx_coaching_managers_org_status ON public.coaching_managers(coaching_org_id, status);
-
 -- 5) coaching_coaches
 CREATE TABLE IF NOT EXISTS public.coaching_coaches (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -177,10 +150,8 @@ CREATE TABLE IF NOT EXISTS public.coaching_coaches (
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT uq_coaching_coaches_user UNIQUE (coaching_org_id, user_id)
 );
-
 CREATE INDEX IF NOT EXISTS idx_coaching_coaches_user ON public.coaching_coaches(user_id);
 CREATE INDEX IF NOT EXISTS idx_coaching_coaches_org_status ON public.coaching_coaches(coaching_org_id, status);
-
 -- 6) coaching_manager_assignments
 CREATE TABLE IF NOT EXISTS public.coaching_manager_assignments (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -193,20 +164,16 @@ CREATE TABLE IF NOT EXISTS public.coaching_manager_assignments (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-
 -- Only one active manager per coach
 CREATE UNIQUE INDEX IF NOT EXISTS uq_coaching_manager_assignments_active_coach 
 ON public.coaching_manager_assignments(coaching_org_id, coach_id) 
 WHERE status = 'active';
-
 -- Unique active assignment per manager-coach pair
 CREATE UNIQUE INDEX IF NOT EXISTS uq_coaching_manager_assignments_active_pair 
 ON public.coaching_manager_assignments(coaching_org_id, manager_id, coach_id) 
 WHERE status = 'active';
-
 CREATE INDEX IF NOT EXISTS idx_coaching_manager_assignments_manager ON public.coaching_manager_assignments(manager_id);
 CREATE INDEX IF NOT EXISTS idx_coaching_manager_assignments_coach ON public.coaching_manager_assignments(coach_id);
-
 -- ------------------------------------------------------------
 -- C) ENGAGEMENTS (Auto-linked when coaching org provisions company)
 -- ------------------------------------------------------------
@@ -227,15 +194,12 @@ CREATE TABLE IF NOT EXISTS public.coaching_org_engagements (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-
 -- Prevent duplicate live engagements
 CREATE UNIQUE INDEX IF NOT EXISTS uq_coaching_org_engagements_live 
 ON public.coaching_org_engagements(coaching_org_id, member_company_id) 
 WHERE status IN ('active', 'suspended');
-
 CREATE INDEX IF NOT EXISTS idx_coaching_org_engagements_org_status ON public.coaching_org_engagements(coaching_org_id, status);
 CREATE INDEX IF NOT EXISTS idx_coaching_org_engagements_member_status ON public.coaching_org_engagements(member_company_id, status);
-
 -- 8) coaching_org_engagement_assignments
 CREATE TABLE IF NOT EXISTS public.coaching_org_engagement_assignments (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -247,9 +211,7 @@ CREATE TABLE IF NOT EXISTS public.coaching_org_engagement_assignments (
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT uq_coaching_org_engagement_assignments_coach UNIQUE (coaching_engagement_id, coach_id)
 );
-
 CREATE INDEX IF NOT EXISTS idx_coaching_org_engagement_assignments_coach ON public.coaching_org_engagement_assignments(coach_id);
-
 -- ------------------------------------------------------------
 -- D) GROUPS (Roster + Rollups)
 -- ------------------------------------------------------------
@@ -264,10 +226,8 @@ CREATE TABLE IF NOT EXISTS public.coaching_org_groups (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-
 CREATE INDEX IF NOT EXISTS idx_coaching_org_groups_org ON public.coaching_org_groups(coaching_org_id);
 CREATE INDEX IF NOT EXISTS idx_coaching_org_groups_coach ON public.coaching_org_groups(coach_id) WHERE coach_id IS NOT NULL;
-
 -- 10) coaching_org_group_members
 CREATE TABLE IF NOT EXISTS public.coaching_org_group_members (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -279,14 +239,11 @@ CREATE TABLE IF NOT EXISTS public.coaching_org_group_members (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-
 -- Unique constraint handling null member_user_id
 CREATE UNIQUE INDEX IF NOT EXISTS uq_coaching_org_group_members 
 ON public.coaching_org_group_members(coaching_group_id, coaching_engagement_id, member_company_id, COALESCE(member_user_id, '00000000-0000-0000-0000-000000000000'::uuid));
-
 CREATE INDEX IF NOT EXISTS idx_coaching_org_group_members_engagement ON public.coaching_org_group_members(coaching_engagement_id);
 CREATE INDEX IF NOT EXISTS idx_coaching_org_group_members_company ON public.coaching_org_group_members(member_company_id);
-
 -- ------------------------------------------------------------
 -- E) CROSS-TENANT GRANTS
 -- ------------------------------------------------------------
@@ -305,14 +262,11 @@ CREATE TABLE IF NOT EXISTS public.access_grants (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-
 -- Unique constraint handling null source_id
 CREATE UNIQUE INDEX IF NOT EXISTS uq_access_grants 
 ON public.access_grants(grantor_company_id, grantee_user_id, module, source_type, COALESCE(source_id, '00000000-0000-0000-0000-000000000000'::uuid));
-
 CREATE INDEX IF NOT EXISTS idx_access_grants_grantor_grantee ON public.access_grants(grantor_company_id, grantee_user_id, module, status);
 CREATE INDEX IF NOT EXISTS idx_access_grants_grantee ON public.access_grants(grantee_user_id, status);
-
 -- ------------------------------------------------------------
 -- F) COACHING-SCOPED COLLABORATION HOOK
 -- ------------------------------------------------------------
@@ -320,21 +274,15 @@ CREATE INDEX IF NOT EXISTS idx_access_grants_grantee ON public.access_grants(gra
 -- Add coaching_engagement_id to tasks
 ALTER TABLE public.tasks 
 ADD COLUMN IF NOT EXISTS coaching_engagement_id uuid REFERENCES public.coaching_org_engagements(id) ON DELETE SET NULL;
-
 CREATE INDEX IF NOT EXISTS idx_tasks_coaching_engagement ON public.tasks(company_id, coaching_engagement_id) WHERE coaching_engagement_id IS NOT NULL;
-
 -- Add coaching_engagement_id to projects
 ALTER TABLE public.projects 
 ADD COLUMN IF NOT EXISTS coaching_engagement_id uuid REFERENCES public.coaching_org_engagements(id) ON DELETE SET NULL;
-
 CREATE INDEX IF NOT EXISTS idx_projects_coaching_engagement ON public.projects(company_id, coaching_engagement_id) WHERE coaching_engagement_id IS NOT NULL;
-
 -- Add coaching_engagement_id to notes
 ALTER TABLE public.notes 
 ADD COLUMN IF NOT EXISTS coaching_engagement_id uuid REFERENCES public.coaching_org_engagements(id) ON DELETE SET NULL;
-
 CREATE INDEX IF NOT EXISTS idx_notes_coaching_engagement ON public.notes(company_id, coaching_engagement_id) WHERE coaching_engagement_id IS NOT NULL;
-
 -- ------------------------------------------------------------
 -- G) PERMISSION ONBOARDING HOOKS
 -- ------------------------------------------------------------
@@ -362,9 +310,7 @@ CREATE TABLE IF NOT EXISTS public.coaching_permission_templates (
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT uq_coaching_permission_templates_name UNIQUE (coaching_org_id, name)
 );
-
 CREATE INDEX IF NOT EXISTS idx_coaching_permission_templates_org ON public.coaching_permission_templates(coaching_org_id, status);
-
 -- 13) coaching_engagement_onboarding
 CREATE TABLE IF NOT EXISTS public.coaching_engagement_onboarding (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -377,9 +323,7 @@ CREATE TABLE IF NOT EXISTS public.coaching_engagement_onboarding (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-
 CREATE INDEX IF NOT EXISTS idx_coaching_engagement_onboarding_company ON public.coaching_engagement_onboarding(member_company_id, status);
-
 -- ------------------------------------------------------------
 -- H) MODULE SCAFFOLDING
 -- ------------------------------------------------------------
@@ -388,7 +332,6 @@ CREATE INDEX IF NOT EXISTS idx_coaching_engagement_onboarding_company ON public.
 INSERT INTO public.modules (slug, name, description, category, is_public)
 VALUES ('coaches', 'Coaches', 'Coaching organization management and client engagement', 'premium', true)
 ON CONFLICT (slug) DO NOTHING;
-
 -- ------------------------------------------------------------
 -- TRIGGERS FOR updated_at
 -- ------------------------------------------------------------
@@ -401,7 +344,6 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SET search_path = public;
-
 -- Apply triggers to new tables
 DO $$
 DECLARE
@@ -432,7 +374,6 @@ BEGIN
     ', tbl, tbl, tbl, tbl);
   END LOOP;
 END $$;
-
 -- ------------------------------------------------------------
 -- FUNCTION: Auto-create coaching_org when company_type is set
 -- ------------------------------------------------------------
@@ -457,13 +398,11 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 DROP TRIGGER IF EXISTS handle_coaching_org_company_trigger ON public.companies;
 CREATE TRIGGER handle_coaching_org_company_trigger
   AFTER INSERT OR UPDATE OF company_type ON public.companies
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_coaching_org_company();
-
 -- ------------------------------------------------------------
 -- FUNCTION: Auto-create engagement onboarding record
 -- ------------------------------------------------------------
@@ -487,7 +426,6 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 DROP TRIGGER IF EXISTS handle_coaching_engagement_onboarding_trigger ON public.coaching_org_engagements;
 CREATE TRIGGER handle_coaching_engagement_onboarding_trigger
   AFTER INSERT ON public.coaching_org_engagements

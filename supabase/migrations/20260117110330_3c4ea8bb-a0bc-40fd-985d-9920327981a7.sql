@@ -2,44 +2,35 @@
 
 -- Scope type enum
 CREATE TYPE public.wf_scope_type AS ENUM ('site', 'company', 'group');
-
 -- Form/Workflow status enum
 CREATE TYPE public.wf_status AS ENUM ('draft', 'published', 'archived');
-
 -- Field types enum
 CREATE TYPE public.wf_field_type AS ENUM (
   'short_text', 'long_text', 'email', 'phone', 'number', 'date',
   'dropdown', 'multi_select', 'checkbox', 'rating', 'yes_no'
 );
-
 -- Workflow trigger types
 CREATE TYPE public.wf_trigger_type AS ENUM (
   'manual', 'employee_event', 'scheduled', 'form_submission'
 );
-
 -- Workflow step types
 CREATE TYPE public.wf_step_type AS ENUM (
   'form_step', 'approval_step', 'task_step', 'project_step',
   'calendar_step', 'document_step', 'note_step', 'notify_step',
   'assign_lms_step', 'support_ticket_step'
 );
-
 -- Assignee types
 CREATE TYPE public.wf_assignee_type AS ENUM (
   'user', 'employee', 'group', 'company_admin', 'workflow_initiator'
 );
-
 -- Run status
 CREATE TYPE public.wf_run_status AS ENUM ('running', 'completed', 'cancelled', 'failed');
-
 -- Step run status
 CREATE TYPE public.wf_step_run_status AS ENUM (
   'pending', 'in_progress', 'completed', 'rejected', 'skipped', 'failed'
 );
-
 -- Submission status
 CREATE TYPE public.wf_submission_status AS ENUM ('submitted', 'under_review', 'completed', 'closed');
-
 -- ============================================
 -- FORMS
 -- ============================================
@@ -65,7 +56,6 @@ CREATE TABLE public.wf_forms (
     (scope_type = 'group' AND group_id IS NOT NULL)
   )
 );
-
 CREATE TABLE public.wf_form_fields (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   form_id UUID NOT NULL REFERENCES public.wf_forms(id) ON DELETE CASCADE,
@@ -81,7 +71,6 @@ CREATE TABLE public.wf_form_fields (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(form_id, key)
 );
-
 CREATE TABLE public.wf_form_submissions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   form_id UUID NOT NULL REFERENCES public.wf_forms(id) ON DELETE CASCADE,
@@ -91,7 +80,6 @@ CREATE TABLE public.wf_form_submissions (
   submitted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 CREATE TABLE public.wf_form_submission_values (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   submission_id UUID NOT NULL REFERENCES public.wf_form_submissions(id) ON DELETE CASCADE,
@@ -102,7 +90,6 @@ CREATE TABLE public.wf_form_submission_values (
   value_json JSONB,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 -- ============================================
 -- WORKFLOWS
 -- ============================================
@@ -128,7 +115,6 @@ CREATE TABLE public.wf_workflows (
     (scope_type = 'group' AND group_id IS NOT NULL)
   )
 );
-
 CREATE TABLE public.wf_workflow_steps (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   workflow_id UUID NOT NULL REFERENCES public.wf_workflows(id) ON DELETE CASCADE,
@@ -144,7 +130,6 @@ CREATE TABLE public.wf_workflow_steps (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 -- ============================================
 -- WORKFLOW RUNS
 -- ============================================
@@ -160,7 +145,6 @@ CREATE TABLE public.wf_workflow_runs (
   completed_at TIMESTAMPTZ,
   metadata JSONB DEFAULT '{}'
 );
-
 CREATE TABLE public.wf_workflow_step_runs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   run_id UUID NOT NULL REFERENCES public.wf_workflow_runs(id) ON DELETE CASCADE,
@@ -174,7 +158,6 @@ CREATE TABLE public.wf_workflow_step_runs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 -- ============================================
 -- INDEXES
 -- ============================================
@@ -185,7 +168,6 @@ CREATE INDEX idx_wf_form_fields_form ON public.wf_form_fields(form_id, sort_orde
 CREATE INDEX idx_wf_form_submissions_form ON public.wf_form_submissions(form_id);
 CREATE INDEX idx_wf_form_submissions_submitter ON public.wf_form_submissions(submitter_user_id);
 CREATE INDEX idx_wf_form_submissions_status ON public.wf_form_submissions(status);
-
 CREATE INDEX idx_wf_workflows_scope ON public.wf_workflows(scope_type, site_id, company_id, group_id);
 CREATE INDEX idx_wf_workflows_status ON public.wf_workflows(status);
 CREATE INDEX idx_wf_workflow_steps_workflow ON public.wf_workflow_steps(workflow_id, sort_order);
@@ -193,7 +175,6 @@ CREATE INDEX idx_wf_workflow_runs_workflow ON public.wf_workflow_runs(workflow_i
 CREATE INDEX idx_wf_workflow_runs_status ON public.wf_workflow_runs(status);
 CREATE INDEX idx_wf_workflow_step_runs_run ON public.wf_workflow_step_runs(run_id);
 CREATE INDEX idx_wf_workflow_step_runs_assigned ON public.wf_workflow_step_runs(assigned_to_user_id, status);
-
 -- ============================================
 -- TRIGGERS
 -- ============================================
@@ -201,27 +182,21 @@ CREATE INDEX idx_wf_workflow_step_runs_assigned ON public.wf_workflow_step_runs(
 CREATE TRIGGER update_wf_forms_updated_at
   BEFORE UPDATE ON public.wf_forms
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 CREATE TRIGGER update_wf_form_fields_updated_at
   BEFORE UPDATE ON public.wf_form_fields
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 CREATE TRIGGER update_wf_form_submissions_updated_at
   BEFORE UPDATE ON public.wf_form_submissions
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 CREATE TRIGGER update_wf_workflows_updated_at
   BEFORE UPDATE ON public.wf_workflows
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 CREATE TRIGGER update_wf_workflow_steps_updated_at
   BEFORE UPDATE ON public.wf_workflow_steps
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 CREATE TRIGGER update_wf_workflow_step_runs_updated_at
   BEFORE UPDATE ON public.wf_workflow_step_runs
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 -- ============================================
 -- RLS POLICIES
 -- ============================================
@@ -234,7 +209,6 @@ ALTER TABLE public.wf_workflows ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wf_workflow_steps ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wf_workflow_runs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wf_workflow_step_runs ENABLE ROW LEVEL SECURITY;
-
 -- Forms: Read access
 CREATE POLICY "wf_forms_select" ON public.wf_forms FOR SELECT USING (
   (scope_type = 'site' AND status = 'published') OR
@@ -247,7 +221,6 @@ CREATE POLICY "wf_forms_select" ON public.wf_forms FOR SELECT USING (
   created_by = auth.uid() OR
   is_site_admin(get_user_site_id())
 );
-
 -- Forms: Write access (site admin or company admin or group manager)
 CREATE POLICY "wf_forms_insert" ON public.wf_forms FOR INSERT WITH CHECK (
   (scope_type = 'site' AND is_site_admin(get_user_site_id())) OR
@@ -259,7 +232,6 @@ CREATE POLICY "wf_forms_insert" ON public.wf_forms FOR INSERT WITH CHECK (
     AND gm.role IN ('manager', 'admin')
   ))
 );
-
 CREATE POLICY "wf_forms_update" ON public.wf_forms FOR UPDATE USING (
   (scope_type = 'site' AND is_site_admin(get_user_site_id())) OR
   (scope_type = 'company' AND is_company_admin(company_id)) OR
@@ -271,18 +243,15 @@ CREATE POLICY "wf_forms_update" ON public.wf_forms FOR UPDATE USING (
   )) OR
   created_by = auth.uid()
 );
-
 CREATE POLICY "wf_forms_delete" ON public.wf_forms FOR DELETE USING (
   (scope_type = 'site' AND is_site_admin(get_user_site_id())) OR
   (scope_type = 'company' AND is_company_admin(company_id)) OR
   created_by = auth.uid()
 );
-
 -- Form fields: inherit from form
 CREATE POLICY "wf_form_fields_select" ON public.wf_form_fields FOR SELECT USING (
   form_id IN (SELECT id FROM public.wf_forms)
 );
-
 CREATE POLICY "wf_form_fields_insert" ON public.wf_form_fields FOR INSERT WITH CHECK (
   form_id IN (SELECT id FROM public.wf_forms WHERE 
     created_by = auth.uid() OR
@@ -290,7 +259,6 @@ CREATE POLICY "wf_form_fields_insert" ON public.wf_form_fields FOR INSERT WITH C
     (scope_type = 'company' AND is_company_admin(company_id))
   )
 );
-
 CREATE POLICY "wf_form_fields_update" ON public.wf_form_fields FOR UPDATE USING (
   form_id IN (SELECT id FROM public.wf_forms WHERE 
     created_by = auth.uid() OR
@@ -298,7 +266,6 @@ CREATE POLICY "wf_form_fields_update" ON public.wf_form_fields FOR UPDATE USING 
     (scope_type = 'company' AND is_company_admin(company_id))
   )
 );
-
 CREATE POLICY "wf_form_fields_delete" ON public.wf_form_fields FOR DELETE USING (
   form_id IN (SELECT id FROM public.wf_forms WHERE 
     created_by = auth.uid() OR
@@ -306,7 +273,6 @@ CREATE POLICY "wf_form_fields_delete" ON public.wf_form_fields FOR DELETE USING 
     (scope_type = 'company' AND is_company_admin(company_id))
   )
 );
-
 -- Submissions: submitter can view their own, admins can view all in scope
 CREATE POLICY "wf_form_submissions_select" ON public.wf_form_submissions FOR SELECT USING (
   submitter_user_id = auth.uid() OR
@@ -315,11 +281,9 @@ CREATE POLICY "wf_form_submissions_select" ON public.wf_form_submissions FOR SEL
     (scope_type = 'company' AND is_company_admin(company_id))
   )
 );
-
 CREATE POLICY "wf_form_submissions_insert" ON public.wf_form_submissions FOR INSERT WITH CHECK (
   form_id IN (SELECT id FROM public.wf_forms WHERE status = 'published')
 );
-
 CREATE POLICY "wf_form_submissions_update" ON public.wf_form_submissions FOR UPDATE USING (
   submitter_user_id = auth.uid() OR
   form_id IN (SELECT id FROM public.wf_forms WHERE 
@@ -327,16 +291,13 @@ CREATE POLICY "wf_form_submissions_update" ON public.wf_form_submissions FOR UPD
     (scope_type = 'company' AND is_company_admin(company_id))
   )
 );
-
 -- Submission values: inherit from submission
 CREATE POLICY "wf_form_submission_values_select" ON public.wf_form_submission_values FOR SELECT USING (
   submission_id IN (SELECT id FROM public.wf_form_submissions)
 );
-
 CREATE POLICY "wf_form_submission_values_insert" ON public.wf_form_submission_values FOR INSERT WITH CHECK (
   submission_id IN (SELECT id FROM public.wf_form_submissions WHERE submitter_user_id = auth.uid())
 );
-
 -- Workflows: similar to forms
 CREATE POLICY "wf_workflows_select" ON public.wf_workflows FOR SELECT USING (
   (scope_type = 'site' AND status = 'published') OR
@@ -349,7 +310,6 @@ CREATE POLICY "wf_workflows_select" ON public.wf_workflows FOR SELECT USING (
   created_by = auth.uid() OR
   is_site_admin(get_user_site_id())
 );
-
 CREATE POLICY "wf_workflows_insert" ON public.wf_workflows FOR INSERT WITH CHECK (
   (scope_type = 'site' AND is_site_admin(get_user_site_id())) OR
   (scope_type = 'company' AND is_company_admin(company_id)) OR
@@ -360,24 +320,20 @@ CREATE POLICY "wf_workflows_insert" ON public.wf_workflows FOR INSERT WITH CHECK
     AND gm.role IN ('manager', 'admin')
   ))
 );
-
 CREATE POLICY "wf_workflows_update" ON public.wf_workflows FOR UPDATE USING (
   (scope_type = 'site' AND is_site_admin(get_user_site_id())) OR
   (scope_type = 'company' AND is_company_admin(company_id)) OR
   created_by = auth.uid()
 );
-
 CREATE POLICY "wf_workflows_delete" ON public.wf_workflows FOR DELETE USING (
   (scope_type = 'site' AND is_site_admin(get_user_site_id())) OR
   (scope_type = 'company' AND is_company_admin(company_id)) OR
   created_by = auth.uid()
 );
-
 -- Workflow steps: inherit from workflow
 CREATE POLICY "wf_workflow_steps_select" ON public.wf_workflow_steps FOR SELECT USING (
   workflow_id IN (SELECT id FROM public.wf_workflows)
 );
-
 CREATE POLICY "wf_workflow_steps_insert" ON public.wf_workflow_steps FOR INSERT WITH CHECK (
   workflow_id IN (SELECT id FROM public.wf_workflows WHERE 
     created_by = auth.uid() OR
@@ -385,7 +341,6 @@ CREATE POLICY "wf_workflow_steps_insert" ON public.wf_workflow_steps FOR INSERT 
     (scope_type = 'company' AND is_company_admin(company_id))
   )
 );
-
 CREATE POLICY "wf_workflow_steps_update" ON public.wf_workflow_steps FOR UPDATE USING (
   workflow_id IN (SELECT id FROM public.wf_workflows WHERE 
     created_by = auth.uid() OR
@@ -393,7 +348,6 @@ CREATE POLICY "wf_workflow_steps_update" ON public.wf_workflow_steps FOR UPDATE 
     (scope_type = 'company' AND is_company_admin(company_id))
   )
 );
-
 CREATE POLICY "wf_workflow_steps_delete" ON public.wf_workflow_steps FOR DELETE USING (
   workflow_id IN (SELECT id FROM public.wf_workflows WHERE 
     created_by = auth.uid() OR
@@ -401,7 +355,6 @@ CREATE POLICY "wf_workflow_steps_delete" ON public.wf_workflow_steps FOR DELETE 
     (scope_type = 'company' AND is_company_admin(company_id))
   )
 );
-
 -- Workflow runs: initiator + assigned users + admins
 CREATE POLICY "wf_workflow_runs_select" ON public.wf_workflow_runs FOR SELECT USING (
   initiated_by_user_id = auth.uid() OR
@@ -411,11 +364,9 @@ CREATE POLICY "wf_workflow_runs_select" ON public.wf_workflow_runs FOR SELECT US
     (scope_type = 'company' AND is_company_admin(company_id))
   )
 );
-
 CREATE POLICY "wf_workflow_runs_insert" ON public.wf_workflow_runs FOR INSERT WITH CHECK (
   workflow_id IN (SELECT id FROM public.wf_workflows WHERE status = 'published')
 );
-
 CREATE POLICY "wf_workflow_runs_update" ON public.wf_workflow_runs FOR UPDATE USING (
   initiated_by_user_id = auth.uid() OR
   workflow_id IN (SELECT id FROM public.wf_workflows WHERE 
@@ -423,17 +374,14 @@ CREATE POLICY "wf_workflow_runs_update" ON public.wf_workflow_runs FOR UPDATE US
     (scope_type = 'company' AND is_company_admin(company_id))
   )
 );
-
 -- Step runs: assigned user + admins
 CREATE POLICY "wf_workflow_step_runs_select" ON public.wf_workflow_step_runs FOR SELECT USING (
   assigned_to_user_id = auth.uid() OR
   run_id IN (SELECT id FROM public.wf_workflow_runs)
 );
-
 CREATE POLICY "wf_workflow_step_runs_insert" ON public.wf_workflow_step_runs FOR INSERT WITH CHECK (
   run_id IN (SELECT id FROM public.wf_workflow_runs)
 );
-
 CREATE POLICY "wf_workflow_step_runs_update" ON public.wf_workflow_step_runs FOR UPDATE USING (
   assigned_to_user_id = auth.uid() OR
   run_id IN (SELECT id FROM public.wf_workflow_runs WHERE 

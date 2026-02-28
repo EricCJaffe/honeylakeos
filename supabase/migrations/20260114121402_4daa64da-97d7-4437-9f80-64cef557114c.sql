@@ -5,7 +5,6 @@ DROP FUNCTION IF EXISTS public.can_update_group_member_role(uuid, uuid, text);
 DROP FUNCTION IF EXISTS public.can_delete_group_member(uuid, uuid);
 DROP FUNCTION IF EXISTS public.is_group_manager(uuid);
 DROP FUNCTION IF EXISTS public.get_group_company_id(uuid);
-
 -- 1) Function to check if a specific user is a manager of a group
 CREATE OR REPLACE FUNCTION public.is_group_manager(p_group_id uuid, p_user_id uuid)
 RETURNS boolean
@@ -21,7 +20,6 @@ AS $$
       AND role = 'manager'
   );
 $$;
-
 -- 2) Function to check if role update is allowed
 CREATE OR REPLACE FUNCTION public.can_update_group_member_role(p_group_id uuid, p_target_user_id uuid, p_new_role text)
 RETURNS boolean
@@ -83,7 +81,6 @@ BEGIN
   RETURN true;
 END;
 $$;
-
 -- 3) Function to check if member deletion is allowed
 CREATE OR REPLACE FUNCTION public.can_delete_group_member(p_group_id uuid, p_target_user_id uuid)
 RETURNS boolean
@@ -140,7 +137,6 @@ BEGIN
   RETURN true;
 END;
 $$;
-
 -- 4) RLS policies on group_members
 CREATE POLICY "group_members_update_role_guard"
 ON public.group_members
@@ -148,7 +144,6 @@ FOR UPDATE
 TO authenticated
 USING (true)
 WITH CHECK (can_update_group_member_role(group_id, user_id, role));
-
 CREATE POLICY "group_members_delete_guard"
 ON public.group_members
 FOR DELETE

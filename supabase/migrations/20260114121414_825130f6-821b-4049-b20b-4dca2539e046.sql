@@ -1,6 +1,5 @@
 -- Fix the UPDATE policy to use the function in USING clause as well (avoids linter warning)
 DROP POLICY IF EXISTS "group_members_update_role_guard" ON public.group_members;
-
 -- Recreate with proper USING clause (check authorization for viewing the row to update)
 CREATE POLICY "group_members_update_role_guard"
 ON public.group_members

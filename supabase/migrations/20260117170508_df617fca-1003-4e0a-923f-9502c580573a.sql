@@ -61,7 +61,6 @@ BEGIN
   RETURN v_new_id;
 END;
 $$;
-
 -- 2. folder_rename: Rename a folder
 CREATE OR REPLACE FUNCTION public.folder_rename(
   p_folder_id UUID,
@@ -82,7 +81,6 @@ BEGIN
   END IF;
 END;
 $$;
-
 -- 3. folder_move: Move folder to new parent with validation
 CREATE OR REPLACE FUNCTION public.folder_move(
   p_folder_id UUID,
@@ -151,7 +149,6 @@ BEGIN
   END IF;
 END;
 $$;
-
 -- 4. folder_reorder: Reorder folder among siblings
 CREATE OR REPLACE FUNCTION public.folder_reorder(
   p_folder_id UUID,
@@ -203,7 +200,6 @@ BEGIN
   UPDATE folders SET sort_order = p_new_index WHERE id = p_folder_id;
 END;
 $$;
-
 -- 5. folder_delete: Delete folder (children moved up, items unfiled)
 -- Already handled by trigger, but add explicit RPC for better error handling
 CREATE OR REPLACE FUNCTION public.folder_delete(p_folder_id UUID)
@@ -219,7 +215,6 @@ BEGIN
   END IF;
 END;
 $$;
-
 -- 6. Bulk move items to folder
 CREATE OR REPLACE FUNCTION public.move_documents_to_folder(
   p_document_ids UUID[],
@@ -236,7 +231,6 @@ BEGIN
   WHERE id = ANY(p_document_ids);
 END;
 $$;
-
 CREATE OR REPLACE FUNCTION public.move_notes_to_folder(
   p_note_ids UUID[],
   p_folder_id UUID DEFAULT NULL

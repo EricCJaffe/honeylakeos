@@ -513,9 +513,16 @@ export function useExitSurveyMutations() {
       if (!activeCompanyId) throw new Error("No active company");
       const { error } = await supabase
         .from("exit_survey_settings")
-        .update({ value, updated_at: new Date().toISOString() })
-        .eq("company_id", activeCompanyId)
-        .eq("key", key);
+        .upsert(
+          {
+            company_id: activeCompanyId,
+            key,
+            value,
+            category: "settings",
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "company_id,key" }
+        );
       if (error) throw error;
 
       await auditLog("exit_survey.settings_updated", "exit_survey_setting", activeCompanyId, {
@@ -796,6 +803,34 @@ export function useExitSurveyMutations() {
     },
   });
 
+  const runRetentionScan = useMutation({
+    mutationFn: async (input: { dryRun?: boolean; apply?: boolean }) => {
+      if (!activeCompanyId) throw new Error("No active company");
+      const { data, error } = await supabase.functions.invoke("exit-survey-retention", {
+        body: {
+          company_id: activeCompanyId,
+          dry_run: input.dryRun ?? true,
+          apply: input.apply ?? false,
+        },
+      });
+      if (error) throw error;
+      if (data?.success === false) throw new Error(data?.error || "Retention scan failed");
+
+      await auditLog("exit_survey.retention_scan_requested", "exit_survey_setting", activeCompanyId, {
+        dry_run: input.dryRun ?? true,
+        apply: input.apply ?? false,
+      });
+      return data;
+    },
+    onSuccess: (data) => {
+      const scanned = Array.isArray(data?.companies) ? data.companies.length : 0;
+      toast({ title: `Retention scan completed (${scanned} company scope)` });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Retention scan failed", description: err.message, variant: "destructive" });
+    },
+  });
+
   return {
     updateAlertStatus,
     updateQuestion,
@@ -807,5 +842,6 @@ export function useExitSurveyMutations() {
     deleteEmailTemplate,
     sendEmailTemplateTest,
     runAutomationTriggerTest,
+    runRetentionScan,
   };
 }

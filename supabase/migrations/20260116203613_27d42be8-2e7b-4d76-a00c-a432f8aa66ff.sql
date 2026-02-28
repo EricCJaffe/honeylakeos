@@ -8,23 +8,19 @@ ADD COLUMN IF NOT EXISTS scope text NOT NULL DEFAULT 'company' CHECK (scope IN (
 ADD COLUMN IF NOT EXISTS owner_user_id uuid NULL,
 ADD COLUMN IF NOT EXISTS sort_order integer NOT NULL DEFAULT 0,
 ADD COLUMN IF NOT EXISTS archived_at timestamptz NULL;
-
 -- Add constraint: personal folders must have owner_user_id, company folders must not
 ALTER TABLE public.folders 
 DROP CONSTRAINT IF EXISTS folders_scope_owner_check;
-
 ALTER TABLE public.folders
 ADD CONSTRAINT folders_scope_owner_check 
 CHECK (
   (scope = 'company' AND owner_user_id IS NULL) OR 
   (scope = 'personal' AND owner_user_id IS NOT NULL)
 );
-
 -- Create index for efficient tree queries
 CREATE INDEX IF NOT EXISTS idx_folders_parent ON public.folders (parent_folder_id);
 CREATE INDEX IF NOT EXISTS idx_folders_scope ON public.folders (company_id, scope);
 CREATE INDEX IF NOT EXISTS idx_folders_owner ON public.folders (owner_user_id) WHERE owner_user_id IS NOT NULL;
-
 -- ============================================================================
 -- FOLDER ACL TABLE
 -- ============================================================================
@@ -49,14 +45,11 @@ CREATE TABLE IF NOT EXISTS public.folder_acl (
   -- Unique constraint to prevent duplicate ACL entries
   CONSTRAINT folder_acl_unique UNIQUE (folder_id, principal_type, principal_id)
 );
-
 -- Enable RLS
 ALTER TABLE public.folder_acl ENABLE ROW LEVEL SECURITY;
-
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_folder_acl_folder ON public.folder_acl (folder_id);
 CREATE INDEX IF NOT EXISTS idx_folder_acl_principal ON public.folder_acl (principal_type, principal_id);
-
 -- ============================================================================
 -- HELPER FUNCTION: Check if user has access to a folder
 -- ============================================================================
@@ -125,7 +118,6 @@ BEGIN
   RETURN v_access_level;
 END;
 $$;
-
 -- ============================================================================
 -- HELPER FUNCTION: Check folder nesting depth (prevent > 5 levels)
 -- ============================================================================
@@ -154,7 +146,6 @@ BEGIN
   RETURN v_depth;
 END;
 $$;
-
 -- ============================================================================
 -- TRIGGER: Prevent cycles and enforce max depth on folder insert/update
 -- ============================================================================
@@ -196,13 +187,11 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
 DROP TRIGGER IF EXISTS validate_folder_hierarchy_trigger ON public.folders;
 CREATE TRIGGER validate_folder_hierarchy_trigger
   BEFORE INSERT OR UPDATE ON public.folders
   FOR EACH ROW
   EXECUTE FUNCTION public.validate_folder_hierarchy();
-
 -- ============================================================================
 -- TRIGGER: Auto-create company-wide view ACL for new company folders
 -- ============================================================================
@@ -224,13 +213,11 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
 DROP TRIGGER IF EXISTS auto_create_folder_acl_trigger ON public.folders;
 CREATE TRIGGER auto_create_folder_acl_trigger
   AFTER INSERT ON public.folders
   FOR EACH ROW
   EXECUTE FUNCTION public.auto_create_folder_acl();
-
 -- ============================================================================
 -- RLS POLICIES FOR FOLDERS (update existing)
 -- ============================================================================
@@ -240,7 +227,6 @@ DROP POLICY IF EXISTS folders_select_company_member ON public.folders;
 DROP POLICY IF EXISTS folders_insert_company_member ON public.folders;
 DROP POLICY IF EXISTS folders_update_creator_or_admin ON public.folders;
 DROP POLICY IF EXISTS folders_delete_creator_or_admin ON public.folders;
-
 -- SELECT: Can see company folders with ACL access + own personal folders
 CREATE POLICY folders_select_accessible ON public.folders
 FOR SELECT USING (
@@ -255,7 +241,6 @@ FOR SELECT USING (
     ))
   )
 );
-
 -- INSERT: Company members can create personal folders, admins/delegated admins can create company folders
 CREATE POLICY folders_insert_accessible ON public.folders
 FOR INSERT WITH CHECK (
@@ -270,7 +255,6 @@ FOR INSERT WITH CHECK (
     ))
   )
 );
-
 -- UPDATE: Owner of personal, admin/delegated admin of company folders
 CREATE POLICY folders_update_accessible ON public.folders
 FOR UPDATE USING (
@@ -283,7 +267,6 @@ FOR UPDATE USING (
     ))
   )
 );
-
 -- DELETE: Owner of personal, admin/delegated admin of company folders
 CREATE POLICY folders_delete_accessible ON public.folders
 FOR DELETE USING (
@@ -296,7 +279,6 @@ FOR DELETE USING (
     ))
   )
 );
-
 -- ============================================================================
 -- RLS POLICIES FOR FOLDER_ACL
 -- ============================================================================
@@ -310,7 +292,6 @@ FOR SELECT USING (
     get_folder_access_level(folder_id, auth.uid()) IS NOT NULL
   )
 );
-
 -- INSERT: Company admins or folder admins
 CREATE POLICY folder_acl_insert ON public.folder_acl
 FOR INSERT WITH CHECK (
@@ -320,7 +301,6 @@ FOR INSERT WITH CHECK (
     get_folder_access_level(folder_id, auth.uid()) = 'admin'
   )
 );
-
 -- UPDATE: Company admins or folder admins
 CREATE POLICY folder_acl_update ON public.folder_acl
 FOR UPDATE USING (
@@ -330,7 +310,6 @@ FOR UPDATE USING (
     get_folder_access_level(folder_id, auth.uid()) = 'admin'
   )
 );
-
 -- DELETE: Company admins or folder admins
 CREATE POLICY folder_acl_delete ON public.folder_acl
 FOR DELETE USING (
@@ -340,8 +319,7 @@ FOR DELETE USING (
     get_folder_access_level(folder_id, auth.uid()) = 'admin'
   )
 );
-
 -- ============================================================================
 -- ADD AUDIT ACTIONS FOR FOLDERS
 -- ============================================================================
--- (Audit logging will be done in application code via useAuditLog)
+-- (Audit logging will be done in application code via useAuditLog);

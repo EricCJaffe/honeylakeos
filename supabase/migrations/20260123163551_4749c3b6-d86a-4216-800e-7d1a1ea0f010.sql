@@ -1,6 +1,5 @@
 -- Fix 1: Update notifications INSERT policy to require proper ownership
 DROP POLICY IF EXISTS "notifications_insert" ON public.notifications;
-
 CREATE POLICY "notifications_insert" ON public.notifications
 FOR INSERT
 TO authenticated
@@ -15,7 +14,6 @@ WITH CHECK (
     AND role = 'company_admin'
   )
 );
-
 -- Fix 2: Set search_path on fn_validate_workflow_run_engagement
 CREATE OR REPLACE FUNCTION public.fn_validate_workflow_run_engagement()
 RETURNS trigger

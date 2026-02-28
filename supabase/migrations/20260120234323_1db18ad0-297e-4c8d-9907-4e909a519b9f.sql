@@ -13,15 +13,12 @@ CREATE TABLE public.task_subtasks (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 -- Create indexes
 CREATE INDEX idx_task_subtasks_parent ON public.task_subtasks(parent_task_id);
 CREATE INDEX idx_task_subtasks_company ON public.task_subtasks(company_id);
 CREATE INDEX idx_task_subtasks_status ON public.task_subtasks(status);
-
 -- Enable RLS
 ALTER TABLE public.task_subtasks ENABLE ROW LEVEL SECURITY;
-
 -- RLS: Users who can view the parent task can view subtasks
 CREATE POLICY "Users can view subtasks of visible tasks"
 ON public.task_subtasks
@@ -46,7 +43,6 @@ USING (
     )
   )
 );
-
 -- RLS: Users who can edit the parent task can manage subtasks
 CREATE POLICY "Users can insert subtasks for editable tasks"
 ON public.task_subtasks
@@ -59,7 +55,6 @@ WITH CHECK (
     AND m.user_id = auth.uid()
   )
 );
-
 CREATE POLICY "Users can update subtasks of editable tasks"
 ON public.task_subtasks
 FOR UPDATE
@@ -70,7 +65,6 @@ USING (
     AND m.user_id = auth.uid()
   )
 );
-
 CREATE POLICY "Users can delete subtasks of editable tasks"
 ON public.task_subtasks
 FOR DELETE
@@ -81,13 +75,11 @@ USING (
     AND m.user_id = auth.uid()
   )
 );
-
 -- Trigger for updated_at
 CREATE TRIGGER update_task_subtasks_updated_at
 BEFORE UPDATE ON public.task_subtasks
 FOR EACH ROW
 EXECUTE FUNCTION public.update_updated_at_column();
-
 -- Audit logging function for subtasks
 CREATE OR REPLACE FUNCTION public.audit_task_subtask_changes()
 RETURNS TRIGGER AS $$
@@ -127,12 +119,10 @@ BEGIN
   RETURN NULL;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 CREATE TRIGGER trg_audit_task_subtask_changes
 AFTER INSERT OR UPDATE OR DELETE ON public.task_subtasks
 FOR EACH ROW
 EXECUTE FUNCTION public.audit_task_subtask_changes();
-
 -- Function to get subtask counts for multiple tasks (for list views)
 CREATE OR REPLACE FUNCTION public.get_task_subtask_counts(p_task_ids UUID[])
 RETURNS TABLE(task_id UUID, total_count INTEGER, completed_count INTEGER) AS $$
@@ -147,7 +137,6 @@ BEGIN
   GROUP BY ts.parent_task_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 -- Function to copy subtasks for recurring task generation
 CREATE OR REPLACE FUNCTION public.copy_subtasks_for_recurring_task(
   p_source_task_id UUID,

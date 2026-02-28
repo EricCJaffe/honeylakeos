@@ -4,20 +4,16 @@ ADD COLUMN IF NOT EXISTS base_key TEXT,
 ADD COLUMN IF NOT EXISTS program_key TEXT DEFAULT 'generic',
 ADD COLUMN IF NOT EXISTS version TEXT DEFAULT '1.0',
 ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
-
 -- Add attached_form_base_key to workflow steps (stores base key, not full key)
 ALTER TABLE public.coaching_org_workflow_steps
 ADD COLUMN IF NOT EXISTS attached_form_base_key TEXT;
-
 -- Add attached_form_base_key to pack workflow steps
 ALTER TABLE public.coaching_program_pack_workflow_steps
 ADD COLUMN IF NOT EXISTS attached_form_base_key TEXT;
-
 -- Create index for form resolution lookups
 CREATE INDEX IF NOT EXISTS idx_wf_forms_base_key ON public.wf_forms(base_key);
 CREATE INDEX IF NOT EXISTS idx_wf_forms_program_key ON public.wf_forms(program_key);
 CREATE INDEX IF NOT EXISTS idx_wf_forms_resolution ON public.wf_forms(base_key, program_key, is_active);
-
 -- Backfill base_key from existing template_key (extract after first underscore)
 UPDATE public.wf_forms 
 SET base_key = CASE 
@@ -35,7 +31,6 @@ program_key = CASE
   ELSE 'generic'
 END
 WHERE template_key IS NOT NULL AND base_key IS NULL;
-
 -- Backfill attached_form_base_key from attached_form_template_key
 UPDATE public.coaching_org_workflow_steps
 SET attached_form_base_key = CASE 
@@ -46,7 +41,6 @@ SET attached_form_base_key = CASE
   ELSE attached_form_template_key
 END
 WHERE attached_form_template_key IS NOT NULL AND attached_form_base_key IS NULL;
-
 -- Comment on new columns
 COMMENT ON COLUMN public.wf_forms.base_key IS 'Base form identifier without program prefix (e.g. member_covenant)';
 COMMENT ON COLUMN public.wf_forms.program_key IS 'Program pack this form belongs to (generic, convene, etc.)';

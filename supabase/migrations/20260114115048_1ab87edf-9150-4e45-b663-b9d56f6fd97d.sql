@@ -1,6 +1,5 @@
 -- Allow company creators to insert themselves as initial admin
 DROP POLICY IF EXISTS "memberships_insert_self_initial_admin" ON public.memberships;
-
 CREATE POLICY "memberships_insert_self_initial_admin"
 ON public.memberships
 FOR INSERT

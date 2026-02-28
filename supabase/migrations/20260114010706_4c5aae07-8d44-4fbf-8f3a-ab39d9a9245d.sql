@@ -1,4 +1,3 @@
-
 -- Fix profiles primary key to be user_id (best practice for Supabase auth mapping)
 
 -- Drop existing primary key constraint
@@ -13,13 +12,10 @@ begin
     execute format('alter table public.profiles drop constraint %I', pk_name);
   end if;
 end $$;
-
 -- Ensure user_id is not null
 alter table public.profiles alter column user_id set not null;
-
 -- Make user_id the primary key
 alter table public.profiles add primary key (user_id);
-
 -- Drop the redundant id column if it exists
 do $$
 begin

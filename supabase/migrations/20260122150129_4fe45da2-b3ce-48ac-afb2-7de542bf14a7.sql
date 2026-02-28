@@ -8,28 +8,22 @@
 CREATE INDEX IF NOT EXISTS idx_tasks_coaching_engagement 
 ON public.tasks(company_id, coaching_engagement_id) 
 WHERE coaching_engagement_id IS NOT NULL;
-
 CREATE INDEX IF NOT EXISTS idx_projects_coaching_engagement 
 ON public.projects(company_id, coaching_engagement_id) 
 WHERE coaching_engagement_id IS NOT NULL;
-
 CREATE INDEX IF NOT EXISTS idx_notes_coaching_engagement 
 ON public.notes(company_id, coaching_engagement_id) 
 WHERE coaching_engagement_id IS NOT NULL;
-
 CREATE INDEX IF NOT EXISTS idx_coaching_workflow_assignments_next_run 
 ON public.coaching_workflow_assignments(next_run_at, status) 
 WHERE status = 'active';
-
 CREATE INDEX IF NOT EXISTS idx_health_check_responses_check_question 
 ON public.coaching_health_check_responses(coaching_health_check_id, template_question_id);
-
 -- B) Unique constraint on workflow runs (correct column name)
 -- ============================================================
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_coaching_workflow_runs_period 
 ON public.coaching_workflow_runs(coaching_workflow_assignment_id, run_for_period_start);
-
 -- C) Create coaching-specific audit view
 -- ============================================================
 
@@ -57,7 +51,6 @@ WHERE al.action LIKE 'coaching.%'
    OR al.action LIKE 'engagement.%'
    OR al.entity_type IN ('coaching_engagement', 'access_grant', 'coaching_workflow', 'coaching_health_check')
 ORDER BY al.created_at DESC;
-
 -- D) Validation trigger for workflow runs
 -- ============================================================
 
@@ -80,7 +73,6 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
 DROP TRIGGER IF EXISTS trg_validate_workflow_run_engagement ON public.coaching_workflow_runs;
 CREATE TRIGGER trg_validate_workflow_run_engagement
 BEFORE INSERT ON public.coaching_workflow_runs

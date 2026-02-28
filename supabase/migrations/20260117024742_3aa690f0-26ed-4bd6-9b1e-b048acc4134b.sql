@@ -7,20 +7,16 @@ ADD COLUMN IF NOT EXISTS short_summary text,
 ADD COLUMN IF NOT EXISTS tags text[] DEFAULT '{}',
 ADD COLUMN IF NOT EXISTS published_at timestamptz,
 ADD COLUMN IF NOT EXISTS source_framework_id uuid REFERENCES public.frameworks(id);
-
 -- Add framework_adoption to recommendation_type enum
 ALTER TYPE public.recommendation_type ADD VALUE IF NOT EXISTS 'framework_adoption';
-
 -- Create index for marketplace queries
 CREATE INDEX IF NOT EXISTS idx_frameworks_marketplace 
 ON public.frameworks(owner_type, status, marketplace_visibility) 
 WHERE archived_at IS NULL;
-
 -- Create index for version tracking
 CREATE INDEX IF NOT EXISTS idx_frameworks_source 
 ON public.frameworks(source_framework_id) 
 WHERE source_framework_id IS NOT NULL;
-
 -- RLS: Allow clients to read frameworks shared by their coaching org
 CREATE POLICY "Clients can view coach org shared frameworks"
 ON public.frameworks
@@ -45,7 +41,6 @@ USING (
     )
   )
 );
-
 -- Add comment for documentation
 COMMENT ON COLUMN public.frameworks.marketplace_visibility IS 'Controls who can see this framework: private (owner only), coach_org_clients (visible to client companies in engagements)';
 COMMENT ON COLUMN public.frameworks.short_summary IS 'Brief 1-2 line summary for marketplace display';

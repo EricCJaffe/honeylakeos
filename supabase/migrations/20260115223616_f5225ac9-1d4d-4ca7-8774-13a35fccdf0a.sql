@@ -21,7 +21,6 @@ BEGIN
     ALTER TABLE public.events ADD COLUMN is_recurrence_exception boolean DEFAULT false;
   END IF;
 END $$;
-
 -- Create event_recurrence_exceptions table
 CREATE TABLE IF NOT EXISTS public.event_recurrence_exceptions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -32,7 +31,6 @@ CREATE TABLE IF NOT EXISTS public.event_recurrence_exceptions (
   created_at timestamptz DEFAULT now(),
   UNIQUE(company_id, event_id, exception_date)
 );
-
 -- Create event_recurrence_overrides table
 CREATE TABLE IF NOT EXISTS public.event_recurrence_overrides (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -44,7 +42,6 @@ CREATE TABLE IF NOT EXISTS public.event_recurrence_overrides (
   created_at timestamptz DEFAULT now(),
   UNIQUE(company_id, series_event_id, occurrence_start_at)
 );
-
 -- Add indexes for performance
 CREATE INDEX IF NOT EXISTS idx_event_recurrence_exceptions_lookup 
   ON public.event_recurrence_exceptions(company_id, event_id);
@@ -52,37 +49,29 @@ CREATE INDEX IF NOT EXISTS idx_event_recurrence_overrides_lookup
   ON public.event_recurrence_overrides(company_id, series_event_id);
 CREATE INDEX IF NOT EXISTS idx_events_recurrence 
   ON public.events(company_id, is_recurring_template) WHERE is_recurring_template = true;
-
 -- Enable RLS
 ALTER TABLE public.event_recurrence_exceptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.event_recurrence_overrides ENABLE ROW LEVEL SECURITY;
-
 -- RLS policies for event_recurrence_exceptions
 CREATE POLICY "event_recurrence_exceptions_select_company_member"
   ON public.event_recurrence_exceptions FOR SELECT
   USING (is_company_member(company_id));
-
 CREATE POLICY "event_recurrence_exceptions_insert_company_member"
   ON public.event_recurrence_exceptions FOR INSERT
   WITH CHECK (is_company_member(company_id));
-
 CREATE POLICY "event_recurrence_exceptions_delete_creator_or_admin"
   ON public.event_recurrence_exceptions FOR DELETE
   USING ((created_by = auth.uid()) OR is_company_admin(company_id));
-
 -- RLS policies for event_recurrence_overrides
 CREATE POLICY "event_recurrence_overrides_select_company_member"
   ON public.event_recurrence_overrides FOR SELECT
   USING (is_company_member(company_id));
-
 CREATE POLICY "event_recurrence_overrides_insert_company_member"
   ON public.event_recurrence_overrides FOR INSERT
   WITH CHECK (is_company_member(company_id));
-
 CREATE POLICY "event_recurrence_overrides_delete_creator_or_admin"
   ON public.event_recurrence_overrides FOR DELETE
   USING ((created_by = auth.uid()) OR is_company_admin(company_id));
-
 -- Create RPC for expanding event series
 CREATE OR REPLACE FUNCTION public.expand_event_series(
   p_event_id uuid,
@@ -232,7 +221,6 @@ BEGIN
   RETURN;
 END;
 $$;
-
 -- RPC to skip an event occurrence
 CREATE OR REPLACE FUNCTION public.skip_event_occurrence(
   p_event_id uuid,
@@ -268,7 +256,6 @@ BEGIN
   RETURN v_exception_id;
 END;
 $$;
-
 -- RPC to create an override (edit single occurrence)
 CREATE OR REPLACE FUNCTION public.create_event_occurrence_override(
   p_series_event_id uuid,

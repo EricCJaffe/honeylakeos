@@ -11,7 +11,6 @@ BEGIN
   LOOP v_plan_entitlements := jsonb_set(COALESCE(v_plan_entitlements, '{}'), string_to_array(v_override.entitlement_key, '.'), v_override.entitlement_value::jsonb); END LOOP;
   RETURN COALESCE(v_plan_entitlements, '{}');
 END; $$;
-
 CREATE OR REPLACE FUNCTION public.fn_on_coaching_engagement_ended() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE v_member_company_id uuid; v_has_other_active boolean; v_current_plan record; v_grace_days integer := 14;
 BEGIN
@@ -28,8 +27,6 @@ BEGIN
   END IF;
   RETURN NEW;
 END; $$;
-
 DROP TRIGGER IF EXISTS trg_coaching_engagement_ended ON public.coaching_org_engagements;
 CREATE TRIGGER trg_coaching_engagement_ended AFTER UPDATE ON public.coaching_org_engagements FOR EACH ROW EXECUTE FUNCTION public.fn_on_coaching_engagement_ended();
-
 GRANT EXECUTE ON FUNCTION public.fn_company_entitlements(uuid) TO authenticated;

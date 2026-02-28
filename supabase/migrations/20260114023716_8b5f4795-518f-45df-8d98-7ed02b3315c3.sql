@@ -23,10 +23,8 @@ AS $$
     -- Only allow company admins to access this
     AND is_company_admin(p_company_id);
 $$;
-
 -- Grant execute to authenticated users (the function itself checks admin status)
 GRANT EXECUTE ON FUNCTION public.get_company_member_directory(uuid) TO authenticated;
-
 -- Also create a function to get profile info for ACL display (for entity owners/admins)
 CREATE OR REPLACE FUNCTION public.get_acl_grantee_profile(p_grantee_id uuid, p_entity_type text, p_entity_id uuid)
 RETURNS TABLE (
@@ -50,5 +48,4 @@ AS $$
       OR p_grantee_id = auth.uid()
     );
 $$;
-
 GRANT EXECUTE ON FUNCTION public.get_acl_grantee_profile(uuid, text, uuid) TO authenticated;

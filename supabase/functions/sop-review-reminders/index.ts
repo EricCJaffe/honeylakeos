@@ -18,6 +18,10 @@ interface SOPReviewCheck {
   created_by: string | null;
 }
 
+interface SOPReminderRequest {
+  dry_run?: boolean;
+}
+
 serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -25,6 +29,17 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
+    const requiredSecret = Deno.env.get("SOP_REVIEW_SCHEDULER_SECRET") || "";
+    if (requiredSecret) {
+      const providedSecret = req.headers.get("x-scheduler-secret") || "";
+      if (providedSecret !== requiredSecret) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Unauthorized" }),
+          { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -37,6 +52,13 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    let body: SOPReminderRequest = {};
+    try {
+      body = await req.json();
+    } catch {
+      body = {};
+    }
+    const dryRun = body.dry_run ?? false;
 
     const now = new Date();
     const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -79,6 +101,8 @@ serve(async (req: Request): Promise<Response> => {
 
     let remindersCreated = 0;
     let escalationsCreated = 0;
+    let reminderCandidates = 0;
+    let escalationCandidates = 0;
 
     for (const sop of sops) {
       const reviewDate = new Date(sop.next_review_at);
@@ -97,43 +121,49 @@ serve(async (req: Request): Promise<Response> => {
       // Case 1: 30 days before review - send initial reminder to owner
       if (daysUntilReview <= 30 && daysUntilReview > 0 && !sop.review_reminder_sent_at) {
         if (sop.created_by) {
-          await supabase.from("in_app_notifications").insert({
-            company_id: sop.company_id,
-            user_id: sop.created_by,
-            type: "sop_review_reminder",
-            title: "SOP Review Due Soon",
-            message: `"${sop.title}" is due for review in ${daysUntilReview} days.`,
-            entity_type: "sop",
-            entity_id: sop.id,
-            metadata: { days_until_review: daysUntilReview, reminder_type: "30_day" }
-          });
+          reminderCandidates++;
+          if (!dryRun) {
+            await supabase.from("in_app_notifications").insert({
+              company_id: sop.company_id,
+              user_id: sop.created_by,
+              type: "sop_review_reminder",
+              title: "SOP Review Due Soon",
+              message: `"${sop.title}" is due for review in ${daysUntilReview} days.`,
+              entity_type: "sop",
+              entity_id: sop.id,
+              metadata: { days_until_review: daysUntilReview, reminder_type: "30_day" }
+            });
 
-          await supabase
-            .from("sops")
-            .update({ review_reminder_sent_at: now.toISOString() })
-            .eq("id", sop.id);
+            await supabase
+              .from("sops")
+              .update({ review_reminder_sent_at: now.toISOString() })
+              .eq("id", sop.id);
 
-          remindersCreated++;
-          console.log(`Sent 30-day reminder for SOP: ${sop.title}`);
+            remindersCreated++;
+            console.log(`Sent 30-day reminder for SOP: ${sop.title}`);
+          }
         }
       }
 
       // Case 2: At due date - send follow-up reminder
       if (daysUntilReview <= 0 && daysUntilReview > -1 && sop.review_reminder_sent_at) {
         if (sop.created_by) {
-          await supabase.from("in_app_notifications").insert({
-            company_id: sop.company_id,
-            user_id: sop.created_by,
-            type: "sop_review_due",
-            title: "SOP Review Due Today",
-            message: `"${sop.title}" is due for review today.`,
-            entity_type: "sop",
-            entity_id: sop.id,
-            metadata: { reminder_type: "due_date" }
-          });
+          reminderCandidates++;
+          if (!dryRun) {
+            await supabase.from("in_app_notifications").insert({
+              company_id: sop.company_id,
+              user_id: sop.created_by,
+              type: "sop_review_due",
+              title: "SOP Review Due Today",
+              message: `"${sop.title}" is due for review today.`,
+              entity_type: "sop",
+              entity_id: sop.id,
+              metadata: { reminder_type: "due_date" }
+            });
 
-          remindersCreated++;
-          console.log(`Sent due-date reminder for SOP: ${sop.title}`);
+            remindersCreated++;
+            console.log(`Sent due-date reminder for SOP: ${sop.title}`);
+          }
         }
       }
 
@@ -148,29 +178,32 @@ serve(async (req: Request): Promise<Response> => {
 
         const uniqueAdminIds = [...new Set(adminIds)];
 
-        for (const adminId of uniqueAdminIds) {
-          await supabase.from("in_app_notifications").insert({
-            company_id: sop.company_id,
-            user_id: adminId,
-            type: "sop_review_overdue",
-            title: "SOP Review Overdue",
-            message: `"${sop.title}" is ${Math.abs(daysUntilReview)} days overdue for review. Immediate action required.`,
-            entity_type: "sop",
-            entity_id: sop.id,
-            metadata: { days_overdue: Math.abs(daysUntilReview), reminder_type: "escalation" }
-          });
+        escalationCandidates++;
+        if (!dryRun) {
+          for (const adminId of uniqueAdminIds) {
+            await supabase.from("in_app_notifications").insert({
+              company_id: sop.company_id,
+              user_id: adminId,
+              type: "sop_review_overdue",
+              title: "SOP Review Overdue",
+              message: `"${sop.title}" is ${Math.abs(daysUntilReview)} days overdue for review. Immediate action required.`,
+              entity_type: "sop",
+              entity_id: sop.id,
+              metadata: { days_overdue: Math.abs(daysUntilReview), reminder_type: "escalation" }
+            });
+          }
+
+          await supabase
+            .from("sops")
+            .update({ 
+              overdue_reminder_sent_at: now.toISOString(),
+              status: "review_due"
+            })
+            .eq("id", sop.id);
+
+          escalationsCreated++;
+          console.log(`Escalated overdue SOP: ${sop.title} to ${uniqueAdminIds.length} admins`);
         }
-
-        await supabase
-          .from("sops")
-          .update({ 
-            overdue_reminder_sent_at: now.toISOString(),
-            status: "review_due"
-          })
-          .eq("id", sop.id);
-
-        escalationsCreated++;
-        console.log(`Escalated overdue SOP: ${sop.title} to ${uniqueAdminIds.length} admins`);
       }
     }
 
@@ -180,6 +213,9 @@ serve(async (req: Request): Promise<Response> => {
       JSON.stringify({ 
         success: true, 
         processed: sops.length,
+        dry_run: dryRun,
+        reminder_candidates: reminderCandidates,
+        escalation_candidates: escalationCandidates,
         reminders_created: remindersCreated,
         escalations_created: escalationsCreated
       }),

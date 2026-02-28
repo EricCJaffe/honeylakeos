@@ -35,31 +35,25 @@ CREATE TABLE public.crm_clients (
     person_full_name IS NOT NULL OR org_name IS NOT NULL
   )
 );
-
 -- Enable RLS
 ALTER TABLE public.crm_clients ENABLE ROW LEVEL SECURITY;
-
 -- RLS Policies: Company members can CRUD their own company's CRM records
 CREATE POLICY "Company members can view CRM clients"
 ON public.crm_clients
 FOR SELECT
 USING (is_company_member(company_id));
-
 CREATE POLICY "Company members can create CRM clients"
 ON public.crm_clients
 FOR INSERT
 WITH CHECK (is_company_member(company_id));
-
 CREATE POLICY "Company members can update CRM clients"
 ON public.crm_clients
 FOR UPDATE
 USING (is_company_member(company_id));
-
 CREATE POLICY "Company members can delete CRM clients"
 ON public.crm_clients
 FOR DELETE
 USING (is_company_member(company_id));
-
 -- Indexes for common queries
 CREATE INDEX idx_crm_clients_company_id ON public.crm_clients(company_id);
 CREATE INDEX idx_crm_clients_lifecycle_status ON public.crm_clients(lifecycle_status);
@@ -67,13 +61,11 @@ CREATE INDEX idx_crm_clients_type ON public.crm_clients(type);
 CREATE INDEX idx_crm_clients_archived_at ON public.crm_clients(archived_at);
 CREATE INDEX idx_crm_clients_person_email ON public.crm_clients(person_email);
 CREATE INDEX idx_crm_clients_org_name ON public.crm_clients(org_name);
-
 -- Add trigger for updated_at
 CREATE TRIGGER update_crm_clients_updated_at
 BEFORE UPDATE ON public.crm_clients
 FOR EACH ROW
 EXECUTE FUNCTION public.update_updated_at_column();
-
 -- Insert CRM module if it doesn't exist
 INSERT INTO public.modules (id, name, slug, description, category, is_public)
 VALUES (

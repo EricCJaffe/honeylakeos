@@ -4,19 +4,14 @@
 
 -- Create coaching role enum
 CREATE TYPE public.coaching_role AS ENUM ('coach', 'coach_manager', 'org_admin');
-
 -- Create engagement status enum
 CREATE TYPE public.engagement_status AS ENUM ('active', 'paused', 'ended');
-
 -- Create coach assignment role enum
 CREATE TYPE public.coach_assignment_role AS ENUM ('primary_coach', 'support_coach');
-
 -- Create recommendation type enum
 CREATE TYPE public.recommendation_type AS ENUM ('task', 'project', 'calendar_event', 'note_prompt', 'document_prompt', 'framework_change_suggestion');
-
 -- Create recommendation status enum
 CREATE TYPE public.recommendation_status AS ENUM ('proposed', 'accepted', 'rejected', 'expired');
-
 -- ==========================================
 -- COACHING ORG SETTINGS
 -- ==========================================
@@ -28,7 +23,6 @@ CREATE TABLE public.coaching_org_settings (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 -- ==========================================
 -- COACH PROFILES (Internal coaching org users)
 -- ==========================================
@@ -44,7 +38,6 @@ CREATE TABLE public.coaching_coach_profiles (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(company_id, user_id)
 );
-
 -- ==========================================
 -- COACHING ENGAGEMENTS
 -- ==========================================
@@ -62,12 +55,10 @@ CREATE TABLE public.coaching_engagements (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   archived_at TIMESTAMPTZ
 );
-
 -- Partial unique index for active engagements
 CREATE UNIQUE INDEX idx_unique_active_engagement 
   ON public.coaching_engagements(coaching_org_company_id, client_company_id) 
   WHERE archived_at IS NULL AND engagement_status = 'active';
-
 -- ==========================================
 -- COACH ASSIGNMENTS
 -- ==========================================
@@ -80,12 +71,10 @@ CREATE TABLE public.coach_assignments (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 -- Partial unique index for active assignments
 CREATE UNIQUE INDEX idx_unique_active_assignment 
   ON public.coach_assignments(engagement_id, coach_user_id) 
   WHERE archived_at IS NULL;
-
 -- ==========================================
 -- COACH RECOMMENDATIONS
 -- ==========================================
@@ -107,7 +96,6 @@ CREATE TABLE public.coach_recommendations (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 -- ==========================================
 -- INDEXES
 -- ==========================================
@@ -122,30 +110,24 @@ CREATE INDEX idx_coach_assignments_coach ON public.coach_assignments(coach_user_
 CREATE INDEX idx_coach_recommendations_engagement ON public.coach_recommendations(engagement_id);
 CREATE INDEX idx_coach_recommendations_target ON public.coach_recommendations(target_company_id);
 CREATE INDEX idx_coach_recommendations_status ON public.coach_recommendations(status);
-
 -- ==========================================
 -- TRIGGERS
 -- ==========================================
 CREATE TRIGGER update_coaching_org_settings_updated_at
   BEFORE UPDATE ON public.coaching_org_settings
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 CREATE TRIGGER update_coaching_coach_profiles_updated_at
   BEFORE UPDATE ON public.coaching_coach_profiles
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 CREATE TRIGGER update_coaching_engagements_updated_at
   BEFORE UPDATE ON public.coaching_engagements
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 CREATE TRIGGER update_coach_assignments_updated_at
   BEFORE UPDATE ON public.coach_assignments
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 CREATE TRIGGER update_coach_recommendations_updated_at
   BEFORE UPDATE ON public.coach_recommendations
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 -- ==========================================
 -- HELPER FUNCTIONS
 -- ==========================================
@@ -165,7 +147,6 @@ AS $$
     AND archived_at IS NULL
   )
 $$;
-
 -- Check if user is a coach manager or org admin
 CREATE OR REPLACE FUNCTION public.is_coach_manager_or_admin(p_company_id UUID, p_user_id UUID DEFAULT auth.uid())
 RETURNS BOOLEAN
@@ -182,7 +163,6 @@ AS $$
     AND archived_at IS NULL
   )
 $$;
-
 -- Check if user is assigned to an engagement
 CREATE OR REPLACE FUNCTION public.is_assigned_to_engagement(p_engagement_id UUID, p_user_id UUID DEFAULT auth.uid())
 RETURNS BOOLEAN
@@ -198,67 +178,54 @@ AS $$
     AND archived_at IS NULL
   )
 $$;
-
 -- ==========================================
 -- RLS POLICIES
 -- ==========================================
 
 -- COACHING ORG SETTINGS
 ALTER TABLE public.coaching_org_settings ENABLE ROW LEVEL SECURITY;
-
 CREATE POLICY "Company members can view coaching org settings"
   ON public.coaching_org_settings FOR SELECT
   USING (public.is_company_member(company_id));
-
 CREATE POLICY "Company admins can manage coaching org settings"
   ON public.coaching_org_settings FOR ALL
   USING (public.is_company_admin(company_id));
-
 -- COACH PROFILES
 ALTER TABLE public.coaching_coach_profiles ENABLE ROW LEVEL SECURITY;
-
 CREATE POLICY "Coaching org members can view coach profiles"
   ON public.coaching_coach_profiles FOR SELECT
   USING (public.is_company_member(company_id));
-
 CREATE POLICY "Org admins can manage coach profiles"
   ON public.coaching_coach_profiles FOR ALL
   USING (
     public.is_company_admin(company_id) OR
     public.is_coach_manager_or_admin(company_id)
   );
-
 -- COACHING ENGAGEMENTS
 ALTER TABLE public.coaching_engagements ENABLE ROW LEVEL SECURITY;
-
 CREATE POLICY "Coaching org members can view their engagements"
   ON public.coaching_engagements FOR SELECT
   USING (
     public.is_company_member(coaching_org_company_id) OR
     public.is_company_member(client_company_id)
   );
-
 CREATE POLICY "Coaching org admins can create engagements"
   ON public.coaching_engagements FOR INSERT
   WITH CHECK (
     public.is_company_admin(coaching_org_company_id) OR
     public.is_coach_manager_or_admin(coaching_org_company_id)
   );
-
 CREATE POLICY "Coaching org admins can update engagements"
   ON public.coaching_engagements FOR UPDATE
   USING (
     public.is_company_admin(coaching_org_company_id) OR
     public.is_coach_manager_or_admin(coaching_org_company_id)
   );
-
 CREATE POLICY "Coaching org admins can delete engagements"
   ON public.coaching_engagements FOR DELETE
   USING (public.is_company_admin(coaching_org_company_id));
-
 -- COACH ASSIGNMENTS
 ALTER TABLE public.coach_assignments ENABLE ROW LEVEL SECURITY;
-
 CREATE POLICY "Coaching org members can view assignments"
   ON public.coach_assignments FOR SELECT
   USING (
@@ -271,7 +238,6 @@ CREATE POLICY "Coaching org members can view assignments"
       )
     )
   );
-
 CREATE POLICY "Coach managers can manage assignments"
   ON public.coach_assignments FOR ALL
   USING (
@@ -284,10 +250,8 @@ CREATE POLICY "Coach managers can manage assignments"
       )
     )
   );
-
 -- COACH RECOMMENDATIONS
 ALTER TABLE public.coach_recommendations ENABLE ROW LEVEL SECURITY;
-
 CREATE POLICY "Coaches can view recommendations they created"
   ON public.coach_recommendations FOR SELECT
   USING (
@@ -299,21 +263,18 @@ CREATE POLICY "Coaches can view recommendations they created"
       AND public.is_company_member(e.coaching_org_company_id)
     )
   );
-
 CREATE POLICY "Assigned coaches can create recommendations"
   ON public.coach_recommendations FOR INSERT
   WITH CHECK (
     recommended_by = auth.uid() AND
     public.is_assigned_to_engagement(engagement_id)
   );
-
 CREATE POLICY "Coaches can update their pending recommendations"
   ON public.coach_recommendations FOR UPDATE
   USING (
     (recommended_by = auth.uid() AND status = 'proposed') OR
     (public.is_company_member(target_company_id) AND status = 'proposed')
   );
-
 CREATE POLICY "Only coaching org admins can delete recommendations"
   ON public.coach_recommendations FOR DELETE
   USING (

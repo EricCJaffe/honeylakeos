@@ -10,42 +10,34 @@ DO $$ BEGIN
   CREATE TYPE public.workflow_assignment_status AS ENUM ('active', 'paused', 'archived');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 DO $$ BEGIN
   CREATE TYPE public.workflow_cadence AS ENUM ('one_time', 'weekly', 'monthly', 'quarterly', 'annually');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 DO $$ BEGIN
   CREATE TYPE public.workflow_run_status AS ENUM ('generated', 'in_progress', 'completed', 'cancelled');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 DO $$ BEGIN
   CREATE TYPE public.workflow_run_item_type AS ENUM ('task', 'meeting', 'note', 'form');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 DO $$ BEGIN
   CREATE TYPE public.workflow_run_item_status AS ENUM ('active', 'cancelled');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 DO $$ BEGIN
   CREATE TYPE public.workflow_default_assignee AS ENUM ('coach', 'member_admin', 'member_user', 'unassigned');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 DO $$ BEGIN
   CREATE TYPE public.notification_status AS ENUM ('unread', 'read', 'dismissed');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 DO $$ BEGIN
   CREATE TYPE public.notification_job_status AS ENUM ('scheduled', 'sent', 'cancelled');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- B) Retrofit coaching_workflow_steps with offset columns
 -- ============================================================
 
@@ -53,12 +45,10 @@ ALTER TABLE public.coaching_workflow_steps
 ADD COLUMN IF NOT EXISTS due_offset_days integer DEFAULT 0,
 ADD COLUMN IF NOT EXISTS schedule_offset_days integer DEFAULT 0,
 ADD COLUMN IF NOT EXISTS default_assignee public.workflow_default_assignee DEFAULT 'unassigned';
-
 ALTER TABLE public.coaching_program_pack_workflow_steps
 ADD COLUMN IF NOT EXISTS due_offset_days integer DEFAULT 0,
 ADD COLUMN IF NOT EXISTS schedule_offset_days integer DEFAULT 0,
 ADD COLUMN IF NOT EXISTS default_assignee public.workflow_default_assignee DEFAULT 'unassigned';
-
 -- C) New Tables
 -- ============================================================
 
@@ -77,17 +67,13 @@ CREATE TABLE IF NOT EXISTS public.coaching_workflow_assignments (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-
 CREATE UNIQUE INDEX IF NOT EXISTS idx_workflow_assignments_unique_active 
 ON public.coaching_workflow_assignments (coaching_engagement_id, coaching_workflow_template_id, cadence, start_on)
 WHERE status = 'active';
-
 CREATE INDEX IF NOT EXISTS idx_workflow_assignments_engagement_status 
 ON public.coaching_workflow_assignments (coaching_engagement_id, status);
-
 CREATE INDEX IF NOT EXISTS idx_workflow_assignments_next_run 
 ON public.coaching_workflow_assignments (next_run_at, status);
-
 CREATE TABLE IF NOT EXISTS public.coaching_workflow_runs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   coaching_workflow_assignment_id uuid NOT NULL REFERENCES public.coaching_workflow_assignments(id) ON DELETE CASCADE,
@@ -99,13 +85,10 @@ CREATE TABLE IF NOT EXISTS public.coaching_workflow_runs (
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT unique_run_per_period UNIQUE (coaching_workflow_assignment_id, run_for_period_start)
 );
-
 CREATE INDEX IF NOT EXISTS idx_workflow_runs_assignment_period 
 ON public.coaching_workflow_runs (coaching_workflow_assignment_id, run_for_period_start);
-
 CREATE INDEX IF NOT EXISTS idx_workflow_runs_scheduled 
 ON public.coaching_workflow_runs (scheduled_run_at, status);
-
 CREATE TABLE IF NOT EXISTS public.coaching_workflow_run_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   coaching_workflow_run_id uuid NOT NULL REFERENCES public.coaching_workflow_runs(id) ON DELETE CASCADE,
@@ -118,10 +101,8 @@ CREATE TABLE IF NOT EXISTS public.coaching_workflow_run_items (
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT unique_step_per_run UNIQUE (coaching_workflow_run_id, step_id)
 );
-
 CREATE INDEX IF NOT EXISTS idx_workflow_run_items_entity 
 ON public.coaching_workflow_run_items (created_entity_table, created_entity_id);
-
 CREATE TABLE IF NOT EXISTS public.notifications (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
@@ -134,13 +115,10 @@ CREATE TABLE IF NOT EXISTS public.notifications (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-
 CREATE INDEX IF NOT EXISTS idx_notifications_user_status 
 ON public.notifications (user_id, status);
-
 CREATE INDEX IF NOT EXISTS idx_notifications_due 
 ON public.notifications (due_at, status);
-
 CREATE TABLE IF NOT EXISTS public.notification_jobs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   notification_id uuid NOT NULL REFERENCES public.notifications(id) ON DELETE CASCADE,
@@ -149,10 +127,8 @@ CREATE TABLE IF NOT EXISTS public.notification_jobs (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-
 CREATE INDEX IF NOT EXISTS idx_notification_jobs_run 
 ON public.notification_jobs (run_at, status);
-
 CREATE TABLE IF NOT EXISTS public.coaching_form_requests (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   coaching_engagement_id uuid NOT NULL REFERENCES public.coaching_org_engagements(id) ON DELETE CASCADE,
@@ -164,10 +140,8 @@ CREATE TABLE IF NOT EXISTS public.coaching_form_requests (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-
 CREATE INDEX IF NOT EXISTS idx_form_requests_engagement 
 ON public.coaching_form_requests (coaching_engagement_id, status);
-
 -- D) Updated_at Triggers
 -- ============================================================
 
@@ -175,32 +149,26 @@ DROP TRIGGER IF EXISTS set_updated_at_coaching_workflow_assignments ON public.co
 CREATE TRIGGER set_updated_at_coaching_workflow_assignments
   BEFORE UPDATE ON public.coaching_workflow_assignments
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 DROP TRIGGER IF EXISTS set_updated_at_coaching_workflow_runs ON public.coaching_workflow_runs;
 CREATE TRIGGER set_updated_at_coaching_workflow_runs
   BEFORE UPDATE ON public.coaching_workflow_runs
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 DROP TRIGGER IF EXISTS set_updated_at_coaching_workflow_run_items ON public.coaching_workflow_run_items;
 CREATE TRIGGER set_updated_at_coaching_workflow_run_items
   BEFORE UPDATE ON public.coaching_workflow_run_items
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 DROP TRIGGER IF EXISTS set_updated_at_notifications ON public.notifications;
 CREATE TRIGGER set_updated_at_notifications
   BEFORE UPDATE ON public.notifications
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 DROP TRIGGER IF EXISTS set_updated_at_notification_jobs ON public.notification_jobs;
 CREATE TRIGGER set_updated_at_notification_jobs
   BEFORE UPDATE ON public.notification_jobs
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 DROP TRIGGER IF EXISTS set_updated_at_coaching_form_requests ON public.coaching_form_requests;
 CREATE TRIGGER set_updated_at_coaching_form_requests
   BEFORE UPDATE ON public.coaching_form_requests
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 -- E) Helper Functions for RLS (using memberships table)
 -- ============================================================
 
@@ -232,7 +200,6 @@ AS $$
       )
   )
 $$;
-
 CREATE OR REPLACE FUNCTION public.fn_can_manage_workflow_assignment(_user_id uuid, _assignment_id uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -259,7 +226,6 @@ AS $$
       )
   )
 $$;
-
 CREATE OR REPLACE FUNCTION public.fn_can_access_engagement_for_workflow(_user_id uuid, _engagement_id uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -287,7 +253,6 @@ AS $$
       )
   )
 $$;
-
 CREATE OR REPLACE FUNCTION public.fn_can_manage_engagement_workflow(_user_id uuid, _engagement_id uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -313,7 +278,6 @@ AS $$
       )
   )
 $$;
-
 -- F) RLS Policies
 -- ============================================================
 
@@ -323,51 +287,42 @@ ALTER TABLE public.coaching_workflow_run_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notification_jobs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coaching_form_requests ENABLE ROW LEVEL SECURITY;
-
 -- coaching_workflow_assignments policies
 CREATE POLICY "wf_assignments_select"
 ON public.coaching_workflow_assignments FOR SELECT
 TO authenticated
 USING (public.fn_can_access_engagement_for_workflow(auth.uid(), coaching_engagement_id));
-
 CREATE POLICY "wf_assignments_insert"
 ON public.coaching_workflow_assignments FOR INSERT
 TO authenticated
 WITH CHECK (public.fn_can_manage_engagement_workflow(auth.uid(), coaching_engagement_id));
-
 CREATE POLICY "wf_assignments_update"
 ON public.coaching_workflow_assignments FOR UPDATE
 TO authenticated
 USING (public.fn_can_manage_workflow_assignment(auth.uid(), id))
 WITH CHECK (public.fn_can_manage_workflow_assignment(auth.uid(), id));
-
 CREATE POLICY "wf_assignments_delete"
 ON public.coaching_workflow_assignments FOR DELETE
 TO authenticated
 USING (public.fn_can_manage_workflow_assignment(auth.uid(), id));
-
 -- coaching_workflow_runs policies
 CREATE POLICY "wf_runs_select"
 ON public.coaching_workflow_runs FOR SELECT
 TO authenticated
 USING (public.fn_can_access_workflow_assignment(auth.uid(), coaching_workflow_assignment_id));
-
 CREATE POLICY "wf_runs_insert"
 ON public.coaching_workflow_runs FOR INSERT
 TO authenticated
 WITH CHECK (public.fn_can_manage_workflow_assignment(auth.uid(), coaching_workflow_assignment_id));
-
 CREATE POLICY "wf_runs_update"
 ON public.coaching_workflow_runs FOR UPDATE
 TO authenticated
 USING (public.fn_can_manage_workflow_assignment(auth.uid(), coaching_workflow_assignment_id))
 WITH CHECK (public.fn_can_manage_workflow_assignment(auth.uid(), coaching_workflow_assignment_id));
-
 CREATE POLICY "wf_runs_delete"
 ON public.coaching_workflow_runs FOR DELETE
 TO authenticated
 USING (public.fn_can_manage_workflow_assignment(auth.uid(), coaching_workflow_assignment_id));
-
 -- coaching_workflow_run_items policies
 CREATE POLICY "wf_run_items_select"
 ON public.coaching_workflow_run_items FOR SELECT
@@ -379,7 +334,6 @@ USING (
       AND public.fn_can_access_workflow_assignment(auth.uid(), r.coaching_workflow_assignment_id)
   )
 );
-
 CREATE POLICY "wf_run_items_insert"
 ON public.coaching_workflow_run_items FOR INSERT
 TO authenticated
@@ -390,7 +344,6 @@ WITH CHECK (
       AND public.fn_can_manage_workflow_assignment(auth.uid(), r.coaching_workflow_assignment_id)
   )
 );
-
 CREATE POLICY "wf_run_items_update"
 ON public.coaching_workflow_run_items FOR UPDATE
 TO authenticated
@@ -408,7 +361,6 @@ WITH CHECK (
       AND public.fn_can_manage_workflow_assignment(auth.uid(), r.coaching_workflow_assignment_id)
   )
 );
-
 CREATE POLICY "wf_run_items_delete"
 ON public.coaching_workflow_run_items FOR DELETE
 TO authenticated
@@ -419,31 +371,26 @@ USING (
       AND public.fn_can_manage_workflow_assignment(auth.uid(), r.coaching_workflow_assignment_id)
   )
 );
-
 -- notifications policies
 CREATE POLICY "notifications_select_own"
 ON public.notifications FOR SELECT
 TO authenticated
 USING (user_id = auth.uid());
-
 CREATE POLICY "notifications_update_own"
 ON public.notifications FOR UPDATE
 TO authenticated
 USING (user_id = auth.uid())
 WITH CHECK (user_id = auth.uid());
-
 CREATE POLICY "notifications_insert"
 ON public.notifications FOR INSERT
 TO authenticated
 WITH CHECK (true);
-
 -- notification_jobs policies
 CREATE POLICY "notification_jobs_admin"
 ON public.notification_jobs FOR ALL
 TO authenticated
 USING (public.fn_is_site_admin(auth.uid()))
 WITH CHECK (public.fn_is_site_admin(auth.uid()));
-
 CREATE POLICY "notification_jobs_select_own"
 ON public.notification_jobs FOR SELECT
 TO authenticated
@@ -452,29 +399,24 @@ USING (
     SELECT id FROM public.notifications WHERE user_id = auth.uid()
   )
 );
-
 -- coaching_form_requests policies
 CREATE POLICY "form_requests_select"
 ON public.coaching_form_requests FOR SELECT
 TO authenticated
 USING (public.fn_can_access_engagement_for_workflow(auth.uid(), coaching_engagement_id));
-
 CREATE POLICY "form_requests_insert"
 ON public.coaching_form_requests FOR INSERT
 TO authenticated
 WITH CHECK (public.fn_can_manage_engagement_workflow(auth.uid(), coaching_engagement_id));
-
 CREATE POLICY "form_requests_update"
 ON public.coaching_form_requests FOR UPDATE
 TO authenticated
 USING (public.fn_can_manage_engagement_workflow(auth.uid(), coaching_engagement_id))
 WITH CHECK (public.fn_can_manage_engagement_workflow(auth.uid(), coaching_engagement_id));
-
 CREATE POLICY "form_requests_delete"
 ON public.coaching_form_requests FOR DELETE
 TO authenticated
 USING (public.fn_can_manage_engagement_workflow(auth.uid(), coaching_engagement_id));
-
 -- G) Automation Helper Functions
 -- ============================================================
 
@@ -509,7 +451,6 @@ BEGIN
   RETURN (v_next_date::text || ' 10:00:00')::timestamp AT TIME ZONE p_timezone;
 END;
 $$;
-
 CREATE OR REPLACE FUNCTION public.fn_set_initial_next_run()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -523,12 +464,10 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
 DROP TRIGGER IF EXISTS trg_set_initial_next_run ON public.coaching_workflow_assignments;
 CREATE TRIGGER trg_set_initial_next_run
   BEFORE INSERT ON public.coaching_workflow_assignments
   FOR EACH ROW EXECUTE FUNCTION public.fn_set_initial_next_run();
-
 CREATE OR REPLACE FUNCTION public.fn_update_next_run_on_resume()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -546,7 +485,6 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
 DROP TRIGGER IF EXISTS trg_update_next_run_on_resume ON public.coaching_workflow_assignments;
 CREATE TRIGGER trg_update_next_run_on_resume
   BEFORE UPDATE ON public.coaching_workflow_assignments

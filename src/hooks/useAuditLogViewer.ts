@@ -20,6 +20,7 @@ export interface AuditLogFilters {
   action?: string;
   actionPrefix?: string;
   actorUserId?: string;
+  actorEmail?: string;
   startDate?: Date;
   endDate?: Date;
   search?: string;
@@ -36,6 +37,20 @@ export function useAuditLogViewer() {
     queryKey: ['audit-logs', companyId, page, filters],
     queryFn: async () => {
       if (!companyId) return { logs: [], totalCount: 0 };
+      let resolvedActorUserId = filters.actorUserId || null;
+      const actorEmail = filters.actorEmail?.trim();
+
+      if (!resolvedActorUserId && actorEmail) {
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .ilike("email", actorEmail)
+          .maybeSingle();
+
+        if (profileError) throw profileError;
+        if (!profile?.user_id) return { logs: [], totalCount: 0 };
+        resolvedActorUserId = profile.user_id;
+      }
 
       const { data, error } = await supabase.rpc('list_audit_logs', {
         p_company_id: companyId,
@@ -43,7 +58,7 @@ export function useAuditLogViewer() {
         p_page: page,
         p_entity_type: filters.entityType || null,
         p_action: filters.action || filters.actionPrefix || null,
-        p_actor_user_id: filters.actorUserId || null,
+        p_actor_user_id: resolvedActorUserId,
         p_start_date: filters.startDate?.toISOString() || null,
         p_end_date: filters.endDate?.toISOString() || null,
         p_search: filters.search || null,

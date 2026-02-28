@@ -21,15 +21,12 @@ CREATE TABLE IF NOT EXISTS public.saved_views (
     (is_personal = false AND company_id IS NOT NULL)
   )
 );
-
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_saved_views_owner ON public.saved_views(owner_user_id) WHERE is_personal = true;
 CREATE INDEX IF NOT EXISTS idx_saved_views_company ON public.saved_views(company_id) WHERE is_personal = false;
 CREATE INDEX IF NOT EXISTS idx_saved_views_module ON public.saved_views(module);
-
 -- Enable RLS
 ALTER TABLE public.saved_views ENABLE ROW LEVEL SECURITY;
-
 -- RLS Policies
 -- Personal views: owner only
 CREATE POLICY "Users can view their own saved views"
@@ -41,7 +38,6 @@ CREATE POLICY "Users can view their own saved views"
       SELECT m.company_id FROM public.memberships m WHERE m.user_id = auth.uid()
     ))
   );
-
 CREATE POLICY "Users can create personal saved views"
   ON public.saved_views FOR INSERT
   WITH CHECK (
@@ -51,7 +47,6 @@ CREATE POLICY "Users can create personal saved views"
       SELECT m.company_id FROM public.memberships m WHERE m.user_id = auth.uid() AND m.role = 'company_admin'
     ))
   );
-
 CREATE POLICY "Users can update their saved views"
   ON public.saved_views FOR UPDATE
   USING (
@@ -61,7 +56,6 @@ CREATE POLICY "Users can update their saved views"
       SELECT m.company_id FROM public.memberships m WHERE m.user_id = auth.uid() AND m.role = 'company_admin'
     ))
   );
-
 CREATE POLICY "Users can delete their saved views"
   ON public.saved_views FOR DELETE
   USING (
@@ -71,7 +65,6 @@ CREATE POLICY "Users can delete their saved views"
       SELECT m.company_id FROM public.memberships m WHERE m.user_id = auth.uid() AND m.role = 'company_admin'
     ))
   );
-
 -- Audit trigger for saved views
 CREATE OR REPLACE FUNCTION public.audit_saved_view_changes()
 RETURNS TRIGGER
@@ -125,11 +118,9 @@ BEGIN
   RETURN COALESCE(NEW, OLD);
 END;
 $$;
-
 CREATE TRIGGER audit_saved_view_trigger
   AFTER INSERT OR UPDATE OR DELETE ON public.saved_views
   FOR EACH ROW EXECUTE FUNCTION public.audit_saved_view_changes();
-
 -- Update timestamp trigger
 CREATE TRIGGER update_saved_views_updated_at
   BEFORE UPDATE ON public.saved_views

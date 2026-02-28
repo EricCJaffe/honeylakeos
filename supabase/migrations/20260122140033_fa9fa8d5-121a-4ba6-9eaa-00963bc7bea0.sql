@@ -1,4 +1,3 @@
-
 -- ============================================================
 -- COACHES MODULE RETROFIT - PROMPT 4
 -- Program Type Packs + Terminology + Seeding + Member Flow Hooks
@@ -15,33 +14,27 @@ ADD COLUMN IF NOT EXISTS program_name text NOT NULL DEFAULT 'Generic',
 ADD COLUMN IF NOT EXISTS program_version text,
 ADD COLUMN IF NOT EXISTS seeded_from_pack_id uuid,
 ADD COLUMN IF NOT EXISTS seeded_at timestamptz;
-
 -- Add constraint for non-empty values (safe to fail if exists)
 DO $$ BEGIN
   ALTER TABLE coaching_orgs ADD CONSTRAINT chk_coaching_orgs_program_key_not_empty CHECK (program_key <> '');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 DO $$ BEGIN
   ALTER TABLE coaching_orgs ADD CONSTRAINT chk_coaching_orgs_program_name_not_empty CHECK (program_name <> '');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- Index on program_key
 CREATE INDEX IF NOT EXISTS idx_coaching_orgs_program_key ON coaching_orgs(program_key);
-
 -- Backfill existing rows
 UPDATE coaching_orgs
 SET program_key = 'generic',
     program_name = 'Generic',
     seeded_at = now()
 WHERE program_key = 'generic' AND seeded_at IS NULL;
-
 -- 2) coaching_engagements - add program snapshot
 ALTER TABLE coaching_engagements
 ADD COLUMN IF NOT EXISTS program_key_snapshot text,
 ADD COLUMN IF NOT EXISTS program_name_snapshot text;
-
 -- Backfill from coaching_orgs via company_id join
 UPDATE coaching_engagements ce
 SET program_key_snapshot = co.program_key,
@@ -49,19 +42,16 @@ SET program_key_snapshot = co.program_key,
 FROM coaching_orgs co
 WHERE ce.coaching_org_company_id = co.company_id
   AND ce.program_key_snapshot IS NULL;
-
 -- Also add to coaching_org_engagements for completeness
 ALTER TABLE coaching_org_engagements
 ADD COLUMN IF NOT EXISTS program_key_snapshot text,
 ADD COLUMN IF NOT EXISTS program_name_snapshot text;
-
 UPDATE coaching_org_engagements coe
 SET program_key_snapshot = co.program_key,
     program_name_snapshot = co.program_name
 FROM coaching_orgs co
 WHERE coe.coaching_org_id = co.id
   AND coe.program_key_snapshot IS NULL;
-
 -- 3) coaching_terms - terminology overrides per org
 CREATE TABLE IF NOT EXISTS coaching_terms (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -72,9 +62,7 @@ CREATE TABLE IF NOT EXISTS coaching_terms (
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT uq_coaching_terms_org_key UNIQUE(coaching_org_id, term_key)
 );
-
 CREATE INDEX IF NOT EXISTS idx_coaching_terms_org_key ON coaching_terms(coaching_org_id, term_key);
-
 -- ============================================================
 -- B) PRIVATE PACK LIBRARY (Site Admin Only)
 -- ============================================================
@@ -90,7 +78,6 @@ CREATE TABLE IF NOT EXISTS coaching_program_packs (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-
 -- Add FK from coaching_orgs
 DO $$ BEGIN
   ALTER TABLE coaching_orgs
@@ -98,7 +85,6 @@ DO $$ BEGIN
   FOREIGN KEY (seeded_from_pack_id) REFERENCES coaching_program_packs(id);
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- 5) coaching_program_pack_terms
 CREATE TABLE IF NOT EXISTS coaching_program_pack_terms (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -109,7 +95,6 @@ CREATE TABLE IF NOT EXISTS coaching_program_pack_terms (
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT uq_pack_terms_pack_key UNIQUE(pack_id, term_key)
 );
-
 -- 6) coaching_program_pack_workflow_templates (uses template_status and coaching_workflow_type)
 CREATE TABLE IF NOT EXISTS coaching_program_pack_workflow_templates (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -121,7 +106,6 @@ CREATE TABLE IF NOT EXISTS coaching_program_pack_workflow_templates (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-
 -- 7) coaching_program_pack_workflow_steps (uses coaching_step_type)
 CREATE TABLE IF NOT EXISTS coaching_program_pack_workflow_steps (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -134,7 +118,6 @@ CREATE TABLE IF NOT EXISTS coaching_program_pack_workflow_steps (
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT uq_pack_workflow_steps_order UNIQUE(pack_workflow_template_id, step_order)
 );
-
 -- 8) coaching_program_pack_dashboard_widgets
 CREATE TABLE IF NOT EXISTS coaching_program_pack_dashboard_widgets (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -149,7 +132,6 @@ CREATE TABLE IF NOT EXISTS coaching_program_pack_dashboard_widgets (
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT uq_pack_dashboard_widgets UNIQUE(pack_id, dashboard_type, widget_key)
 );
-
 -- ============================================================
 -- Add seeding metadata to existing tables for idempotency
 -- ============================================================
@@ -157,30 +139,25 @@ CREATE TABLE IF NOT EXISTS coaching_program_pack_dashboard_widgets (
 -- coaching_workflow_templates - add seeding metadata
 ALTER TABLE coaching_workflow_templates
 ADD COLUMN IF NOT EXISTS seeded_from_pack_workflow_template_id uuid;
-
 DO $$ BEGIN
   ALTER TABLE coaching_workflow_templates
   ADD CONSTRAINT fk_wf_templates_pack_template
   FOREIGN KEY (seeded_from_pack_workflow_template_id) REFERENCES coaching_program_pack_workflow_templates(id);
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- Unique constraint for idempotency
 CREATE UNIQUE INDEX IF NOT EXISTS uq_workflow_templates_seeded
 ON coaching_workflow_templates(coaching_org_id, seeded_from_pack_workflow_template_id)
 WHERE seeded_from_pack_workflow_template_id IS NOT NULL;
-
 -- coaching_workflow_steps - add seeding metadata
 ALTER TABLE coaching_workflow_steps
 ADD COLUMN IF NOT EXISTS seeded_from_pack_step_id uuid;
-
 DO $$ BEGIN
   ALTER TABLE coaching_workflow_steps
   ADD CONSTRAINT fk_wf_steps_pack_step
   FOREIGN KEY (seeded_from_pack_step_id) REFERENCES coaching_program_pack_workflow_steps(id);
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
 -- coaching_org_dashboard_widgets - org-scoped widget defaults
 CREATE TABLE IF NOT EXISTS coaching_org_dashboard_widgets (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -197,11 +174,9 @@ CREATE TABLE IF NOT EXISTS coaching_org_dashboard_widgets (
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT uq_org_dashboard_widgets UNIQUE(coaching_org_id, dashboard_type, widget_key)
 );
-
 CREATE UNIQUE INDEX IF NOT EXISTS uq_org_widgets_seeded
 ON coaching_org_dashboard_widgets(coaching_org_id, seeded_from_pack_widget_id)
 WHERE seeded_from_pack_widget_id IS NOT NULL;
-
 -- ============================================================
 -- C) SEED INITIAL GENERIC PACK
 -- ============================================================
@@ -210,7 +185,6 @@ WHERE seeded_from_pack_widget_id IS NOT NULL;
 INSERT INTO coaching_program_packs (key, name, version, description, is_active)
 VALUES ('generic', 'Generic', '1.0', 'Default coaching program pack with standard terminology and workflows', true)
 ON CONFLICT (key) DO NOTHING;
-
 -- Seed Generic pack terms
 INSERT INTO coaching_program_pack_terms (pack_id, term_key, term_value)
 SELECT p.id, t.term_key, t.term_value
@@ -233,7 +207,6 @@ CROSS JOIN (VALUES
 ) AS t(term_key, term_value)
 WHERE p.key = 'generic'
 ON CONFLICT (pack_id, term_key) DO NOTHING;
-
 -- Seed Generic pack workflow templates
 WITH pack AS (
   SELECT id FROM coaching_program_packs WHERE key = 'generic'
@@ -250,7 +223,6 @@ CROSS JOIN (VALUES
   ('Operations Review', 'operations', 'Operational workflow for managing coaching activities')
 ) AS t(name, workflow_type, description)
 ON CONFLICT DO NOTHING;
-
 -- Seed workflow steps for each template
 WITH templates AS (
   SELECT pt.id, pt.workflow_type
@@ -299,7 +271,6 @@ CROSS JOIN LATERAL (
   WHERE steps.wf_type = t.workflow_type::text
 ) s
 ON CONFLICT DO NOTHING;
-
 -- Seed dashboard widgets for Generic pack
 WITH pack AS (
   SELECT id FROM coaching_program_packs WHERE key = 'generic'
@@ -333,7 +304,6 @@ CROSS JOIN (VALUES
   ('member', 'coach_info', 5, 'Assigned coach information', 'coaching_coaches')
 ) AS w(dashboard_type, widget_key, widget_order, description, data_source)
 ON CONFLICT (pack_id, dashboard_type, widget_key) DO NOTHING;
-
 -- ============================================================
 -- D) SEEDING FUNCTION
 -- ============================================================
@@ -501,7 +471,6 @@ BEGIN
   );
 END;
 $$;
-
 -- ============================================================
 -- E) TRIGGER: Set program snapshot on engagement creation
 -- ============================================================
@@ -523,14 +492,12 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
 DROP TRIGGER IF EXISTS trg_engagement_program_snapshot ON coaching_engagements;
 CREATE TRIGGER trg_engagement_program_snapshot
   BEFORE INSERT ON coaching_engagements
   FOR EACH ROW
   WHEN (NEW.program_key_snapshot IS NULL)
   EXECUTE FUNCTION trg_set_engagement_program_snapshot();
-
 -- For coaching_org_engagements (uses coaching_org_id directly)
 CREATE OR REPLACE FUNCTION trg_set_org_engagement_program_snapshot()
 RETURNS TRIGGER
@@ -547,14 +514,12 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
 DROP TRIGGER IF EXISTS trg_org_engagement_program_snapshot ON coaching_org_engagements;
 CREATE TRIGGER trg_org_engagement_program_snapshot
   BEFORE INSERT ON coaching_org_engagements
   FOR EACH ROW
   WHEN (NEW.program_key_snapshot IS NULL)
   EXECUTE FUNCTION trg_set_org_engagement_program_snapshot();
-
 -- ============================================================
 -- F) RLS POLICIES
 -- ============================================================
@@ -567,122 +532,93 @@ ALTER TABLE coaching_program_pack_workflow_templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE coaching_program_pack_workflow_steps ENABLE ROW LEVEL SECURITY;
 ALTER TABLE coaching_program_pack_dashboard_widgets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE coaching_org_dashboard_widgets ENABLE ROW LEVEL SECURITY;
-
 -- coaching_program_packs - Site admin only
 CREATE POLICY "site_admin_select_packs" ON coaching_program_packs
   FOR SELECT USING (fn_is_site_admin(auth.uid()));
-
 CREATE POLICY "site_admin_insert_packs" ON coaching_program_packs
   FOR INSERT WITH CHECK (fn_is_site_admin(auth.uid()));
-
 CREATE POLICY "site_admin_update_packs" ON coaching_program_packs
   FOR UPDATE USING (fn_is_site_admin(auth.uid()));
-
 CREATE POLICY "site_admin_delete_packs" ON coaching_program_packs
   FOR DELETE USING (fn_is_site_admin(auth.uid()));
-
 -- coaching_program_pack_terms - Site admin only
 CREATE POLICY "site_admin_select_pack_terms" ON coaching_program_pack_terms
   FOR SELECT USING (fn_is_site_admin(auth.uid()));
-
 CREATE POLICY "site_admin_insert_pack_terms" ON coaching_program_pack_terms
   FOR INSERT WITH CHECK (fn_is_site_admin(auth.uid()));
-
 CREATE POLICY "site_admin_update_pack_terms" ON coaching_program_pack_terms
   FOR UPDATE USING (fn_is_site_admin(auth.uid()));
-
 CREATE POLICY "site_admin_delete_pack_terms" ON coaching_program_pack_terms
   FOR DELETE USING (fn_is_site_admin(auth.uid()));
-
 -- coaching_program_pack_workflow_templates - Site admin only
 CREATE POLICY "site_admin_select_pack_wf_templates" ON coaching_program_pack_workflow_templates
   FOR SELECT USING (fn_is_site_admin(auth.uid()));
-
 CREATE POLICY "site_admin_insert_pack_wf_templates" ON coaching_program_pack_workflow_templates
   FOR INSERT WITH CHECK (fn_is_site_admin(auth.uid()));
-
 CREATE POLICY "site_admin_update_pack_wf_templates" ON coaching_program_pack_workflow_templates
   FOR UPDATE USING (fn_is_site_admin(auth.uid()));
-
 CREATE POLICY "site_admin_delete_pack_wf_templates" ON coaching_program_pack_workflow_templates
   FOR DELETE USING (fn_is_site_admin(auth.uid()));
-
 -- coaching_program_pack_workflow_steps - Site admin only
 CREATE POLICY "site_admin_select_pack_wf_steps" ON coaching_program_pack_workflow_steps
   FOR SELECT USING (fn_is_site_admin(auth.uid()));
-
 CREATE POLICY "site_admin_insert_pack_wf_steps" ON coaching_program_pack_workflow_steps
   FOR INSERT WITH CHECK (fn_is_site_admin(auth.uid()));
-
 CREATE POLICY "site_admin_update_pack_wf_steps" ON coaching_program_pack_workflow_steps
   FOR UPDATE USING (fn_is_site_admin(auth.uid()));
-
 CREATE POLICY "site_admin_delete_pack_wf_steps" ON coaching_program_pack_workflow_steps
   FOR DELETE USING (fn_is_site_admin(auth.uid()));
-
 -- coaching_program_pack_dashboard_widgets - Site admin only
 CREATE POLICY "site_admin_select_pack_widgets" ON coaching_program_pack_dashboard_widgets
   FOR SELECT USING (fn_is_site_admin(auth.uid()));
-
 CREATE POLICY "site_admin_insert_pack_widgets" ON coaching_program_pack_dashboard_widgets
   FOR INSERT WITH CHECK (fn_is_site_admin(auth.uid()));
-
 CREATE POLICY "site_admin_update_pack_widgets" ON coaching_program_pack_dashboard_widgets
   FOR UPDATE USING (fn_is_site_admin(auth.uid()));
-
 CREATE POLICY "site_admin_delete_pack_widgets" ON coaching_program_pack_dashboard_widgets
   FOR DELETE USING (fn_is_site_admin(auth.uid()));
-
 -- coaching_terms - Org admins can manage their own, site admin sees all
 CREATE POLICY "select_coaching_terms" ON coaching_terms
   FOR SELECT USING (
     fn_is_site_admin(auth.uid())
     OR coaching_org_id IN (SELECT fn_user_coaching_org_ids(auth.uid()))
   );
-
 CREATE POLICY "insert_coaching_terms" ON coaching_terms
   FOR INSERT WITH CHECK (
     fn_is_site_admin(auth.uid())
     OR fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
   );
-
 CREATE POLICY "update_coaching_terms" ON coaching_terms
   FOR UPDATE USING (
     fn_is_site_admin(auth.uid())
     OR fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
   );
-
 CREATE POLICY "delete_coaching_terms" ON coaching_terms
   FOR DELETE USING (
     fn_is_site_admin(auth.uid())
     OR fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
   );
-
 -- coaching_org_dashboard_widgets - Org admins can manage their own
 CREATE POLICY "select_org_dashboard_widgets" ON coaching_org_dashboard_widgets
   FOR SELECT USING (
     fn_is_site_admin(auth.uid())
     OR coaching_org_id IN (SELECT fn_user_coaching_org_ids(auth.uid()))
   );
-
 CREATE POLICY "insert_org_dashboard_widgets" ON coaching_org_dashboard_widgets
   FOR INSERT WITH CHECK (
     fn_is_site_admin(auth.uid())
     OR fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
   );
-
 CREATE POLICY "update_org_dashboard_widgets" ON coaching_org_dashboard_widgets
   FOR UPDATE USING (
     fn_is_site_admin(auth.uid())
     OR fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
   );
-
 CREATE POLICY "delete_org_dashboard_widgets" ON coaching_org_dashboard_widgets
   FOR DELETE USING (
     fn_is_site_admin(auth.uid())
     OR fn_is_coaching_org_admin(auth.uid(), coaching_org_id)
   );
-
 -- ============================================================
 -- G) UPDATE TRIGGERS for updated_at
 -- ============================================================
@@ -691,37 +627,30 @@ CREATE TRIGGER update_coaching_terms_updated_at
   BEFORE UPDATE ON coaching_terms
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_coaching_program_packs_updated_at
   BEFORE UPDATE ON coaching_program_packs
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_coaching_program_pack_terms_updated_at
   BEFORE UPDATE ON coaching_program_pack_terms
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_coaching_program_pack_workflow_templates_updated_at
   BEFORE UPDATE ON coaching_program_pack_workflow_templates
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_coaching_program_pack_workflow_steps_updated_at
   BEFORE UPDATE ON coaching_program_pack_workflow_steps
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_coaching_program_pack_dashboard_widgets_updated_at
   BEFORE UPDATE ON coaching_program_pack_dashboard_widgets
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_coaching_org_dashboard_widgets_updated_at
   BEFORE UPDATE ON coaching_org_dashboard_widgets
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-
 -- ============================================================
 -- H) HELPER: Get coaching term for an org (with fallback)
 -- ============================================================

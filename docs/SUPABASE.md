@@ -33,10 +33,11 @@
 | `exit-survey-notify` | No | Sends Resend alerts for exit survey low-score notifications |
 | `exit-survey-weekly-digest` | No | Sends weekly exit survey summaries to question owners (Resend) |
 | `exit-survey-reminders` | No | Sends reminder emails for open exit survey alerts (Resend) |
+| `exit-survey-retention` | No | Dry-run retention candidate scan for exit-survey submissions/alerts based on settings |
 | `get-finance-metrics` | Yes | Finance dashboard metrics (requires Authorization header) |
 | `create-backup` | Yes | Exports schema + data to backup store |
 | `restore-backup` | Yes | Restores from a backup |
-| `sop-review-reminders` | Yes | Sends scheduled SOP review reminder emails |
+| `sop-review-reminders` | No | Sends scheduled SOP review reminders (supports scheduler secret + dry-run mode) |
 
 ## AI Tables (Phase 1)
 - `company_ai_settings` — per-company AI feature flags and token limits.

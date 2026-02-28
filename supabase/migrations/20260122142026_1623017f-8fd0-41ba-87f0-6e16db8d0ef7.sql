@@ -19,10 +19,8 @@ JOIN public.coaching_health_check_responses r ON r.coaching_health_check_id = hc
 WHERE r.numeric_value IS NOT NULL
   AND hc.status = 'submitted'
 GROUP BY hc.coaching_engagement_id, hc.template_id, r.template_question_id, hc.period_start;
-
 DROP VIEW IF EXISTS public.v_health_check_trend_delta;
 DROP VIEW IF EXISTS public.v_health_check_subject_overall_score;
-
 CREATE VIEW public.v_health_check_subject_overall_score 
 WITH (security_invoker = true)
 AS
@@ -36,7 +34,6 @@ SELECT
 FROM public.coaching_health_checks hc
 WHERE hc.status = 'submitted'
   AND hc.overall_score IS NOT NULL;
-
 CREATE VIEW public.v_health_check_trend_delta 
 WITH (security_invoker = true)
 AS
@@ -66,7 +63,6 @@ LEFT JOIN ranked_scores prev
   AND prev.subject_type = curr.subject_type 
   AND prev.rn = curr.rn + 1
 WHERE curr.rn = 1;
-
 DROP VIEW IF EXISTS public.v_goal_completion_rate;
 CREATE VIEW public.v_goal_completion_rate 
 WITH (security_invoker = true)
@@ -85,7 +81,6 @@ SELECT
 FROM public.coaching_goals cg
 JOIN public.coaching_plans cp ON cp.id = cg.coaching_plan_id
 GROUP BY cg.coaching_plan_id, cp.coaching_engagement_id, DATE_TRUNC('month', cg.created_at);
-
 DROP VIEW IF EXISTS public.v_org_scorecard_rollup;
 CREATE VIEW public.v_org_scorecard_rollup 
 WITH (security_invoker = true)

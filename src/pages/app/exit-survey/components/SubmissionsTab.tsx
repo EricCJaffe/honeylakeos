@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,10 +6,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   useExitSurveySubmissions,
   useExitSurveySubmissionDetail,
+  useExitSurveySettings,
   type DateFilter,
 } from "@/hooks/useExitSurvey";
-import { Search, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Eye, EyeOff } from "lucide-react";
 import { format } from "date-fns";
+import { useAuditLog } from "@/hooks/useAuditLog";
+import { Badge } from "@/components/ui/badge";
 
 const DATE_FILTERS: { label: string; value: DateFilter }[] = [
   { label: "30d", value: "30d" },
@@ -61,11 +64,17 @@ function ScoreHeatmap({ submissionId }: { submissionId: string }) {
 
 export function SubmissionsTab() {
   const navigate = useNavigate();
+  const { log } = useAuditLog();
+  const hasLoggedViewRef = useRef(false);
+  const searchLoggedTermsRef = useRef<Set<string>>(new Set());
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
   const PAGE_SIZE = 20;
+  const { data: settings } = useExitSurveySettings();
+  const [revealNames, setRevealNames] = useState(false);
+  const phiSafeMode = settings?.phi_safe_email_mode === "true";
 
   const { data, isLoading } = useExitSurveySubmissions({
     dateFilter,
@@ -78,9 +87,25 @@ export function SubmissionsTab() {
   const totalCount = data?.count ?? 0;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
+  useEffect(() => {
+    if (hasLoggedViewRef.current) return;
+    hasLoggedViewRef.current = true;
+    void log("exit_survey.submissions_viewed", "exit_survey_submission", undefined, {
+      source: "exit_survey_submissions_tab",
+    });
+  }, [log]);
+
   function handleSearch(val: string) {
     setSearch(val);
     setPage(1);
+    const normalized = val.trim().toLowerCase();
+    if (normalized.length >= 2 && !searchLoggedTermsRef.current.has(normalized)) {
+      searchLoggedTermsRef.current.add(normalized);
+      void log("exit_survey.patient_lookup_searched", "exit_survey_submission", undefined, {
+        source: "exit_survey_submissions_tab",
+        query_length: normalized.length,
+      });
+    }
   }
 
   return (
@@ -112,6 +137,17 @@ export function SubmissionsTab() {
         <span className="text-sm text-muted-foreground ml-auto">
           {totalCount} submission{totalCount !== 1 ? "s" : ""}
         </span>
+        {phiSafeMode && (
+          <>
+            <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50">
+              PHI-safe mode ON
+            </Badge>
+            <Button variant="outline" size="sm" onClick={() => setRevealNames((prev) => !prev)}>
+              {revealNames ? <EyeOff className="w-4 h-4 mr-1" /> : <Eye className="w-4 h-4 mr-1" />}
+              {revealNames ? "Mask Names" : "Reveal Names"}
+            </Button>
+          </>
+        )}
       </div>
 
       {/* Table */}
@@ -151,7 +187,9 @@ export function SubmissionsTab() {
                     <td className="px-4 py-3">
                       {s.is_anonymous || (!s.patient_first_name && !s.patient_last_name)
                         ? <span className="text-muted-foreground italic text-xs">Anonymous</span>
-                        : <span className="font-medium">{s.patient_first_name} {s.patient_last_name}</span>
+                        : phiSafeMode && !revealNames
+                          ? <span className="font-medium">Patient {s.id.slice(0, 6)}</span>
+                          : <span className="font-medium">{s.patient_first_name} {s.patient_last_name}</span>
                       }
                     </td>
                     <td className="px-3 py-3 text-center">

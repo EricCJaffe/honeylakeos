@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import {
 import { useMembership } from "@/lib/membership";
 import { useCompanyMembers } from "@/hooks/useCompanyMembers";
 import { format } from "date-fns";
+import { useAuditLog } from "@/hooks/useAuditLog";
 
 type VisibleStatus = "pending" | "acknowledged" | "resolved";
 
@@ -198,6 +199,8 @@ export default function ExitSurveySubmissionPage() {
   const { isCompanyAdmin, isSiteAdmin } = useMembership();
   const members = useCompanyMembers();
   const [expandedAlert, setExpandedAlert] = useState<string | null>(null);
+  const { log } = useAuditLog();
+  const hasLoggedViewRef = useRef(false);
 
   const canComplete = isCompanyAdmin || isSiteAdmin;
 
@@ -227,6 +230,15 @@ export default function ExitSurveySubmissionPage() {
   const patientName = submission.data?.is_anonymous || (!submission.data?.patient_first_name && !submission.data?.patient_last_name)
     ? "Anonymous"
     : `${submission.data?.patient_first_name ?? ""} ${submission.data?.patient_last_name ?? ""}`.trim();
+
+  useEffect(() => {
+    if (!submissionId || !submission.data || hasLoggedViewRef.current) return;
+    hasLoggedViewRef.current = true;
+    void log("exit_survey.submission_viewed", "exit_survey_submission", submissionId, {
+      source: "exit_survey_submission_page",
+      is_anonymous: Boolean(submission.data.is_anonymous),
+    });
+  }, [log, submission.data, submissionId]);
 
   return (
     <div className="flex flex-col h-full">

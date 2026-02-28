@@ -69,6 +69,8 @@ interface EmployeeFormData {
   full_name: string;
   email: string;
   title: string;
+  role: string;
+  phone: string;
 }
 
 interface InviteWithEmployee extends EmployeeInvite {
@@ -95,6 +97,8 @@ export default function EmployeesPanel() {
     full_name: "",
     email: "",
     title: "",
+    role: "",
+    phone: "",
   });
 
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -160,6 +164,14 @@ export default function EmployeesPanel() {
     );
   }, [employees, searchQuery]);
 
+  const pendingInviteByEmployeeId = useMemo(() => {
+    const map = new Map<string, InviteWithEmployee>();
+    for (const invite of pendingInvites) {
+      if (invite.employee_id) map.set(invite.employee_id, invite);
+    }
+    return map;
+  }, [pendingInvites]);
+
   const createMutation = useMutation({
     mutationFn: async (data: EmployeeFormData) => {
       if (!activeCompanyId) throw new Error("No active company");
@@ -170,8 +182,10 @@ export default function EmployeesPanel() {
           full_name: data.full_name,
           email: data.email.trim() || null,
           title: data.title.trim() || null,
+          role: data.role.trim() || null,
+          phone: data.phone.trim() || null,
           created_by: user?.id,
-        })
+        } as any)
         .select("id")
         .single();
       if (error) throw error;
@@ -195,7 +209,9 @@ export default function EmployeesPanel() {
           full_name: data.full_name,
           email: data.email?.trim() || null,
           title: data.title?.trim() || null,
-        })
+          role: data.role?.trim() || null,
+          phone: data.phone?.trim() || null,
+        } as any)
         .eq("id", id);
       if (error) throw error;
     },
@@ -362,12 +378,12 @@ export default function EmployeesPanel() {
   const closeFormDialog = () => {
     setFormDialogOpen(false);
     setEditingEmployee(null);
-    setFormData({ full_name: "", email: "", title: "" });
+    setFormData({ full_name: "", email: "", title: "", role: "", phone: "" });
   };
 
   const handleCreate = () => {
     setEditingEmployee(null);
-    setFormData({ full_name: "", email: "", title: "" });
+    setFormData({ full_name: "", email: "", title: "", role: "", phone: "" });
     setFormDialogOpen(true);
   };
 
@@ -377,6 +393,8 @@ export default function EmployeesPanel() {
       full_name: employee.full_name || "",
       email: employee.email || "",
       title: employee.title || "",
+      role: ((employee as any).role as string) || "",
+      phone: ((employee as any).phone as string) || "",
     });
     setFormDialogOpen(true);
   };
@@ -452,7 +470,10 @@ export default function EmployeesPanel() {
                       <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Phone</TableHead>
                         <TableHead>Title</TableHead>
+                        <TableHead>Invite</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="w-12"></TableHead>
                       </TableRow>
@@ -460,11 +481,31 @@ export default function EmployeesPanel() {
                     <TableBody>
                       {filteredEmployees.map((employee) => (
                         <TableRow key={employee.id}>
+                          {(() => {
+                            const pendingInvite = pendingInviteByEmployeeId.get(employee.id);
+                            return (
+                              <>
                           <TableCell className="font-medium">{employee.full_name}</TableCell>
                           <TableCell className="text-muted-foreground">
                             {employee.email || "—"}
                           </TableCell>
+                          <TableCell>{((employee as any).role as string) || "—"}</TableCell>
+                          <TableCell>{((employee as any).phone as string) || "—"}</TableCell>
                           <TableCell>{employee.title || "—"}</TableCell>
+                          <TableCell>
+                            {pendingInvite ? (
+                              <div className="space-y-1">
+                                <Badge variant="outline" className="text-[10px]">
+                                  pending invite
+                                </Badge>
+                                <div className="text-[11px] text-muted-foreground">
+                                  {format(new Date(pendingInvite.created_at), "MMM d, yyyy")}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
                           <TableCell>
                             <Badge variant={employee.status === "active" ? "default" : "secondary"}>
                               {employee.status}
@@ -490,6 +531,29 @@ export default function EmployeesPanel() {
                                     <Send className="h-4 w-4 mr-2" />
                                     Send Invite
                                   </DropdownMenuItem>
+                                )}
+                                {employee.email && !employee.user_id && pendingInviteByEmployeeId.get(employee.id) && (
+                                  <>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        const invite = pendingInviteByEmployeeId.get(employee.id);
+                                        if (invite) resendInviteMutation.mutate(invite);
+                                      }}
+                                      disabled={resendInviteMutation.isPending}
+                                    >
+                                      <RefreshCw className="h-4 w-4 mr-2" />
+                                      Resend Invite
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        const invite = pendingInviteByEmployeeId.get(employee.id);
+                                        if (invite) copyInviteLink(invite);
+                                      }}
+                                    >
+                                      <Copy className="h-4 w-4 mr-2" />
+                                      Copy Invite Link
+                                    </DropdownMenuItem>
+                                  </>
                                 )}
                                 {employee.email && employee.user_id && (
                                   <DropdownMenuItem
@@ -523,6 +587,9 @@ export default function EmployeesPanel() {
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
+                              </>
+                            );
+                          })()}
                         </TableRow>
                       ))}
                     </TableBody>
@@ -693,6 +760,22 @@ export default function EmployeesPanel() {
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
+              <Input
+                id="role"
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               />
             </div>
           </div>

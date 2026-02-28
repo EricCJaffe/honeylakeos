@@ -26,7 +26,6 @@ CROSS JOIN (VALUES
 ) AS field(key, label, field_type, is_required, sort_order, help_text, options)
 WHERE f.template_key = 'generic_forum_health_check'
 ON CONFLICT DO NOTHING;
-
 -- Seed form fields for Forum Health Check (Convene)
 INSERT INTO wf_form_fields (form_id, key, label, field_type, is_required, sort_order, help_text, options)
 SELECT 
@@ -55,7 +54,6 @@ CROSS JOIN (VALUES
 ) AS field(key, label, field_type, is_required, sort_order, help_text, options)
 WHERE f.template_key = 'convene_forum_health_check'
 ON CONFLICT DO NOTHING;
-
 -- Seed form fields for Member Covenant (Generic)
 INSERT INTO wf_form_fields (form_id, key, label, field_type, is_required, sort_order, help_text, options)
 SELECT 
@@ -84,7 +82,6 @@ CROSS JOIN (VALUES
 ) AS field(key, label, field_type, is_required, sort_order, help_text, options)
 WHERE f.template_key = 'generic_member_covenant'
 ON CONFLICT DO NOTHING;
-
 -- Seed form fields for Member Covenant (Convene)
 INSERT INTO wf_form_fields (form_id, key, label, field_type, is_required, sort_order, help_text, options)
 SELECT 
@@ -113,7 +110,6 @@ CROSS JOIN (VALUES
 ) AS field(key, label, field_type, is_required, sort_order, help_text, options)
 WHERE f.template_key = 'convene_member_covenant'
 ON CONFLICT DO NOTHING;
-
 -- Seed form fields for Chair Covenant (Generic)
 INSERT INTO wf_form_fields (form_id, key, label, field_type, is_required, sort_order, help_text, options)
 SELECT 
@@ -141,7 +137,6 @@ CROSS JOIN (VALUES
 ) AS field(key, label, field_type, is_required, sort_order, help_text, options)
 WHERE f.template_key = 'generic_chair_covenant'
 ON CONFLICT DO NOTHING;
-
 -- Seed form fields for Chair Covenant (Convene)
 INSERT INTO wf_form_fields (form_id, key, label, field_type, is_required, sort_order, help_text, options)
 SELECT 

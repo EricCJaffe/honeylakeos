@@ -40,7 +40,6 @@ BEGIN
   RETURN v_status IN ('active', 'trial');
 END;
 $$;
-
 -- 2. Create require_module_enabled function (raises exception if not enabled)
 CREATE OR REPLACE FUNCTION public.require_module_enabled(p_company_id uuid, p_module_key text)
 RETURNS void
@@ -55,7 +54,6 @@ BEGIN
   END IF;
 END;
 $$;
-
 -- 3. Create is_link_allowed function for entity_links
 -- Both modules for the entity types must be enabled
 CREATE OR REPLACE FUNCTION public.is_link_allowed(p_company_id uuid, p_from_type text, p_to_type text)
@@ -94,7 +92,6 @@ BEGIN
   );
 END;
 $$;
-
 -- 4. Update RLS policies on feature tables to check module enablement
 -- We'll add module checks to the existing policies
 
@@ -103,64 +100,52 @@ DROP POLICY IF EXISTS "tasks_select_company_member" ON tasks;
 CREATE POLICY "tasks_select_company_member" ON tasks
   FOR SELECT
   USING (is_company_member(company_id) AND is_module_enabled(company_id, 'tasks'));
-
 DROP POLICY IF EXISTS "tasks_insert_company_member" ON tasks;
 CREATE POLICY "tasks_insert_company_member" ON tasks
   FOR INSERT
   WITH CHECK (is_company_member(company_id) AND is_module_enabled(company_id, 'tasks'));
-
 DROP POLICY IF EXISTS "tasks_update_creator_or_admin" ON tasks;
 CREATE POLICY "tasks_update_creator_or_admin" ON tasks
   FOR UPDATE
   USING ((created_by = auth.uid() OR is_company_admin(company_id)) AND is_module_enabled(company_id, 'tasks'));
-
 DROP POLICY IF EXISTS "tasks_delete_creator_or_admin" ON tasks;
 CREATE POLICY "tasks_delete_creator_or_admin" ON tasks
   FOR DELETE
   USING ((created_by = auth.uid() OR is_company_admin(company_id)) AND is_module_enabled(company_id, 'tasks'));
-
 -- EVENTS/CALENDAR: Add module check
 DROP POLICY IF EXISTS "events_select_company_member" ON events;
 CREATE POLICY "events_select_company_member" ON events
   FOR SELECT
   USING (is_company_member(company_id) AND is_module_enabled(company_id, 'calendar'));
-
 DROP POLICY IF EXISTS "events_insert_company_member" ON events;
 CREATE POLICY "events_insert_company_member" ON events
   FOR INSERT
   WITH CHECK (is_company_member(company_id) AND is_module_enabled(company_id, 'calendar'));
-
 DROP POLICY IF EXISTS "events_update_creator_or_admin" ON events;
 CREATE POLICY "events_update_creator_or_admin" ON events
   FOR UPDATE
   USING ((created_by = auth.uid() OR is_company_admin(company_id)) AND is_module_enabled(company_id, 'calendar'));
-
 DROP POLICY IF EXISTS "events_delete_creator_or_admin" ON events;
 CREATE POLICY "events_delete_creator_or_admin" ON events
   FOR DELETE
   USING ((created_by = auth.uid() OR is_company_admin(company_id)) AND is_module_enabled(company_id, 'calendar'));
-
 -- PROJECTS: Add module check
 DROP POLICY IF EXISTS "projects_select_company_member" ON projects;
 CREATE POLICY "projects_select_company_member" ON projects
   FOR SELECT
   USING (is_company_member(company_id) AND is_module_enabled(company_id, 'projects'));
-
 DROP POLICY IF EXISTS "projects_insert_company_member" ON projects;
 CREATE POLICY "projects_insert_company_member" ON projects
   FOR INSERT
   WITH CHECK (is_company_member(company_id) AND is_module_enabled(company_id, 'projects'));
-
 DROP POLICY IF EXISTS "projects_update_owner_or_admin" ON projects;
 CREATE POLICY "projects_update_owner_or_admin" ON projects
   FOR UPDATE
   USING ((owner_user_id = auth.uid() OR is_company_admin(company_id)) AND is_module_enabled(company_id, 'projects'));
-
 DROP POLICY IF EXISTS "projects_delete_owner_or_admin" ON projects;
 CREATE POLICY "projects_delete_owner_or_admin" ON projects
   FOR DELETE
   USING ((owner_user_id = auth.uid() OR is_company_admin(company_id)) AND is_module_enabled(company_id, 'projects'));
-
 -- DOCUMENTS: Add module check
 DROP POLICY IF EXISTS "documents_select_access" ON documents;
 CREATE POLICY "documents_select_access" ON documents
@@ -184,22 +169,18 @@ CREATE POLICY "documents_select_access" ON documents
       )
     )
   );
-
 DROP POLICY IF EXISTS "documents_insert_company_member" ON documents;
 CREATE POLICY "documents_insert_company_member" ON documents
   FOR INSERT
   WITH CHECK (is_company_member(company_id) AND is_module_enabled(company_id, 'documents'));
-
 DROP POLICY IF EXISTS "documents_update_creator_or_admin" ON documents;
 CREATE POLICY "documents_update_creator_or_admin" ON documents
   FOR UPDATE
   USING ((created_by = auth.uid() OR is_company_admin(company_id)) AND is_module_enabled(company_id, 'documents'));
-
 DROP POLICY IF EXISTS "documents_delete_creator_or_admin" ON documents;
 CREATE POLICY "documents_delete_creator_or_admin" ON documents
   FOR DELETE
   USING ((created_by = auth.uid() OR is_company_admin(company_id)) AND is_module_enabled(company_id, 'documents'));
-
 -- NOTES: Add module check
 DROP POLICY IF EXISTS "notes_select_access" ON notes;
 CREATE POLICY "notes_select_access" ON notes
@@ -223,117 +204,95 @@ CREATE POLICY "notes_select_access" ON notes
       )
     )
   );
-
 DROP POLICY IF EXISTS "notes_insert_company_member" ON notes;
 CREATE POLICY "notes_insert_company_member" ON notes
   FOR INSERT
   WITH CHECK (is_company_member(company_id) AND is_module_enabled(company_id, 'notes'));
-
 DROP POLICY IF EXISTS "notes_update_creator_or_admin" ON notes;
 CREATE POLICY "notes_update_creator_or_admin" ON notes
   FOR UPDATE
   USING ((created_by = auth.uid() OR is_company_admin(company_id)) AND is_module_enabled(company_id, 'notes'));
-
 DROP POLICY IF EXISTS "notes_delete_creator_or_admin" ON notes;
 CREATE POLICY "notes_delete_creator_or_admin" ON notes
   FOR DELETE
   USING ((created_by = auth.uid() OR is_company_admin(company_id)) AND is_module_enabled(company_id, 'notes'));
-
 -- FOLDERS: Add module check
 DROP POLICY IF EXISTS "folders_select_company_member" ON folders;
 CREATE POLICY "folders_select_company_member" ON folders
   FOR SELECT
   USING (is_company_member(company_id) AND is_module_enabled(company_id, 'folders') AND (access_level = 'company' OR created_by = auth.uid()));
-
 DROP POLICY IF EXISTS "folders_insert_company_member" ON folders;
 CREATE POLICY "folders_insert_company_member" ON folders
   FOR INSERT
   WITH CHECK (is_company_member(company_id) AND is_module_enabled(company_id, 'folders'));
-
 DROP POLICY IF EXISTS "folders_update_creator_or_admin" ON folders;
 CREATE POLICY "folders_update_creator_or_admin" ON folders
   FOR UPDATE
   USING ((created_by = auth.uid() OR is_company_admin(company_id)) AND is_module_enabled(company_id, 'folders'));
-
 DROP POLICY IF EXISTS "folders_delete_creator_or_admin" ON folders;
 CREATE POLICY "folders_delete_creator_or_admin" ON folders
   FOR DELETE
   USING ((created_by = auth.uid() OR is_company_admin(company_id)) AND is_module_enabled(company_id, 'folders'));
-
 -- GROUPS: Add module check  
 DROP POLICY IF EXISTS "groups_select_company_member" ON groups;
 CREATE POLICY "groups_select_company_member" ON groups
   FOR SELECT
   USING (is_company_member(company_id) AND is_module_enabled(company_id, 'groups'));
-
 DROP POLICY IF EXISTS "groups_write_company_admin" ON groups;
 CREATE POLICY "groups_write_company_admin" ON groups
   FOR INSERT
   WITH CHECK (is_company_admin(company_id) AND is_module_enabled(company_id, 'groups'));
-
 DROP POLICY IF EXISTS "groups_update_company_admin" ON groups;
 CREATE POLICY "groups_update_company_admin" ON groups
   FOR UPDATE
   USING (is_company_admin(company_id) AND is_module_enabled(company_id, 'groups'));
-
 DROP POLICY IF EXISTS "groups_delete_company_admin" ON groups;
 CREATE POLICY "groups_delete_company_admin" ON groups
   FOR DELETE
   USING (is_company_admin(company_id) AND is_module_enabled(company_id, 'groups'));
-
 -- ENTITY_LINKS: Gate by both modules being enabled
 DROP POLICY IF EXISTS "entity_links_select_company_member" ON entity_links;
 CREATE POLICY "entity_links_select_company_member" ON entity_links
   FOR SELECT
   USING (is_company_member(company_id) AND is_link_allowed(company_id, from_type, to_type));
-
 DROP POLICY IF EXISTS "entity_links_insert_company_member" ON entity_links;
 CREATE POLICY "entity_links_insert_company_member" ON entity_links
   FOR INSERT
   WITH CHECK (is_company_member(company_id) AND created_by = auth.uid() AND is_link_allowed(company_id, from_type, to_type));
-
 DROP POLICY IF EXISTS "entity_links_delete_creator_or_admin" ON entity_links;
 CREATE POLICY "entity_links_delete_creator_or_admin" ON entity_links
   FOR DELETE
   USING ((created_by = auth.uid() OR is_company_admin(company_id)) AND is_link_allowed(company_id, from_type, to_type));
-
 -- TASK RECURRENCE TABLES: Add module check
 DROP POLICY IF EXISTS "task_recurrence_exceptions_select_company_member" ON task_recurrence_exceptions;
 CREATE POLICY "task_recurrence_exceptions_select_company_member" ON task_recurrence_exceptions
   FOR SELECT
   USING (is_company_member(company_id) AND is_module_enabled(company_id, 'tasks'));
-
 DROP POLICY IF EXISTS "task_recurrence_exceptions_insert_company_member" ON task_recurrence_exceptions;
 CREATE POLICY "task_recurrence_exceptions_insert_company_member" ON task_recurrence_exceptions
   FOR INSERT
   WITH CHECK (is_company_member(company_id) AND is_module_enabled(company_id, 'tasks'));
-
 DROP POLICY IF EXISTS "task_recurrence_exceptions_delete_creator_or_admin" ON task_recurrence_exceptions;
 CREATE POLICY "task_recurrence_exceptions_delete_creator_or_admin" ON task_recurrence_exceptions
   FOR DELETE
   USING ((created_by = auth.uid() OR is_company_admin(company_id)) AND is_module_enabled(company_id, 'tasks'));
-
 DROP POLICY IF EXISTS "task_recurrence_overrides_select_company_member" ON task_recurrence_overrides;
 CREATE POLICY "task_recurrence_overrides_select_company_member" ON task_recurrence_overrides
   FOR SELECT
   USING (is_company_member(company_id) AND is_module_enabled(company_id, 'tasks'));
-
 DROP POLICY IF EXISTS "task_recurrence_overrides_insert_company_member" ON task_recurrence_overrides;
 CREATE POLICY "task_recurrence_overrides_insert_company_member" ON task_recurrence_overrides
   FOR INSERT
   WITH CHECK (is_company_member(company_id) AND is_module_enabled(company_id, 'tasks'));
-
 DROP POLICY IF EXISTS "task_recurrence_overrides_delete_creator_or_admin" ON task_recurrence_overrides;
 CREATE POLICY "task_recurrence_overrides_delete_creator_or_admin" ON task_recurrence_overrides
   FOR DELETE
   USING ((created_by = auth.uid() OR is_company_admin(company_id)) AND is_module_enabled(company_id, 'tasks'));
-
 -- TASK OCCURRENCE COMPLETIONS: Add module check
 DROP POLICY IF EXISTS "task_occurrence_completions_select_company_member" ON task_occurrence_completions;
 CREATE POLICY "task_occurrence_completions_select_company_member" ON task_occurrence_completions
   FOR SELECT
   USING (is_company_member(company_id) AND is_module_enabled(company_id, 'tasks'));
-
 DROP POLICY IF EXISTS "task_occurrence_completions_insert_authorized" ON task_occurrence_completions;
 CREATE POLICY "task_occurrence_completions_insert_authorized" ON task_occurrence_completions
   FOR INSERT
@@ -346,7 +305,6 @@ CREATE POLICY "task_occurrence_completions_insert_authorized" ON task_occurrence
       OR is_company_admin(company_id)
     )
   );
-
 DROP POLICY IF EXISTS "task_occurrence_completions_delete_authorized" ON task_occurrence_completions;
 CREATE POLICY "task_occurrence_completions_delete_authorized" ON task_occurrence_completions
   FOR DELETE
@@ -358,44 +316,36 @@ CREATE POLICY "task_occurrence_completions_delete_authorized" ON task_occurrence
       OR is_company_admin(company_id)
     )
   );
-
 -- EVENT RECURRENCE TABLES: Add module check
 DROP POLICY IF EXISTS "event_recurrence_exceptions_select_company_member" ON event_recurrence_exceptions;
 CREATE POLICY "event_recurrence_exceptions_select_company_member" ON event_recurrence_exceptions
   FOR SELECT
   USING (is_company_member(company_id) AND is_module_enabled(company_id, 'calendar'));
-
 DROP POLICY IF EXISTS "event_recurrence_exceptions_insert_company_member" ON event_recurrence_exceptions;
 CREATE POLICY "event_recurrence_exceptions_insert_company_member" ON event_recurrence_exceptions
   FOR INSERT
   WITH CHECK (is_company_member(company_id) AND is_module_enabled(company_id, 'calendar'));
-
 DROP POLICY IF EXISTS "event_recurrence_exceptions_delete_creator_or_admin" ON event_recurrence_exceptions;
 CREATE POLICY "event_recurrence_exceptions_delete_creator_or_admin" ON event_recurrence_exceptions
   FOR DELETE
   USING ((created_by = auth.uid() OR is_company_admin(company_id)) AND is_module_enabled(company_id, 'calendar'));
-
 DROP POLICY IF EXISTS "event_recurrence_overrides_select_company_member" ON event_recurrence_overrides;
 CREATE POLICY "event_recurrence_overrides_select_company_member" ON event_recurrence_overrides
   FOR SELECT
   USING (is_company_member(company_id) AND is_module_enabled(company_id, 'calendar'));
-
 DROP POLICY IF EXISTS "event_recurrence_overrides_insert_company_member" ON event_recurrence_overrides;
 CREATE POLICY "event_recurrence_overrides_insert_company_member" ON event_recurrence_overrides
   FOR INSERT
   WITH CHECK (is_company_member(company_id) AND is_module_enabled(company_id, 'calendar'));
-
 DROP POLICY IF EXISTS "event_recurrence_overrides_delete_creator_or_admin" ON event_recurrence_overrides;
 CREATE POLICY "event_recurrence_overrides_delete_creator_or_admin" ON event_recurrence_overrides
   FOR DELETE
   USING ((created_by = auth.uid() OR is_company_admin(company_id)) AND is_module_enabled(company_id, 'calendar'));
-
 -- PROJECT_PHASES: Add module check
 DROP POLICY IF EXISTS "project_phases_select_company_member" ON project_phases;
 CREATE POLICY "project_phases_select_company_member" ON project_phases
   FOR SELECT
   USING (is_company_member(company_id) AND is_module_enabled(company_id, 'projects'));
-
 DROP POLICY IF EXISTS "project_phases_insert_company_admin" ON project_phases;
 CREATE POLICY "project_phases_insert_company_admin" ON project_phases
   FOR INSERT
@@ -406,7 +356,6 @@ CREATE POLICY "project_phases_insert_company_admin" ON project_phases
       OR (SELECT projects.owner_user_id FROM projects WHERE projects.id = project_phases.project_id) = auth.uid()
     )
   );
-
 DROP POLICY IF EXISTS "project_phases_update_company_admin" ON project_phases;
 CREATE POLICY "project_phases_update_company_admin" ON project_phases
   FOR UPDATE
@@ -417,7 +366,6 @@ CREATE POLICY "project_phases_update_company_admin" ON project_phases
       OR (SELECT projects.owner_user_id FROM projects WHERE projects.id = project_phases.project_id) = auth.uid()
     )
   );
-
 DROP POLICY IF EXISTS "project_phases_delete_company_admin" ON project_phases;
 CREATE POLICY "project_phases_delete_company_admin" ON project_phases
   FOR DELETE
@@ -428,7 +376,6 @@ CREATE POLICY "project_phases_delete_company_admin" ON project_phases
       OR (SELECT projects.owner_user_id FROM projects WHERE projects.id = project_phases.project_id) = auth.uid()
     )
   );
-
 -- 5. Add RLS policy for company_modules to allow admins to delete (for disabling)
 DROP POLICY IF EXISTS "company_modules_delete_admins" ON company_modules;
 CREATE POLICY "company_modules_delete_admins" ON company_modules
@@ -437,7 +384,6 @@ CREATE POLICY "company_modules_delete_admins" ON company_modules
     is_company_admin(company_id) 
     OR is_site_admin((SELECT c.site_id FROM companies c WHERE c.id = company_modules.company_id))
   );
-
 -- Allow UPDATE on company_modules for admins
 DROP POLICY IF EXISTS "company_modules_update_admins" ON company_modules;
 CREATE POLICY "company_modules_update_admins" ON company_modules
@@ -446,7 +392,6 @@ CREATE POLICY "company_modules_update_admins" ON company_modules
     is_company_admin(company_id) 
     OR is_site_admin((SELECT c.site_id FROM companies c WHERE c.id = company_modules.company_id))
   );
-
 -- 6. Create trigger to seed company_modules when a new company is created
 CREATE OR REPLACE FUNCTION public.seed_company_modules()
 RETURNS TRIGGER
@@ -465,13 +410,11 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
 DROP TRIGGER IF EXISTS trigger_seed_company_modules ON companies;
 CREATE TRIGGER trigger_seed_company_modules
   AFTER INSERT ON companies
   FOR EACH ROW
   EXECUTE FUNCTION seed_company_modules();
-
 -- 7. Backfill company_modules for existing companies (premium modules only)
 INSERT INTO company_modules (company_id, module_id, status)
 SELECT c.id, m.id, 'suspended'

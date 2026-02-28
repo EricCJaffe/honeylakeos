@@ -24,18 +24,13 @@ CREATE TABLE IF NOT EXISTS public.integration_sharepoint_sync_map (
   updated_at timestamptz NOT NULL DEFAULT now(),
   last_synced_at timestamptz
 );
-
 CREATE UNIQUE INDEX IF NOT EXISTS uq_sharepoint_sync_map_item
 ON public.integration_sharepoint_sync_map(company_id, sharepoint_drive_id, sharepoint_item_id);
-
 CREATE INDEX IF NOT EXISTS idx_sharepoint_sync_map_company
 ON public.integration_sharepoint_sync_map(company_id);
-
 CREATE INDEX IF NOT EXISTS idx_sharepoint_sync_map_document
 ON public.integration_sharepoint_sync_map(company_id, document_id);
-
 ALTER TABLE public.integration_sharepoint_sync_map ENABLE ROW LEVEL SECURITY;
-
 DROP POLICY IF EXISTS "sharepoint_sync_map_select" ON public.integration_sharepoint_sync_map;
 CREATE POLICY "sharepoint_sync_map_select"
 ON public.integration_sharepoint_sync_map
@@ -43,7 +38,6 @@ FOR SELECT
 USING (
   company_id IN (SELECT company_id FROM public.memberships WHERE user_id = auth.uid())
 );
-
 DROP POLICY IF EXISTS "sharepoint_sync_map_insert" ON public.integration_sharepoint_sync_map;
 CREATE POLICY "sharepoint_sync_map_insert"
 ON public.integration_sharepoint_sync_map
@@ -51,7 +45,6 @@ FOR INSERT
 WITH CHECK (
   company_id IN (SELECT company_id FROM public.memberships WHERE user_id = auth.uid())
 );
-
 DROP POLICY IF EXISTS "sharepoint_sync_map_update" ON public.integration_sharepoint_sync_map;
 CREATE POLICY "sharepoint_sync_map_update"
 ON public.integration_sharepoint_sync_map
@@ -59,7 +52,6 @@ FOR UPDATE
 USING (
   company_id IN (SELECT company_id FROM public.memberships WHERE user_id = auth.uid())
 );
-
 DROP POLICY IF EXISTS "sharepoint_sync_map_delete" ON public.integration_sharepoint_sync_map;
 CREATE POLICY "sharepoint_sync_map_delete"
 ON public.integration_sharepoint_sync_map
@@ -67,7 +59,6 @@ FOR DELETE
 USING (
   company_id IN (SELECT company_id FROM public.memberships WHERE user_id = auth.uid() AND role = 'company_admin')
 );
-
 DROP TRIGGER IF EXISTS update_sharepoint_sync_map_updated_at ON public.integration_sharepoint_sync_map;
 CREATE TRIGGER update_sharepoint_sync_map_updated_at
   BEFORE UPDATE ON public.integration_sharepoint_sync_map

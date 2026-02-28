@@ -2,13 +2,10 @@
 
 -- Plan type enum
 CREATE TYPE public.plan_type AS ENUM ('company', 'coach_org');
-
 -- Plan tier enum  
 CREATE TYPE public.plan_tier AS ENUM ('starter', 'growth', 'scale', 'solo_coach', 'coaching_team', 'coaching_firm');
-
 -- Plan status enum
 CREATE TYPE public.plan_status AS ENUM ('active', 'grace', 'expired', 'cancelled');
-
 -- Company plans table
 CREATE TABLE public.company_plans (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -26,7 +23,6 @@ CREATE TABLE public.company_plans (
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT unique_active_company_plan UNIQUE (company_id)
 );
-
 -- Plan entitlements configuration (defines what each tier grants)
 CREATE TABLE public.plan_entitlements (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -37,7 +33,6 @@ CREATE TABLE public.plan_entitlements (
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT unique_tier_entitlement UNIQUE (plan_tier, entitlement_key)
 );
-
 -- Company entitlement overrides (for custom deals, legacy access, etc.)
 CREATE TABLE public.company_entitlement_overrides (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -50,17 +45,14 @@ CREATE TABLE public.company_entitlement_overrides (
   created_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT unique_company_entitlement UNIQUE (company_id, entitlement_key)
 );
-
 -- Enable RLS
 ALTER TABLE public.company_plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.plan_entitlements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.company_entitlement_overrides ENABLE ROW LEVEL SECURITY;
-
 -- RLS Policies for company_plans
 CREATE POLICY "Company admins can view their plan"
 ON public.company_plans FOR SELECT
 USING (company_id = ((auth.jwt()->>'active_company_id')::uuid));
-
 CREATE POLICY "Site admins can manage all plans"
 ON public.company_plans FOR ALL
 USING (
@@ -70,12 +62,10 @@ USING (
     AND sm.role IN ('super_admin', 'site_admin')
   )
 );
-
 -- RLS for plan_entitlements (read-only for all authenticated)
 CREATE POLICY "Anyone can read plan entitlements"
 ON public.plan_entitlements FOR SELECT
 USING (true);
-
 CREATE POLICY "Site admins can manage entitlements"
 ON public.plan_entitlements FOR ALL
 USING (
@@ -85,12 +75,10 @@ USING (
     AND sm.role IN ('super_admin', 'site_admin')
   )
 );
-
 -- RLS for company_entitlement_overrides
 CREATE POLICY "Company admins can view their overrides"
 ON public.company_entitlement_overrides FOR SELECT
 USING (company_id = ((auth.jwt()->>'active_company_id')::uuid));
-
 CREATE POLICY "Site admins can manage overrides"
 ON public.company_entitlement_overrides FOR ALL
 USING (
@@ -100,18 +88,15 @@ USING (
     AND sm.role IN ('super_admin', 'site_admin')
   )
 );
-
 -- Indexes
 CREATE INDEX idx_company_plans_company ON public.company_plans(company_id);
 CREATE INDEX idx_company_plans_status ON public.company_plans(status) WHERE status = 'active';
 CREATE INDEX idx_plan_entitlements_tier ON public.plan_entitlements(plan_tier);
 CREATE INDEX idx_company_overrides_company ON public.company_entitlement_overrides(company_id);
-
 -- Trigger for updated_at
 CREATE TRIGGER update_company_plans_updated_at
   BEFORE UPDATE ON public.company_plans
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 -- Insert default entitlements for each tier
 -- Company Plans
 INSERT INTO public.plan_entitlements (plan_tier, entitlement_key, entitlement_value) VALUES
@@ -194,7 +179,6 @@ INSERT INTO public.plan_entitlements (plan_tier, entitlement_key, entitlement_va
 ('coaching_firm', 'coach_manager_views', 'true'),
 ('coaching_firm', 'private_coach_notes', 'true'),
 ('coaching_firm', 'advanced_reporting', 'true');
-
 -- Comments
 COMMENT ON TABLE public.company_plans IS 'Tracks the active subscription/plan for each company';
 COMMENT ON TABLE public.plan_entitlements IS 'Defines what each plan tier grants';

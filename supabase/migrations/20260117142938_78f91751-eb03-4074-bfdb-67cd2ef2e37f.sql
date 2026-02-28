@@ -10,19 +10,15 @@ CREATE TABLE public.task_lists (
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
-
 -- Add list_id foreign key to tasks table
 ALTER TABLE public.tasks
 ADD COLUMN list_id UUID REFERENCES public.task_lists(id) ON DELETE SET NULL;
-
 -- Create index for faster lookups
 CREATE INDEX idx_task_lists_company_id ON public.task_lists(company_id);
 CREATE INDEX idx_task_lists_status ON public.task_lists(status);
 CREATE INDEX idx_tasks_list_id ON public.tasks(list_id);
-
 -- Enable RLS
 ALTER TABLE public.task_lists ENABLE ROW LEVEL SECURITY;
-
 -- RLS Policies for task_lists
 -- Company members can view task_lists
 CREATE POLICY "Company members can view task_lists"
@@ -36,7 +32,6 @@ USING (
     AND memberships.status = 'active'
   )
 );
-
 -- Company admins can insert task_lists
 CREATE POLICY "Company admins can insert task_lists"
 ON public.task_lists
@@ -50,7 +45,6 @@ WITH CHECK (
     AND memberships.role = 'company_admin'
   )
 );
-
 -- Company admins can update task_lists
 CREATE POLICY "Company admins can update task_lists"
 ON public.task_lists
@@ -64,7 +58,6 @@ USING (
     AND memberships.role = 'company_admin'
   )
 );
-
 -- Company admins can delete task_lists
 CREATE POLICY "Company admins can delete task_lists"
 ON public.task_lists
@@ -78,7 +71,6 @@ USING (
     AND memberships.role = 'company_admin'
   )
 );
-
 -- Trigger to update updated_at timestamp
 CREATE TRIGGER update_task_lists_updated_at
 BEFORE UPDATE ON public.task_lists

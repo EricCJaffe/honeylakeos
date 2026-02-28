@@ -11,18 +11,14 @@ CREATE TABLE public.onboarding_presets (
   sort_order INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 CREATE INDEX idx_onboarding_presets_active ON public.onboarding_presets(is_active, sort_order);
-
 ALTER TABLE public.onboarding_presets ENABLE ROW LEVEL SECURITY;
-
 -- All authenticated users can read active presets
 CREATE POLICY "onboarding_presets_select_authenticated"
   ON public.onboarding_presets
   FOR SELECT
   TO authenticated
   USING (is_active = true);
-
 -- Site admins can manage presets (using existing is_site_admin function)
 CREATE POLICY "onboarding_presets_manage_site_admin"
   ON public.onboarding_presets
@@ -30,11 +26,9 @@ CREATE POLICY "onboarding_presets_manage_site_admin"
   TO authenticated
   USING (public.is_site_admin(auth.uid()))
   WITH CHECK (public.is_site_admin(auth.uid()));
-
 -- Add preset_id to company_onboarding_state
 ALTER TABLE public.company_onboarding_state
   ADD COLUMN IF NOT EXISTS applied_preset_id UUID REFERENCES public.onboarding_presets(id) ON DELETE SET NULL;
-
 -- Create apply_onboarding_preset function
 CREATE OR REPLACE FUNCTION public.apply_onboarding_preset(
   p_company_id UUID,
@@ -119,5 +113,4 @@ BEGIN
   RETURN v_result;
 END;
 $$;
-
 GRANT EXECUTE ON FUNCTION public.apply_onboarding_preset(UUID, UUID) TO authenticated;

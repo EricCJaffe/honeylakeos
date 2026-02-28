@@ -1,11 +1,9 @@
 -- 1) Add sent_at column to employee_invites if missing
 ALTER TABLE public.employee_invites 
 ADD COLUMN IF NOT EXISTS sent_at timestamptz NULL;
-
 -- 2) Create index for faster token lookups
 CREATE INDEX IF NOT EXISTS idx_employee_invites_token_status 
 ON public.employee_invites(token, status);
-
 -- 3) Create public RPC to get invite info (no auth required for token lookup)
 CREATE OR REPLACE FUNCTION public.get_employee_invite_public(p_token text)
 RETURNS TABLE(
@@ -31,7 +29,6 @@ AS $$
     AND i.status = 'pending'
   LIMIT 1;
 $$;
-
 -- 4) Create RPC to accept an invite by token (requires auth)
 CREATE OR REPLACE FUNCTION public.accept_employee_invite(p_token text)
 RETURNS json
@@ -123,7 +120,6 @@ BEGIN
   );
 END;
 $$;
-
 -- 5) Grant execute permissions on public functions
 GRANT EXECUTE ON FUNCTION public.get_employee_invite_public(text) TO anon;
 GRANT EXECUTE ON FUNCTION public.get_employee_invite_public(text) TO authenticated;

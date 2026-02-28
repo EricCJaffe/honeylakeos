@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import {
   useExitSurveyAlerts,
   useExitSurveyMutations,
   useExitSurveyAlertComments,
+  useExitSurveySettings,
   type ExitSurveyAlert,
 } from "@/hooks/useExitSurvey";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,7 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useMembership } from "@/lib/membership";
 import { useCompanyMembers } from "@/hooks/useCompanyMembers";
 import { format } from "date-fns";
-import { AlertTriangle, CheckCircle, CheckCheck, MessageSquare } from "lucide-react";
+import { AlertTriangle, CheckCircle, CheckCheck, MessageSquare, Eye, EyeOff } from "lucide-react";
+import { useAuditLog } from "@/hooks/useAuditLog";
 
 // Three user-facing states. DB enum has 5; we map acknowledged/reviewed/action_taken → acknowledged.
 type VisibleStatus = "pending" | "acknowledged" | "resolved";
@@ -193,11 +195,16 @@ function AlertCommentThread({
 
 export function AlertsTab() {
   const { isCompanyAdmin, isSiteAdmin } = useMembership();
+  const { log } = useAuditLog();
+  const hasLoggedViewRef = useRef(false);
   const { toast } = useToast();
   const { data: alerts, isLoading } = useExitSurveyAlerts();
+  const { data: settings } = useExitSurveySettings();
   const { updateAlertStatus, assignAlert } = useExitSurveyMutations();
   const members = useCompanyMembers();
   const [expandedAlert, setExpandedAlert] = useState<string | null>(null);
+  const [revealNames, setRevealNames] = useState(false);
+  const phiSafeMode = settings?.phi_safe_email_mode === "true";
 
   const alertList = (alerts || []) as AlertWithRelations[];
   const memberMap = new Map((members.data || []).map((m) => [m.user_id, m]));
@@ -216,6 +223,14 @@ export function AlertsTab() {
       if (vA !== vB) return vA - vB;
       return a.score - b.score;
     });
+
+  useEffect(() => {
+    if (hasLoggedViewRef.current) return;
+    hasLoggedViewRef.current = true;
+    void log("exit_survey.alerts_viewed", "exit_survey_alert", undefined, {
+      source: "exit_survey_alerts_tab",
+    });
+  }, [log]);
 
   function handleSetStatus(alertId: string, next: VisibleStatus) {
     const canComplete = isCompanyAdmin || isSiteAdmin;
@@ -254,6 +269,18 @@ export function AlertsTab() {
         })}
       </div>
 
+      {phiSafeMode && (
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50">
+            PHI-safe mode ON
+          </Badge>
+          <Button variant="outline" size="sm" onClick={() => setRevealNames((prev) => !prev)}>
+            {revealNames ? <EyeOff className="w-4 h-4 mr-1" /> : <Eye className="w-4 h-4 mr-1" />}
+            {revealNames ? "Mask Names" : "Reveal Names"}
+          </Button>
+        </div>
+      )}
+
       {/* Alert list — only active (non-completed) */}
       <div className="space-y-3">
         {isLoading ? (
@@ -278,6 +305,10 @@ export function AlertsTab() {
               submission?.patient_first_name || submission?.patient_last_name
                 ? `${submission.patient_first_name ?? ""} ${submission.patient_last_name ?? ""}`.trim()
                 : "Anonymous";
+            const displayName =
+              phiSafeMode && !revealNames && patientName !== "Anonymous"
+                ? `Patient ${alert.submission_id.slice(0, 6)}`
+                : patientName;
 
             return (
               <div key={alert.id} className="border rounded-lg overflow-hidden">
@@ -307,7 +338,7 @@ export function AlertsTab() {
                       <span className="text-xs text-muted-foreground">
                         Score: <strong className="text-red-600">{alert.score}</strong>
                       </span>
-                      <span className="text-xs text-muted-foreground">{patientName}</span>
+                      <span className="text-xs text-muted-foreground">{displayName}</span>
                       {submission?.submitted_at && (
                         <span className="text-xs text-muted-foreground">
                           {format(new Date(submission.submitted_at), "MMM d, yyyy")}

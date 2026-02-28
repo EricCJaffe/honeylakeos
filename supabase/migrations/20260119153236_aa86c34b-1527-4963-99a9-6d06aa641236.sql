@@ -2,10 +2,8 @@
 DROP TABLE IF EXISTS public.sop_revisions CASCADE;
 DROP TABLE IF EXISTS public.sops CASCADE;
 DROP TYPE IF EXISTS public.sop_visibility CASCADE;
-
 -- Create SOP visibility enum
 CREATE TYPE public.sop_visibility AS ENUM ('department_only', 'company_public');
-
 -- Create SOPs table
 CREATE TABLE public.sops (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -29,7 +27,6 @@ CREATE TABLE public.sops (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   created_by UUID REFERENCES auth.users(id)
 );
-
 -- Create SOP revisions table for version history
 CREATE TABLE public.sop_revisions (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -48,21 +45,17 @@ CREATE TABLE public.sop_revisions (
   revised_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (sop_id, version)
 );
-
 -- Create indexes for SOPs
 CREATE INDEX idx_sops_company_id ON public.sops(company_id);
 CREATE INDEX idx_sops_department_id ON public.sops(department_id);
 CREATE INDEX idx_sops_visibility ON public.sops(visibility);
 CREATE INDEX idx_sops_tags ON public.sops USING GIN(tags);
 CREATE INDEX idx_sops_title_search ON public.sops USING GIN(to_tsvector('english', title));
-
 -- Create index for revisions
 CREATE INDEX idx_sop_revisions_sop_id ON public.sop_revisions(sop_id);
-
 -- Enable RLS
 ALTER TABLE public.sops ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sop_revisions ENABLE ROW LEVEL SECURITY;
-
 -- RLS Policies for SOPs
 
 -- Company members can view company-public SOPs
@@ -78,7 +71,6 @@ USING (
     AND memberships.status = 'active'
   )
 );
-
 -- Department members can view department-only SOPs
 CREATE POLICY "Department members can view department SOPs"
 ON public.sops
@@ -91,7 +83,6 @@ USING (
     AND department_members.user_id = auth.uid()
   )
 );
-
 -- Company admins can view all SOPs in their company
 CREATE POLICY "Company admins can view all SOPs"
 ON public.sops
@@ -105,7 +96,6 @@ USING (
     AND memberships.status = 'active'
   )
 );
-
 -- Department managers and company admins can create SOPs
 CREATE POLICY "Managers can create SOPs"
 ON public.sops
@@ -125,7 +115,6 @@ WITH CHECK (
     AND memberships.status = 'active'
   )
 );
-
 -- Department managers and company admins can update SOPs
 CREATE POLICY "Managers can update SOPs"
 ON public.sops
@@ -145,7 +134,6 @@ USING (
     AND memberships.status = 'active'
   )
 );
-
 -- Department managers and company admins can delete SOPs
 CREATE POLICY "Managers can delete SOPs"
 ON public.sops
@@ -165,7 +153,6 @@ USING (
     AND memberships.status = 'active'
   )
 );
-
 -- RLS Policies for SOP Revisions (inherit from parent SOP access)
 
 -- Anyone who can view the SOP can view its revisions
@@ -203,7 +190,6 @@ USING (
     )
   )
 );
-
 -- Managers can insert revisions
 CREATE POLICY "Managers can create SOP revisions"
 ON public.sop_revisions
@@ -229,7 +215,6 @@ WITH CHECK (
     )
   )
 );
-
 -- Create trigger for updated_at
 CREATE TRIGGER update_sops_updated_at
 BEFORE UPDATE ON public.sops

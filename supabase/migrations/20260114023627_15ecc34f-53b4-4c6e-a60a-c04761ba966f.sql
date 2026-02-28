@@ -16,7 +16,6 @@ AS $$
     ELSE NULL
   END;
 $$;
-
 -- 2. Create helper function to check if user is entity owner
 CREATE OR REPLACE FUNCTION public.entity_acl_is_owner(p_entity_type text, p_entity_id uuid)
 RETURNS boolean
@@ -35,10 +34,8 @@ AS $$
     ELSE false
   END;
 $$;
-
 -- 3. Drop the permissive SELECT policy
 DROP POLICY IF EXISTS "entity_acl_select_company_admin" ON public.entity_acl;
-
 -- 4. Create secure SELECT policy
 -- Allow SELECT only if:
 -- a) The entity belongs to user's active company, AND
@@ -64,7 +61,6 @@ USING (
     entity_acl_is_owner(entity_type, entity_id)
   )
 );
-
 -- 5. Add index for performance
 CREATE INDEX IF NOT EXISTS idx_entity_acl_lookup ON public.entity_acl(entity_type, entity_id);
 CREATE INDEX IF NOT EXISTS idx_entity_acl_grantee ON public.entity_acl(grantee_type, grantee_id);

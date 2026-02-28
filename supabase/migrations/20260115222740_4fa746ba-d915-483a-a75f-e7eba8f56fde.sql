@@ -5,7 +5,6 @@ ADD COLUMN IF NOT EXISTS recurrence_start_at timestamptz,
 ADD COLUMN IF NOT EXISTS recurrence_end_at timestamptz,
 ADD COLUMN IF NOT EXISTS recurrence_count integer,
 ADD COLUMN IF NOT EXISTS is_recurrence_exception boolean DEFAULT false;
-
 -- Create task_recurrence_exceptions table
 CREATE TABLE IF NOT EXISTS public.task_recurrence_exceptions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -16,7 +15,6 @@ CREATE TABLE IF NOT EXISTS public.task_recurrence_exceptions (
   created_at timestamptz DEFAULT now(),
   UNIQUE(company_id, task_id, exception_date)
 );
-
 -- Create task_recurrence_overrides table
 CREATE TABLE IF NOT EXISTS public.task_recurrence_overrides (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -28,7 +26,6 @@ CREATE TABLE IF NOT EXISTS public.task_recurrence_overrides (
   created_at timestamptz DEFAULT now(),
   UNIQUE(company_id, series_task_id, occurrence_start_at)
 );
-
 -- Add indexes for performance
 CREATE INDEX IF NOT EXISTS idx_task_recurrence_exceptions_lookup 
   ON public.task_recurrence_exceptions(company_id, task_id);
@@ -36,37 +33,29 @@ CREATE INDEX IF NOT EXISTS idx_task_recurrence_overrides_lookup
   ON public.task_recurrence_overrides(company_id, series_task_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_recurrence 
   ON public.tasks(company_id, is_recurring_template) WHERE is_recurring_template = true;
-
 -- Enable RLS
 ALTER TABLE public.task_recurrence_exceptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.task_recurrence_overrides ENABLE ROW LEVEL SECURITY;
-
 -- RLS policies for task_recurrence_exceptions
 CREATE POLICY "task_recurrence_exceptions_select_company_member"
   ON public.task_recurrence_exceptions FOR SELECT
   USING (is_company_member(company_id));
-
 CREATE POLICY "task_recurrence_exceptions_insert_company_member"
   ON public.task_recurrence_exceptions FOR INSERT
   WITH CHECK (is_company_member(company_id));
-
 CREATE POLICY "task_recurrence_exceptions_delete_creator_or_admin"
   ON public.task_recurrence_exceptions FOR DELETE
   USING ((created_by = auth.uid()) OR is_company_admin(company_id));
-
 -- RLS policies for task_recurrence_overrides
 CREATE POLICY "task_recurrence_overrides_select_company_member"
   ON public.task_recurrence_overrides FOR SELECT
   USING (is_company_member(company_id));
-
 CREATE POLICY "task_recurrence_overrides_insert_company_member"
   ON public.task_recurrence_overrides FOR INSERT
   WITH CHECK (is_company_member(company_id));
-
 CREATE POLICY "task_recurrence_overrides_delete_creator_or_admin"
   ON public.task_recurrence_overrides FOR DELETE
   USING ((created_by = auth.uid()) OR is_company_admin(company_id));
-
 -- Create RPC for expanding task series
 -- This function returns virtual occurrences within a date range
 CREATE OR REPLACE FUNCTION public.expand_task_series(
@@ -242,7 +231,6 @@ BEGIN
   RETURN;
 END;
 $$;
-
 -- RPC to skip an occurrence
 CREATE OR REPLACE FUNCTION public.skip_task_occurrence(
   p_task_id uuid,
@@ -278,7 +266,6 @@ BEGIN
   RETURN v_exception_id;
 END;
 $$;
-
 -- RPC to create an override (edit single occurrence)
 CREATE OR REPLACE FUNCTION public.create_task_occurrence_override(
   p_series_task_id uuid,

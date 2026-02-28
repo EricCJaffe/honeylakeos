@@ -9,17 +9,14 @@ CREATE TABLE public.audit_logs (
   metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
   created_at timestamptz NOT NULL DEFAULT now()
 );
-
 -- Create indexes for common queries
 CREATE INDEX idx_audit_logs_company_id ON public.audit_logs(company_id);
 CREATE INDEX idx_audit_logs_created_at ON public.audit_logs(created_at DESC);
 CREATE INDEX idx_audit_logs_entity ON public.audit_logs(entity_type, entity_id);
 CREATE INDEX idx_audit_logs_action ON public.audit_logs(action);
 CREATE INDEX idx_audit_logs_actor ON public.audit_logs(actor_user_id);
-
 -- Enable RLS
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
-
 -- RLS: Company admins, site admins, and super admins can read audit logs
 CREATE POLICY "audit_logs_select_admins"
 ON public.audit_logs FOR SELECT
@@ -28,12 +25,10 @@ USING (
   is_site_admin((SELECT c.site_id FROM public.companies c WHERE c.id = audit_logs.company_id)) OR
   is_super_admin()
 );
-
 -- RLS: Insert is allowed via SECURITY DEFINER function only (no direct inserts)
 CREATE POLICY "audit_logs_insert_internal"
 ON public.audit_logs FOR INSERT
 WITH CHECK (false);
-
 -- Helper function to log audit events (SECURITY DEFINER to bypass RLS)
 CREATE OR REPLACE FUNCTION public.log_audit_event(
   p_company_id uuid,
@@ -75,7 +70,6 @@ BEGIN
   RETURN v_audit_id;
 END;
 $$;
-
 -- Trigger function for employees table
 CREATE OR REPLACE FUNCTION public.audit_employees_changes()
 RETURNS trigger
@@ -132,7 +126,6 @@ BEGIN
   RETURN NULL;
 END;
 $$;
-
 -- Trigger function for group_members table
 CREATE OR REPLACE FUNCTION public.audit_group_member_changes()
 RETURNS trigger
@@ -192,7 +185,6 @@ BEGIN
   RETURN NULL;
 END;
 $$;
-
 -- Trigger function for location_members table
 CREATE OR REPLACE FUNCTION public.audit_location_member_changes()
 RETURNS trigger
@@ -251,7 +243,6 @@ BEGIN
   RETURN NULL;
 END;
 $$;
-
 -- Trigger function for memberships (role changes)
 CREATE OR REPLACE FUNCTION public.audit_membership_changes()
 RETURNS trigger
@@ -304,7 +295,6 @@ BEGIN
   RETURN NULL;
 END;
 $$;
-
 -- Trigger function for employee_invites
 CREATE OR REPLACE FUNCTION public.audit_invite_changes()
 RETURNS trigger
@@ -349,24 +339,19 @@ BEGIN
   RETURN NULL;
 END;
 $$;
-
 -- Create triggers
 CREATE TRIGGER audit_employees_trigger
 AFTER INSERT OR UPDATE OR DELETE ON public.employees
 FOR EACH ROW EXECUTE FUNCTION audit_employees_changes();
-
 CREATE TRIGGER audit_group_members_trigger
 AFTER INSERT OR UPDATE OR DELETE ON public.group_members
 FOR EACH ROW EXECUTE FUNCTION audit_group_member_changes();
-
 CREATE TRIGGER audit_location_members_trigger
 AFTER INSERT OR UPDATE OR DELETE ON public.location_members
 FOR EACH ROW EXECUTE FUNCTION audit_location_member_changes();
-
 CREATE TRIGGER audit_memberships_trigger
 AFTER INSERT OR UPDATE OR DELETE ON public.memberships
 FOR EACH ROW EXECUTE FUNCTION audit_membership_changes();
-
 CREATE TRIGGER audit_invites_trigger
 AFTER INSERT OR UPDATE ON public.employee_invites
 FOR EACH ROW EXECUTE FUNCTION audit_invite_changes();

@@ -1,4 +1,3 @@
-
 -- =====================================================
 -- WORKFLOW BUILDER LITE - ORG-OWNED WORKFLOW TABLES
 -- =====================================================
@@ -18,7 +17,6 @@ CREATE TABLE IF NOT EXISTS public.coaching_org_workflows (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 -- 2. Create org-owned workflow steps table
 CREATE TABLE IF NOT EXISTS public.coaching_org_workflow_steps (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -37,16 +35,13 @@ CREATE TABLE IF NOT EXISTS public.coaching_org_workflow_steps (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 -- 3. Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_coaching_org_workflows_org ON public.coaching_org_workflows(coaching_org_id);
 CREATE INDEX IF NOT EXISTS idx_coaching_org_workflows_pack ON public.coaching_org_workflows(source_pack_key);
 CREATE INDEX IF NOT EXISTS idx_coaching_org_workflow_steps_workflow ON public.coaching_org_workflow_steps(org_workflow_id);
-
 -- 4. Enable RLS
 ALTER TABLE public.coaching_org_workflows ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coaching_org_workflow_steps ENABLE ROW LEVEL SECURITY;
-
 -- 5. RLS Policies for coaching_org_workflows
 CREATE POLICY "Org members can view their org workflows"
   ON public.coaching_org_workflows FOR SELECT
@@ -56,7 +51,6 @@ CREATE POLICY "Org members can view their org workflows"
       WHERE user_id = auth.uid() AND status = 'active'
     )
   );
-
 CREATE POLICY "Org admins can insert workflows"
   ON public.coaching_org_workflows FOR INSERT
   WITH CHECK (
@@ -65,7 +59,6 @@ CREATE POLICY "Org admins can insert workflows"
       WHERE user_id = auth.uid() AND status = 'active' AND role = 'company_admin'
     )
   );
-
 CREATE POLICY "Org admins can update workflows"
   ON public.coaching_org_workflows FOR UPDATE
   USING (
@@ -74,7 +67,6 @@ CREATE POLICY "Org admins can update workflows"
       WHERE user_id = auth.uid() AND status = 'active' AND role = 'company_admin'
     )
   );
-
 CREATE POLICY "Org admins can delete workflows"
   ON public.coaching_org_workflows FOR DELETE
   USING (
@@ -83,7 +75,6 @@ CREATE POLICY "Org admins can delete workflows"
       WHERE user_id = auth.uid() AND status = 'active' AND role = 'company_admin'
     )
   );
-
 -- 6. RLS Policies for coaching_org_workflow_steps
 CREATE POLICY "Org members can view workflow steps"
   ON public.coaching_org_workflow_steps FOR SELECT
@@ -96,7 +87,6 @@ CREATE POLICY "Org members can view workflow steps"
       )
     )
   );
-
 CREATE POLICY "Org admins can insert workflow steps"
   ON public.coaching_org_workflow_steps FOR INSERT
   WITH CHECK (
@@ -108,7 +98,6 @@ CREATE POLICY "Org admins can insert workflow steps"
       )
     )
   );
-
 CREATE POLICY "Org admins can update workflow steps"
   ON public.coaching_org_workflow_steps FOR UPDATE
   USING (
@@ -120,7 +109,6 @@ CREATE POLICY "Org admins can update workflow steps"
       )
     )
   );
-
 CREATE POLICY "Org admins can delete workflow steps"
   ON public.coaching_org_workflow_steps FOR DELETE
   USING (
@@ -132,12 +120,10 @@ CREATE POLICY "Org admins can delete workflow steps"
       )
     )
   );
-
 -- 7. Trigger for updated_at
 CREATE TRIGGER update_coaching_org_workflows_updated_at
   BEFORE UPDATE ON public.coaching_org_workflows
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 CREATE TRIGGER update_coaching_org_workflow_steps_updated_at
   BEFORE UPDATE ON public.coaching_org_workflow_steps
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();

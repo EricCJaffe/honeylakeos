@@ -94,5 +94,4 @@ begin
   );
 end;
 $$;
-
 grant execute on function public.promote_self_to_super_admin() to authenticated;

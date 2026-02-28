@@ -42,9 +42,20 @@ supabase db diff --schema public        # diff local vs remote schema
 supabase functions deploy exit-survey-weekly-digest exit-survey-reminders
 supabase functions invoke exit-survey-weekly-digest --body '{"company_id":"<company_id>"}'
 supabase functions invoke exit-survey-reminders --body '{"company_id":"<company_id>"}'
+supabase functions invoke exit-survey-retention --body '{"company_id":"<company_id>","dry_run":true}'
 ```
 
 Scheduler required: configure a weekly cron for `exit-survey-weekly-digest` and a 48–72 hour cadence for `exit-survey-reminders`.
+Until go-live, keep cron disabled and use manual invokes/tests only.
+
+## SOP Review Reminder Jobs (Manual Run)
+```bash
+supabase functions deploy sop-review-reminders
+supabase functions invoke sop-review-reminders --body '{"dry_run":true}'
+```
+
+Recommended schedule: daily trigger via `20260228152000_schedule_sop_review_reminders.sql`.
+Until go-live, keep cron disabled and use manual invokes/tests only.
 
 ## Deploy (Vercel)
 - Push to `main` branch — Vercel auto-deploys.

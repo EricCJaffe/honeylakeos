@@ -19,13 +19,10 @@ CREATE TABLE IF NOT EXISTS public.subscription_events (
   created_by_user_id uuid,
   created_at timestamptz DEFAULT now() NOT NULL
 );
-
 CREATE INDEX IF NOT EXISTS idx_subscription_events_company 
 ON public.subscription_events(company_id, created_at DESC);
-
 -- RLS for subscription_events
 ALTER TABLE public.subscription_events ENABLE ROW LEVEL SECURITY;
-
 CREATE POLICY "subscription_events_select_own" ON public.subscription_events
 FOR SELECT USING (
   company_id IN (
@@ -38,7 +35,6 @@ FOR SELECT USING (
     AND sm.role IN ('site_admin', 'super_admin')
   )
 );
-
 CREATE POLICY "subscription_events_insert_admin" ON public.subscription_events
 FOR INSERT WITH CHECK (
   EXISTS (

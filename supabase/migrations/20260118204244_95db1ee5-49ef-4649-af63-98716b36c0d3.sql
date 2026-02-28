@@ -9,7 +9,6 @@ CREATE TABLE IF NOT EXISTS public.framework_finance_targets (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT framework_finance_targets_unique UNIQUE (company_id, framework_id)
 );
-
 -- Framework Finance Playbook Items (condition-based prompts)
 CREATE TABLE IF NOT EXISTS public.framework_finance_playbook_items (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -20,7 +19,6 @@ CREATE TABLE IF NOT EXISTS public.framework_finance_playbook_items (
   sort_order INT NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_framework_finance_targets_company 
   ON public.framework_finance_targets(company_id);
@@ -28,30 +26,24 @@ CREATE INDEX IF NOT EXISTS idx_framework_finance_targets_framework
   ON public.framework_finance_targets(framework_id);
 CREATE INDEX IF NOT EXISTS idx_framework_finance_playbook_items_framework 
   ON public.framework_finance_playbook_items(framework_id);
-
 -- RLS for framework_finance_targets
 ALTER TABLE public.framework_finance_targets ENABLE ROW LEVEL SECURITY;
-
 CREATE POLICY "Finance targets viewable by finance users"
   ON public.framework_finance_targets
   FOR SELECT
   USING (public.is_finance_admin(company_id));
-
 CREATE POLICY "Finance targets manageable by finance admins"
   ON public.framework_finance_targets
   FOR ALL
   USING (public.is_finance_admin(company_id))
   WITH CHECK (public.is_finance_admin(company_id));
-
 -- RLS for framework_finance_playbook_items (read-only for authenticated users with framework access)
 ALTER TABLE public.framework_finance_playbook_items ENABLE ROW LEVEL SECURITY;
-
 CREATE POLICY "Playbook items viewable by authenticated users"
   ON public.framework_finance_playbook_items
   FOR SELECT
   TO authenticated
   USING (true);
-
 CREATE POLICY "Playbook items manageable by system/coach owners"
   ON public.framework_finance_playbook_items
   FOR ALL
@@ -63,7 +55,6 @@ CREATE POLICY "Playbook items manageable by system/coach owners"
       AND (f.is_system_template = true OR f.owner_type = 'coach_org')
     )
   );
-
 -- Seed default EOS playbook items
 INSERT INTO public.framework_finance_playbook_items (framework_id, condition_key, title, description, sort_order)
 SELECT 

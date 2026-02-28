@@ -6,28 +6,23 @@
 DO $$ BEGIN
   CREATE TYPE public.subscription_source AS ENUM ('self', 'provisioned_by_coaching_org', 'imported', 'site_admin');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
 -- Add requires_action and trial to plan_status enum if not exists
 DO $$ BEGIN
   ALTER TYPE public.plan_status ADD VALUE IF NOT EXISTS 'requires_action';
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
 DO $$ BEGIN
   ALTER TYPE public.plan_status ADD VALUE IF NOT EXISTS 'trial';
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
 -- Add columns to company_plans
 ALTER TABLE public.company_plans 
 ADD COLUMN IF NOT EXISTS source public.subscription_source DEFAULT 'self',
 ADD COLUMN IF NOT EXISTS trial_ends_at timestamptz,
 ADD COLUMN IF NOT EXISTS grace_ends_at timestamptz,
 ADD COLUMN IF NOT EXISTS provisioned_by_coaching_org_id uuid;
-
 -- Add entitlements column to plans table
 ALTER TABLE public.plans 
 ADD COLUMN IF NOT EXISTS entitlements jsonb DEFAULT '{}'::jsonb,
 ADD COLUMN IF NOT EXISTS status text DEFAULT 'active';
-
 -- Update existing plans with default entitlements
 UPDATE public.plans SET entitlements = jsonb_build_object(
   'modules', jsonb_build_object(
@@ -69,7 +64,6 @@ UPDATE public.plans SET entitlements = jsonb_build_object(
     'framework_marketplace_publish', CASE WHEN slug IN ('coaching_team', 'coaching_firm') THEN true ELSE false END
   )
 ) WHERE entitlements = '{}'::jsonb OR entitlements IS NULL;
-
 -- Add free_minimal plan if not exists
 INSERT INTO public.plans (name, slug, description, plan_type, is_default, sort_order, entitlements, status)
 VALUES (

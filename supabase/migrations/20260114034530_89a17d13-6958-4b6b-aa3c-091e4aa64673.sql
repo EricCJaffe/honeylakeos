@@ -56,7 +56,6 @@ BEGIN
   RETURN v_active_admin_count > 1;
 END;
 $$;
-
 -- Add DELETE policy on memberships
 CREATE POLICY "memberships_delete_admins"
 ON public.memberships

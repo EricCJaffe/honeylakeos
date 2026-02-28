@@ -34,6 +34,7 @@ import TerminologyPanel from "./company-console/TerminologyPanel";
 import { CapabilitySettingsPanel } from "./company-console/CapabilitySettingsPanel";
 import DepartmentsPanel from "./company-console/DepartmentsPanel";
 import { FeatureFlagsPanel } from "@/core/modules";
+import SecurityBaselinePanel from "./company-console/SecurityBaselinePanel";
 
 const adminSections = [
   {
@@ -96,6 +97,12 @@ const adminSections = [
     icon: ClipboardList,
     description: "Review administrative actions and track changes across your organization.",
   },
+  {
+    id: "security",
+    label: "Security",
+    icon: ShieldCheck,
+    description: "Review HIPAA-oriented baseline controls and verification checks.",
+  },
 ];
 
 export default function CompanyConsolePage() {
@@ -132,6 +139,7 @@ export default function CompanyConsolePage() {
       queryClient.invalidateQueries({ queryKey: ["groups"] });
       queryClient.invalidateQueries({ queryKey: ["locations"] });
       queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
+      queryClient.invalidateQueries({ queryKey: ["security-baseline-submission-view-audit"] });
       queryClient.invalidateQueries({ queryKey: ["company"] });
     }
     previousCompanyId.current = activeCompanyId;
@@ -205,6 +213,7 @@ export default function CompanyConsolePage() {
                     queryClient.invalidateQueries({ queryKey: ["groups"] });
                     queryClient.invalidateQueries({ queryKey: ["locations"] });
                     queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
+                    queryClient.invalidateQueries({ queryKey: ["security-baseline-submission-view-audit"] });
                   } finally {
                     setSwitchingCompanyId(null);
                   }
@@ -273,6 +282,7 @@ export default function CompanyConsolePage() {
             {section.id === "capabilities" && <CapabilitySettingsPanel />}
             {section.id === "terminology" && <TerminologyPanel />}
             {section.id === "audit" && <AuditLogPanel />}
+            {section.id === "security" && <SecurityBaselinePanel />}
           </TabsContent>
         ))}
       </Tabs>

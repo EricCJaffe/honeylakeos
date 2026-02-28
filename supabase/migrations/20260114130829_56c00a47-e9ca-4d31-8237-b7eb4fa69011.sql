@@ -1,6 +1,5 @@
 -- Drop existing INSERT policy on group_members
 DROP POLICY IF EXISTS "group_members_write_company_admin" ON public.group_members;
-
 -- Create new INSERT policy that allows company admins OR group managers
 CREATE POLICY "group_members_insert_admin_or_manager"
 ON public.group_members

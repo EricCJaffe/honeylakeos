@@ -12,6 +12,5 @@ AS $$
   ORDER BY created_at ASC 
   LIMIT 1;
 $$;
-
 -- Grant execute to authenticated users
 GRANT EXECUTE ON FUNCTION public.get_default_site_id() TO authenticated;

@@ -1,12 +1,10 @@
 -- Add can_access_finance column to memberships
 ALTER TABLE public.memberships 
 ADD COLUMN IF NOT EXISTS can_access_finance BOOLEAN NOT NULL DEFAULT false;
-
 -- Create index for faster finance permission lookups
 CREATE INDEX IF NOT EXISTS idx_memberships_finance_access 
 ON public.memberships(company_id, user_id, can_access_finance) 
 WHERE can_access_finance = true;
-
 -- Update is_finance_admin function to check for can_access_finance permission
 CREATE OR REPLACE FUNCTION public.is_finance_admin(p_company_id UUID)
 RETURNS BOOLEAN
@@ -40,6 +38,5 @@ AS $$
       AND sm.role IN ('site_admin', 'super_admin')
   );
 $$;
-
 -- Add comment for documentation
 COMMENT ON COLUMN public.memberships.can_access_finance IS 'Whether the user has access to finance module features. Company admins always have access regardless of this flag.';

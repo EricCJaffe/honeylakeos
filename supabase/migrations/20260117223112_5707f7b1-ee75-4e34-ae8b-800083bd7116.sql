@@ -13,7 +13,6 @@ CREATE TYPE public.report_type AS ENUM (
   'invoices_by_status',
   'receipts_by_tag'
 );
-
 -- Create reports table
 CREATE TABLE public.reports (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -27,7 +26,6 @@ CREATE TABLE public.reports (
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
-
 -- Create report_runs table for caching expensive queries
 CREATE TABLE public.report_runs (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -37,11 +35,9 @@ CREATE TABLE public.report_runs (
   expires_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (now() + interval '1 hour'),
   created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
 );
-
 -- Enable RLS
 ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.report_runs ENABLE ROW LEVEL SECURITY;
-
 -- RLS policies for reports
 -- Users can view personal reports they own
 CREATE POLICY "Users can view their own personal reports"
@@ -51,7 +47,6 @@ USING (
   is_personal = true 
   AND owner_user_id = auth.uid()
 );
-
 -- Users can view company reports if they're a member
 CREATE POLICY "Company members can view company reports"
 ON public.reports
@@ -64,7 +59,6 @@ USING (
     AND memberships.user_id = auth.uid()
   )
 );
-
 -- Users can create reports in their company
 CREATE POLICY "Company members can create reports"
 ON public.reports
@@ -76,7 +70,6 @@ WITH CHECK (
     AND memberships.user_id = auth.uid()
   )
 );
-
 -- Users can update their own personal reports
 CREATE POLICY "Users can update their own personal reports"
 ON public.reports
@@ -85,7 +78,6 @@ USING (
   is_personal = true 
   AND owner_user_id = auth.uid()
 );
-
 -- Admins can update company reports (using correct enum value)
 CREATE POLICY "Admins can update company reports"
 ON public.reports
@@ -99,7 +91,6 @@ USING (
     AND memberships.role = 'company_admin'
   )
 );
-
 -- Users can delete their own personal reports
 CREATE POLICY "Users can delete their own personal reports"
 ON public.reports
@@ -108,7 +99,6 @@ USING (
   is_personal = true 
   AND owner_user_id = auth.uid()
 );
-
 -- Admins can delete company reports (using correct enum value)
 CREATE POLICY "Admins can delete company reports"
 ON public.reports
@@ -122,7 +112,6 @@ USING (
     AND memberships.role = 'company_admin'
   )
 );
-
 -- RLS policies for report_runs
 CREATE POLICY "Users can view report runs for accessible reports"
 ON public.report_runs
@@ -141,7 +130,6 @@ USING (
     )
   )
 );
-
 CREATE POLICY "Users can create report runs for accessible reports"
 ON public.report_runs
 FOR INSERT
@@ -159,14 +147,12 @@ WITH CHECK (
     )
   )
 );
-
 -- Indexes
 CREATE INDEX idx_reports_company_id ON public.reports(company_id);
 CREATE INDEX idx_reports_owner_user_id ON public.reports(owner_user_id);
 CREATE INDEX idx_reports_report_type ON public.reports(report_type);
 CREATE INDEX idx_report_runs_report_id ON public.report_runs(report_id);
 CREATE INDEX idx_report_runs_expires_at ON public.report_runs(expires_at);
-
 -- Trigger for updated_at
 CREATE TRIGGER update_reports_updated_at
 BEFORE UPDATE ON public.reports

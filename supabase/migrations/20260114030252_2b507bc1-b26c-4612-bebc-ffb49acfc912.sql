@@ -74,6 +74,5 @@ begin
   );
 end;
 $$;
-
 -- Let authenticated users call it
 grant execute on function public.bootstrap_first_site(text, text) to authenticated;

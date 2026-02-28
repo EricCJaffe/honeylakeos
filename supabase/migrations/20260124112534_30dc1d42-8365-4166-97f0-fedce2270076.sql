@@ -19,7 +19,6 @@ CROSS JOIN (VALUES
 ) AS field(key, label, field_type, is_required, sort_order, help_text, options)
 WHERE f.template_key IN ('generic_chair_readiness_assessment', 'convene_chair_readiness_assessment')
 ON CONFLICT DO NOTHING;
-
 -- Seed form fields for Forum Prework (Generic & Convene)
 INSERT INTO wf_form_fields (form_id, key, label, field_type, is_required, sort_order, help_text, options)
 SELECT 
@@ -37,7 +36,6 @@ CROSS JOIN (VALUES
 ) AS field(key, label, field_type, is_required, sort_order, help_text, options)
 WHERE f.template_key IN ('generic_forum_prework', 'convene_forum_prework')
 ON CONFLICT DO NOTHING;
-
 -- Seed form fields for Forum Summary (Generic & Convene)
 INSERT INTO wf_form_fields (form_id, key, label, field_type, is_required, sort_order, help_text, options)
 SELECT 
@@ -55,7 +53,6 @@ CROSS JOIN (VALUES
 ) AS field(key, label, field_type, is_required, sort_order, help_text, options)
 WHERE f.template_key IN ('generic_forum_summary', 'convene_forum_summary')
 ON CONFLICT DO NOTHING;
-
 -- Seed form fields for Quarterly Review (Generic & Convene)
 INSERT INTO wf_form_fields (form_id, key, label, field_type, is_required, sort_order, help_text, options)
 SELECT 
@@ -74,7 +71,6 @@ CROSS JOIN (VALUES
 ) AS field(key, label, field_type, is_required, sort_order, help_text, options)
 WHERE f.template_key IN ('generic_quarterly_review', 'convene_quarterly_review')
 ON CONFLICT DO NOTHING;
-
 -- Seed form fields for Chair Application (Generic & Convene)
 INSERT INTO wf_form_fields (form_id, key, label, field_type, is_required, sort_order, help_text, options)
 SELECT 

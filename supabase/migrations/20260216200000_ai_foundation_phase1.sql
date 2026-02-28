@@ -2,7 +2,6 @@
 
 -- Ensure vector extension is available for embeddings.
 CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA extensions;
-
 -- Seed OpenAI as an integration provider (company-level by default).
 INSERT INTO public.integration_providers (key, name, description, scope_supported, is_enabled_platform_wide)
 VALUES (
@@ -18,7 +17,6 @@ SET
   description = EXCLUDED.description,
   scope_supported = EXCLUDED.scope_supported,
   is_enabled_platform_wide = EXCLUDED.is_enabled_platform_wide;
-
 -- Company-level AI feature and budget controls.
 CREATE TABLE IF NOT EXISTS public.company_ai_settings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -42,9 +40,7 @@ CREATE TABLE IF NOT EXISTS public.company_ai_settings (
     AND max_completion_tokens BETWEEN 64 AND 32000
   )
 );
-
 ALTER TABLE public.company_ai_settings ENABLE ROW LEVEL SECURITY;
-
 DROP POLICY IF EXISTS "Company members can read AI settings" ON public.company_ai_settings;
 CREATE POLICY "Company members can read AI settings"
 ON public.company_ai_settings
@@ -53,7 +49,6 @@ USING (
   public.is_company_member(company_id)
   OR public.is_site_admin((SELECT c.site_id FROM public.companies c WHERE c.id = company_ai_settings.company_id))
 );
-
 DROP POLICY IF EXISTS "Company admins can manage AI settings" ON public.company_ai_settings;
 CREATE POLICY "Company admins can manage AI settings"
 ON public.company_ai_settings
@@ -66,14 +61,11 @@ WITH CHECK (
   public.is_company_admin(company_id)
   OR public.is_site_admin((SELECT c.site_id FROM public.companies c WHERE c.id = company_ai_settings.company_id))
 );
-
 DROP TRIGGER IF EXISTS update_company_ai_settings_updated_at ON public.company_ai_settings;
 CREATE TRIGGER update_company_ai_settings_updated_at
   BEFORE UPDATE ON public.company_ai_settings
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 CREATE INDEX IF NOT EXISTS idx_company_ai_settings_company_id ON public.company_ai_settings(company_id);
-
 -- Usage and spend observability for AI calls.
 CREATE TABLE IF NOT EXISTS public.ai_usage_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -97,9 +89,7 @@ CREATE TABLE IF NOT EXISTS public.ai_usage_logs (
     AND (total_tokens IS NULL OR total_tokens >= 0)
   )
 );
-
 ALTER TABLE public.ai_usage_logs ENABLE ROW LEVEL SECURITY;
-
 DROP POLICY IF EXISTS "Company members can read AI usage logs" ON public.ai_usage_logs;
 CREATE POLICY "Company members can read AI usage logs"
 ON public.ai_usage_logs
@@ -108,11 +98,9 @@ USING (
   public.is_company_member(company_id)
   OR public.is_site_admin((SELECT c.site_id FROM public.companies c WHERE c.id = ai_usage_logs.company_id))
 );
-
 CREATE INDEX IF NOT EXISTS idx_ai_usage_logs_company_created ON public.ai_usage_logs(company_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_ai_usage_logs_company_feature_created ON public.ai_usage_logs(company_id, feature_key, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_ai_usage_logs_company_status_created ON public.ai_usage_logs(company_id, status, created_at DESC);
-
 -- Vector-ready chunk storage for RAG over notes/documents/SOPs.
 CREATE TABLE IF NOT EXISTS public.ai_document_chunks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -131,9 +119,7 @@ CREATE TABLE IF NOT EXISTS public.ai_document_chunks (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (company_id, source_table, source_id, chunk_index)
 );
-
 ALTER TABLE public.ai_document_chunks ENABLE ROW LEVEL SECURITY;
-
 DROP POLICY IF EXISTS "Company members can read AI document chunks" ON public.ai_document_chunks;
 CREATE POLICY "Company members can read AI document chunks"
 ON public.ai_document_chunks
@@ -142,7 +128,6 @@ USING (
   public.is_company_member(company_id)
   OR public.is_site_admin((SELECT c.site_id FROM public.companies c WHERE c.id = ai_document_chunks.company_id))
 );
-
 DROP POLICY IF EXISTS "Company admins can manage AI document chunks" ON public.ai_document_chunks;
 CREATE POLICY "Company admins can manage AI document chunks"
 ON public.ai_document_chunks
@@ -155,23 +140,18 @@ WITH CHECK (
   public.is_company_admin(company_id)
   OR public.is_site_admin((SELECT c.site_id FROM public.companies c WHERE c.id = ai_document_chunks.company_id))
 );
-
 DROP TRIGGER IF EXISTS update_ai_document_chunks_updated_at ON public.ai_document_chunks;
 CREATE TRIGGER update_ai_document_chunks_updated_at
   BEFORE UPDATE ON public.ai_document_chunks
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 CREATE INDEX IF NOT EXISTS idx_ai_document_chunks_company_source
   ON public.ai_document_chunks(company_id, source_table, source_id, chunk_index);
-
 CREATE INDEX IF NOT EXISTS idx_ai_document_chunks_company_embedded
   ON public.ai_document_chunks(company_id, embedded_at DESC);
-
 CREATE INDEX IF NOT EXISTS idx_ai_document_chunks_embedding
   ON public.ai_document_chunks
   USING ivfflat (embedding extensions.vector_cosine_ops)
   WITH (lists = 100);
-
 -- RAG retrieval helper.
 CREATE OR REPLACE FUNCTION public.match_ai_document_chunks(
   p_company_id UUID,

@@ -1,13 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { useActiveExitSurvey } from "@/hooks/useExitSurvey";
+import { useActiveExitSurvey, useExitSurveySettings } from "@/hooks/useExitSurvey";
 import { useMembership } from "@/lib/membership";
-import { ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowUp, ArrowDown, Eye, EyeOff } from "lucide-react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -17,6 +17,7 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
+import { useAuditLog } from "@/hooks/useAuditLog";
 
 const TIMEFRAMES = [
   { label: "30 Days", value: "30d", days: 30 },
@@ -196,13 +197,26 @@ function computeDailySeries(rows: ResponseRow[]) {
 
 export function TrendsTab() {
   const { activeCompanyId } = useMembership();
+  const { log } = useAuditLog();
+  const hasLoggedViewRef = useRef(false);
   const { questions } = useActiveExitSurvey();
+  const { data: settings } = useExitSurveySettings();
   const [timeframe, setTimeframe] = useState<TimeframeValue>("90d");
   const [customStart, setCustomStart] = useState<string>(formatDateInput(new Date()));
   const [customEnd, setCustomEnd] = useState<string>(formatDateInput(new Date()));
+  const [revealNames, setRevealNames] = useState(false);
+  const phiSafeMode = settings?.phi_safe_email_mode === "true";
 
   const range = useMemo(() => buildRange(timeframe, customStart, customEnd), [timeframe, customStart, customEnd]);
   const prevRange = useMemo(() => (range ? shiftRange(range) : null), [range]);
+
+  useEffect(() => {
+    if (hasLoggedViewRef.current) return;
+    hasLoggedViewRef.current = true;
+    void log("exit_survey.trends_viewed", "exit_survey_submission", undefined, {
+      source: "exit_survey_trends_tab",
+    });
+  }, [log]);
 
   const statsQuery = useQuery({
     queryKey: ["exit-survey-leadership", activeCompanyId, range?.start.toISOString(), range?.end.toISOString()],
@@ -305,6 +319,17 @@ export function TrendsTab() {
               className="h-8 rounded-md border px-2 text-xs"
             />
           </div>
+        )}
+        {phiSafeMode && (
+          <>
+            <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50">
+              PHI-safe mode ON
+            </Badge>
+            <Button variant="outline" size="sm" onClick={() => setRevealNames((prev) => !prev)}>
+              {revealNames ? <EyeOff className="w-4 h-4 mr-1" /> : <Eye className="w-4 h-4 mr-1" />}
+              {revealNames ? "Mask Names" : "Reveal Names"}
+            </Button>
+          </>
         )}
       </div>
 
@@ -526,7 +551,11 @@ export function TrendsTab() {
                           <div className="mt-2 space-y-2">
                             {current.comments.map((c) => (
                               <div key={c.submissionId} className="text-xs text-muted-foreground">
-                                <span className="font-medium text-foreground">{c.patientName}</span>{" "}
+                                <span className="font-medium text-foreground">
+                                  {phiSafeMode && !revealNames && c.patientName !== "Anonymous"
+                                    ? `Patient ${c.submissionId.slice(0, 6)}`
+                                    : c.patientName}
+                                </span>{" "}
                                 <span>({new Date(c.submittedAt).toLocaleDateString()})</span>
                                 {c.score !== null && (
                                   <span className="ml-2 text-xs">Score: {c.score}</span>

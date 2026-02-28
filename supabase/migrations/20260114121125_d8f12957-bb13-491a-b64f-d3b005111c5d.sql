@@ -13,7 +13,6 @@ AS $$
       AND role = 'manager'
   );
 $$;
-
 -- Helper function: Get company_id for a group
 CREATE OR REPLACE FUNCTION public.get_group_company_id(p_group_id uuid)
 RETURNS uuid
@@ -24,7 +23,6 @@ SET search_path = public
 AS $$
   SELECT company_id FROM public.groups WHERE id = p_group_id;
 $$;
-
 -- Function to check if role update is allowed
 CREATE OR REPLACE FUNCTION public.can_update_group_member_role(p_group_id uuid, p_user_id uuid, p_new_role text)
 RETURNS boolean
@@ -77,7 +75,6 @@ BEGIN
   RETURN true;
 END;
 $$;
-
 -- Function to check if member deletion is allowed
 CREATE OR REPLACE FUNCTION public.can_delete_group_member(p_group_id uuid, p_user_id uuid)
 RETURNS boolean
@@ -125,10 +122,8 @@ BEGIN
   RETURN true;
 END;
 $$;
-
 -- Drop existing UPDATE policy if exists
 DROP POLICY IF EXISTS "group_members_update_company_admin" ON public.group_members;
-
 -- Create new UPDATE policy using the function
 CREATE POLICY "group_members_update_authorized"
 ON public.group_members
@@ -136,10 +131,8 @@ FOR UPDATE
 TO authenticated
 USING (can_update_group_member_role(group_id, user_id, role))
 WITH CHECK (can_update_group_member_role(group_id, user_id, role));
-
 -- Drop existing DELETE policy if exists
 DROP POLICY IF EXISTS "group_members_delete_admin_or_creator" ON public.group_members;
-
 -- Create new DELETE policy using the function
 CREATE POLICY "group_members_delete_authorized"
 ON public.group_members

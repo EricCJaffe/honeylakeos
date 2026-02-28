@@ -268,7 +268,6 @@ BEGIN
   RETURN;
 END;
 $$;
-
 -- Update expand_event_series with similar improvements
 CREATE OR REPLACE FUNCTION public.expand_event_series(
   p_event_id uuid, 

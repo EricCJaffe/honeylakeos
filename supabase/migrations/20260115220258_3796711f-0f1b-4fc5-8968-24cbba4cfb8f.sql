@@ -14,32 +14,26 @@ CREATE TABLE public.entity_links (
   CONSTRAINT valid_link_type CHECK (link_type IN ('related', 'blocks', 'depends_on', 'reference')),
   CONSTRAINT unique_entity_link UNIQUE (company_id, from_type, from_id, to_type, to_id, link_type)
 );
-
 -- Create indexes for performance
 CREATE INDEX idx_entity_links_from ON public.entity_links (company_id, from_type, from_id);
 CREATE INDEX idx_entity_links_to ON public.entity_links (company_id, to_type, to_id);
-
 -- Enable RLS
 ALTER TABLE public.entity_links ENABLE ROW LEVEL SECURITY;
-
 -- SELECT: company members can view links
 CREATE POLICY "entity_links_select_company_member"
 ON public.entity_links
 FOR SELECT
 USING (is_company_member(company_id));
-
 -- INSERT: company members can create links
 CREATE POLICY "entity_links_insert_company_member"
 ON public.entity_links
 FOR INSERT
 WITH CHECK (is_company_member(company_id) AND created_by = auth.uid());
-
 -- DELETE: creator or admin can delete
 CREATE POLICY "entity_links_delete_creator_or_admin"
 ON public.entity_links
 FOR DELETE
 USING (created_by = auth.uid() OR is_company_admin(company_id));
-
 -- Helper function to get entity company_id
 CREATE OR REPLACE FUNCTION public.get_entity_company_id(p_entity_type text, p_entity_id uuid)
 RETURNS uuid
@@ -68,7 +62,6 @@ BEGIN
   RETURN v_company_id;
 END;
 $$;
-
 -- RPC to create entity link with validation
 CREATE OR REPLACE FUNCTION public.create_entity_link(
   p_company_id uuid,
@@ -117,7 +110,6 @@ BEGIN
   RETURN v_link_id;
 END;
 $$;
-
 -- RPC to delete entity link with validation
 CREATE OR REPLACE FUNCTION public.delete_entity_link(p_link_id uuid)
 RETURNS boolean

@@ -1,18 +1,13 @@
 -- Create framework owner type enum
 CREATE TYPE public.framework_owner_type AS ENUM ('system', 'coach_org', 'company');
-
 -- Create framework status enum
 CREATE TYPE public.framework_status AS ENUM ('draft', 'published', 'archived');
-
 -- Create framework frequency type enum
 CREATE TYPE public.framework_frequency_type AS ENUM ('weekly', 'monthly', 'quarterly', 'annual', 'custom');
-
 -- Create metric type enum
 CREATE TYPE public.framework_metric_type AS ENUM ('percentage', 'count', 'trend', 'boolean');
-
 -- Create dashboard audience enum
 CREATE TYPE public.framework_dashboard_audience AS ENUM ('company_admin', 'leadership', 'member', 'coach', 'coach_manager');
-
 -- ==========================================
 -- FRAMEWORKS TABLE
 -- ==========================================
@@ -31,7 +26,6 @@ CREATE TABLE public.frameworks (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   archived_at TIMESTAMPTZ
 );
-
 -- ==========================================
 -- FRAMEWORK CONCEPTS (Vocabulary + Structure)
 -- ==========================================
@@ -48,7 +42,6 @@ CREATE TABLE public.framework_concepts (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(framework_id, key)
 );
-
 -- ==========================================
 -- FRAMEWORK CADENCES (Routines & Rhythm)
 -- ==========================================
@@ -69,7 +62,6 @@ CREATE TABLE public.framework_cadences (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(framework_id, key)
 );
-
 -- ==========================================
 -- FRAMEWORK TEMPLATES (Link to existing template system)
 -- ==========================================
@@ -85,7 +77,6 @@ CREATE TABLE public.framework_templates (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 -- ==========================================
 -- FRAMEWORK DASHBOARDS
 -- ==========================================
@@ -101,7 +92,6 @@ CREATE TABLE public.framework_dashboards (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(framework_id, key)
 );
-
 -- ==========================================
 -- FRAMEWORK DASHBOARD SECTIONS
 -- ==========================================
@@ -117,7 +107,6 @@ CREATE TABLE public.framework_dashboard_sections (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 -- ==========================================
 -- FRAMEWORK HEALTH METRICS
 -- ==========================================
@@ -137,7 +126,6 @@ CREATE TABLE public.framework_health_metrics (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(framework_id, key)
 );
-
 -- ==========================================
 -- COMPANY FRAMEWORKS (Active framework per company)
 -- ==========================================
@@ -147,7 +135,6 @@ CREATE TABLE public.company_frameworks (
   adopted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   adopted_by UUID
 );
-
 -- ==========================================
 -- INDEXES
 -- ==========================================
@@ -160,63 +147,51 @@ CREATE INDEX idx_framework_templates_framework_id ON public.framework_templates(
 CREATE INDEX idx_framework_dashboards_framework_id ON public.framework_dashboards(framework_id);
 CREATE INDEX idx_framework_dashboard_sections_dashboard_id ON public.framework_dashboard_sections(dashboard_id);
 CREATE INDEX idx_framework_health_metrics_framework_id ON public.framework_health_metrics(framework_id);
-
 -- ==========================================
 -- UPDATED_AT TRIGGERS
 -- ==========================================
 CREATE TRIGGER update_frameworks_updated_at
   BEFORE UPDATE ON public.frameworks
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 CREATE TRIGGER update_framework_concepts_updated_at
   BEFORE UPDATE ON public.framework_concepts
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 CREATE TRIGGER update_framework_cadences_updated_at
   BEFORE UPDATE ON public.framework_cadences
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 CREATE TRIGGER update_framework_templates_updated_at
   BEFORE UPDATE ON public.framework_templates
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 CREATE TRIGGER update_framework_dashboards_updated_at
   BEFORE UPDATE ON public.framework_dashboards
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 CREATE TRIGGER update_framework_dashboard_sections_updated_at
   BEFORE UPDATE ON public.framework_dashboard_sections
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 CREATE TRIGGER update_framework_health_metrics_updated_at
   BEFORE UPDATE ON public.framework_health_metrics
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 -- ==========================================
 -- RLS POLICIES
 -- ==========================================
 
 -- FRAMEWORKS
 ALTER TABLE public.frameworks ENABLE ROW LEVEL SECURITY;
-
 CREATE POLICY "System templates readable by authenticated users"
   ON public.frameworks FOR SELECT
   USING (is_system_template = true AND status = 'published');
-
 CREATE POLICY "Company frameworks readable by company members"
   ON public.frameworks FOR SELECT
   USING (
     company_id IS NOT NULL 
     AND public.is_company_member(company_id)
   );
-
 CREATE POLICY "Company admins can insert company frameworks"
   ON public.frameworks FOR INSERT
   WITH CHECK (
     company_id IS NOT NULL 
     AND public.is_company_admin(company_id)
   );
-
 CREATE POLICY "Company admins can update company frameworks"
   ON public.frameworks FOR UPDATE
   USING (
@@ -224,7 +199,6 @@ CREATE POLICY "Company admins can update company frameworks"
     AND public.is_company_admin(company_id)
     AND is_system_template = false
   );
-
 CREATE POLICY "Company admins can delete draft company frameworks"
   ON public.frameworks FOR DELETE
   USING (
@@ -233,10 +207,8 @@ CREATE POLICY "Company admins can delete draft company frameworks"
     AND is_system_template = false
     AND status = 'draft'
   );
-
 -- FRAMEWORK CONCEPTS
 ALTER TABLE public.framework_concepts ENABLE ROW LEVEL SECURITY;
-
 CREATE POLICY "Concepts readable via framework access"
   ON public.framework_concepts FOR SELECT
   USING (
@@ -249,7 +221,6 @@ CREATE POLICY "Concepts readable via framework access"
       )
     )
   );
-
 CREATE POLICY "Company admins can manage concepts"
   ON public.framework_concepts FOR ALL
   USING (
@@ -261,10 +232,8 @@ CREATE POLICY "Company admins can manage concepts"
       AND f.is_system_template = false
     )
   );
-
 -- FRAMEWORK CADENCES
 ALTER TABLE public.framework_cadences ENABLE ROW LEVEL SECURITY;
-
 CREATE POLICY "Cadences readable via framework access"
   ON public.framework_cadences FOR SELECT
   USING (
@@ -277,7 +246,6 @@ CREATE POLICY "Cadences readable via framework access"
       )
     )
   );
-
 CREATE POLICY "Company admins can manage cadences"
   ON public.framework_cadences FOR ALL
   USING (
@@ -289,10 +257,8 @@ CREATE POLICY "Company admins can manage cadences"
       AND f.is_system_template = false
     )
   );
-
 -- FRAMEWORK TEMPLATES
 ALTER TABLE public.framework_templates ENABLE ROW LEVEL SECURITY;
-
 CREATE POLICY "Templates readable via framework access"
   ON public.framework_templates FOR SELECT
   USING (
@@ -305,7 +271,6 @@ CREATE POLICY "Templates readable via framework access"
       )
     )
   );
-
 CREATE POLICY "Company admins can manage framework templates"
   ON public.framework_templates FOR ALL
   USING (
@@ -317,10 +282,8 @@ CREATE POLICY "Company admins can manage framework templates"
       AND f.is_system_template = false
     )
   );
-
 -- FRAMEWORK DASHBOARDS
 ALTER TABLE public.framework_dashboards ENABLE ROW LEVEL SECURITY;
-
 CREATE POLICY "Dashboards readable via framework access"
   ON public.framework_dashboards FOR SELECT
   USING (
@@ -333,7 +296,6 @@ CREATE POLICY "Dashboards readable via framework access"
       )
     )
   );
-
 CREATE POLICY "Company admins can manage dashboards"
   ON public.framework_dashboards FOR ALL
   USING (
@@ -345,10 +307,8 @@ CREATE POLICY "Company admins can manage dashboards"
       AND f.is_system_template = false
     )
   );
-
 -- FRAMEWORK DASHBOARD SECTIONS
 ALTER TABLE public.framework_dashboard_sections ENABLE ROW LEVEL SECURITY;
-
 CREATE POLICY "Dashboard sections readable via dashboard access"
   ON public.framework_dashboard_sections FOR SELECT
   USING (
@@ -362,7 +322,6 @@ CREATE POLICY "Dashboard sections readable via dashboard access"
       )
     )
   );
-
 CREATE POLICY "Company admins can manage dashboard sections"
   ON public.framework_dashboard_sections FOR ALL
   USING (
@@ -375,10 +334,8 @@ CREATE POLICY "Company admins can manage dashboard sections"
       AND f.is_system_template = false
     )
   );
-
 -- FRAMEWORK HEALTH METRICS
 ALTER TABLE public.framework_health_metrics ENABLE ROW LEVEL SECURITY;
-
 CREATE POLICY "Health metrics readable via framework access"
   ON public.framework_health_metrics FOR SELECT
   USING (
@@ -391,7 +348,6 @@ CREATE POLICY "Health metrics readable via framework access"
       )
     )
   );
-
 CREATE POLICY "Company admins can manage health metrics"
   ON public.framework_health_metrics FOR ALL
   USING (
@@ -403,26 +359,20 @@ CREATE POLICY "Company admins can manage health metrics"
       AND f.is_system_template = false
     )
   );
-
 -- COMPANY FRAMEWORKS
 ALTER TABLE public.company_frameworks ENABLE ROW LEVEL SECURITY;
-
 CREATE POLICY "Company members can view active framework"
   ON public.company_frameworks FOR SELECT
   USING (public.is_company_member(company_id));
-
 CREATE POLICY "Company admins can adopt/switch frameworks"
   ON public.company_frameworks FOR INSERT
   WITH CHECK (public.is_company_admin(company_id));
-
 CREATE POLICY "Company admins can update active framework"
   ON public.company_frameworks FOR UPDATE
   USING (public.is_company_admin(company_id));
-
 CREATE POLICY "Company admins can remove framework adoption"
   ON public.company_frameworks FOR DELETE
   USING (public.is_company_admin(company_id));
-
 -- ==========================================
 -- CLONE FRAMEWORK FUNCTION
 -- ==========================================

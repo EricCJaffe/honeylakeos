@@ -15,7 +15,6 @@ CREATE TABLE IF NOT EXISTS public.project_templates (
   created_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE(company_id, name)
 );
-
 -- 2. Create project_template_phases table
 CREATE TABLE IF NOT EXISTS public.project_template_phases (
   id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -25,7 +24,6 @@ CREATE TABLE IF NOT EXISTS public.project_template_phases (
   color text NULL,
   description text NULL
 );
-
 -- 3. Create project_template_tasks table
 CREATE TABLE IF NOT EXISTS public.project_template_tasks (
   id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -38,33 +36,27 @@ CREATE TABLE IF NOT EXISTS public.project_template_tasks (
   relative_due_days integer NULL,
   is_milestone boolean NOT NULL DEFAULT false
 );
-
 -- 4. Enable RLS on all new tables
 ALTER TABLE public.project_templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.project_template_phases ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.project_template_tasks ENABLE ROW LEVEL SECURITY;
-
 -- 5. RLS Policies for project_templates
 CREATE POLICY "project_templates_select_company_member"
   ON public.project_templates
   FOR SELECT
   USING (is_company_member(company_id));
-
 CREATE POLICY "project_templates_insert_company_admin"
   ON public.project_templates
   FOR INSERT
   WITH CHECK (is_company_admin(company_id));
-
 CREATE POLICY "project_templates_update_company_admin"
   ON public.project_templates
   FOR UPDATE
   USING (is_company_admin(company_id));
-
 CREATE POLICY "project_templates_delete_company_admin"
   ON public.project_templates
   FOR DELETE
   USING (is_company_admin(company_id));
-
 -- 6. RLS Policies for project_template_phases (access via template)
 CREATE POLICY "project_template_phases_select"
   ON public.project_template_phases
@@ -74,7 +66,6 @@ CREATE POLICY "project_template_phases_select"
     WHERE pt.id = project_template_phases.template_id
     AND is_company_member(pt.company_id)
   ));
-
 CREATE POLICY "project_template_phases_insert"
   ON public.project_template_phases
   FOR INSERT
@@ -83,7 +74,6 @@ CREATE POLICY "project_template_phases_insert"
     WHERE pt.id = project_template_phases.template_id
     AND is_company_admin(pt.company_id)
   ));
-
 CREATE POLICY "project_template_phases_update"
   ON public.project_template_phases
   FOR UPDATE
@@ -92,7 +82,6 @@ CREATE POLICY "project_template_phases_update"
     WHERE pt.id = project_template_phases.template_id
     AND is_company_admin(pt.company_id)
   ));
-
 CREATE POLICY "project_template_phases_delete"
   ON public.project_template_phases
   FOR DELETE
@@ -101,7 +90,6 @@ CREATE POLICY "project_template_phases_delete"
     WHERE pt.id = project_template_phases.template_id
     AND is_company_admin(pt.company_id)
   ));
-
 -- 7. RLS Policies for project_template_tasks (access via template)
 CREATE POLICY "project_template_tasks_select"
   ON public.project_template_tasks
@@ -111,7 +99,6 @@ CREATE POLICY "project_template_tasks_select"
     WHERE pt.id = project_template_tasks.template_id
     AND is_company_member(pt.company_id)
   ));
-
 CREATE POLICY "project_template_tasks_insert"
   ON public.project_template_tasks
   FOR INSERT
@@ -120,7 +107,6 @@ CREATE POLICY "project_template_tasks_insert"
     WHERE pt.id = project_template_tasks.template_id
     AND is_company_admin(pt.company_id)
   ));
-
 CREATE POLICY "project_template_tasks_update"
   ON public.project_template_tasks
   FOR UPDATE
@@ -129,7 +115,6 @@ CREATE POLICY "project_template_tasks_update"
     WHERE pt.id = project_template_tasks.template_id
     AND is_company_admin(pt.company_id)
   ));
-
 CREATE POLICY "project_template_tasks_delete"
   ON public.project_template_tasks
   FOR DELETE
@@ -138,12 +123,10 @@ CREATE POLICY "project_template_tasks_delete"
     WHERE pt.id = project_template_tasks.template_id
     AND is_company_admin(pt.company_id)
   ));
-
 -- 8. Create indexes
 CREATE INDEX IF NOT EXISTS idx_project_templates_company ON public.project_templates(company_id);
 CREATE INDEX IF NOT EXISTS idx_project_template_phases_template ON public.project_template_phases(template_id);
 CREATE INDEX IF NOT EXISTS idx_project_template_tasks_template ON public.project_template_tasks(template_id);
-
 -- 9. RPC: create_project_from_template
 CREATE OR REPLACE FUNCTION public.create_project_from_template(
   p_template_id uuid,

@@ -4,7 +4,6 @@
 
 -- Enable extensions
 create extension if not exists "pgcrypto";
-
 -- ============================================================
 -- ENUMS
 -- ============================================================
@@ -18,14 +17,12 @@ do $$ begin
     'external'
   );
 exception when duplicate_object then null; end $$;
-
 do $$ begin
   create type site_role as enum (
     'super_admin',
     'site_admin'
   );
 exception when duplicate_object then null; end $$;
-
 do $$ begin
   create type company_status as enum (
     'active',
@@ -35,7 +32,6 @@ do $$ begin
     'suspended'
   );
 exception when duplicate_object then null; end $$;
-
 do $$ begin
   create type module_status as enum (
     'active',
@@ -44,7 +40,6 @@ do $$ begin
     'suspended'
   );
 exception when duplicate_object then null; end $$;
-
 -- ============================================================
 -- ADD NEW COLUMNS TO EXISTING PROFILES TABLE
 -- ============================================================
@@ -53,7 +48,6 @@ ALTER TABLE public.profiles
 ADD COLUMN IF NOT EXISTS active_company_id uuid null,
 ADD COLUMN IF NOT EXISTS active_location_id uuid null,
 ADD COLUMN IF NOT EXISTS full_name text;
-
 -- ============================================================
 -- TOUCH UPDATED_AT FUNCTION
 -- ============================================================
@@ -64,7 +58,6 @@ begin
   new.updated_at = now();
   return new;
 end $$;
-
 -- ============================================================
 -- SITES (Single SaaS Instance)
 -- ============================================================
@@ -76,9 +69,7 @@ create table if not exists public.sites (
   status text not null default 'active',
   created_at timestamptz not null default now()
 );
-
 alter table public.sites enable row level security;
-
 -- ============================================================
 -- COMPANIES
 -- ============================================================
@@ -94,11 +85,8 @@ create table if not exists public.companies (
   created_at timestamptz not null default now(),
   created_by uuid null references auth.users(id)
 );
-
 create index if not exists idx_companies_site_id on public.companies(site_id);
-
 alter table public.companies enable row level security;
-
 -- ============================================================
 -- LOCATIONS
 -- ============================================================
@@ -118,11 +106,8 @@ create table if not exists public.locations (
   timezone text,
   created_at timestamptz not null default now()
 );
-
 create index if not exists idx_locations_company_id on public.locations(company_id);
-
 alter table public.locations enable row level security;
-
 -- ============================================================
 -- SITE MEMBERSHIPS (Platform Admins)
 -- ============================================================
@@ -135,11 +120,8 @@ create table if not exists public.site_memberships (
   created_at timestamptz not null default now(),
   unique(user_id, site_id, role)
 );
-
 create index if not exists idx_site_memberships_user_id on public.site_memberships(user_id);
-
 alter table public.site_memberships enable row level security;
-
 -- ============================================================
 -- COMPANY MEMBERSHIPS (Multi-Company + External Users)
 -- ============================================================
@@ -156,12 +138,9 @@ create table if not exists public.memberships (
   created_at timestamptz not null default now(),
   unique(user_id, company_id)
 );
-
 create index if not exists idx_memberships_user_company on public.memberships(user_id, company_id);
 create index if not exists idx_memberships_company on public.memberships(company_id);
-
 alter table public.memberships enable row level security;
-
 -- ============================================================
 -- MODULES + COMPANY MODULE ENABLEMENT
 -- ============================================================
@@ -176,9 +155,7 @@ create table if not exists public.modules (
   is_public boolean not null default false,
   created_at timestamptz not null default now()
 );
-
 alter table public.modules enable row level security;
-
 create table if not exists public.company_modules (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.companies(id) on delete cascade,
@@ -190,11 +167,8 @@ create table if not exists public.company_modules (
   expires_at timestamptz null,
   unique(company_id, module_id)
 );
-
 create index if not exists idx_company_modules_company on public.company_modules(company_id);
-
 alter table public.company_modules enable row level security;
-
 -- ============================================================
 -- ADD FOREIGN KEYS TO PROFILES (after tables exist)
 -- ============================================================
@@ -209,7 +183,6 @@ BEGIN
     FOREIGN KEY (active_company_id) REFERENCES public.companies(id) ON DELETE SET NULL;
   END IF;
 END $$;
-
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -220,7 +193,6 @@ BEGIN
     FOREIGN KEY (active_location_id) REFERENCES public.locations(id) ON DELETE SET NULL;
   END IF;
 END $$;
-
 -- ============================================================
 -- HELPER FUNCTIONS FOR RLS (SECURITY DEFINER)
 -- ============================================================
@@ -234,7 +206,6 @@ returns boolean language sql stable security definer set search_path = public as
       and sm.role in ('super_admin','site_admin')
   );
 $$;
-
 create or replace function public.is_super_admin()
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (
@@ -243,7 +214,6 @@ returns boolean language sql stable security definer set search_path = public as
       and sm.role = 'super_admin'
   );
 $$;
-
 create or replace function public.is_company_member(p_company_id uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (
@@ -254,7 +224,6 @@ returns boolean language sql stable security definer set search_path = public as
       and (m.expires_at is null or m.expires_at > now())
   );
 $$;
-
 create or replace function public.is_company_admin(p_company_id uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (
@@ -266,7 +235,6 @@ returns boolean language sql stable security definer set search_path = public as
       and (m.expires_at is null or m.expires_at > now())
   );
 $$;
-
 -- ============================================================
 -- ROW LEVEL SECURITY POLICIES
 -- ============================================================
@@ -275,7 +243,6 @@ $$;
 create policy "sites_select_admin"
   on public.sites for select
   using (public.is_site_admin(id));
-
 -- COMPANIES
 create policy "companies_select_member_or_site_admin"
   on public.companies for select
@@ -283,18 +250,15 @@ create policy "companies_select_member_or_site_admin"
     public.is_company_member(id)
     OR public.is_site_admin(site_id)
   );
-
 create policy "companies_insert_site_admin"
   on public.companies for insert
   with check (public.is_site_admin(site_id));
-
 create policy "companies_update_admins"
   on public.companies for update
   using (
     public.is_site_admin(site_id)
     OR public.is_company_admin(id)
   );
-
 -- LOCATIONS
 create policy "locations_select_member_or_site_admin"
   on public.locations for select
@@ -304,7 +268,6 @@ create policy "locations_select_member_or_site_admin"
       (select c.site_id from public.companies c where c.id = locations.company_id)
     )
   );
-
 create policy "locations_write_admins"
   on public.locations for insert
   with check (
@@ -313,7 +276,6 @@ create policy "locations_write_admins"
       (select c.site_id from public.companies c where c.id = locations.company_id)
     )
   );
-
 -- MEMBERSHIPS
 create policy "memberships_select_own_or_admin"
   on public.memberships for select
@@ -324,7 +286,6 @@ create policy "memberships_select_own_or_admin"
       (select c.site_id from public.companies c where c.id = memberships.company_id)
     )
   );
-
 create policy "memberships_insert_admins"
   on public.memberships for insert
   with check (
@@ -333,7 +294,6 @@ create policy "memberships_insert_admins"
       (select c.site_id from public.companies c where c.id = memberships.company_id)
     )
   );
-
 create policy "memberships_update_admins"
   on public.memberships for update
   using (
@@ -342,25 +302,20 @@ create policy "memberships_update_admins"
       (select c.site_id from public.companies c where c.id = memberships.company_id)
     )
   );
-
 -- SITE MEMBERSHIPS
 create policy "site_memberships_select_admin"
   on public.site_memberships for select
   using (public.is_site_admin(site_id));
-
 create policy "site_memberships_write_super_admin"
   on public.site_memberships for insert
   with check (public.is_super_admin());
-
 -- MODULES
 create policy "modules_select_authenticated"
   on public.modules for select
   using (auth.uid() is not null);
-
 create policy "modules_write_super_admin"
   on public.modules for insert
   with check (public.is_super_admin());
-
 -- COMPANY MODULES
 create policy "company_modules_select_member_or_site_admin"
   on public.company_modules for select
@@ -370,7 +325,6 @@ create policy "company_modules_select_member_or_site_admin"
       (select c.site_id from public.companies c where c.id = company_modules.company_id)
     )
   );
-
 create policy "company_modules_write_admins"
   on public.company_modules for insert
   with check (
@@ -379,7 +333,6 @@ create policy "company_modules_write_admins"
       (select c.site_id from public.companies c where c.id = company_modules.company_id)
     )
   );
-
 -- ============================================================
 -- SEED BUSINESSOS SITE
 -- ============================================================

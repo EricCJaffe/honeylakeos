@@ -18,22 +18,18 @@ CREATE TABLE public.sop_ingestions (
   reviewed_at TIMESTAMP WITH TIME ZONE,
   reviewed_by UUID
 );
-
 -- Add indexes
 CREATE INDEX idx_sop_ingestions_company_id ON public.sop_ingestions(company_id);
 CREATE INDEX idx_sop_ingestions_department_id ON public.sop_ingestions(department_id);
 CREATE INDEX idx_sop_ingestions_status ON public.sop_ingestions(status);
 CREATE INDEX idx_sop_ingestions_created_by ON public.sop_ingestions(created_by);
-
 -- Enable RLS
 ALTER TABLE public.sop_ingestions ENABLE ROW LEVEL SECURITY;
-
 -- RLS Policy: Users can view ingestions they created
 CREATE POLICY "Users can view own ingestions"
 ON public.sop_ingestions
 FOR SELECT
 USING (auth.uid() = created_by);
-
 -- RLS Policy: Department managers can view all ingestions in their department
 CREATE POLICY "Department managers can view department ingestions"
 ON public.sop_ingestions
@@ -46,7 +42,6 @@ USING (
     AND dm.role = 'manager'
   )
 );
-
 -- RLS Policy: Company admins can view all ingestions
 CREATE POLICY "Company admins can view all ingestions"
 ON public.sop_ingestions
@@ -59,7 +54,6 @@ USING (
     AND m.role = 'company_admin'
   )
 );
-
 -- RLS Policy: Users can create ingestions
 CREATE POLICY "Users can create ingestions"
 ON public.sop_ingestions
@@ -72,7 +66,6 @@ WITH CHECK (
     AND m.user_id = auth.uid()
   )
 );
-
 -- RLS Policy: Users can update their own ingestions or department managers can update
 CREATE POLICY "Users can update own ingestions"
 ON public.sop_ingestions
@@ -92,23 +85,19 @@ USING (
     AND m.role = 'company_admin'
   )
 );
-
 -- Add AI-related fields to SOPs table
 ALTER TABLE public.sops 
 ADD COLUMN IF NOT EXISTS created_from_ingestion_id UUID REFERENCES public.sop_ingestions(id) ON DELETE SET NULL,
 ADD COLUMN IF NOT EXISTS ai_generated BOOLEAN DEFAULT false,
 ADD COLUMN IF NOT EXISTS ai_confidence_overall NUMERIC(3,2) CHECK (ai_confidence_overall >= 0 AND ai_confidence_overall <= 1),
 ADD COLUMN IF NOT EXISTS ai_confidence_by_field JSONB;
-
 -- Create index for ingestion lookup
 CREATE INDEX idx_sops_ingestion_id ON public.sops(created_from_ingestion_id);
-
 -- Create trigger for updated_at
 CREATE TRIGGER update_sop_ingestions_updated_at
 BEFORE UPDATE ON public.sop_ingestions
 FOR EACH ROW
 EXECUTE FUNCTION public.update_updated_at_column();
-
 -- Create SOP Ingestion Audit Log table
 CREATE TABLE public.sop_ingestion_audit_logs (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -120,10 +109,8 @@ CREATE TABLE public.sop_ingestion_audit_logs (
   details JSONB,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
-
 -- Enable RLS on audit logs
 ALTER TABLE public.sop_ingestion_audit_logs ENABLE ROW LEVEL SECURITY;
-
 -- RLS Policy: Same visibility as ingestion
 CREATE POLICY "Users can view audit logs for accessible ingestions"
 ON public.sop_ingestion_audit_logs
@@ -149,7 +136,6 @@ USING (
     )
   )
 );
-
 -- RLS Policy: Insert audit logs
 CREATE POLICY "System can insert audit logs"
 ON public.sop_ingestion_audit_logs

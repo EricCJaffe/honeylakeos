@@ -9,18 +9,15 @@ CREATE TABLE public.framework_health_scores (
   calculated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 -- Create index for latest score lookup
 CREATE INDEX framework_health_scores_company_idx ON public.framework_health_scores(company_id);
 CREATE INDEX framework_health_scores_calculated_idx ON public.framework_health_scores(calculated_at DESC);
-
 -- Create coach alert severity enum type
 DO $$ BEGIN
   CREATE TYPE public.alert_severity AS ENUM ('low', 'medium', 'high');
 EXCEPTION
   WHEN duplicate_object THEN null;
 END $$;
-
 -- Create coach_alerts table
 CREATE TABLE public.coach_alerts (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -36,17 +33,14 @@ CREATE TABLE public.coach_alerts (
   resolved_by UUID,
   CONSTRAINT valid_coach_relationship CHECK (coach_company_id != client_company_id)
 );
-
 -- Indexes for performance
 CREATE INDEX coach_alerts_coach_company_idx ON public.coach_alerts(coach_company_id);
 CREATE INDEX coach_alerts_client_company_idx ON public.coach_alerts(client_company_id);
 CREATE INDEX coach_alerts_unresolved_idx ON public.coach_alerts(coach_company_id) WHERE resolved_at IS NULL;
 CREATE INDEX coach_alerts_severity_idx ON public.coach_alerts(severity);
-
 -- Enable RLS
 ALTER TABLE public.framework_health_scores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coach_alerts ENABLE ROW LEVEL SECURITY;
-
 -- RLS for framework_health_scores
 -- Company members can view their own scores
 CREATE POLICY "Company members can view own health scores"
@@ -59,7 +53,6 @@ CREATE POLICY "Company members can view own health scores"
       AND m.status = 'active'
     )
   );
-
 -- Coaches can view client health scores
 CREATE POLICY "Coaches can view client health scores"
   ON public.framework_health_scores FOR SELECT
@@ -73,7 +66,6 @@ CREATE POLICY "Coaches can view client health scores"
       AND co.status = 'active'
     )
   );
-
 -- Admins can insert health scores
 CREATE POLICY "Admins can insert health scores"
   ON public.framework_health_scores FOR INSERT
@@ -86,7 +78,6 @@ CREATE POLICY "Admins can insert health scores"
       AND m.role = 'company_admin'
     )
   );
-
 -- RLS for coach_alerts
 -- Coaches can view alerts for their company
 CREATE POLICY "Coaches can view their alerts"
@@ -99,7 +90,6 @@ CREATE POLICY "Coaches can view their alerts"
       AND m.status = 'active'
     )
   );
-
 -- Coaches can resolve alerts
 CREATE POLICY "Coaches can resolve their alerts"
   ON public.coach_alerts FOR UPDATE
@@ -119,7 +109,6 @@ CREATE POLICY "Coaches can resolve their alerts"
       AND m.status = 'active'
     )
   );
-
 -- System can create alerts
 CREATE POLICY "Members can create alerts"
   ON public.coach_alerts FOR INSERT
@@ -131,7 +120,6 @@ CREATE POLICY "Members can create alerts"
       AND m.status = 'active'
     )
   );
-
 -- Create function to compute and store health score for a company
 CREATE OR REPLACE FUNCTION public.compute_health_score(
   _company_id UUID,
@@ -228,7 +216,6 @@ BEGIN
   RETURN _result_id;
 END;
 $$;
-
 -- Function to generate coach alerts based on health changes
 CREATE OR REPLACE FUNCTION public.generate_coach_alerts(
   _client_company_id UUID
@@ -335,7 +322,6 @@ BEGIN
   RETURN _alert_count;
 END;
 $$;
-
 -- Grant execute on functions
 GRANT EXECUTE ON FUNCTION public.compute_health_score(UUID, UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.generate_coach_alerts(UUID) TO authenticated;

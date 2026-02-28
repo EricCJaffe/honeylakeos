@@ -11,23 +11,19 @@ CREATE TABLE public.activation_scores (
   calculated_by TEXT DEFAULT 'system',
   CONSTRAINT activation_scores_company_id_key UNIQUE (company_id)
 );
-
 -- Enable RLS
 ALTER TABLE public.activation_scores ENABLE ROW LEVEL SECURITY;
-
 -- RLS Policies
 -- Site admins can see all
 CREATE POLICY "Site admins can view all activation scores"
   ON public.activation_scores
   FOR SELECT
   USING (public.is_site_admin((SELECT site_id FROM companies WHERE id = activation_scores.company_id)));
-
 -- Company admins can see their own
 CREATE POLICY "Company admins can view own activation score"
   ON public.activation_scores
   FOR SELECT
   USING (public.is_company_admin(company_id));
-
 -- Coaches can see attributed client scores
 CREATE POLICY "Coaches can view attributed client scores"
   ON public.activation_scores
@@ -42,14 +38,12 @@ CREATE POLICY "Coaches can view attributed client scores"
       )
     )
   );
-
 -- System can insert/update (via SECURITY DEFINER functions)
 CREATE POLICY "System can manage activation scores"
   ON public.activation_scores
   FOR ALL
   USING (public.is_site_admin((SELECT site_id FROM companies WHERE id = activation_scores.company_id)))
   WITH CHECK (public.is_site_admin((SELECT site_id FROM companies WHERE id = activation_scores.company_id)));
-
 -- ==========================================
 -- Enhanced Scoring Function with Breakdown
 -- ==========================================
@@ -235,7 +229,6 @@ BEGIN
     RETURN result;
 END;
 $$;
-
 -- ==========================================
 -- Function to Calculate and Store Score
 -- ==========================================
@@ -283,7 +276,6 @@ BEGIN
     RETURN score_result;
 END;
 $$;
-
 -- ==========================================
 -- Function to Recalculate All Pilot Scores
 -- ==========================================
@@ -309,7 +301,6 @@ BEGIN
     RETURN count;
 END;
 $$;
-
 -- ==========================================
 -- Update get_pilot_company_stats to use new scoring
 -- ==========================================
@@ -365,7 +356,6 @@ BEGIN
     RETURN result;
 END;
 $$;
-
 -- Grant execute permissions
 GRANT EXECUTE ON FUNCTION public.calculate_activation_score(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.compute_and_store_activation_score(UUID, TEXT) TO authenticated;

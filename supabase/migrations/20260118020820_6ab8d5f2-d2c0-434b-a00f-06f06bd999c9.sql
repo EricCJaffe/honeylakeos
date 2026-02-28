@@ -9,17 +9,14 @@ CREATE TABLE public.plans (
     sort_order INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
-
 -- Enable RLS
 ALTER TABLE public.plans ENABLE ROW LEVEL SECURITY;
-
 -- Plans are readable by all authenticated users
 CREATE POLICY "Plans are viewable by authenticated users" 
 ON public.plans 
 FOR SELECT 
 TO authenticated 
 USING (true);
-
 -- Only site admins can manage plans
 CREATE POLICY "Site admins can manage plans" 
 ON public.plans 
@@ -27,7 +24,6 @@ FOR ALL
 TO authenticated 
 USING (public.is_site_admin(auth.uid()))
 WITH CHECK (public.is_site_admin(auth.uid()));
-
 -- Seed default plans
 INSERT INTO public.plans (name, slug, description, plan_type, is_default, sort_order) VALUES
 ('Starter', 'starter', 'For small teams getting started', 'company', true, 1),
@@ -36,7 +32,6 @@ INSERT INTO public.plans (name, slug, description, plan_type, is_default, sort_o
 ('Solo Coach', 'solo_coach', 'For independent coaches', 'coach_org', false, 4),
 ('Coaching Team', 'coaching_team', 'For small coaching teams', 'coach_org', false, 5),
 ('Coaching Firm', 'coaching_firm', 'For large coaching organizations', 'coach_org', false, 6);
-
 -- Add module-based entitlement keys for v1
 INSERT INTO public.plan_entitlements (plan_tier, entitlement_key, entitlement_value) VALUES
 -- Starter plan - basic modules only

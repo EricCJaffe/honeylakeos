@@ -27,7 +27,6 @@ VALUES (
   true,
   NULL
 );
-
 -- ==========================================
 -- EOS CONCEPTS (14 core concepts)
 -- ==========================================
@@ -47,7 +46,6 @@ VALUES
   ('00000001-0000-0000-0000-000000000001', 'to_dos', 'To-Do', 'To-Dos', '7-day action items that move Rocks forward and keep commitments from meetings.', 12, true),
   ('00000001-0000-0000-0000-000000000001', 'people', 'Accountability', 'Accountability', 'Right people in right seats. The Accountability Chart defines roles and responsibilities.', 13, true),
   ('00000001-0000-0000-0000-000000000001', 'process', 'Process', 'Processes', 'Documented core processes that define the way things are done in your organization.', 14, true);
-
 -- ==========================================
 -- EOS CADENCES (5 meeting rhythms)
 -- ==========================================
@@ -58,7 +56,6 @@ VALUES
   ('00000001-0000-0000-0000-000000000001', 'monthly_check_in', 'Monthly Check-in', 'monthly', 1, NULL, 1, 60, 'leadership', 3, true),
   ('00000001-0000-0000-0000-000000000001', 'quarterly_planning', 'Quarterly Planning', 'quarterly', 1, NULL, NULL, 480, 'leadership', 4, true),
   ('00000001-0000-0000-0000-000000000001', 'annual_planning', 'Annual Planning', 'annual', 1, NULL, NULL, 960, 'leadership', 5, true);
-
 -- ==========================================
 -- EOS TEMPLATES MAPPING (references to be linked after clone)
 -- ==========================================
@@ -76,7 +73,6 @@ VALUES
   ('00000001-0000-0000-0000-000000000001', 'calendar_event', NULL, 'meetings', 'weekly_level10', 10, true),
   ('00000001-0000-0000-0000-000000000001', 'calendar_event', NULL, 'meetings', 'quarterly_planning', 11, true),
   ('00000001-0000-0000-0000-000000000001', 'lms_path', NULL, 'vision', NULL, 12, true);
-
 -- ==========================================
 -- EOS DASHBOARDS (3 audience-specific views)
 -- ==========================================
@@ -84,7 +80,6 @@ VALUES
 -- Leadership Dashboard
 INSERT INTO public.framework_dashboards (id, framework_id, key, display_name, audience, sort_order, enabled)
 VALUES ('00000001-0001-0000-0000-000000000001', '00000001-0000-0000-0000-000000000001', 'leadership_dashboard', 'Leadership Dashboard', 'leadership', 1, true);
-
 INSERT INTO public.framework_dashboard_sections (dashboard_id, section_key, display_name, data_source_type, config, sort_order, enabled)
 VALUES
   ('00000001-0001-0000-0000-000000000001', 'quarterly_rocks_summary', 'Quarterly Rocks', 'projects', '{"filter": {"tag": "rock"}}', 1, true),
@@ -92,29 +87,24 @@ VALUES
   ('00000001-0001-0000-0000-000000000001', 'open_issues', 'Open Issues', 'tasks', '{"filter": {"tag": "issue", "status": "open"}}', 3, true),
   ('00000001-0001-0000-0000-000000000001', 'upcoming_cadences', 'Upcoming Meetings', 'calendar', '{"days_ahead": 14}', 4, true),
   ('00000001-0001-0000-0000-000000000001', 'overdue_actions', 'Overdue To-Dos', 'tasks', '{"filter": {"overdue": true}}', 5, true);
-
 -- Team Dashboard
 INSERT INTO public.framework_dashboards (id, framework_id, key, display_name, audience, sort_order, enabled)
 VALUES ('00000001-0002-0000-0000-000000000001', '00000001-0000-0000-0000-000000000001', 'team_dashboard', 'Team Dashboard', 'member', 2, true);
-
 INSERT INTO public.framework_dashboard_sections (dashboard_id, section_key, display_name, data_source_type, config, sort_order, enabled)
 VALUES
   ('00000001-0002-0000-0000-000000000001', 'my_rocks', 'My Rocks', 'projects', '{"filter": {"assigned_to_me": true, "tag": "rock"}}', 1, true),
   ('00000001-0002-0000-0000-000000000001', 'my_to_dos', 'My To-Dos', 'tasks', '{"filter": {"assigned_to_me": true}}', 2, true),
   ('00000001-0002-0000-0000-000000000001', 'upcoming_meetings', 'Upcoming Meetings', 'calendar', '{"days_ahead": 7}', 3, true),
   ('00000001-0002-0000-0000-000000000001', 'key_docs_notes', 'Key Documents', 'notes', '{"filter": {"pinned": true}}', 4, true);
-
 -- Coach Dashboard
 INSERT INTO public.framework_dashboards (id, framework_id, key, display_name, audience, sort_order, enabled)
 VALUES ('00000001-0003-0000-0000-000000000001', '00000001-0000-0000-0000-000000000001', 'coach_dashboard', 'Coach Dashboard', 'coach', 3, true);
-
 INSERT INTO public.framework_dashboard_sections (dashboard_id, section_key, display_name, data_source_type, config, sort_order, enabled)
 VALUES
   ('00000001-0003-0000-0000-000000000001', 'client_health_rollup', 'Client Health', 'custom_derived', '{"metric_keys": ["rocks_completion_rate", "overdue_meetings_count"]}', 1, true),
   ('00000001-0003-0000-0000-000000000001', 'cadence_misses', 'Missed Cadences', 'calendar', '{"filter": {"missed": true, "days_back": 30}}', 2, true),
   ('00000001-0003-0000-0000-000000000001', 'rocks_at_risk', 'Rocks at Risk', 'projects', '{"filter": {"tag": "rock", "status": "at_risk"}}', 3, true),
   ('00000001-0003-0000-0000-000000000001', 'issues_aging', 'Aging Issues', 'tasks', '{"filter": {"tag": "issue", "age_days": 14}}', 4, true);
-
 -- ==========================================
 -- EOS HEALTH METRICS (5 key indicators)
 -- ==========================================

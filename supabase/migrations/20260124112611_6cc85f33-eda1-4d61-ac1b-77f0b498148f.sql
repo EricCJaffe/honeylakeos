@@ -18,7 +18,6 @@ CROSS JOIN (VALUES
 ) AS field(key, label, field_type, is_required, sort_order, help_text, options)
 WHERE f.template_key = 'generic_annual_goals_portfolio'
 ON CONFLICT DO NOTHING;
-
 -- Seed form fields for Executive Briefing (Generic)
 INSERT INTO wf_form_fields (form_id, key, label, field_type, is_required, sort_order, help_text, options)
 SELECT 
@@ -40,7 +39,6 @@ CROSS JOIN (VALUES
 ) AS field(key, label, field_type, is_required, sort_order, help_text, options)
 WHERE f.template_key = 'generic_executive_briefing'
 ON CONFLICT DO NOTHING;
-
 -- Seed form fields for Monthly Check-in (Generic)
 INSERT INTO wf_form_fields (form_id, key, label, field_type, is_required, sort_order, help_text, options)
 SELECT 
@@ -59,7 +57,6 @@ CROSS JOIN (VALUES
 ) AS field(key, label, field_type, is_required, sort_order, help_text, options)
 WHERE f.template_key = 'generic_monthly_checkin'
 ON CONFLICT DO NOTHING;
-
 -- Seed form fields for Weekly Report (Generic)
 INSERT INTO wf_form_fields (form_id, key, label, field_type, is_required, sort_order, help_text, options)
 SELECT 
@@ -76,7 +73,6 @@ CROSS JOIN (VALUES
 ) AS field(key, label, field_type, is_required, sort_order, help_text, options)
 WHERE f.template_key = 'generic_weekly_report'
 ON CONFLICT DO NOTHING;
-
 -- Seed form fields for Pre-Meeting Survey (Generic)
 INSERT INTO wf_form_fields (form_id, key, label, field_type, is_required, sort_order, help_text, options)
 SELECT 
@@ -94,7 +90,6 @@ CROSS JOIN (VALUES
 ) AS field(key, label, field_type, is_required, sort_order, help_text, options)
 WHERE f.template_key = 'generic_pre_meeting_survey'
 ON CONFLICT DO NOTHING;
-
 -- Seed form fields for Session Prep (Generic)
 INSERT INTO wf_form_fields (form_id, key, label, field_type, is_required, sort_order, help_text, options)
 SELECT 

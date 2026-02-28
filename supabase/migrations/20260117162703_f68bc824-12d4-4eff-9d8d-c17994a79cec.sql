@@ -2,7 +2,6 @@
 CREATE INDEX IF NOT EXISTS idx_task_lists_owner_sort ON public.task_lists(owner_user_id, sort_order) WHERE is_personal = true;
 CREATE INDEX IF NOT EXISTS idx_task_lists_company_sort ON public.task_lists(company_id, sort_order) WHERE is_personal = false;
 CREATE INDEX IF NOT EXISTS idx_tasks_list_id ON public.tasks(list_id);
-
 -- RPC: Create task list with auto sort_order
 CREATE OR REPLACE FUNCTION public.task_list_create(
   p_name TEXT,
@@ -52,7 +51,6 @@ BEGIN
   RETURN v_list_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 -- RPC: Reorder task list within its scope
 CREATE OR REPLACE FUNCTION public.task_list_reorder(
   p_list_id UUID,
@@ -129,7 +127,6 @@ BEGIN
   UPDATE public.task_lists SET sort_order = p_new_index WHERE id = p_list_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 -- RPC: Rename task list
 CREATE OR REPLACE FUNCTION public.task_list_rename(
   p_list_id UUID,
@@ -160,7 +157,6 @@ BEGIN
   UPDATE public.task_lists SET name = p_name, updated_at = now() WHERE id = p_list_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 -- RPC: Delete task list (sets tasks.list_id to null first)
 CREATE OR REPLACE FUNCTION public.task_list_delete(
   p_list_id UUID
@@ -194,7 +190,6 @@ BEGIN
   DELETE FROM public.task_lists WHERE id = p_list_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 -- RPC: Get task counts per list (for sidebar display)
 CREATE OR REPLACE FUNCTION public.task_list_counts(
   p_company_id UUID DEFAULT NULL
@@ -219,7 +214,6 @@ BEGIN
   GROUP BY t.list_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 -- RPC: Get unlisted task count
 CREATE OR REPLACE FUNCTION public.unlisted_task_count(
   p_company_id UUID

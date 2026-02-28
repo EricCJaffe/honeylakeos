@@ -11,6 +11,9 @@ interface NotifyRequest {
   alert_id: string;
 }
 
+const REDACTED_PATIENT = "Withheld (PHI-safe mode)";
+const REDACTED_QUESTION = "Question details redacted. Review in dashboard.";
+
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -63,11 +66,12 @@ serve(async (req: Request): Promise<Response> => {
           owner_email
         ),
         exit_survey_submissions (
+          company_id,
           patient_first_name,
           patient_last_name,
           submitted_at,
           is_anonymous,
-          companies (name)
+          companies (id, name)
         )
       `)
       .eq("id", alert_id)
@@ -94,6 +98,7 @@ serve(async (req: Request): Promise<Response> => {
     } | null;
 
     const submission = Array.isArray(rawSubmission) ? rawSubmission[0] : rawSubmission as {
+      company_id: string;
       patient_first_name: string | null;
       patient_last_name: string | null;
       submitted_at: string;
@@ -107,12 +112,23 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
+    const alertCompanyId = submission?.company_id ?? null;
+    const { data: phiSafeSetting } = await supabase
+      .from("exit_survey_settings")
+      .select("value")
+      .eq("company_id", alertCompanyId ?? "")
+      .eq("key", "phi_safe_email_mode")
+      .maybeSingle();
+    const phiSafeMode = (phiSafeSetting?.value ?? "false") === "true";
+
     // 6. Build email content
     const priorityLabel = alert.priority === "high" ? "🔴 HIGH" : alert.priority === "normal" ? "🟡 NORMAL" : "🟢 LOW";
     const scoreLabel = `${alert.score}/5`;
     const patientName = submission?.is_anonymous || (!submission?.patient_first_name && !submission?.patient_last_name)
       ? "Anonymous patient"
       : `${submission?.patient_first_name ?? ""} ${submission?.patient_last_name ?? ""}`.trim();
+    const patientLabel = phiSafeMode ? REDACTED_PATIENT : patientName;
+    const questionLabel = phiSafeMode ? REDACTED_QUESTION : question.text;
     const submittedDate = submission?.submitted_at
       ? new Date(submission.submitted_at).toLocaleDateString("en-US", {
           weekday: "long", year: "numeric", month: "long", day: "numeric",
@@ -166,7 +182,7 @@ serve(async (req: Request): Promise<Response> => {
                   </tr>
                   <tr>
                     <td style="padding: 4px 0; font-size: 13px; color: #666;">Patient</td>
-                    <td style="padding: 4px 0; font-size: 13px;">${patientName}</td>
+                    <td style="padding: 4px 0; font-size: 13px;">${patientLabel}</td>
                   </tr>
                   <tr>
                     <td style="padding: 4px 0; font-size: 13px; color: #666;">Submitted</td>
@@ -177,7 +193,7 @@ serve(async (req: Request): Promise<Response> => {
 
               <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 24px;">
                 <p style="margin: 0 0 6px; font-size: 12px; color: #475569; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Question</p>
-                <p style="margin: 0; font-size: 14px; font-style: italic; color: #1e293b;">"${question.text}"</p>
+                <p style="margin: 0; font-size: 14px; font-style: italic; color: #1e293b;">"${questionLabel}"</p>
               </div>
 
               <div style="text-align: center; margin-bottom: 24px;">

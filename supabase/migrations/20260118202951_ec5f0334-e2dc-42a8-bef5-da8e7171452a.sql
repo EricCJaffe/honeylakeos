@@ -14,7 +14,6 @@ CREATE TABLE IF NOT EXISTS public.financial_import_batches (
   created_by_user_id UUID,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 -- 2) financial_categories - company-scoped mapping targets
 CREATE TABLE IF NOT EXISTS public.financial_categories (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -25,7 +24,6 @@ CREATE TABLE IF NOT EXISTS public.financial_categories (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(company_id, name)
 );
-
 -- 3) financial_statement_lines - P&L and Balance Sheet line items
 CREATE TABLE IF NOT EXISTS public.financial_statement_lines (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -39,7 +37,6 @@ CREATE TABLE IF NOT EXISTS public.financial_statement_lines (
   amount NUMERIC(15,2) NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 -- 4) open_ar_items - Accounts Receivable
 CREATE TABLE IF NOT EXISTS public.open_ar_items (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -51,7 +48,6 @@ CREATE TABLE IF NOT EXISTS public.open_ar_items (
   amount_due NUMERIC(15,2) NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 -- 5) open_ap_items - Accounts Payable
 CREATE TABLE IF NOT EXISTS public.open_ap_items (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -63,66 +59,53 @@ CREATE TABLE IF NOT EXISTS public.open_ap_items (
   amount_due NUMERIC(15,2) NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_financial_import_batches_company ON public.financial_import_batches(company_id, import_type, period_end);
 CREATE INDEX IF NOT EXISTS idx_financial_statement_lines_lookup ON public.financial_statement_lines(company_id, statement_type, period_end);
 CREATE INDEX IF NOT EXISTS idx_financial_categories_company ON public.financial_categories(company_id, category_type);
 CREATE INDEX IF NOT EXISTS idx_open_ar_items_company ON public.open_ar_items(company_id, batch_id);
 CREATE INDEX IF NOT EXISTS idx_open_ap_items_company ON public.open_ap_items(company_id, batch_id);
-
 -- RLS Policies
 ALTER TABLE public.financial_import_batches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.financial_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.financial_statement_lines ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.open_ar_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.open_ap_items ENABLE ROW LEVEL SECURITY;
-
 -- financial_import_batches policies
 CREATE POLICY "Finance users can view import batches"
   ON public.financial_import_batches FOR SELECT
   USING (public.is_finance_admin(company_id));
-
 CREATE POLICY "Finance users can create import batches"
   ON public.financial_import_batches FOR INSERT
   WITH CHECK (public.is_finance_admin(company_id));
-
 CREATE POLICY "Finance users can update import batches"
   ON public.financial_import_batches FOR UPDATE
   USING (public.is_finance_admin(company_id));
-
 -- financial_categories policies
 CREATE POLICY "Finance users can view categories"
   ON public.financial_categories FOR SELECT
   USING (public.is_finance_admin(company_id));
-
 CREATE POLICY "Finance users can manage categories"
   ON public.financial_categories FOR ALL
   USING (public.is_finance_admin(company_id));
-
 -- financial_statement_lines policies
 CREATE POLICY "Finance users can view statement lines"
   ON public.financial_statement_lines FOR SELECT
   USING (public.is_finance_admin(company_id));
-
 CREATE POLICY "Finance users can manage statement lines"
   ON public.financial_statement_lines FOR ALL
   USING (public.is_finance_admin(company_id));
-
 -- open_ar_items policies
 CREATE POLICY "Finance users can view AR items"
   ON public.open_ar_items FOR SELECT
   USING (public.is_finance_admin(company_id));
-
 CREATE POLICY "Finance users can manage AR items"
   ON public.open_ar_items FOR ALL
   USING (public.is_finance_admin(company_id));
-
 -- open_ap_items policies
 CREATE POLICY "Finance users can view AP items"
   ON public.open_ap_items FOR SELECT
   USING (public.is_finance_admin(company_id));
-
 CREATE POLICY "Finance users can manage AP items"
   ON public.open_ap_items FOR ALL
   USING (public.is_finance_admin(company_id));

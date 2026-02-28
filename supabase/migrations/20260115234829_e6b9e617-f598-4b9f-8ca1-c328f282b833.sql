@@ -12,21 +12,17 @@ CREATE TABLE IF NOT EXISTS public.task_occurrence_completions (
   completed_by uuid NOT NULL DEFAULT auth.uid(),
   CONSTRAINT unique_occurrence_completion UNIQUE(company_id, series_task_id, occurrence_start_at)
 );
-
 -- Create indexes
 CREATE INDEX idx_task_occurrence_completions_company ON public.task_occurrence_completions(company_id);
 CREATE INDEX idx_task_occurrence_completions_series ON public.task_occurrence_completions(series_task_id);
 CREATE INDEX idx_task_occurrence_completions_date ON public.task_occurrence_completions(occurrence_start_at);
-
 -- Enable RLS
 ALTER TABLE public.task_occurrence_completions ENABLE ROW LEVEL SECURITY;
-
 -- RLS: Company members can SELECT
 CREATE POLICY "task_occurrence_completions_select_company_member"
   ON public.task_occurrence_completions
   FOR SELECT
   USING (is_company_member(company_id));
-
 -- RLS: Task creator, assignee, or admin can INSERT
 CREATE POLICY "task_occurrence_completions_insert_authorized"
   ON public.task_occurrence_completions
@@ -43,7 +39,6 @@ CREATE POLICY "task_occurrence_completions_insert_authorized"
       )
     )
   );
-
 -- RLS: Task creator, assignee, or admin can DELETE
 CREATE POLICY "task_occurrence_completions_delete_authorized"
   ON public.task_occurrence_completions
@@ -57,7 +52,6 @@ CREATE POLICY "task_occurrence_completions_delete_authorized"
       WHERE ta.task_id = series_task_id AND ta.user_id = auth.uid()
     )
   );
-
 -- ============================================
 -- RPC: COMPLETE TASK OCCURRENCE
 -- ============================================
@@ -109,7 +103,6 @@ BEGIN
   RETURN json_build_object('success', true, 'completion_id', v_completion_id);
 END;
 $$;
-
 -- ============================================
 -- RPC: UNCOMPLETE TASK OCCURRENCE
 -- ============================================
@@ -161,7 +154,6 @@ BEGIN
   RETURN json_build_object('success', true, 'deleted', v_deleted);
 END;
 $$;
-
 -- ============================================
 -- Update expand_task_series to include completion status
 -- ============================================

@@ -9,10 +9,8 @@ CREATE TABLE public.company_onboarding_state (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 -- Enable RLS
 ALTER TABLE public.company_onboarding_state ENABLE ROW LEVEL SECURITY;
-
 -- RLS: Company admins can manage their own onboarding state
 CREATE POLICY "company_onboarding_state_select"
 ON public.company_onboarding_state
@@ -26,7 +24,6 @@ USING (
       AND m.status = 'active'
   )
 );
-
 CREATE POLICY "company_onboarding_state_insert"
 ON public.company_onboarding_state
 FOR INSERT
@@ -40,7 +37,6 @@ WITH CHECK (
       AND m.status = 'active'
   )
 );
-
 CREATE POLICY "company_onboarding_state_update"
 ON public.company_onboarding_state
 FOR UPDATE
@@ -54,7 +50,6 @@ USING (
       AND m.status = 'active'
   )
 );
-
 -- Coaches can view onboarding state for their assigned clients
 CREATE POLICY "company_onboarding_state_coach_select"
 ON public.company_onboarding_state
@@ -70,7 +65,6 @@ USING (
       AND ce.archived_at IS NULL
   )
 );
-
 -- Add trigger for updated_at
 CREATE TRIGGER update_company_onboarding_state_updated_at
 BEFORE UPDATE ON public.company_onboarding_state
