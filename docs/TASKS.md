@@ -57,7 +57,6 @@
 - [x] Implement `exit-survey-scheduler` dispatcher and set reminder cadence to 72 hours (2026-02-27).
 - [x] Wire scheduler to Exit Survey Settings automation controls (enable toggles, day/time/timezone, once-per-day local-date guard) (2026-02-27).
 - [x] Add AI-assisted editing for exit survey email templates (plain-language prompt -> updated subject/body draft) (2026-02-27).
-- [x] Remove coaching and coaches modules from the codebase (2026-02-18).
 - [x] Fix crash when opening Exit Survey → Leadership tab (Trends screen). Error: `Cannot read properties of undefined (reading 'avg')` (2026-02-24).
 - [x] Fix data filtering on Leadership tab using PostgREST `!inner` hint for proper date range queries (2026-02-24).
 - [x] Add alert and comment functionality to submission detail pages (2026-02-24).
@@ -69,14 +68,13 @@
 - [x] De-scoped: Framework diff viewer for version comparison (not needed) (2026-02-27).
 - [x] Exit Survey: add initial `Advanced Reports` tab with date filters, department/owner performance breakdown, and CSV export (2026-02-27).
 - [x] De-scoped: Stripe payment integration (not needed) (2026-02-27).
-- [x] De-scoped: Coaching team management page (not needed) (2026-02-27).
 - [x] De-scoped: Automated health score snapshots (not needed) (2026-02-27).
 - [x] De-scoped: Public framework marketplace (not needed) (2026-02-27).
 - [x] De-scoped: Usage-based billing (not needed) (2026-02-27).
 - [x] De-scoped: Multi-framework support per company (not needed) (2026-02-27).
 - [x] De-scoped: External calendar sync (Google, Outlook) (not needed) (2026-02-27).
 - [x] De-scoped: Plaid banking integration (not needed) (2026-02-27).
-- [x] Hard-delete sweep: removed remaining user-facing coaching references from onboarding, templates, plan usage, and capability labels (2026-02-28).
+- [x] Hard-delete sweep: removed remaining legacy module references from onboarding, templates, plan usage, and capability labels (2026-02-28).
 
 ## Conventions
 - Keep tasks small and outcome-focused.

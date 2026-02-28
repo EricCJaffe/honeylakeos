@@ -171,7 +171,7 @@ src/
 │   ├── forms/
 │   ├── workflows/
 │   ├── finance/
-│   ├── coaching/
+│   ├── legacy/
 │   ├── reports/
 │   └── announcements/
 │

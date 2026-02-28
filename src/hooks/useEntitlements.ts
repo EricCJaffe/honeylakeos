@@ -4,8 +4,8 @@ import { useActiveCompany } from "./useActiveCompany";
 import { toast } from "sonner";
 
 // Types
-export type PlanType = "company" | "coach_org";
-export type PlanTier = "starter" | "growth" | "scale" | "solo_coach" | "coaching_team" | "coaching_firm";
+export type PlanType = "company" | string;
+export type PlanTier = "starter" | "growth" | "scale" | string;
 export type PlanStatus = "active" | "grace" | "expired" | "cancelled";
 
 export interface CompanyPlan {
@@ -51,7 +51,6 @@ export type EntitlementKey =
   | "max_companies"
   | "max_active_frameworks"
   | "max_published_frameworks"
-  | "max_active_clients"
   | "limits.users"
   | "limits.projects"
   | "limits.storage_mb"
@@ -63,27 +62,20 @@ export type EntitlementKey =
   | "modules.finance"
   | "modules.lms"
   | "modules.reports"
-  | "coach.enabled"
   // Feature flags (legacy + new)
   | "crm_enabled"
   | "lms_enabled"
-  | "coaching_module_enabled"
   | "framework_engine_enabled"
   | "reporting_enabled"
   | "framework_marketplace_publish"
   | "weighted_health_metrics"
-  | "coach_manager_views"
-  | "private_coach_notes"
   | "advanced_reporting";
 
 // Plan display info
-export const PLAN_INFO: Record<PlanTier, { name: string; description: string; type: PlanType }> = {
+export const PLAN_INFO: Record<string, { name: string; description: string; type: PlanType }> = {
   starter: { name: "Starter", description: "For small teams getting started", type: "company" },
   growth: { name: "Growth", description: "For growing organizations", type: "company" },
   scale: { name: "Scale", description: "For large organizations", type: "company" },
-  solo_coach: { name: "Solo Coach", description: "For independent coaches", type: "coach_org" },
-  coaching_team: { name: "Coaching Team", description: "For small coaching teams", type: "coach_org" },
-  coaching_firm: { name: "Coaching Firm", description: "For large coaching organizations", type: "coach_org" },
 };
 
 // Plan metadata interface (from plans table)
@@ -104,7 +96,6 @@ const DEFAULT_ENTITLEMENTS: Record<string, unknown> = {
   max_companies: 999999,
   max_active_frameworks: 999999,
   max_published_frameworks: 999999,
-  max_active_clients: 999999,
   // Module entitlements (v1)
   "modules.tasks": true,
   "modules.projects": true,
@@ -116,17 +107,13 @@ const DEFAULT_ENTITLEMENTS: Record<string, unknown> = {
   "limits.users": 999999,
   "limits.projects": 999999,
   "limits.storage_mb": 999999,
-  "coach.enabled": true,
   // Legacy feature flags
   crm_enabled: true,
   lms_enabled: true,
-  coaching_module_enabled: true,
   framework_engine_enabled: true,
   reporting_enabled: true,
   framework_marketplace_publish: true,
   weighted_health_metrics: true,
-  coach_manager_views: true,
-  private_coach_notes: true,
   advanced_reporting: true,
 };
 
@@ -367,10 +354,8 @@ export function useEntitlements() {
     // Convenience checks for common entitlements
     canUseCrm: () => isEnabled("crm_enabled"),
     canUseLms: () => isEnabled("lms_enabled"),
-    canUseCoaching: () => isEnabled("coaching_module_enabled"),
     canPublishFrameworks: () => isEnabled("framework_marketplace_publish"),
     canUseWeightedMetrics: () => isEnabled("weighted_health_metrics"),
-    canUseCoachManagerViews: () => isEnabled("coach_manager_views"),
     canUseAdvancedReporting: () => isEnabled("advanced_reporting"),
   };
 }
@@ -706,7 +691,7 @@ export function useCanPerformAction(action: "add_user" | "add_framework" | "publ
     add_user: { key: "max_users", countKey: "users" },
     add_framework: { key: "max_active_frameworks", countKey: "frameworks" },
     publish_framework: { key: "max_published_frameworks", countKey: "publishedFrameworks" },
-    add_client: { key: "max_active_clients", countKey: "clients" },
+    add_client: { key: "max_users", countKey: "users" },
   };
 
   const { key, countKey } = actionToEntitlement[action];

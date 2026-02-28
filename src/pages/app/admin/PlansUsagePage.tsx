@@ -260,9 +260,7 @@ function CurrentPlanCard({
               variant="outline"
               className={cn(
                 "gap-1.5",
-                planInfo?.type === "coach_org"
-                  ? "bg-purple-500/10 text-purple-600 border-purple-500/20"
-                  : "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                "bg-blue-500/10 text-blue-600 border-blue-500/20"
               )}
             >
               {planInfo?.name}

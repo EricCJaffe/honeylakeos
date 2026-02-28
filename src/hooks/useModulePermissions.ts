@@ -55,7 +55,6 @@ export class PermissionError extends Error {
  */
 const MODULE_CAPABILITY_MAP: Record<string, { manage: CapabilityFlag; publish?: CapabilityFlag }> = {
   crm: { manage: "crm_member_manage_enabled" },
-  coaches: { manage: "coaches_member_manage_enabled" },
   forms: { manage: "forms_member_manage_enabled", publish: "forms_member_publish_enabled" },
   lms: { manage: "lms_member_manage_enabled", publish: "lms_member_publish_enabled" },
 };

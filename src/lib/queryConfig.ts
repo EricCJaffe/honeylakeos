@@ -120,7 +120,7 @@ export const queryKeys = {
   reports: (companyId: string) => ["reports", companyId] as const,
   reportRuns: (reportId: string) => ["report-runs", reportId] as const,
 
-  // Coach
-  coachAlerts: (companyId: string) => ["coach-alerts", companyId] as const,
+  // Partner/engagement alerts
+  partnerAlerts: (companyId: string) => ["partner-alerts", companyId] as const,
   healthScores: (companyId: string) => ["health-scores", companyId] as const,
 } as const;

@@ -4,11 +4,11 @@ import { useActiveCompany } from "./useActiveCompany";
 import { toast } from "sonner";
 
 // Types
-export type FrameworkOwnerType = "system" | "coach_org" | "company";
+export type FrameworkOwnerType = "system" | "company" | string;
 export type FrameworkStatus = "draft" | "published" | "archived";
 export type FrameworkFrequencyType = "weekly" | "monthly" | "quarterly" | "annual" | "custom";
 export type FrameworkMetricType = "percentage" | "count" | "trend" | "boolean";
-export type FrameworkDashboardAudience = "company_admin" | "leadership" | "member" | "coach" | "coach_manager";
+export type FrameworkDashboardAudience = "company_admin" | "leadership" | "member" | string;
 
 export interface Framework {
   id: string;

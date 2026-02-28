@@ -118,7 +118,7 @@ This document provides step-by-step validation for the failure containment and e
 
 **Expected:**
 - [ ] Navigation shows only core modules (tasks, projects, calendar, notes, docs, groups, locations, admin)
-- [ ] Premium modules (CRM, LMS, Coaching, etc.) are hidden
+- [ ] Premium modules (CRM, LMS, etc.) are hidden
 - [ ] Health page shows "Module Flags: Warning - Running in safe mode"
 - [ ] Core modules remain accessible
 

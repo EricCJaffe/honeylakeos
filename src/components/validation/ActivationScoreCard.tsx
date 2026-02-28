@@ -133,13 +133,13 @@ export function ActivationScoreCard({
               />
             ))}
 
-            {/* Coach Suggestions */}
+            {/* Improvement suggestions */}
             {showCoachSuggestions && lowestSection && (
               <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/10">
                 <div className="flex items-start gap-2">
                   <Lightbulb className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-medium text-sm">Coaching Focus</p>
+                    <p className="font-medium text-sm">Improvement Focus</p>
                     <p className="text-sm text-muted-foreground mt-1">
                       {SECTION_LABELS[lowestSection].suggestion}
                     </p>

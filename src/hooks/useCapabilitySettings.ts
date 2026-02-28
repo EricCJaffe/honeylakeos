@@ -13,7 +13,6 @@ export interface CompanyCapabilitySettings {
   company_id: string;
   crm_member_manage_enabled: boolean;
   contacts_member_manage_enabled: boolean;
-  coaches_member_manage_enabled: boolean;
   forms_member_manage_enabled: boolean;
   forms_member_publish_enabled: boolean;
   lms_member_manage_enabled: boolean;
@@ -30,7 +29,6 @@ export type CapabilityFlag = keyof Omit<CompanyCapabilitySettings, 'company_id' 
 export const DEFAULT_CAPABILITY_SETTINGS: Omit<CompanyCapabilitySettings, 'company_id' | 'updated_at' | 'updated_by'> = {
   crm_member_manage_enabled: true,
   contacts_member_manage_enabled: true,
-  coaches_member_manage_enabled: true,
   forms_member_manage_enabled: true,
   forms_member_publish_enabled: true,
   lms_member_manage_enabled: true,
@@ -48,10 +46,6 @@ export const CAPABILITY_LABELS: Record<CapabilityFlag, { label: string; descript
   contacts_member_manage_enabled: {
     label: "External Contacts Management",
     description: "Allow regular members to create, edit, and archive external contacts",
-  },
-  coaches_member_manage_enabled: {
-    label: "Partners & Vendors Management",
-    description: "Allow regular members to create, edit, and archive partner/vendor profiles",
   },
   forms_member_manage_enabled: {
     label: "Forms Management",

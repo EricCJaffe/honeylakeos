@@ -752,7 +752,7 @@ export function useRecalculateAllPilotScores() {
 }
 
 /**
- * Get the lowest-scoring section for coaching focus
+ * Get the lowest-scoring section for improvement focus
  */
 export function getLowestScoringSection(breakdown: ActivationScoreBreakdown | null): keyof ActivationScoreBreakdown | null {
   if (!breakdown) return null;
@@ -775,9 +775,9 @@ export function getLowestScoringSection(breakdown: ActivationScoreBreakdown | nu
 }
 
 /**
- * Get coaching suggestions based on unmet criteria
+ * Get suggestions based on unmet criteria
  */
-export function getCoachingSuggestions(breakdown: ActivationScoreBreakdown | null): string[] {
+export function getImprovementSuggestions(breakdown: ActivationScoreBreakdown | null): string[] {
   if (!breakdown) return [];
 
   const suggestions: string[] = [];

@@ -150,7 +150,7 @@ function LinkedEntityItem({
             .single();
           if (!data) return null;
           const contact = data.external_contacts as { full_name: string; email: string | null } | null;
-          const typeLabel = data.profile_type === "coach" ? "Partner" : data.profile_type === "partner" ? "Partner" : "Vendor";
+          const typeLabel = data.profile_type === "vendor" ? "Vendor" : "Partner";
           return {
             id: data.id,
             name: contact?.full_name || "Unknown",

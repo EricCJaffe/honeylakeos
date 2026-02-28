@@ -180,19 +180,6 @@ export function CapabilitySettingsPanel() {
 
         <Separator />
 
-        {/* Partners & Vendors */}
-        <CapabilitySection
-          title="Partners & Vendors"
-          description="Partner and vendor profiles"
-          flags={["coaches_member_manage_enabled"]}
-          settings={settings as any}
-          disabled={!canEdit || isUpdating}
-          moduleDisabled={!isEnabled("coaches")}
-          onToggle={handleToggle}
-        />
-
-        <Separator />
-
         {/* Forms */}
         <CapabilitySection
           title="Forms & Workflows"

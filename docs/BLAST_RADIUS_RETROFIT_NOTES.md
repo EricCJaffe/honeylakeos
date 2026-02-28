@@ -43,7 +43,7 @@ Defines all modules with:
 - core, tasks, projects, calendar, notes, docs, groups, locations, admin
 
 **Optional Modules (toggleable):**
-- crm, contacts, forms, workflows, announcements, finance, reports, lms, coaching
+- crm, contacts, forms, workflows, announcements, finance, reports, lms
 
 ### 3. Feature Flags Hook
 

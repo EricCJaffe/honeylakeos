@@ -29,7 +29,6 @@ export interface OnboardingState {
   framework_id: string | null;
   current_step: OnboardingStep;
   completed_steps: OnboardingStep[];
-  coach_engagement_id: string | null;
   completed_at: string | null;
   created_at: string;
   updated_at: string;
@@ -61,7 +60,7 @@ export function useOnboardingMutations() {
   const { activeCompanyId } = useActiveCompany();
 
   const initializeOnboarding = useMutation({
-    mutationFn: async (coachEngagementId?: string) => {
+    mutationFn: async () => {
       if (!activeCompanyId) throw new Error("No company selected");
 
       const { data, error } = await supabase
@@ -70,7 +69,6 @@ export function useOnboardingMutations() {
           company_id: activeCompanyId,
           current_step: "select_framework",
           completed_steps: [],
-          coach_engagement_id: coachEngagementId || null,
         })
         .select()
         .single();

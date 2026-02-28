@@ -77,16 +77,16 @@ export function FrameworkMarketplaceBrowser({ onFrameworkAdopted }: FrameworkMar
     );
   }
 
-  const { systemTemplates = [], coachRecommended = [] } = data || {};
+  const { systemTemplates = [], recommended = [] } = data || {};
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue={coachRecommended.length > 0 ? "recommended" : "system"}>
+      <Tabs defaultValue={recommended.length > 0 ? "recommended" : "system"}>
         <TabsList>
-          {coachRecommended.length > 0 && (
+          {recommended.length > 0 && (
             <TabsTrigger value="recommended">
               <Building2 className="h-4 w-4 mr-2" />
-              Recommended ({coachRecommended.length})
+              Recommended ({recommended.length})
             </TabsTrigger>
           )}
           <TabsTrigger value="system">
@@ -95,10 +95,10 @@ export function FrameworkMarketplaceBrowser({ onFrameworkAdopted }: FrameworkMar
           </TabsTrigger>
         </TabsList>
 
-        {coachRecommended.length > 0 && (
+        {recommended.length > 0 && (
           <TabsContent value="recommended" className="mt-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {coachRecommended.map((framework) => (
+              {recommended.map((framework) => (
                 <FrameworkCard
                   key={framework.id}
                   framework={framework}
@@ -125,7 +125,7 @@ export function FrameworkMarketplaceBrowser({ onFrameworkAdopted }: FrameworkMar
         </TabsContent>
       </Tabs>
 
-      {systemTemplates.length === 0 && coachRecommended.length === 0 && (
+      {systemTemplates.length === 0 && recommended.length === 0 && (
         <Card>
           <CardContent className="py-12 text-center">
             <Layers className="h-12 w-12 mx-auto text-muted-foreground mb-4" />

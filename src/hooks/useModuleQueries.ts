@@ -77,32 +77,13 @@ const MODULE_QUERY_KEYS: Record<ModuleKey, string[][]> = {
     ["lms-session"],
     ["enrollments"],
     ["enrollment"],
-    ["cohort-coaches"],
+    ["cohort-facilitators"],
   ],
   crm: [
     ["crm-clients"],
     ["crm-client"],
     ["external-contacts"], // External contacts use CRM module
     ["external-contact"],
-  ],
-  coaches: [
-    ["coach-profiles"],
-    ["coach-profile"],
-  ],
-  coaching: [
-    ["coaching-orgs"],
-    ["coaching-org"],
-    ["coaching-org-memberships"],
-    ["coaching-managers"],
-    ["coaching-coaches"],
-    ["coaching-manager-assignments"],
-    ["coaching-org-engagements"],
-    ["coaching-engagement-assignments"],
-    ["coaching-org-groups"],
-    ["coaching-group-members"],
-    ["coaching-permission-templates"],
-    ["coaching-engagement-onboarding"],
-    ["access-grants"],
   ],
   sales: [
     ["sales_pipelines"],

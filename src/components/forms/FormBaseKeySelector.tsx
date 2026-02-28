@@ -24,8 +24,8 @@ interface FormBaseKeySelectorProps {
   value: string | null;
   /** Callback when selection changes */
   onChange: (baseKey: string | null) => void;
-  /** Optional coaching org context */
-  coachingOrgId?: string | null;
+  /** Optional organization context */
+  organizationId?: string | null;
   /** Placeholder text */
   placeholder?: string;
   /** Additional CSS classes */
@@ -43,13 +43,13 @@ interface FormBaseKeySelectorProps {
 export function FormBaseKeySelector({
   value,
   onChange,
-  coachingOrgId,
+  organizationId,
   placeholder = "Select a form...",
   className,
   disabled,
 }: FormBaseKeySelectorProps) {
   const [open, setOpen] = React.useState(false);
-  const { data, isLoading, error } = useAvailableFormBaseKeys(coachingOrgId);
+  const { data, isLoading, error } = useAvailableFormBaseKeys(organizationId);
 
   const selectedForm = data?.baseKeys.find((f) => f.baseKey === value);
 
@@ -151,8 +151,8 @@ export function FormBaseKeySelector({
 }
 
 interface FormBaseKeyListProps {
-  /** Coaching org context */
-  coachingOrgId?: string | null;
+  /** Optional organization context */
+  organizationId?: string | null;
   /** Callback when a form is selected */
   onSelect?: (baseKey: string) => void;
   /** Currently selected base key */
@@ -167,13 +167,13 @@ interface FormBaseKeyListProps {
  * Used in admin views to show all forms with their resolution status.
  */
 export function FormBaseKeyList({
-  coachingOrgId,
+  organizationId,
   onSelect,
   selectedKey,
   className,
 }: FormBaseKeyListProps) {
   const [searchTerm, setSearchTerm] = React.useState("");
-  const { data, isLoading, error } = useAvailableFormBaseKeys(coachingOrgId);
+  const { data, isLoading, error } = useAvailableFormBaseKeys(organizationId);
 
   const filteredForms = React.useMemo(() => {
     if (!data?.baseKeys) return [];

@@ -65,7 +65,7 @@ export default function FrameworkOnboardingPage() {
   // Initialize onboarding if not exists
   useEffect(() => {
     if (!stateLoading && !onboardingState && activeCompanyId && isCompanyAdmin) {
-      initializeOnboarding.mutate(undefined);
+      initializeOnboarding.mutate();
     }
   }, [stateLoading, onboardingState, activeCompanyId, isCompanyAdmin]);
 

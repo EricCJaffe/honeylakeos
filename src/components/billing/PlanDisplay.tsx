@@ -26,8 +26,11 @@ export function PlanBadge({
   tier: PlanTier; 
   size?: "sm" | "default" | "lg"; 
 }) {
-  const info = PLAN_INFO[tier];
-  const isCoachPlan = info.type === "coach_org";
+  const info = PLAN_INFO[tier] ?? {
+    name: tier,
+    description: "Custom plan",
+    type: "company",
+  };
 
   const sizeClasses = {
     sm: "text-xs px-2 py-0.5",
@@ -41,12 +44,10 @@ export function PlanBadge({
       className={cn(
         sizeClasses[size],
         "gap-1.5",
-        isCoachPlan 
-          ? "bg-purple-500/10 text-purple-600 border-purple-500/20" 
-          : "bg-blue-500/10 text-blue-600 border-blue-500/20"
+        "bg-blue-500/10 text-blue-600 border-blue-500/20"
       )}
     >
-      {isCoachPlan ? <Crown className="h-3 w-3" /> : <Building2 className="h-3 w-3" />}
+      <Building2 className="h-3 w-3" />
       {info.name}
     </Badge>
   );

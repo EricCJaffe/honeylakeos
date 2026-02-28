@@ -46,9 +46,8 @@ export const ENTITY_TO_MODULE_MAP: Record<string, ModuleKey> = {
   crm: "crm",
   // External contacts are governed by the CRM module
   external_contact: "crm",
-  // Coach profiles use the coaches module
-  coach_profile: "coaches",
-  coaches: "coaches",
+  // Partner/vendor profiles are governed by the CRM module
+  coach_profile: "crm",
   // Sales entities
   sales_opportunity: "sales",
   sales: "sales",

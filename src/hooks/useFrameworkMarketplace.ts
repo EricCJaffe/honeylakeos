@@ -4,9 +4,13 @@ import { useActiveCompany } from "./useActiveCompany";
 import { toast } from "sonner";
 import { Framework } from "./useFrameworks";
 
+type MarketplaceVisibility = "private" | "organization_clients" | "coach_org_clients";
+const LEGACY_ORG_OWNER_TYPE = "coach_org";
+const LEGACY_ORG_VISIBILITY = "coach_org_clients";
+
 // Extended Framework type with marketplace fields
 export interface MarketplaceFramework extends Framework {
-  marketplace_visibility: "private" | "coach_org_clients";
+  marketplace_visibility: MarketplaceVisibility;
   short_summary: string | null;
   tags: string[];
   published_at: string | null;
@@ -34,7 +38,7 @@ export function useMarketplaceFrameworks() {
   return useQuery({
     queryKey: ["marketplace-frameworks", activeCompanyId],
     queryFn: async () => {
-      if (!activeCompanyId) return { systemTemplates: [], coachRecommended: [] };
+      if (!activeCompanyId) return { systemTemplates: [], recommended: [] };
 
       // Fetch system templates
       const { data: systemTemplates, error: systemError } = await supabase
@@ -48,7 +52,7 @@ export function useMarketplaceFrameworks() {
 
       return {
         systemTemplates: (systemTemplates || []) as MarketplaceFramework[],
-        coachRecommended: [] as MarketplaceFramework[],
+        recommended: [] as MarketplaceFramework[],
       };
     },
     enabled: !!activeCompanyId,
@@ -56,13 +60,13 @@ export function useMarketplaceFrameworks() {
 }
 
 // ==========================================
-// COACH ORG FRAMEWORK MANAGEMENT
+// ORGANIZATION FRAMEWORK MANAGEMENT
 // ==========================================
-export function useCoachOrgFrameworks() {
+export function useOrganizationFrameworks() {
   const { activeCompanyId } = useActiveCompany();
 
   return useQuery({
-    queryKey: ["coach-org-frameworks", activeCompanyId],
+    queryKey: ["organization-frameworks", activeCompanyId],
     queryFn: async () => {
       if (!activeCompanyId) return [];
 
@@ -70,7 +74,7 @@ export function useCoachOrgFrameworks() {
         .from("frameworks")
         .select("*")
         .eq("owner_company_id", activeCompanyId)
-        .eq("owner_type", "coach_org")
+        .eq("owner_type", LEGACY_ORG_OWNER_TYPE)
         .is("archived_at", null)
         .order("created_at", { ascending: false });
 
@@ -116,15 +120,16 @@ export function useFrameworkPublishingMutations() {
       tags,
     }: {
       frameworkId: string;
-      visibility: "private" | "coach_org_clients";
+      visibility: MarketplaceVisibility;
       shortSummary?: string;
       tags?: string[];
     }) => {
+      const dbVisibility = visibility === "organization_clients" ? LEGACY_ORG_VISIBILITY : visibility;
       const { data, error } = await supabase
         .from("frameworks")
         .update({
           status: "published",
-          marketplace_visibility: visibility,
+          marketplace_visibility: dbVisibility,
           short_summary: shortSummary,
           tags: tags || [],
           published_at: new Date().toISOString(),
@@ -137,7 +142,7 @@ export function useFrameworkPublishingMutations() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["coach-org-frameworks"] });
+      queryClient.invalidateQueries({ queryKey: ["organization-frameworks"] });
       queryClient.invalidateQueries({ queryKey: ["frameworks"] });
       toast.success("Framework published");
     },
@@ -152,11 +157,12 @@ export function useFrameworkPublishingMutations() {
       visibility,
     }: {
       frameworkId: string;
-      visibility: "private" | "coach_org_clients";
+      visibility: MarketplaceVisibility;
     }) => {
+      const dbVisibility = visibility === "organization_clients" ? LEGACY_ORG_VISIBILITY : visibility;
       const { data, error } = await supabase
         .from("frameworks")
-        .update({ marketplace_visibility: visibility })
+        .update({ marketplace_visibility: dbVisibility })
         .eq("id", frameworkId)
         .select()
         .single();
@@ -165,7 +171,7 @@ export function useFrameworkPublishingMutations() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["coach-org-frameworks"] });
+      queryClient.invalidateQueries({ queryKey: ["organization-frameworks"] });
       toast.success("Visibility updated");
     },
     onError: (error: Error) => {
@@ -199,7 +205,7 @@ export function useFrameworkPublishingMutations() {
         .update({
           version_label: newVersionLabel,
           source_framework_id: sourceFrameworkId,
-          owner_type: "coach_org",
+          owner_type: LEGACY_ORG_OWNER_TYPE,
           owner_company_id: activeCompanyId,
         })
         .eq("id", data);
@@ -208,7 +214,7 @@ export function useFrameworkPublishingMutations() {
       return data as string;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["coach-org-frameworks"] });
+      queryClient.invalidateQueries({ queryKey: ["organization-frameworks"] });
       queryClient.invalidateQueries({ queryKey: ["framework-versions"] });
       toast.success("New version created");
     },
@@ -227,7 +233,7 @@ export function useFrameworkPublishingMutations() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["coach-org-frameworks"] });
+      queryClient.invalidateQueries({ queryKey: ["organization-frameworks"] });
       toast.success("Framework archived");
     },
     onError: (error: Error) => {
@@ -259,7 +265,7 @@ export function useFrameworkPublishingMutations() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["coach-org-frameworks"] });
+      queryClient.invalidateQueries({ queryKey: ["organization-frameworks"] });
       toast.success("Metadata updated");
     },
     onError: (error: Error) => {
