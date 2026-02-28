@@ -180,10 +180,10 @@ export function CapabilitySettingsPanel() {
 
         <Separator />
 
-        {/* Coaches & Partners */}
+        {/* Partners & Vendors */}
         <CapabilitySection
-          title="Coaches & Partners"
-          description="Coach, partner, and vendor profiles"
+          title="Partners & Vendors"
+          description="Partner and vendor profiles"
           flags={["coaches_member_manage_enabled"]}
           settings={settings as any}
           disabled={!canEdit || isUpdating}

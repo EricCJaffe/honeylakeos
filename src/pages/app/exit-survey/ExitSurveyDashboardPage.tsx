@@ -11,10 +11,12 @@ import { PreviewTab } from "./components/PreviewTab";
 import { QuestionsTab } from "./components/QuestionsTab";
 import { SettingsTab } from "./components/SettingsTab";
 import { PdfExportButton } from "./components/PdfExportButton";
+import { ReportsTab } from "./components/ReportsTab";
 
 const TABS = [
   { value: "overview", label: "Overview" },
   { value: "trends", label: "Leadership" },
+  { value: "reports", label: "Advanced Reports" },
   { value: "submissions", label: "Submissions" },
   { value: "alerts", label: "Alerts" },
   { value: "preview", label: "Preview" },
@@ -66,6 +68,9 @@ export default function ExitSurveyDashboardPage() {
           </TabsContent>
           <TabsContent value="trends">
             <TrendsTab />
+          </TabsContent>
+          <TabsContent value="reports">
+            <ReportsTab />
           </TabsContent>
           <TabsContent value="submissions">
             <SubmissionsTab />

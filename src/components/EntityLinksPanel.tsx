@@ -40,7 +40,7 @@ const ENTITY_TYPES: { value: EntityType; label: string; icon: string }[] = [
   { value: "event", label: "Event", icon: "📅" },
   { value: "crm_client", label: "Client", icon: "🤝" },
   { value: "external_contact", label: "Contact", icon: "👤" },
-  { value: "coach_profile", label: "Coach/Partner", icon: "🎓" },
+  { value: "coach_profile", label: "Partner/Vendor", icon: "🎓" },
   { value: "sales_opportunity", label: "Opportunity", icon: "💰" },
 ];
 
@@ -150,7 +150,7 @@ function LinkedEntityItem({
             .single();
           if (!data) return null;
           const contact = data.external_contacts as { full_name: string; email: string | null } | null;
-          const typeLabel = data.profile_type === "coach" ? "Coach" : data.profile_type === "partner" ? "Partner" : "Vendor";
+          const typeLabel = data.profile_type === "coach" ? "Partner" : data.profile_type === "partner" ? "Partner" : "Vendor";
           return {
             id: data.id,
             name: contact?.full_name || "Unknown",

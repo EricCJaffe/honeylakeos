@@ -2,7 +2,7 @@
 
 ## Owners
 - Platform: TBD
-- Coaching module: TBD
+- Exit Survey module: TBD
 - Frameworks module: TBD
 - LMS module: TBD
 - CRM module: TBD

@@ -7,7 +7,6 @@ import {
   ClipboardList,
   Users,
   BarChart3,
-  GraduationCap,
   BookOpen,
   Search,
 } from "lucide-react";
@@ -29,10 +28,15 @@ import {
 const categoryIcons: Record<TemplateCategory, React.ComponentType<{ className?: string }>> = {
   employee_lifecycle: Users,
   requests: ClipboardList,
-  surveys: BarChart3,
-  coaching: GraduationCap,
-  knowledge_management: BookOpen,
+  surveys: BarChart3,  knowledge_management: BookOpen,
 };
+
+const DISPLAY_CATEGORIES: TemplateCategory[] = [
+  "employee_lifecycle",
+  "requests",
+  "surveys",
+  "knowledge_management",
+];
 
 export function StarterTemplatesTab() {
   const navigate = useNavigate();
@@ -171,7 +175,7 @@ export function StarterTemplatesTab() {
             All
             <Badge variant="secondary" className="ml-1 text-xs">{allTemplates.length}</Badge>
           </TabsTrigger>
-          {(Object.keys(categoryLabels) as TemplateCategory[]).map((cat) => {
+          {DISPLAY_CATEGORIES.map((cat) => {
             const CatIcon = categoryIcons[cat];
             const count = templatesByCategory[cat]?.length || 0;
             return (

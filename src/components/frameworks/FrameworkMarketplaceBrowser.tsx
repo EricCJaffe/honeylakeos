@@ -86,7 +86,7 @@ export function FrameworkMarketplaceBrowser({ onFrameworkAdopted }: FrameworkMar
           {coachRecommended.length > 0 && (
             <TabsTrigger value="recommended">
               <Building2 className="h-4 w-4 mr-2" />
-              Coach Recommended ({coachRecommended.length})
+              Recommended ({coachRecommended.length})
             </TabsTrigger>
           )}
           <TabsTrigger value="system">

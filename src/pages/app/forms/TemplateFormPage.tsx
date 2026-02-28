@@ -34,8 +34,8 @@ function StandardTemplateForm({ templateKey }: { templateKey: string | undefined
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
-  // Optional coaching engagement linking
-  const coachingEngagementId = searchParams.get("engagementId") ?? undefined;
+  // Optional engagement linking (legacy support)
+  const engagementId = searchParams.get("engagementId") ?? undefined;
   
   const { data: form, isLoading: formLoading } = useFormByTemplateKey(templateKey);
   const createForm = useCreateFormFromTemplate();

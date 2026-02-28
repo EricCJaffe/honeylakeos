@@ -623,8 +623,6 @@ export function FrameworkEditor({ frameworkId, readOnly = false }: FrameworkEdit
                   <SelectItem value="company_admin">Company Admin</SelectItem>
                   <SelectItem value="leadership">Leadership</SelectItem>
                   <SelectItem value="member">Member</SelectItem>
-                  <SelectItem value="coach">Coach</SelectItem>
-                  <SelectItem value="coach_manager">Coach Manager</SelectItem>
                 </SelectContent>
               </Select>
             </div>

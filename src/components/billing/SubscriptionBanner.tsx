@@ -29,7 +29,7 @@ export function SubscriptionBanner() {
         <AlertDescription className="flex items-center justify-between">
           <span className="text-amber-700 dark:text-amber-300">
             {status.isProvisionedByCoach
-              ? "Your coaching engagement has ended. "
+              ? "Your provisioned organization access has ended. "
               : ""}
             You have {status.graceDaysRemaining} days to choose a subscription plan.
           </span>

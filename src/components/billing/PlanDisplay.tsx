@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   Crown, 
   Users, 
-  Building2, 
+  Building2,
   Layers, 
   CheckCircle, 
   XCircle,
@@ -261,14 +261,6 @@ export function EntitlementsOverviewCard() {
             limit={getLimit("max_active_frameworks")} 
             icon={Layers}
           />
-          {status.planType === "coach_org" && (
-            <UsageLimitDisplay 
-              label="Active Clients" 
-              current={0} 
-              limit={getLimit("max_active_clients")} 
-              icon={Building2}
-            />
-          )}
         </div>
 
         {/* Features */}
@@ -281,10 +273,6 @@ export function EntitlementsOverviewCard() {
           <FeatureEntitlement 
             label="Learning Management (LMS)" 
             enabled={isEnabled("lms_enabled")} 
-          />
-          <FeatureEntitlement 
-            label="Coaching Module" 
-            enabled={isEnabled("coaching_module_enabled")} 
           />
           <FeatureEntitlement 
             label="Advanced Reporting" 

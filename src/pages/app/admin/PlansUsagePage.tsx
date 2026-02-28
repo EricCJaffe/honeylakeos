@@ -13,9 +13,7 @@ import {
 } from "@/hooks/useEntitlements";
 import { useMembership } from "@/lib/membership";
 import {
-  Crown,
   Users,
-  Building2,
   Layers,
   Share2,
   CheckCircle,
@@ -147,19 +145,6 @@ export default function PlansUsagePage() {
             limit={getLimit("max_published_frameworks")}
             isLoading={usageLoading}
           />
-          {planStatus.planType === "coach_org" && (
-            <>
-              <Separator />
-              <UsageLimitRow
-                icon={Building2}
-                label="Active Clients"
-                description="Client organizations you're coaching"
-                current={counts.clients}
-                limit={getLimit("max_active_clients")}
-                isLoading={usageLoading}
-              />
-            </>
-          )}
         </CardContent>
       </Card>
 
@@ -187,11 +172,6 @@ export default function PlansUsagePage() {
               description="Courses, lessons, and training"
             />
             <FeatureItem
-              label="Coaching Module"
-              enabled={isEnabled("coaching_module_enabled")}
-              description="Client engagements and coaching"
-            />
-            <FeatureItem
               label="Framework Engine"
               enabled={isEnabled("framework_engine_enabled")}
               description="Business operating frameworks"
@@ -205,11 +185,6 @@ export default function PlansUsagePage() {
               label="Weighted Health Metrics"
               enabled={isEnabled("weighted_health_metrics")}
               description="Advanced health scoring"
-            />
-            <FeatureItem
-              label="Coach Manager Views"
-              enabled={isEnabled("coach_manager_views")}
-              description="Multi-coach management"
             />
             <FeatureItem
               label="Advanced Reporting"

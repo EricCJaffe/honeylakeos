@@ -18,6 +18,7 @@ export interface AuditLogEntry {
 export interface AuditLogFilters {
   entityType?: string;
   action?: string;
+  actionPrefix?: string;
   actorUserId?: string;
   startDate?: Date;
   endDate?: Date;
@@ -41,7 +42,7 @@ export function useAuditLogViewer() {
         p_page_size: PAGE_SIZE,
         p_page: page,
         p_entity_type: filters.entityType || null,
-        p_action: filters.action || null,
+        p_action: filters.action || filters.actionPrefix || null,
         p_actor_user_id: filters.actorUserId || null,
         p_start_date: filters.startDate?.toISOString() || null,
         p_end_date: filters.endDate?.toISOString() || null,

@@ -1,7 +1,7 @@
 # Project Context
 
 ## Purpose
-HoneylakeOS is a multi-module web application built on React and Supabase. It includes public pages, authentication, and a large authenticated app surface with role-based access and module feature flags. The product targets coaching orgs, client companies, and solo coaches with an operating system for programs, operations, and learning.
+HoneylakeOS is a multi-module web application built on React and Supabase. It includes public pages, authentication, and a large authenticated app surface with role-based access and module feature flags. The product targets operational teams running internal workflows, employee lifecycle processes, and patient exit-survey programs.
 
 ## Tech Stack
 - Vite 5 + React 18 + TypeScript
@@ -72,7 +72,7 @@ Default enablement (from `moduleRegistry`):
 ## Exit Survey Module
 - **Status**: Completed February 2026.
 - **Public form**: `/exit-survey` — no auth required; token-based patient survey.
-- **Admin dashboard**: `/app/exit-survey` — 7 tabs: Overview, Submissions, Alerts, Trends, Questions, Settings, Leadership.
+- **Admin dashboard**: `/app/exit-survey` — tabs for Overview, Leadership, Advanced Reports, Submissions, Alerts, Preview, Questions, and Settings.
 - **Alert system**: Low-score responses (≤ threshold) auto-create alerts; assigned users receive email notifications via `exit-survey-notify` edge function.
 - **Comment threads**: Alerts support threaded comments stored in `exit_survey_alert_comments` table.
 - **Scheduled jobs**: Weekly digest (`exit-survey-weekly-digest`) and reminders (`exit-survey-reminders`) require cron setup.

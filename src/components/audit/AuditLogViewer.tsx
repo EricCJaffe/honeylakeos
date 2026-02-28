@@ -40,6 +40,12 @@ import { useAuditLogViewer, useAuditEntityTypes } from '@/hooks/useAuditLogViewe
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
+const ACTION_PREFIX_PRESETS = [
+  { label: "Exit Survey", value: "exit_survey." },
+  { label: "Employee", value: "employee." },
+  { label: "Integration", value: "integration." },
+] as const;
+
 function ActionBadge({ action }: { action: string }) {
   const getVariant = () => {
     if (action.includes('created') || action.includes('added')) return 'default';
@@ -218,7 +224,12 @@ export function AuditLogViewer() {
 
             <Select
               value={filters.action || 'all'}
-              onValueChange={(v) => updateFilters({ action: v === 'all' ? undefined : v })}
+              onValueChange={(v) =>
+                updateFilters({
+                  action: v === 'all' ? undefined : v,
+                  actionPrefix: undefined,
+                })
+              }
             >
               <SelectTrigger className="w-[240px] h-9">
                 <SelectValue placeholder="Action" />
@@ -279,6 +290,28 @@ export function AuditLogViewer() {
         {/* Results count */}
         <div className="text-sm text-muted-foreground">
           {totalCount} {totalCount === 1 ? 'entry' : 'entries'}
+        </div>
+
+        {/* Prefix presets */}
+        <div className="flex flex-wrap gap-2">
+          {ACTION_PREFIX_PRESETS.map((preset) => {
+            const active = filters.actionPrefix === preset.value;
+            return (
+              <Button
+                key={preset.value}
+                variant={active ? "default" : "outline"}
+                size="sm"
+                onClick={() =>
+                  updateFilters({
+                    actionPrefix: active ? undefined : preset.value,
+                    action: undefined,
+                  })
+                }
+              >
+                {preset.label} ({preset.value}*)
+              </Button>
+            );
+          })}
         </div>
 
         {/* Table */}

@@ -50,8 +50,8 @@ export const CAPABILITY_LABELS: Record<CapabilityFlag, { label: string; descript
     description: "Allow regular members to create, edit, and archive external contacts",
   },
   coaches_member_manage_enabled: {
-    label: "Coaches & Partners Management",
-    description: "Allow regular members to create, edit, and archive coach/partner profiles",
+    label: "Partners & Vendors Management",
+    description: "Allow regular members to create, edit, and archive partner/vendor profiles",
   },
   forms_member_manage_enabled: {
     label: "Forms Management",

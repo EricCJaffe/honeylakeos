@@ -4,6 +4,8 @@
 **Last Updated**: 2026-01-17  
 **Prepared For**: Platform Launch to Coaches and Client Companies
 
+> Note (2026-02-27): This document contains legacy coaching-era content and is retained for historical reference only. Current Honey Lake implementation does not use the coaching module; rely on `docs/TASKS.md`, `docs/RUNBOOK.md`, and `docs/HIPAA_COMPLIANCE_BASELINE.md` for active launch scope.
+
 ---
 
 ## Executive Summary

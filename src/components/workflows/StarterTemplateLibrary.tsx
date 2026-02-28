@@ -58,9 +58,7 @@ export function StarterTemplateLibrary({ onTemplateAdded }: StarterTemplateLibra
         return ClipboardCheck;
       case "surveys":
         return MessageSquare;
-      case "coaching":
-        return Settings2;
-      default:
+            default:
         return FileText;
     }
   };
@@ -178,7 +176,7 @@ export function StarterTemplateLibrary({ onTemplateAdded }: StarterTemplateLibra
     return templatesByCategory[activeCategory] || [];
   }, [activeCategory]);
 
-  const categories: (TemplateCategory | "all")[] = ["all", "employee_lifecycle", "requests", "surveys"];
+  const categories: (TemplateCategory | "all")[] = ["all", "employee_lifecycle", "requests", "surveys", "knowledge_management"];
 
   return (
     <div className="space-y-6">

@@ -27,7 +27,6 @@ const TICKET_CATEGORIES = [
   { value: "tasks", label: "Tasks" },
   { value: "projects", label: "Projects" },
   { value: "frameworks", label: "Frameworks" },
-  { value: "coaching", label: "Coaching" },
   { value: "billing", label: "Billing & Plans" },
   { value: "other", label: "Other" },
 ];
@@ -62,11 +61,6 @@ const COMMON_FIXES: Record<string, string[]> = {
     "Make sure a framework is adopted for your company",
     "Check framework marketplace for available options",
     "Contact your admin if you need framework access",
-  ],
-  coaching: [
-    "Verify you have an active coaching engagement",
-    "Check with your coach for access issues",
-    "Ensure coaching module is enabled",
   ],
   billing: [
     "Check your current plan status",

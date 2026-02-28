@@ -8,14 +8,12 @@ export type OnboardingStep =
   | "select_framework"
   | "core_setup"
   | "activate_components"
-  | "coach_recommendations"
   | "final_review";
 
 export const ONBOARDING_STEPS: OnboardingStep[] = [
   "select_framework",
   "core_setup",
   "activate_components",
-  "coach_recommendations",
   "final_review",
 ];
 
@@ -23,7 +21,6 @@ export const STEP_LABELS: Record<OnboardingStep, string> = {
   select_framework: "Select Framework",
   core_setup: "Core Setup",
   activate_components: "Activate Components",
-  coach_recommendations: "Coach Recommendations",
   final_review: "Review & Launch",
 };
 
@@ -211,4 +208,3 @@ export function useOnboardingMutations() {
     skipOnboarding,
   };
 }
-

@@ -10,11 +10,12 @@
 
 ## Active
 - [ ] Activate production cron for `exit-survey-scheduler` (recommended every 15 minutes with `{ "mode": "all" }`).
+- [ ] Exit Survey: validate new `Advanced Reports` tab against real data and confirm KPI definitions with leadership.
 - [ ] Define department color configuration (per-deployment mapping vs fixed palette) and implement in leadership dashboard.
 - [ ] Confirm weekly digest recipients: question owners only vs a configured distribution list.
 - [ ] Confirm reminder routing: assigned user vs owner/admin fallback for open alerts.
 - [ ] Confirm whether department colors are standardized across deployments or configurable per company/department.
-- [ ] Run final smoke test with a real coach account.
+- [ ] Run final smoke test with a real company admin/operator account.
 - [ ] Pre-go-live: from `/app/admin/employees`, send manual invites to seeded exit-survey owners so they become auth users (do not bulk invite).
 
 ## Discussion (Security / HIPAA / PII)
@@ -41,7 +42,6 @@
 
 ## Backlog
 - [ ] Recommendation history view.
-- [ ] Framework diff viewer for version comparison.
 - [ ] Advanced reporting dashboard.
 - [ ] Email notifications for recommendations.
 - [ ] Framework concept/cadence counts on dashboard.
@@ -66,6 +66,8 @@
 - [x] Decide whether leadership feedback should be stored as structured fields vs comment text - using comment text with type prefixes for flexibility (2026-02-24).
 - [x] Test the email invite flow in production with Resend integration (2026-02-24).
 - [x] Customize exit survey email templates for branding with per-trigger HTML/text variables editable in Settings (2026-02-27).
+- [x] De-scoped: Framework diff viewer for version comparison (not needed) (2026-02-27).
+- [x] Exit Survey: add initial `Advanced Reports` tab with date filters, department/owner performance breakdown, and CSV export (2026-02-27).
 - [x] De-scoped: Stripe payment integration (not needed) (2026-02-27).
 - [x] De-scoped: Coaching team management page (not needed) (2026-02-27).
 - [x] De-scoped: Automated health score snapshots (not needed) (2026-02-27).
@@ -74,6 +76,7 @@
 - [x] De-scoped: Multi-framework support per company (not needed) (2026-02-27).
 - [x] De-scoped: External calendar sync (Google, Outlook) (not needed) (2026-02-27).
 - [x] De-scoped: Plaid banking integration (not needed) (2026-02-27).
+- [x] Hard-delete sweep: removed remaining user-facing coaching references from onboarding, templates, plan usage, and capability labels (2026-02-28).
 
 ## Conventions
 - Keep tasks small and outcome-focused.

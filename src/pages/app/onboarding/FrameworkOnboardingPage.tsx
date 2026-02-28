@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Layers, Users, Settings2, MessageSquare, Rocket, 
+  Layers, Users, Settings2, Rocket, 
   Check, ChevronRight, ChevronLeft, SkipForward, Loader2,
   Info
 } from "lucide-react";
@@ -29,7 +29,6 @@ const STEP_ICONS: Record<OnboardingStep, React.ElementType> = {
   select_framework: Layers,
   core_setup: Users,
   activate_components: Settings2,
-  coach_recommendations: MessageSquare,
   final_review: Rocket,
 };
 
@@ -77,14 +76,7 @@ export default function FrameworkOnboardingPage() {
     }
   }, [activeFramework]);
 
-  const hasCoach = false;
-  const hasPendingRecommendations = false;
-
-  // Filter steps based on context
-  const availableSteps = ONBOARDING_STEPS.filter(step => {
-    if (step === "coach_recommendations") return false;
-    return true;
-  });
+  const availableSteps = ONBOARDING_STEPS;
 
   const currentStepIndex = availableSteps.indexOf(currentStep);
 
@@ -262,10 +254,7 @@ export default function FrameworkOnboardingPage() {
             )}
 
             {currentStep === "core_setup" && (
-              <StepCoreSetup
-                hasCoach={false}
-                coachOrgName={undefined}
-              />
+              <StepCoreSetup />
             )}
 
             {currentStep === "activate_components" && (
@@ -280,7 +269,6 @@ export default function FrameworkOnboardingPage() {
               <StepFinalReview
                 frameworkDetails={frameworkDetails}
                 activationChoices={activationChoices}
-                hasCoach={false}
               />
             )}
           </motion.div>
@@ -431,13 +419,7 @@ function StepSelectFramework({
   );
 }
 
-function StepCoreSetup({
-  hasCoach,
-  coachOrgName,
-}: {
-  hasCoach: boolean;
-  coachOrgName?: string;
-}) {
+function StepCoreSetup() {
   return (
     <div className="space-y-6">
       <div>
@@ -451,40 +433,18 @@ function StepCoreSetup({
         <CardHeader>
           <CardTitle className="text-base">Team Members</CardTitle>
           <CardDescription>
-            Invite team members from the Members section after onboarding completes.
+            Invite team members from the Employees section after onboarding completes.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription>
-              You can invite team members and assign roles from Company Console → Members.
+              You can invite team members and assign roles from Company Console to Employees.
             </AlertDescription>
           </Alert>
         </CardContent>
       </Card>
-
-      {hasCoach && coachOrgName && (
-        <Card className="border-primary/50">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" />
-              Coach Connected
-            </CardTitle>
-            <CardDescription>
-              You're working with <strong>{coachOrgName}</strong> as your coaching partner.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                Your coach can view your framework progress and send recommendations.
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
@@ -598,57 +558,9 @@ function StepActivateComponents({
   );
 }
 
-function StepCoachRecommendations({
-  recommendations,
-}: {
-  recommendations: any[];
-}) {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold mb-2">Coach Recommendations</h2>
-        <p className="text-muted-foreground">
-          Your coach has suggestions for your onboarding. Review and accept the ones that fit.
-        </p>
-      </div>
-
-      {recommendations.length === 0 ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            <MessageSquare className="h-8 w-8 mx-auto mb-3 opacity-50" />
-            <p>No recommendations yet</p>
-            <p className="text-sm">Your coach may add suggestions as you progress.</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {recommendations.map((rec: any) => (
-            <Card key={rec.id}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">{rec.title}</CardTitle>
-                  <Badge>{rec.recommendation_type}</Badge>
-                </div>
-                <CardDescription>{rec.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-2">
-                  <Button size="sm">Accept</Button>
-                  <Button size="sm" variant="outline">Decline</Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function StepFinalReview({
   frameworkDetails,
   activationChoices,
-  hasCoach,
 }: {
   frameworkDetails: any;
   activationChoices: {
@@ -656,7 +568,6 @@ function StepFinalReview({
     instantiateTemplates: boolean;
     assignLmsPath: boolean;
   };
-  hasCoach: boolean;
 }) {
   const activeChoices = Object.entries(activationChoices)
     .filter(([_, v]) => v)
@@ -716,16 +627,6 @@ function StepFinalReview({
                     </li>
                   )}
                 </ul>
-              </div>
-            </>
-          )}
-
-          {hasCoach && (
-            <>
-              <Separator />
-              <div className="flex items-center gap-2 text-sm">
-                <MessageSquare className="h-4 w-4 text-primary" />
-                <span>Coach-assisted onboarding active</span>
               </div>
             </>
           )}

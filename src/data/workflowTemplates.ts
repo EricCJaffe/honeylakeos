@@ -5,8 +5,7 @@ export type TemplateCategory =
   | "employee_lifecycle" 
   | "requests" 
   | "surveys" 
-  | "coaching"
-  | "knowledge_management";
+    | "knowledge_management";
 
 export type RequiredModule = 
   | "employees" 
@@ -146,12 +145,12 @@ export const exitSurveyForm: FormTemplate = {
 export const executiveMembershipApplicationForm: FormTemplate = {
   id: "generic_executive_membership_application",
   type: "form",
-  category: "coaching",
+  category: "knowledge_management",
   title: "Executive Membership Application & Commitment",
   description: "Application and commitment form for executive retreat membership. Captures company profile, member information, and membership commitments.",
   summary: "Executive membership application with commitments",
   required_modules: [],
-  tags: ["coaching", "membership", "application", "executive", "commitment"],
+  tags: ["leadership", "membership", "application", "executive", "commitment"],
   fields: [
     // Section: Company / Business Profile
     { label: "Company Name", field_type: "short_text", is_required: true, helper_text: "Your company or organization name", sort_order: 0 },
@@ -194,12 +193,12 @@ export const executiveMembershipApplicationForm: FormTemplate = {
 export const businessPlanOrganizerForm: FormTemplate = {
   id: "generic_business_plan_organizer_v25_07",
   type: "form",
-  category: "coaching",
+  category: "knowledge_management",
   title: "Business Plan Organizer",
-  description: "Comprehensive annual business planning form with strategic plan, quarterly rocks, and scorecard. Perfect for EOS-style planning and coaching engagements.",
+  description: "Comprehensive annual business planning form with strategic plan, quarterly rocks, and scorecard. Perfect for EOS-style planning and leadership engagements.",
   summary: "Annual plan, quarterly rocks, and scorecard in one form",
   required_modules: [],
-  tags: ["coaching", "business plan", "rocks", "scorecard", "strategic", "EOS", "annual planning"],
+  tags: ["leadership", "business plan", "rocks", "scorecard", "strategic", "EOS", "annual planning"],
   fields: [
     // Header
     { label: "Plan Year", field_type: "number", is_required: true, helper_text: "Enter the plan year", sort_order: 0 },
@@ -239,12 +238,12 @@ export const businessPlanOrganizerForm: FormTemplate = {
 export const briefingQuestionnaireTeamForm: FormTemplate = {
   id: "generic_briefing_questionnaire_team",
   type: "form",
-  category: "coaching",
+  category: "knowledge_management",
   title: "Briefing Questionnaire – Team",
-  description: "Team member input to support executive leadership review and coaching. Gathers feedback on leader strengths, company culture, and recommendations.",
-  summary: "Team feedback for executive coaching prep",
+  description: "Team member input to support executive leadership review and leadership. Gathers feedback on leader strengths, company culture, and recommendations.",
+  summary: "Team feedback for executive leadership prep",
   required_modules: [],
-  tags: ["coaching", "briefing", "team", "feedback", "leadership", "360"],
+  tags: ["leadership", "briefing", "team", "feedback", "leadership", "360"],
   fields: [
     // Section: Participant Information
     { label: "Your Name", field_type: "short_text", is_required: true, helper_text: "Enter your full name", sort_order: 0 },
@@ -278,12 +277,12 @@ export const briefingQuestionnaireTeamForm: FormTemplate = {
 export const briefingQuestionnaireSpouseForm: FormTemplate = {
   id: "generic_briefing_questionnaire_spouse",
   type: "form",
-  category: "coaching",
+  category: "knowledge_management",
   title: "Briefing Questionnaire – Spouse",
-  description: "Spousal perspective to support executive leadership and life balance coaching. Gathers feedback on growth, concerns, work-life balance, and accountability.",
-  summary: "Spouse feedback for executive coaching prep",
+  description: "Spousal perspective to support executive leadership and life balance leadership. Gathers feedback on growth, concerns, work-life balance, and accountability.",
+  summary: "Spouse feedback for executive leadership prep",
   required_modules: [],
-  tags: ["coaching", "briefing", "spouse", "feedback", "leadership", "360", "confidential"],
+  tags: ["leadership", "briefing", "spouse", "feedback", "leadership", "360", "confidential"],
   fields: [
     // Section: Participant Information
     { label: "Member Name", field_type: "short_text", is_required: true, helper_text: "Name of the executive/leader", sort_order: 0 },
@@ -584,18 +583,18 @@ export const sopLifecycleWorkflow: WorkflowTemplate = {
 };
 
 // =============================================
-// COACHING TEMPLATES
+// LEGACY LEADERSHIP TEMPLATES
 // =============================================
 
 export const annualGoalsPortfolioForm: FormTemplate = {
   id: "generic_annual_goals_portfolio",
   type: "form",
-  category: "coaching",
+  category: "knowledge_management",
   title: "Life & Leadership Portfolio — Annual Goals",
-  description: "Comprehensive annual goals form covering life stewardship areas and business strategic initiatives. Designed for coaching engagements and personal development planning.",
+  description: "Comprehensive annual goals form covering life stewardship areas and business strategic initiatives. Designed for leadership engagements and personal development planning.",
   summary: "Set annual goals across life and business areas",
   required_modules: [],
-  tags: ["coaching", "goals", "annual", "portfolio", "strategic", "life stewardship"],
+  tags: ["leadership", "goals", "annual", "portfolio", "strategic", "life stewardship"],
   fields: [
     // Header Fields
     { label: "Year", field_type: "number", is_required: true, helper_text: "Enter the goal year (e.g., 2024)", sort_order: 0 },
@@ -629,12 +628,12 @@ export const annualGoalsPortfolioForm: FormTemplate = {
 export const keyLeaderMemberCovenantForm: FormTemplate = {
   id: "generic_key_leader_member_covenant",
   type: "form",
-  category: "coaching",
+  category: "knowledge_management",
   title: "Key Leader Member Info & Covenant",
   description: "New member information and covenant commitments for Key Leader groups. Captures member details, contact information, and covenant agreements.",
   summary: "Collect member info and covenant commitments",
   required_modules: [],
-  tags: ["coaching", "membership", "covenant", "onboarding", "key leader"],
+  tags: ["leadership", "membership", "covenant", "onboarding", "key leader"],
   fields: [
     // Section: Member Information
     { label: "Member Name", field_type: "short_text", is_required: true, helper_text: "Your full name", sort_order: 0 },
@@ -673,12 +672,12 @@ export const keyLeaderMemberCovenantForm: FormTemplate = {
 export const keyLeaderBriefingForm: FormTemplate = {
   id: "generic_key_leader_briefing",
   type: "form",
-  category: "coaching",
+  category: "knowledge_management",
   title: "Key Leader Briefing – Life & Business Stewardship",
-  description: "Executive briefing covering life stewardship and business stewardship categories. Use for coaching reviews, annual/quarterly prep, and development planning.",
+  description: "Executive briefing covering life stewardship and business stewardship categories. Use for leadership reviews, annual/quarterly prep, and development planning.",
   summary: "Executive briefing across life and business stewardship areas",
   required_modules: [],
-  tags: ["coaching", "briefing", "stewardship", "executive", "key leader", "review"],
+  tags: ["leadership", "briefing", "stewardship", "executive", "key leader", "review"],
   fields: [
     // Section 1: Header
     { label: "Briefing Name", field_type: "short_text", is_required: false, helper_text: "Optional title for this briefing", sort_order: 0 },
@@ -721,12 +720,12 @@ export const keyLeaderBriefingForm: FormTemplate = {
 export const executiveBriefingForm: FormTemplate = {
   id: "generic_executive_briefing",
   type: "form",
-  category: "coaching",
+  category: "knowledge_management",
   title: "Executive Briefing – Life & Business Review",
-  description: "Integrated executive briefing incorporating life stewardship, business review, and strategic planning. Designed for comprehensive executive coaching reviews.",
+  description: "Integrated executive briefing incorporating life stewardship, business review, and strategic planning. Designed for comprehensive executive leadership reviews.",
   summary: "Executive briefing across life stewardship, business review, and strategic planning",
   required_modules: [],
-  tags: ["coaching", "executive", "briefing", "stewardship", "strategic planning", "review"],
+  tags: ["leadership", "executive", "briefing", "stewardship", "strategic planning", "review"],
   fields: [
     // Section 1: Header
     { label: "Briefing Name", field_type: "short_text", is_required: false, helper_text: "Optional title for this briefing", sort_order: 0 },
@@ -773,12 +772,12 @@ export const executiveBriefingForm: FormTemplate = {
 export const briefingExecutiveSummaryForm: FormTemplate = {
   id: "generic_briefing_executive_summary",
   type: "form",
-  category: "coaching",
+  category: "knowledge_management",
   title: "Briefing Executive Summary",
   description: "Executive summary reflection for leadership and company review. Captures personal background, family overview, and company state for annual reviews and planning.",
   summary: "Executive reflection covering personal, family, and company overview",
   required_modules: [],
-  tags: ["coaching", "executive", "summary", "reflection", "annual", "review"],
+  tags: ["leadership", "executive", "summary", "reflection", "annual", "review"],
   fields: [
     // Section 1: Header
     { label: "Member Name", field_type: "short_text", is_required: true, helper_text: "Your full name", sort_order: 0 },
@@ -818,24 +817,13 @@ export const allTemplates: StarterTemplate[] = [
   meetingEffectivenessSurvey,
   // Knowledge Management
   sopLifecycleWorkflow,
-  // Coaching
-  annualGoalsPortfolioForm,
-  keyLeaderMemberCovenantForm,
-  executiveMembershipApplicationForm,
-  businessPlanOrganizerForm,
-  briefingQuestionnaireTeamForm,
-  briefingQuestionnaireSpouseForm,
-  keyLeaderBriefingForm,
-  executiveBriefingForm,
-  briefingExecutiveSummaryForm,
 ];
 
 export const templatesByCategory: Record<TemplateCategory, StarterTemplate[]> = {
   employee_lifecycle: [onboardingIntakeForm, onboardingWorkflow, exitSurveyForm, offboardingWorkflow],
   requests: [itSupportRequestForm, itSupportWorkflow, facilitiesRequestForm, facilitiesWorkflow, hrRequestForm, hrRequestWorkflow],
   surveys: [pulseSurveyForm, trainingFeedbackForm, meetingEffectivenessSurvey],
-  coaching: [annualGoalsPortfolioForm, keyLeaderMemberCovenantForm, executiveMembershipApplicationForm, businessPlanOrganizerForm, briefingQuestionnaireTeamForm, briefingQuestionnaireSpouseForm, keyLeaderBriefingForm, executiveBriefingForm, briefingExecutiveSummaryForm],
-  knowledge_management: [sopLifecycleWorkflow],
+    knowledge_management: [sopLifecycleWorkflow],
 };
 
 export const categoryLabels: Record<TemplateCategory, { label: string; description: string }> = {
@@ -850,10 +838,6 @@ export const categoryLabels: Record<TemplateCategory, { label: string; descripti
   surveys: { 
     label: "Surveys", 
     description: "Pulse surveys, training feedback, and engagement forms" 
-  },
-  coaching: { 
-    label: "Coaching", 
-    description: "Coaching and development workflow templates" 
   },
   knowledge_management: { 
     label: "Knowledge Management", 

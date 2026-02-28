@@ -11,6 +11,7 @@ Reference:
 - `docs/ARCHITECTURE.md`
 - `docs/CONTRIBUTING.md`
 - `docs/DEPLOYMENT.md`
+- `docs/HIPAA_COMPLIANCE_BASELINE.md`
 - `docs/SUPABASE.md`
 - `docs/INTEGRATIONS.md`
 - `docs/RELEASES.md`
