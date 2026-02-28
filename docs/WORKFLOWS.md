@@ -1,9 +1,11 @@
 # Workflows
 
+See also: `docs/WORKFLOW_2_COMPUTERS.md` for the cloud-first two-laptop workflow (Supabase DEV/PROD + Vercel Preview promotion path).
+
 ## Local Dev
 ```bash
 npm i              # install dependencies
-npm run dev        # start Vite dev server (http://localhost:5173)
+npm run dev        # start Vite dev server (http://localhost:3002, strict port)
 npm run build      # production build (output: dist/)
 npm run build:dev  # development-mode build (useful for debugging)
 npm run preview    # serve the production build locally
@@ -56,3 +58,9 @@ See `docs/AI_PHASE1_SETUP.md` for the full checklist. Summary:
 3. Set edge function secrets in Supabase dashboard (see `docs/ENVIRONMENT.md`).
 4. Enable OpenAI integration per company via `company_integrations` + `manage-integration-secret`.
 5. Set `ai_enabled = true` in `company_ai_settings` for each target company.
+
+## How To Use It Now (Workflows for Testing)
+1. Go to `/app/workflows` -> `Templates` -> `Surveys` and add `Patient Exit Survey Follow-Up`.
+2. Open that workflow and start a run.
+3. Select `Target Employee` (must have email) and optionally `Patient Name`.
+4. Start workflow. Assignment email is sent with the live `/exit-survey` link using your template.

@@ -12,6 +12,7 @@
 - [ ] SECURITY/HIPAA: Confirm data classification (PHI/PII scope) and required compliance targets; document in `docs/SECURITY_ADVISOR_NOTES.md` or new compliance doc.
 - [ ] SECURITY/HIPAA: Add audit logging for high-sensitivity read events (submission detail view, patient profile lookups) after retention policy decision.
 - [ ] SECURITY/HIPAA: Add audit trail filters for actor email and action prefix presets (exit_survey.*, employee.*, integration.*).
+- [ ] 2026-02-28 reminder: copy `docs/WORKFLOW_2_COMPUTERS.md` baseline process into other active project repos.
 
 ## Discussion (Security / HIPAA / PII)
 - [ ] Decide where cron runs (Supabase Scheduled Functions vs external) and confirm logging/monitoring for scheduled jobs.
