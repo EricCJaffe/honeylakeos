@@ -37,6 +37,19 @@ Set in the Supabase dashboard under **Project Settings → Edge Functions → Se
 
 ---
 
+## CLI Tokens (for service linking)
+
+| Token | Purpose | Where to generate |
+|---|---|---|
+| `VERCEL_TOKEN` | Vercel CLI auth (link, deploy, env sync) | https://vercel.com/account/tokens |
+| `SUPABASE_ACCESS_TOKEN` | Supabase CLI auth (link, migrations, functions) | https://supabase.com/dashboard/account/tokens |
+
+These are developer credentials — do not commit them. Pass via environment or `--token` flag.
+
+Run `./scripts/setup-services.sh` with both tokens set to link both CLIs in one step.
+
+---
+
 ## Local Setup Notes
 - Vite reads `VITE_*` variables at build time from `.env` or `.env.local`.
 - Do not commit `.env` to git — it is already in `.gitignore`.
