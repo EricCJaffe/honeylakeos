@@ -27,5 +27,6 @@ dist-ssr
 supabase/.temp/
 .vercel
 .env*.local
+CLAUDE.local.md
 .npm-cache/
 .npm-tmp/
