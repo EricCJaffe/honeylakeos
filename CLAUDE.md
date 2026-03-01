@@ -1,22 +1,5 @@
 # HoneylakeOS
 
-## On Session Start
-
-Read these docs to load project context before doing any work:
-
-1. `docs/CONTEXT.md` — purpose, tech stack, entry points, module system
-2. `docs/ENVIRONMENT.md` — env vars (Vite build-time vs Supabase secrets)
-3. `docs/TASKS.md` — active tasks, backlog, and completed work
-4. `docs/RUNBOOK.md` — operational procedures
-5. Scan `docs/DECISIONS/` for any ADRs relevant to the current task
-
-If the session involves a specific subsystem, also read:
-- Exit survey work → `docs/DECISIONS/0007-exit-survey-architecture.md`
-- AI features → `docs/AI_PHASE1_SETUP.md`, `docs/AI_PHASE2_SETUP.md`
-- Deployment → `docs/DEPLOYMENT.md`
-- Supabase schema/functions → `docs/SUPABASE.md`
-- Security/compliance → `docs/HIPAA_COMPLIANCE_BASELINE.md`
-
 ## Build & Test Commands
 
 - `npm run dev` — local dev server (Vite)
@@ -90,7 +73,56 @@ scripts/            # One-off and utility scripts
 - All cron jobs stay disabled until explicit go-live cutover
 - Run `npm run test` before committing to catch regressions
 
-## On Session End
+## Daily Workflow Prompts (for the developer)
+
+### Starting your day (new machine or new session)
+
+Say one of these:
+
+> "Pull latest and get up to speed"
+
+or
+
+> "Start of day — pull latest from main, read the project docs, and tell me where we left off"
+
+This tells Claude to:
+1. `git pull origin main` to get the latest code
+2. Read `CONTEXT.md`, `ENVIRONMENT.md`, `TASKS.md`, `RUNBOOK.md`, and any relevant ADRs
+3. Summarize what's in progress and what's next
+
+### Ending your day (closing out a session)
+
+Say one of these:
+
+> "End of day — commit, push, and update tasks"
+
+or
+
+> "Close out for the day"
+
+This tells Claude to:
+1. Update `docs/TASKS.md` with any completed or newly discovered work
+2. Commit all changes with clear messages
+3. Push to the working branch (usually `main`)
+4. Give you a summary of what was done and what's next
+
+## On Session Start (Claude instructions)
+
+Read these docs automatically to load project context before doing any work:
+1. `docs/CONTEXT.md` — purpose, tech stack, entry points, module system
+2. `docs/ENVIRONMENT.md` — env vars (Vite build-time vs Supabase secrets)
+3. `docs/TASKS.md` — active tasks, backlog, and completed work
+4. `docs/RUNBOOK.md` — operational procedures
+5. Scan `docs/DECISIONS/` for any ADRs relevant to the current task
+
+If the session involves a specific subsystem, also read:
+- Exit survey work → `docs/DECISIONS/0007-exit-survey-architecture.md`
+- AI features → `docs/AI_PHASE1_SETUP.md`, `docs/AI_PHASE2_SETUP.md`
+- Deployment → `docs/DEPLOYMENT.md`
+- Supabase schema/functions → `docs/SUPABASE.md`
+- Security/compliance → `docs/HIPAA_COMPLIANCE_BASELINE.md`
+
+## On Session End (Claude instructions)
 
 Before ending a session with meaningful changes:
 1. Ensure `docs/TASKS.md` reflects any completed or newly discovered work
