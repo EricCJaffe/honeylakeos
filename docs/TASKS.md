@@ -9,8 +9,8 @@
 - [ ] SECURITY/HIPAA: Finalize secure email content policy (PHI in emails vs summary-only default) now that PHI-safe email mode toggle is shipped.
 
 ## Active
-- [x] Run `./scripts/setup-services.sh` with Vercel + Supabase tokens to link CLIs (2026-03-01).
-- [ ] Keep all automation cron jobs disabled until go-live; use Test buttons/manual invokes only.
+- [x] ~~Run `./scripts/setup-services.sh` with Vercel + Supabase tokens to link CLIs~~ — not needed (2026-03-01).
+- [x] Cron jobs configured in Supabase; kept disabled until go-live (2026-03-02).
 - [ ] At go-live cutover, activate production cron for `exit-survey-scheduler` (recommended every 15 minutes with `{ "mode": "all" }`).
 - [ ] Exit Survey: validate new `Advanced Reports` tab against real data and confirm KPI definitions with leadership.
 - [ ] Define department color configuration (per-deployment mapping vs fixed palette) and implement in leadership dashboard.
