@@ -5,7 +5,7 @@
 - [x] SECURITY/HIPAA: Confirm data classification (PHI/PII scope) and required compliance targets (`docs/HIPAA_COMPLIANCE_BASELINE.md`) (2026-02-27).
 - [x] SECURITY/HIPAA: Add audit logging for high-sensitivity read events (exit survey submission detail page: `exit_survey.submission_viewed`) (2026-02-28).
 - [x] SECURITY/HIPAA: Add audit trail filters for actor email in audit viewer (2026-02-28).
-- [ ] SECURITY/HIPAA: Decide retention/deletion policy for survey submissions, alerts, and exports.
+- [x] SECURITY/HIPAA: Decide retention/deletion policy for survey submissions, alerts, and exports — 90-day archive-only policy implemented (2026-03-03).
 - [ ] SECURITY/HIPAA: Finalize secure email content policy (PHI in emails vs summary-only default) now that PHI-safe email mode toggle is shipped.
 
 ## Active
@@ -35,18 +35,24 @@
 - [ ] Decide on secure email content policy (PHI in emails vs summary-only).
 
 ## Phase 2 (Security / HIPAA)
-- [ ] Implement data retention automation (auto-archive / purge by policy).
+- [x] Implement data retention automation (90-day archive policy with `archived_at` soft-delete) (2026-03-03).
 - [ ] Implement field-level encryption for patient identifiers if required.
 - [ ] Implement access review workflow (periodic user access certification).
 - [ ] Enable `sop-review-reminders` cron schedule at go-live after dry-run validation.
 - [ ] Test login to Honey Lake as a company — verify auth and app load work end-to-end.
 - [ ] Set the modules Honey Lake will be using — configure feature flags in `feature_flags` table for their company.
 
+## Manual Testing / Review (post-implementation)
+- [ ] REVIEW: Recommendations page (`/app/recommendations`) — verify it loads, filters work, accept/decline flow works with real or seeded `coach_recommendations` data.
+- [ ] REVIEW: Recommendation email notifications — deploy `recommendation-notify` edge function, invoke with a test `recommendation_id`, verify email arrives with correct content.
+- [ ] REVIEW: Dashboard framework widget — confirm concept/cadence counts display correctly for the adopted framework on `/app` dashboard.
+- [ ] REVIEW: Dashboard quick stats — verify "Active Projects" and "Pending Tasks" counts reflect real data (no longer hardcoded).
+- [ ] REVIEW: Data retention automation — set retention mode to `archive_only` in Exit Survey Settings, run a dry-run scan, then test apply with `{ "dry_run": false, "apply": true }` and confirm records get `archived_at` timestamps.
+- [ ] REVIEW: Archived records hidden — after archiving, confirm archived submissions and alerts no longer appear in the Submissions and Alerts tabs.
+- [ ] REVIEW: Virus scanning on attachment uploads (`src/hooks/useAttachments.ts:68`) — requires more sophisticated implementation; deferred to future sprint.
+
 ## Backlog
-- [ ] Recommendation history view.
 - [ ] Advanced reporting dashboard.
-- [ ] Email notifications for recommendations.
-- [ ] Framework concept/cadence counts on dashboard.
 - [ ] Virus scanning on attachment uploads (`src/hooks/useAttachments.ts:68`).
 
 ## Done
@@ -86,6 +92,11 @@
 - [x] De-scoped: External calendar sync (Google, Outlook) (not needed) (2026-02-27).
 - [x] De-scoped: Plaid banking integration (not needed) (2026-02-27).
 - [x] Hard-delete sweep: removed remaining legacy module references from onboarding, templates, plan usage, and capability labels (2026-02-28).
+- [x] Recommendation history view: new page at `/app/recommendations` with filtering, accept/decline flow, and summary cards (2026-03-03).
+- [x] Email notifications for recommendations: new `recommendation-notify` edge function sends Resend email to company admins when recommendation is created (2026-03-03).
+- [x] Framework concept/cadence counts on dashboard: `FrameworkSummaryWidget` on main dashboard showing active concept/cadence counts and breakdown (2026-03-03).
+- [x] Dashboard quick stats now use real data (project count + task count) instead of hardcoded values (2026-03-03).
+- [x] Data retention automation: upgraded `exit-survey-retention` from scaffold to working archive-only mode with 90-day default; added `archived_at` columns to submissions/alerts; UI queries filter out archived records (2026-03-03).
 
 ## Conventions
 - Keep tasks small and outcome-focused.

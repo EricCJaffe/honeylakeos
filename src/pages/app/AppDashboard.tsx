@@ -18,6 +18,7 @@ import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { supabase } from "@/integrations/supabase/client";
 import { TaskFormDialog } from "./tasks/TaskFormDialog";
 import DeferredTasksPanel from "./admin/site-console/DeferredTasksPanel";
+import { FrameworkSummaryWidget } from "@/components/frameworks/FrameworkSummaryWidget";
 
 
 type Task = {
@@ -126,6 +127,24 @@ export default function AppDashboard() {
     enabled: !!activeCompanyId && !!user?.id,
   });
 
+  // Fetch real project count
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: projectCount } = useQuery({
+    queryKey: ["dashboard-project-count", activeCompanyId],
+    queryFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const client = supabase as any;
+      const { count, error } = await client
+        .from("projects")
+        .select("id", { count: "exact", head: true })
+        .eq("company_id", activeCompanyId)
+        .in("status", ["active", "in_progress", "planning"]);
+      if (error) return 0;
+      return count || 0;
+    },
+    enabled: !!activeCompanyId,
+  });
+
   // Categorize tasks
   const today = startOfDay(new Date());
   
@@ -183,11 +202,11 @@ export default function AppDashboard() {
         </p>
       </motion.div>
 
-      {/* Quick Stats - removed Documents and Team Members */}
+      {/* Quick Stats */}
       <div className="grid sm:grid-cols-2 gap-4 mb-8">
         {[
-          { label: "Active Projects", value: "12" },
-          { label: "Pending Tasks", value: "24" },
+          { label: "Active Projects", value: String(projectCount ?? 0) },
+          { label: "Pending Tasks", value: String(tasks.length) },
         ].map((stat, index) => (
           <motion.div
             key={stat.label}
@@ -204,6 +223,16 @@ export default function AppDashboard() {
           </motion.div>
         ))}
       </div>
+
+      {/* Framework Summary Widget */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="mb-8"
+      >
+        <FrameworkSummaryWidget />
+      </motion.div>
 
       {/* Tasks Overview Section */}
       <motion.div

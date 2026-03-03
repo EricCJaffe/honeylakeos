@@ -19,6 +19,8 @@ type CompanyResult = {
   alerts_cutoff: string;
   submissions_candidates: number;
   alerts_candidates: number;
+  submissions_archived: number;
+  alerts_archived: number;
   applied: boolean;
   note?: string;
 };
@@ -108,50 +110,112 @@ serve(async (req: Request): Promise<Response> => {
           alerts_cutoff: new Date().toISOString(),
           submissions_candidates: 0,
           alerts_candidates: 0,
+          submissions_archived: 0,
+          alerts_archived: 0,
           applied: false,
           note: "Retention mode is off",
         });
         continue;
       }
 
-      const submissionsDays = parsePositiveInt(settingsMap.get("retention_submissions_days"), 365);
-      const alertsDays = parsePositiveInt(settingsMap.get("retention_alerts_days"), 180);
+      // Default to 90-day archive window
+      const submissionsDays = parsePositiveInt(settingsMap.get("retention_submissions_days"), 90);
+      const alertsDays = parsePositiveInt(settingsMap.get("retention_alerts_days"), 90);
 
       const submissionsCutoff = new Date();
       submissionsCutoff.setDate(submissionsCutoff.getDate() - submissionsDays);
       const alertsCutoff = new Date();
       alertsCutoff.setDate(alertsCutoff.getDate() - alertsDays);
 
+      // Count candidates (not yet archived, older than cutoff)
       const [{ count: submissionsCount, error: submissionsError }, { count: alertsCount, error: alertsError }] = await Promise.all([
         supabase
           .from("exit_survey_submissions")
           .select("id", { count: "exact", head: true })
           .eq("company_id", companyId)
+          .is("archived_at", null)
           .lte("submitted_at", submissionsCutoff.toISOString()),
         supabase
           .from("exit_survey_alerts")
           .select("id", { count: "exact", head: true })
           .eq("company_id", companyId)
+          .is("archived_at", null)
           .lte("created_at", alertsCutoff.toISOString()),
       ]);
 
       if (submissionsError) throw submissionsError;
       if (alertsError) throw alertsError;
 
-      // Safety scaffold: this function only reports candidates for now.
-      const canApply = apply && !dryRun && mode !== "off";
+      const candidateSubmissions = submissionsCount || 0;
+      const candidateAlerts = alertsCount || 0;
+
+      // Apply archive if requested and mode allows
+      const canApply = apply && !dryRun && mode === "archive_only";
+      let archivedSubmissions = 0;
+      let archivedAlerts = 0;
+
+      if (canApply) {
+        const archiveTimestamp = new Date().toISOString();
+
+        // Archive submissions older than cutoff that haven't been archived yet
+        if (candidateSubmissions > 0) {
+          const { data: archivedSubs, error: archSubError } = await supabase
+            .from("exit_survey_submissions")
+            .update({ archived_at: archiveTimestamp })
+            .eq("company_id", companyId)
+            .is("archived_at", null)
+            .lte("submitted_at", submissionsCutoff.toISOString())
+            .select("id");
+
+          if (archSubError) {
+            console.error("Error archiving submissions:", archSubError);
+          } else {
+            archivedSubmissions = archivedSubs?.length || 0;
+          }
+        }
+
+        // Archive alerts older than cutoff that haven't been archived yet
+        if (candidateAlerts > 0) {
+          const { data: archivedAlts, error: archAltError } = await supabase
+            .from("exit_survey_alerts")
+            .update({ archived_at: archiveTimestamp })
+            .eq("company_id", companyId)
+            .is("archived_at", null)
+            .lte("created_at", alertsCutoff.toISOString())
+            .select("id");
+
+          if (archAltError) {
+            console.error("Error archiving alerts:", archAltError);
+          } else {
+            archivedAlerts = archivedAlts?.length || 0;
+          }
+        }
+
+        console.log(`[retention] company=${companyId} archived ${archivedSubmissions} submissions, ${archivedAlerts} alerts`);
+      }
+
+      let note: string;
+      if (canApply) {
+        note = `Archive applied: ${archivedSubmissions} submissions, ${archivedAlerts} alerts archived.`;
+      } else if (mode === "dry_run") {
+        note = `Dry-run scan: ${candidateSubmissions} submissions, ${candidateAlerts} alerts eligible for archiving.`;
+      } else if (!apply || dryRun) {
+        note = "Dry-run candidate scan completed.";
+      } else {
+        note = `Mode "${mode}" does not support apply. Use archive_only.`;
+      }
 
       results.push({
         company_id: companyId,
         mode,
         submissions_cutoff: submissionsCutoff.toISOString(),
         alerts_cutoff: alertsCutoff.toISOString(),
-        submissions_candidates: submissionsCount || 0,
-        alerts_candidates: alertsCount || 0,
-        applied: false,
-        note: canApply
-          ? "Apply requested; destructive retention actions are intentionally disabled in this scaffold."
-          : "Dry-run candidate scan completed.",
+        submissions_candidates: candidateSubmissions,
+        alerts_candidates: candidateAlerts,
+        submissions_archived: archivedSubmissions,
+        alerts_archived: archivedAlerts,
+        applied: canApply,
+        note,
       });
     }
 
