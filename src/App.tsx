@@ -118,7 +118,7 @@ const DepartmentDetailPage = React.lazy(() => import("@/pages/app/departments/De
 const TemplateFormPage = React.lazy(() => import("@/pages/app/forms/TemplateFormPage"));
 const FormSubmissionsListPage = React.lazy(() => import("@/pages/app/forms/FormSubmissionsListPage"));
 const FormSubmissionDetailPage = React.lazy(() => import("@/pages/app/forms/FormSubmissionDetailPage"));
-const RecommendationsPage = React.lazy(() => import("@/pages/app/recommendations/RecommendationsPage"));
+
 
 const queryClient = new QueryClient();
 
@@ -256,7 +256,6 @@ function App() {
                     <Route path="finance/receipts" element={<ModuleGuard moduleKey="finance" moduleName="Finance"><ReceiptsPage /></ModuleGuard>} />
                     <Route path="finance/accounts" element={<ModuleGuard moduleKey="finance" moduleName="Finance"><ChartOfAccountsPage /></ModuleGuard>} />
                     <Route path="donors" element={<ModuleGuard moduleKey="donors" moduleName="Donors"><DonorsPage /></ModuleGuard>} />
-                    <Route path="recommendations" element={<RecommendationsPage />} />
                     <Route path="reports" element={<ReportsPage />} />
                     <Route path="reports/new" element={<ReportFormPage />} />
                     <Route path="reports/exports" element={<ExportsPage />} />
