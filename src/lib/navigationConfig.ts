@@ -33,6 +33,7 @@ import {
   Workflow,
   Inbox,
   Briefcase,
+  Lightbulb,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ModuleKey } from "@/hooks/useModuleAccess";
@@ -154,6 +155,7 @@ export const baseNavigationSections: NavSection[] = [
       { key: "workflows", title: "Workflows", url: "/app/workflows", icon: Workflow, moduleKey: "workflows" },
       { key: "board-meetings", title: "Board Meetings", url: "/app/board", icon: Gavel, moduleKey: "board_meetings" },
       { key: "exit-survey", title: "Exit Survey", url: "/app/exit-survey", icon: ClipboardCheck },
+      { key: "recommendations", title: "Recommendations", url: "/app/recommendations", icon: Lightbulb },
     ],
     hideIfEmpty: true,
   },

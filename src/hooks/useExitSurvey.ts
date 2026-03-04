@@ -187,6 +187,7 @@ export function useExitSurveySubmissions(
         .from("exit_survey_submissions")
         .select("*", { count: "exact" })
         .eq("company_id", activeCompanyId)
+        .is("archived_at", null)
         .order("submitted_at", { ascending: false });
 
       // Date filter
@@ -268,6 +269,7 @@ export function useExitSurveyAlerts(
         .from("exit_survey_alerts")
         .select("*, exit_survey_questions(text, category, department, owner_name), exit_survey_submissions(patient_first_name, patient_last_name, submitted_at)")
         .eq("company_id", activeCompanyId)
+        .is("archived_at", null)
         .order("created_at", { ascending: false });
 
       if (status) {
@@ -398,7 +400,8 @@ export function useExitSurveyKPIs(dateFilter: DateFilter = "30d", customRange?: 
       let query = supabase
         .from("exit_survey_submissions")
         .select("overall_average, kpi_avg")
-        .eq("company_id", activeCompanyId);
+        .eq("company_id", activeCompanyId)
+        .is("archived_at", null);
 
       if (dateFilter === "custom" && customRange?.start && customRange?.end) {
         query = query

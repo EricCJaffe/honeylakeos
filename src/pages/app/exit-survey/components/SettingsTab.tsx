@@ -132,8 +132,8 @@ export function SettingsTab() {
   const [reminderTimezone, setReminderTimezone] = useState("America/New_York");
   const [reminderDelayHours, setReminderDelayHours] = useState(72);
   const [retentionMode, setRetentionMode] = useState("off");
-  const [retentionSubmissionsDays, setRetentionSubmissionsDays] = useState(365);
-  const [retentionAlertsDays, setRetentionAlertsDays] = useState(180);
+  const [retentionSubmissionsDays, setRetentionSubmissionsDays] = useState(90);
+  const [retentionAlertsDays, setRetentionAlertsDays] = useState(90);
   const [retentionExportsDays, setRetentionExportsDays] = useState(90);
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
@@ -196,8 +196,8 @@ export function SettingsTab() {
     setReminderTimezone(settings.automation_reminder_timezone ?? "America/New_York");
     setReminderDelayHours(parseInt(settings.automation_reminder_delay_hours ?? "72", 10) || 72);
     setRetentionMode(settings.retention_mode ?? "off");
-    setRetentionSubmissionsDays(parseInt(settings.retention_submissions_days ?? "365", 10) || 365);
-    setRetentionAlertsDays(parseInt(settings.retention_alerts_days ?? "180", 10) || 180);
+    setRetentionSubmissionsDays(parseInt(settings.retention_submissions_days ?? "90", 10) || 90);
+    setRetentionAlertsDays(parseInt(settings.retention_alerts_days ?? "90", 10) || 90);
     setRetentionExportsDays(parseInt(settings.retention_exports_days ?? "90", 10) || 90);
   }, [settings]);
 
@@ -532,7 +532,7 @@ export function SettingsTab() {
           <CardHeader className="pb-2">
             <CollapsibleTrigger asChild>
               <button type="button" className="w-full flex items-center justify-between text-left">
-                <CardTitle className="text-sm font-semibold">Retention Policy (Scaffold)</CardTitle>
+                <CardTitle className="text-sm font-semibold">Retention Policy</CardTitle>
                 <ChevronDown className={`h-4 w-4 transition-transform ${open.retention ? "rotate-180" : ""}`} />
               </button>
             </CollapsibleTrigger>
@@ -540,7 +540,7 @@ export function SettingsTab() {
           <CollapsibleContent>
             <CardContent className="space-y-4">
               <p className="text-xs text-muted-foreground">
-                Configure retention windows and run dry-run scans. Destructive deletion is intentionally disabled in this phase.
+                Configure retention windows. In archive-only mode, records older than the retention window are soft-archived (hidden from views but preserved in the database). Default: 90 days.
               </p>
               <div className="grid md:grid-cols-4 gap-3">
                 <Select value={retentionMode} onValueChange={(v) => { setRetentionMode(v); setDirty(true); }}>
@@ -548,21 +548,21 @@ export function SettingsTab() {
                   <SelectContent>
                     <SelectItem value="off">Off</SelectItem>
                     <SelectItem value="dry_run">Dry-run only</SelectItem>
-                    <SelectItem value="archive_only">Archive-only (future)</SelectItem>
+                    <SelectItem value="archive_only">Archive-only</SelectItem>
                   </SelectContent>
                 </Select>
                 <Input
                   type="number"
                   min={30}
                   value={String(retentionSubmissionsDays)}
-                  onChange={(e) => { setRetentionSubmissionsDays(Number(e.target.value) || 365); setDirty(true); }}
+                  onChange={(e) => { setRetentionSubmissionsDays(Number(e.target.value) || 90); setDirty(true); }}
                   placeholder="Submission days"
                 />
                 <Input
                   type="number"
                   min={30}
                   value={String(retentionAlertsDays)}
-                  onChange={(e) => { setRetentionAlertsDays(Number(e.target.value) || 180); setDirty(true); }}
+                  onChange={(e) => { setRetentionAlertsDays(Number(e.target.value) || 90); setDirty(true); }}
                   placeholder="Alert days"
                 />
                 <Input
