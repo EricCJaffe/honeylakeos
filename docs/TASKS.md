@@ -5,12 +5,10 @@
 - [x] SECURITY/HIPAA: Confirm data classification (PHI/PII scope) and required compliance targets (`docs/HIPAA_COMPLIANCE_BASELINE.md`) (2026-02-27).
 - [x] SECURITY/HIPAA: Add audit logging for high-sensitivity read events (exit survey submission detail page: `exit_survey.submission_viewed`) (2026-02-28).
 - [x] SECURITY/HIPAA: Add audit trail filters for actor email in audit viewer (2026-02-28).
-- [x] SECURITY/HIPAA: Decide retention/deletion policy for survey submissions, alerts, and exports — 90-day archive-only policy implemented (2026-03-03).
+- [x] SECURITY/HIPAA: Decide retention/deletion policy for survey submissions, alerts, and exports — 90-day archive policy implemented (2026-03-03).
 - [ ] SECURITY/HIPAA: Finalize secure email content policy (PHI in emails vs summary-only default) now that PHI-safe email mode toggle is shipped.
 
 ## Active
-- [x] ~~Run `./scripts/setup-services.sh` with Vercel + Supabase tokens to link CLIs~~ — not needed (2026-03-01).
-- [x] Cron jobs configured in Supabase; kept disabled until go-live (2026-03-02).
 - [ ] At go-live cutover, activate production cron for `exit-survey-scheduler` (recommended every 15 minutes with `{ "mode": "all" }`).
 - [ ] Exit Survey: validate new `Advanced Reports` tab against real data and confirm KPI definitions with leadership.
 - [ ] Define department color configuration (per-deployment mapping vs fixed palette) and implement in leadership dashboard.
@@ -24,7 +22,6 @@
 ## Discussion (Security / HIPAA / PII)
 - [ ] Decide where cron runs (Supabase Scheduled Functions vs external) and confirm logging/monitoring for scheduled jobs.
 - [ ] Confirm whether audit logging coverage is sufficient for PHI access (which tables/actions require audit entries).
-- [ ] Decide on data retention and deletion policies for survey submissions and alerts.
 - [ ] Decide on encryption scope at rest and in transit for PHI (Supabase storage, backups, and exports).
 - [ ] Decide on access controls for exit survey detail pages (role-based view restrictions).
 - [ ] Decide whether to mask/anonymize patient names by default in admin UI.
@@ -35,7 +32,6 @@
 - [ ] Decide on secure email content policy (PHI in emails vs summary-only).
 
 ## Phase 2 (Security / HIPAA)
-- [x] Implement data retention automation (90-day archive policy with `archived_at` soft-delete) (2026-03-03).
 - [ ] Implement field-level encryption for patient identifiers if required.
 - [ ] Implement access review workflow (periodic user access certification).
 - [ ] Enable `sop-review-reminders` cron schedule at go-live after dry-run validation.
@@ -43,8 +39,6 @@
 - [ ] Set the modules Honey Lake will be using — configure feature flags in `feature_flags` table for their company.
 
 ## Manual Testing / Review (post-implementation)
-- [ ] REVIEW: Recommendations page (`/app/recommendations`) — verify it loads, filters work, accept/decline flow works with real or seeded `coach_recommendations` data.
-- [ ] REVIEW: Recommendation email notifications — deploy `recommendation-notify` edge function, invoke with a test `recommendation_id`, verify email arrives with correct content.
 - [ ] REVIEW: Dashboard framework widget — confirm concept/cadence counts display correctly for the adopted framework on `/app` dashboard.
 - [ ] REVIEW: Dashboard quick stats — verify "Active Projects" and "Pending Tasks" counts reflect real data (no longer hardcoded).
 - [ ] REVIEW: Data retention automation — set retention mode to `archive_only` in Exit Survey Settings, run a dry-run scan, then test apply with `{ "dry_run": false, "apply": true }` and confirm records get `archived_at` timestamps.
@@ -56,47 +50,44 @@
 - [ ] Virus scanning on attachment uploads (`src/hooks/useAttachments.ts:68`).
 
 ## Done
-- [x] Add branding to customer-facing public patient exit survey form (`/exit-survey`) including logo, typography, colors, and footer treatment (2026-02-27).
-- [x] Upgrade admin audit log views to the paginated `AuditLogViewer` in Company Console + `/app/admin/audit-log` (2026-02-27).
-- [x] Add exit-survey audit events for settings/template changes, assignment actions, and test trigger runs (2026-02-27).
-- [x] Add audit action-prefix presets in audit viewer (`exit_survey.*`, `employee.*`, `integration.*`) (2026-02-27).
-- [x] 2026-02-28 reminder complete: copied `docs/WORKFLOW_2_COMPUTERS.md` baseline process for reuse across projects (2026-02-27).
-- [x] Build and add the patient exit survey workflow for Honey Lake in `/app/workflows` with assignment-email trigger support (2026-02-27).
-- [x] Implement `exit-survey-scheduler` dispatcher and set reminder cadence to 72 hours (2026-02-27).
-- [x] Wire scheduler to Exit Survey Settings automation controls (enable toggles, day/time/timezone, once-per-day local-date guard) (2026-02-27).
-- [x] Add AI-assisted editing for exit survey email templates (plain-language prompt -> updated subject/body draft) (2026-02-27).
-- [x] Fix crash when opening Exit Survey → Leadership tab (Trends screen). Error: `Cannot read properties of undefined (reading 'avg')` (2026-02-24).
-- [x] Fix data filtering on Leadership tab using PostgREST `!inner` hint for proper date range queries (2026-02-24).
-- [x] Add alert and comment functionality to submission detail pages (2026-02-24).
-- [x] Redesign alert comments as intuitive thread-style interface with type selection (2026-02-24).
-- [x] Enable leaked password protection in Supabase Auth (2026-02-24).
-- [x] Decide whether leadership feedback should be stored as structured fields vs comment text - using comment text with type prefixes for flexibility (2026-02-24).
-- [x] Test the email invite flow in production with Resend integration (2026-02-24).
-- [x] Customize exit survey email templates for branding with per-trigger HTML/text variables editable in Settings (2026-02-27).
-- [x] De-scoped: Framework diff viewer for version comparison (not needed) (2026-02-27).
-- [x] Exit Survey: add initial `Advanced Reports` tab with date filters, department/owner performance breakdown, and CSV export (2026-02-27).
-- [x] SECURITY/HIPAA: Add PHI-safe email mode setting and enforce redaction in `exit-survey-notify`, `exit-survey-reminders`, and `exit-survey-weekly-digest` (2026-02-28).
-- [x] Company Console: add `Security` tab with minimum security baseline panel (PHI-safe mode status, submission-view audit activity, SSO configured check, manual verification prompts) (2026-02-28).
+- [x] Fix: added missing `archived_at` columns to `exit_survey_submissions` and `exit_survey_alerts` tables in production DB — deployed code filtered on these columns but migration was never applied, causing all submission/alert queries to fail silently (2026-03-05).
+- [x] Synced local `main` branch with `origin/main` — local was behind by 20 commits (2026-03-05).
+- [x] Remove Recommendations page and sidebar nav item — coaching is not active on this site (2026-03-05).
+- [x] Optimize CLAUDE.md for token efficiency (2026-03-05).
+- [x] Data retention automation: upgraded `exit-survey-retention` from scaffold to working archive-only mode with 90-day default; added `archived_at` columns to submissions/alerts; UI queries filter out archived records (2026-03-03).
+- [x] Recommendation history view: new page at `/app/recommendations` with filtering, accept/decline flow, and summary cards (2026-03-03). *Later removed — coaching not active.*
+- [x] Email notifications for recommendations: new `recommendation-notify` edge function (2026-03-03). *Later removed — coaching not active.*
+- [x] Framework concept/cadence counts on dashboard: `FrameworkSummaryWidget` on main dashboard (2026-03-03).
+- [x] Dashboard quick stats now use real data (project count + task count) instead of hardcoded values (2026-03-03).
+- [x] Cron jobs configured in Supabase; kept disabled until go-live (2026-03-02).
+- [x] Retention scaffold: add retention policy settings + `exit-survey-retention` dry-run function integration (2026-02-28).
+- [x] SOP reminder hardening: add scheduler-secret support + dry-run mode in `sop-review-reminders` function (2026-02-28).
+- [x] Hard-delete sweep: removed remaining legacy module references from onboarding, templates, plan usage, and capability labels (2026-02-28).
 - [x] Exit Survey Settings: add collapsible Email Template Manager with rich HTML editing, variable detection, preview, and test send controls (2026-02-28).
 - [x] Exit Survey Settings: add Automation Trigger Rules controls (per-trigger on/off, schedule fields, dry-run/test buttons) (2026-02-28).
 - [x] Exit Survey UI: add PHI-safe mode badges and name masking/reveal controls across Submissions, Alerts, and Leadership tabs (2026-02-28).
 - [x] Audit Viewer: add saved filter presets + metadata-enriched CSV export headers (2026-02-28).
 - [x] Employees (Company Console): add role/phone fields and active-row invite UX (`Resend Invite`, `Copy Invite Link`, `Reset Password`) (2026-02-28).
-- [x] Retention scaffold: add retention policy settings + `exit-survey-retention` dry-run function integration (2026-02-28).
-- [x] SOP reminder hardening: add scheduler-secret support + dry-run mode in `sop-review-reminders` function (2026-02-28).
-- [x] De-scoped: Stripe payment integration (not needed) (2026-02-27).
-- [x] De-scoped: Automated health score snapshots (not needed) (2026-02-27).
-- [x] De-scoped: Public framework marketplace (not needed) (2026-02-27).
-- [x] De-scoped: Usage-based billing (not needed) (2026-02-27).
-- [x] De-scoped: Multi-framework support per company (not needed) (2026-02-27).
-- [x] De-scoped: External calendar sync (Google, Outlook) (not needed) (2026-02-27).
-- [x] De-scoped: Plaid banking integration (not needed) (2026-02-27).
-- [x] Hard-delete sweep: removed remaining legacy module references from onboarding, templates, plan usage, and capability labels (2026-02-28).
-- [x] Recommendation history view: new page at `/app/recommendations` with filtering, accept/decline flow, and summary cards (2026-03-03).
-- [x] Email notifications for recommendations: new `recommendation-notify` edge function sends Resend email to company admins when recommendation is created (2026-03-03).
-- [x] Framework concept/cadence counts on dashboard: `FrameworkSummaryWidget` on main dashboard showing active concept/cadence counts and breakdown (2026-03-03).
-- [x] Dashboard quick stats now use real data (project count + task count) instead of hardcoded values (2026-03-03).
-- [x] Data retention automation: upgraded `exit-survey-retention` from scaffold to working archive-only mode with 90-day default; added `archived_at` columns to submissions/alerts; UI queries filter out archived records (2026-03-03).
+- [x] Company Console: add `Security` tab with minimum security baseline panel (2026-02-28).
+- [x] SECURITY/HIPAA: Add PHI-safe email mode setting and enforce redaction in exit-survey email functions (2026-02-28).
+- [x] Add branding to customer-facing public patient exit survey form (`/exit-survey`) (2026-02-27).
+- [x] Upgrade admin audit log views to the paginated `AuditLogViewer` (2026-02-27).
+- [x] Add exit-survey audit events for settings/template changes, assignment actions, and test trigger runs (2026-02-27).
+- [x] Add audit action-prefix presets in audit viewer (2026-02-27).
+- [x] Build and add the patient exit survey workflow for Honey Lake (2026-02-27).
+- [x] Implement `exit-survey-scheduler` dispatcher and set reminder cadence to 72 hours (2026-02-27).
+- [x] Wire scheduler to Exit Survey Settings automation controls (2026-02-27).
+- [x] Add AI-assisted editing for exit survey email templates (2026-02-27).
+- [x] Customize exit survey email templates for branding (2026-02-27).
+- [x] Exit Survey: add initial `Advanced Reports` tab (2026-02-27).
+- [x] Fix crash when opening Exit Survey Leadership tab (2026-02-24).
+- [x] Fix data filtering on Leadership tab using PostgREST `!inner` hint (2026-02-24).
+- [x] Add alert and comment functionality to submission detail pages (2026-02-24).
+- [x] Redesign alert comments as intuitive thread-style interface (2026-02-24).
+- [x] Enable leaked password protection in Supabase Auth (2026-02-24).
+- [x] Test the email invite flow in production with Resend integration (2026-02-24).
+- [x] De-scoped: Stripe payment integration, automated health score snapshots, public framework marketplace, usage-based billing, multi-framework support, external calendar sync, Plaid banking integration, framework diff viewer (2026-02-27).
+- [x] Remove coaching and coaches modules from the codebase (2026-02-18).
 
 ## Conventions
 - Keep tasks small and outcome-focused.
