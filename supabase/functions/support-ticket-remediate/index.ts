@@ -36,20 +36,58 @@ function jsonResponse(payload: unknown, status = 200): Response {
 
 const PROJECT_CONVENTIONS = `
 ## HoneylakeOS Project Conventions
-- Framework: React 18 + Vite 5 + TypeScript (SPA, not Next.js)
-- Styling: Tailwind CSS + shadcn-ui (Radix primitives)
-- Components: src/components/ui/ for shadcn, src/components/ for app-specific
-- Data fetching: TanStack Query v5 hooks, never raw fetch() in components
-- Supabase client: src/integrations/supabase/client.ts
-- Types: src/integrations/supabase/types.ts (generated from DB schema)
-- Hooks: src/hooks/ directory, custom hooks prefixed with "use"
-- Pages: src/pages/app/ for authenticated routes
-- Import aliases: @/ maps to src/
+
+### Stack
+- React 18 + Vite 5 + TypeScript (SPA deployed on Vercel, NOT Next.js — no API routes, no server components)
+- Tailwind CSS with CSS variable-based theming (see color system below)
+- shadcn-ui components in src/components/ui/ (Radix primitives + cva variants)
+- TanStack Query v5 for data fetching — hooks in src/hooks/, never raw fetch() in components
+- Supabase client at src/integrations/supabase/client.ts
+- Import alias: @/ maps to src/
+
+### CSS / Tailwind Color System
+Colors use CSS variables with HSL values. DO NOT use hardcoded colors like bg-red-500.
+Instead, use the design system tokens:
+- primary, secondary, destructive, muted, accent, card, popover, background, foreground
+- sidebar-specific: sidebar, sidebar-foreground, sidebar-primary, sidebar-accent
+- chart colors: chart-1 through chart-5
+- Border radius uses --radius CSS variable (lg, md, sm)
+- Font: Inter + system-ui fallback
+
+If you need a new color variant (e.g., a red button), add it to the component's cva() variants
+using the destructive token (bg-destructive text-destructive-foreground) or Tailwind's built-in
+colors only when no semantic token applies.
+
+### shadcn-ui Button Component (src/components/ui/button.tsx)
+Uses cva() with variants: default, destructive, outline, secondary, ghost, link
+Sizes: default (h-9), sm (h-8), lg (h-10), xl (h-11), icon (h-9 w-9)
+To add a new variant, add it to buttonVariants in cva(). Do NOT create a separate button component.
+
+### File Structure
+- src/components/ui/ — shadcn primitives (Button, Card, Badge, Select, etc.)
+- src/components/ — app-specific components (layout/, support/, attachments/)
+- src/pages/app/ — authenticated route pages
+- src/pages/public/ — public pages
+- src/hooks/ — custom React hooks (camelCase: useXxx.ts)
+- src/lib/ — auth.tsx, membership.tsx, utils.ts, navigationConfig.ts
+- src/integrations/supabase/ — client.ts, types.ts
+- supabase/functions/ — Deno edge functions
+
+### Coding Rules
 - Functional components only, no class components
+- Never modify shadcn-ui component internals in a way that breaks the upgrade path
+- Use the cn() utility from @/lib/utils for conditional classNames
 - Zod for form validation
-- Edge functions: Deno runtime, supabase/functions/ directory
-- File naming: camelCase for hooks, PascalCase for components/pages
+- All pages are lazy-loaded in App.tsx
 `;
+
+// Key config files to auto-read from GitHub for better context
+const CONTEXT_FILES = [
+  "tailwind.config.ts",
+  "src/components/ui/button.tsx",
+  "src/App.tsx",
+  "tsconfig.json",
+];
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -136,15 +174,14 @@ Deno.serve(async (req) => {
 
     console.log(`[remediate] Starting remediation for ticket #${ticket.ticket_number}`);
 
-    // Step 1: Read affected files from GitHub
-    const fileContents: Array<{ path: string; content: string }> = [];
     const ghHeaders = {
       "Authorization": `Bearer ${githubToken}`,
       "Accept": "application/vnd.github.v3+json",
       "User-Agent": "HoneylakeOS-Remediation",
     };
 
-    for (const filePath of triage.affected_areas.slice(0, 5)) { // Cap at 5 files
+    // Helper: read a file from GitHub
+    async function readGitHubFile(filePath: string): Promise<string | null> {
       try {
         const resp = await fetch(
           `https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/${filePath}`,
@@ -154,16 +191,26 @@ Deno.serve(async (req) => {
           const fileData = await resp.json();
           if (fileData.content && fileData.encoding === "base64") {
             const decoded = atob(fileData.content.replace(/\n/g, ""));
-            // Truncate large files
-            const truncated = decoded.length > 8000 ? decoded.slice(0, 8000) + "\n\n[truncated]" : decoded;
-            fileContents.push({ path: filePath, content: truncated });
+            return decoded.length > 8000 ? decoded.slice(0, 8000) + "\n\n[truncated]" : decoded;
           }
-        } else {
-          console.log(`[remediate] Could not read file: ${filePath} (${resp.status})`);
         }
-      } catch (e) {
-        console.error(`[remediate] Error reading ${filePath}:`, e);
-      }
+        return null;
+      } catch { return null; }
+    }
+
+    // Step 1a: Read project context files for better understanding
+    const contextContents: Array<{ path: string; content: string }> = [];
+    for (const ctxPath of CONTEXT_FILES) {
+      const content = await readGitHubFile(ctxPath);
+      if (content) contextContents.push({ path: ctxPath, content });
+    }
+
+    // Step 1b: Read affected files from triage
+    const fileContents: Array<{ path: string; content: string }> = [];
+    for (const filePath of triage.affected_areas.slice(0, 5)) {
+      const content = await readGitHubFile(filePath);
+      if (content) fileContents.push({ path: filePath, content });
+      else console.log(`[remediate] Could not read: ${filePath}`);
     }
 
     // Step 2: Get OpenAI API key (same pattern as ai-gateway)
@@ -198,13 +245,20 @@ Deno.serve(async (req) => {
     }
 
     // Step 3: Call OpenAI for code generation
+    const contextBlock = contextContents.length > 0
+      ? "## Project Config Files (read-only reference — do NOT modify these unless the triage specifically says to)\n\n" +
+        contextContents.map(f => `### ${f.path}\n\`\`\`\n${f.content}\n\`\`\``).join("\n\n")
+      : "";
+
     const fileContextBlock = fileContents.length > 0
       ? fileContents.map(f => `### ${f.path}\n\`\`\`\n${f.content}\n\`\`\``).join("\n\n")
-      : "No files could be read from the repository.";
+      : "No affected files could be read from the repository.";
 
-    const aiPrompt = `You are a code remediation engine. Given a support ticket triage analysis and the current source files, generate the minimum code changes needed to fix the issue.
+    const aiPrompt = `You are a code remediation engine. Given a support ticket triage analysis, project config files, and the affected source files, generate the minimum code changes needed to fix the issue.
 
 ${PROJECT_CONVENTIONS}
+
+${contextBlock}
 
 ## Triage Analysis
 - Classification: ${triage.classification}
@@ -300,21 +354,76 @@ Rules:
       return jsonResponse({ error: "AI produced no code changes" }, 502);
     }
 
-    // Step 4: Create GitHub branch and PR
+    // Step 4: Create GitHub branch and PR (single atomic commit via Git Trees API)
     const branchName = `fix/support-${ticket.ticket_number}`;
+    const ghJsonHeaders = { ...ghHeaders, "Content-Type": "application/json" };
 
     // Get base branch SHA
     const baseRef = await fetch(
       `https://api.github.com/repos/${githubOwner}/${githubRepo}/git/ref/heads/main`,
       { headers: ghHeaders }
     );
-    if (!baseRef.ok) {
-      throw new Error(`Failed to get base branch: ${baseRef.status}`);
-    }
-    const baseRefData = await baseRef.json();
-    const baseSha = baseRefData.object.sha;
+    if (!baseRef.ok) throw new Error(`Failed to get base branch: ${baseRef.status}`);
+    const baseSha = (await baseRef.json()).object.sha;
 
-    // Create branch (delete first if exists)
+    // Get base commit's tree SHA
+    const baseCommit = await fetch(
+      `https://api.github.com/repos/${githubOwner}/${githubRepo}/git/commits/${baseSha}`,
+      { headers: ghHeaders }
+    );
+    if (!baseCommit.ok) throw new Error(`Failed to get base commit`);
+    const baseTreeSha = (await baseCommit.json()).tree.sha;
+
+    // Create blobs for each changed file
+    const treeItems: Array<{ path: string; mode: string; type: string; sha: string }> = [];
+    for (const change of remediation.changes) {
+      const blobResp = await fetch(
+        `https://api.github.com/repos/${githubOwner}/${githubRepo}/git/blobs`,
+        {
+          method: "POST",
+          headers: ghJsonHeaders,
+          body: JSON.stringify({ content: change.content, encoding: "utf-8" }),
+        }
+      );
+      if (!blobResp.ok) {
+        console.error(`[remediate] Failed to create blob for ${change.path}`);
+        continue;
+      }
+      const blob = await blobResp.json();
+      treeItems.push({ path: change.path, mode: "100644", type: "blob", sha: blob.sha });
+    }
+
+    if (treeItems.length === 0) throw new Error("No blobs created — cannot commit");
+
+    // Create tree with all changes
+    const treeResp = await fetch(
+      `https://api.github.com/repos/${githubOwner}/${githubRepo}/git/trees`,
+      {
+        method: "POST",
+        headers: ghJsonHeaders,
+        body: JSON.stringify({ base_tree: baseTreeSha, tree: treeItems }),
+      }
+    );
+    if (!treeResp.ok) throw new Error(`Failed to create tree: ${(await treeResp.json()).message}`);
+    const newTreeSha = (await treeResp.json()).sha;
+
+    // Create single commit
+    const commitResp = await fetch(
+      `https://api.github.com/repos/${githubOwner}/${githubRepo}/git/commits`,
+      {
+        method: "POST",
+        headers: ghJsonHeaders,
+        body: JSON.stringify({
+          message: remediation.commit_message,
+          tree: newTreeSha,
+          parents: [baseSha],
+        }),
+      }
+    );
+    if (!commitResp.ok) throw new Error(`Failed to create commit: ${(await commitResp.json()).message}`);
+    const newCommitSha = (await commitResp.json()).sha;
+
+    // Delete branch if exists, then create pointing to our commit
     const checkBranch = await fetch(
       `https://api.github.com/repos/${githubOwner}/${githubRepo}/git/ref/heads/${branchName}`,
       { headers: ghHeaders }
@@ -325,49 +434,15 @@ Rules:
         { method: "DELETE", headers: ghHeaders }
       );
     }
-
-    const createRef = await fetch(
+    const createRefResp = await fetch(
       `https://api.github.com/repos/${githubOwner}/${githubRepo}/git/refs`,
       {
         method: "POST",
-        headers: { ...ghHeaders, "Content-Type": "application/json" },
-        body: JSON.stringify({ ref: `refs/heads/${branchName}`, sha: baseSha }),
+        headers: ghJsonHeaders,
+        body: JSON.stringify({ ref: `refs/heads/${branchName}`, sha: newCommitSha }),
       }
     );
-    if (!createRef.ok) {
-      const err = await createRef.json();
-      throw new Error(`Failed to create branch: ${JSON.stringify(err)}`);
-    }
-
-    // Commit each file change
-    for (const change of remediation.changes) {
-      // Get current file SHA (needed for update)
-      const getFile = await fetch(
-        `https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/${change.path}?ref=${branchName}`,
-        { headers: ghHeaders }
-      );
-      const fileSha = getFile.ok ? (await getFile.json()).sha : undefined;
-
-      const putBody: Record<string, unknown> = {
-        message: remediation.commit_message,
-        content: btoa(unescape(encodeURIComponent(change.content))),
-        branch: branchName,
-      };
-      if (fileSha) putBody.sha = fileSha;
-
-      const putFile = await fetch(
-        `https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/${change.path}`,
-        {
-          method: "PUT",
-          headers: { ...ghHeaders, "Content-Type": "application/json" },
-          body: JSON.stringify(putBody),
-        }
-      );
-      if (!putFile.ok) {
-        const err = await putFile.json();
-        console.error(`[remediate] Failed to commit ${change.path}:`, err);
-      }
-    }
+    if (!createRefResp.ok) throw new Error(`Failed to create branch: ${(await createRefResp.json()).message}`);
 
     // Create PR
     const createPr = await fetch(
