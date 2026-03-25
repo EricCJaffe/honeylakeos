@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-type TaskType = "workflow_copilot" | "template_copilot" | "insight_summary";
+type TaskType = "workflow_copilot" | "template_copilot" | "insight_summary" | "support_triage";
 
 type AiRequestBody = {
   companyId: string;
@@ -34,6 +34,7 @@ const promptPathByTask: Record<TaskType, string> = {
   workflow_copilot: "./prompts/workflow-copilot.system.md",
   template_copilot: "./prompts/template-copilot.system.md",
   insight_summary: "./prompts/insight-summary.system.md",
+  support_triage: "./prompts/support-triage.system.md",
 };
 
 const fallbackPromptByTask: Record<TaskType, string> = {
@@ -43,6 +44,8 @@ const fallbackPromptByTask: Record<TaskType, string> = {
     "You are a template copilot. Return strict JSON only with keys: title, description, category, required_modules[], fields[]. Each field must include label, field_type, is_required, sort_order, and optional helper_text/options.",
   insight_summary:
     "You are an insight summarizer. Return strict JSON only with keys: summary, risks[], opportunities[], recommended_actions[].",
+  support_triage:
+    "You are a support triage assistant. Analyze the user's issue and return strict JSON with keys: suggestions[] (actionable troubleshooting steps), likely_cause (brief assessment), severity (low/medium/high), recommended_category (crm/lms/calendar/tasks/projects/frameworks/billing/other).",
 };
 
 const promptCache = new Map<TaskType, string>();
@@ -197,6 +200,14 @@ function validateInsightOutput(obj: Record<string, unknown>): string | null {
   return null;
 }
 
+function validateSupportTriageOutput(obj: Record<string, unknown>): string | null {
+  if (!isStringArray(obj.suggestions)) return "suggestions must be an array of strings";
+  if (typeof obj.likely_cause !== "string") return "likely_cause must be a string";
+  if (typeof obj.severity !== "string" || !["low", "medium", "high"].includes(obj.severity)) return "severity must be low, medium, or high";
+  if (typeof obj.recommended_category !== "string") return "recommended_category must be a string";
+  return null;
+}
+
 function validateOutputByTask(taskType: TaskType, outputText: string): { ok: true; parsed: Record<string, unknown> } | { ok: false; error: string } {
   let parsed: unknown;
 
@@ -215,7 +226,9 @@ function validateOutputByTask(taskType: TaskType, outputText: string): { ok: tru
       ? validateWorkflowOutput(parsed)
       : taskType === "template_copilot"
         ? validateTemplateOutput(parsed)
-        : validateInsightOutput(parsed);
+        : taskType === "support_triage"
+          ? validateSupportTriageOutput(parsed)
+          : validateInsightOutput(parsed);
 
   if (validationError) {
     return { ok: false, error: validationError };
@@ -246,6 +259,8 @@ function isFeatureEnabled(taskType: TaskType, settings: CompanyAiSettings): bool
   if (taskType === "workflow_copilot") return settings.workflow_copilot_enabled;
   if (taskType === "template_copilot") return settings.template_copilot_enabled;
   if (taskType === "insight_summary") return settings.insights_enabled;
+  // support_triage is enabled whenever the base AI toggle is on
+  if (taskType === "support_triage") return true;
   return false;
 }
 

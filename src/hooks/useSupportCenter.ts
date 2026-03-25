@@ -457,13 +457,19 @@ export function useSupportTicketMutations() {
 
       if (error) throw error;
 
-      // Create initial event
-      await supabase.from("support_ticket_events").insert({
+      // Fire-and-forget: create event + send notification
+      supabase.from("support_ticket_events").insert({
         ticket_id: data.id,
         event_type: "ticket_created",
         created_by: user.id,
         payload: { subject: input.subject, priority: input.priority || "normal" },
+      }).then(({ error: eventError }) => {
+        if (eventError) console.error("Failed to create ticket event:", eventError);
       });
+
+      supabase.functions.invoke("support-ticket-notify", {
+        body: { ticket_id: data.id, event: "ticket_created" },
+      }).catch((err) => console.error("Failed to send ticket notification:", err));
 
       return data;
     },
@@ -505,32 +511,48 @@ export function useSupportTicketMutations() {
 
       if (error) throw error;
 
-      // Log events for changes
+      // Fire-and-forget: log events + send notifications for changes
       if (updates.status && oldTicket?.status !== updates.status) {
-        await supabase.from("support_ticket_events").insert({
+        supabase.from("support_ticket_events").insert({
           ticket_id: id,
           event_type: "status_change",
           created_by: user?.id,
           payload: { from: oldTicket?.status, to: updates.status },
-        });
+        }).then(({ error: e }) => { if (e) console.error("Event insert error:", e); });
+
+        supabase.functions.invoke("support-ticket-notify", {
+          body: {
+            ticket_id: id,
+            event: "status_changed",
+            changed_by_user_id: user?.id,
+            old_status: oldTicket?.status,
+            new_status: updates.status,
+          },
+        }).catch((err) => console.error("Notification error:", err));
       }
 
       if (updates.priority && oldTicket?.priority !== updates.priority) {
-        await supabase.from("support_ticket_events").insert({
+        supabase.from("support_ticket_events").insert({
           ticket_id: id,
           event_type: "priority_change",
           created_by: user?.id,
           payload: { from: oldTicket?.priority, to: updates.priority },
-        });
+        }).then(({ error: e }) => { if (e) console.error("Event insert error:", e); });
       }
 
       if ("assigned_to_user_id" in updates && oldTicket?.assigned_to_user_id !== updates.assigned_to_user_id) {
-        await supabase.from("support_ticket_events").insert({
+        supabase.from("support_ticket_events").insert({
           ticket_id: id,
           event_type: "assignment_change",
           created_by: user?.id,
           payload: { from: oldTicket?.assigned_to_user_id || null, to: updates.assigned_to_user_id || null },
-        });
+        }).then(({ error: e }) => { if (e) console.error("Event insert error:", e); });
+
+        if (updates.assigned_to_user_id) {
+          supabase.functions.invoke("support-ticket-notify", {
+            body: { ticket_id: id, event: "ticket_assigned", changed_by_user_id: user?.id },
+          }).catch((err) => console.error("Notification error:", err));
+        }
       }
 
       return data;
@@ -567,13 +589,17 @@ export function useSupportTicketMutations() {
 
       if (error) throw error;
 
-      // Log event
-      await supabase.from("support_ticket_events").insert({
+      // Fire-and-forget: log event + notify
+      supabase.from("support_ticket_events").insert({
         ticket_id: input.ticket_id,
         event_type: "message_added",
         created_by: user.id,
         payload: { author_type: input.author_type },
-      });
+      }).then(({ error: e }) => { if (e) console.error("Event insert error:", e); });
+
+      supabase.functions.invoke("support-ticket-notify", {
+        body: { ticket_id: input.ticket_id, event: "message_added", changed_by_user_id: user.id },
+      }).catch((err) => console.error("Notification error:", err));
 
       return data;
     },
@@ -656,29 +682,31 @@ export function useSearchKbArticles(search: string) {
 // =============================================
 
 export function useSiteId() {
-  const { siteMemberships, memberships } = useMembership();
+  const { siteMemberships, memberships, loading } = useMembership();
 
   // Prefer site_id from siteMemberships (direct, no extra query).
   // Fall back to querying companies.site_id if no site membership exists.
   const directSiteId = siteMemberships[0]?.site_id ?? null;
+  const companyId = memberships[0]?.company_id ?? null;
 
   return useQuery({
-    queryKey: ["site-id", directSiteId, memberships[0]?.company_id],
+    queryKey: ["site-id", directSiteId, companyId],
     queryFn: async () => {
       if (directSiteId) return directSiteId;
 
       // Fallback: look up site_id from the company record
-      if (memberships.length === 0) return null;
+      if (!companyId) return null;
 
       const { data, error } = await supabase
         .from("companies")
         .select("site_id")
-        .eq("id", memberships[0].company_id)
+        .eq("id", companyId)
         .single();
 
       if (error) throw error;
       return data.site_id as string | null;
     },
-    enabled: siteMemberships.length > 0 || memberships.length > 0,
+    // Wait for membership to finish loading before enabling the query
+    enabled: !loading && (siteMemberships.length > 0 || memberships.length > 0),
   });
 }
