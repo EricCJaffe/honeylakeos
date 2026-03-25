@@ -180,7 +180,7 @@ export default function SubmitTicketPage() {
         site_id: siteId,
         subject,
         description,
-        category,
+        category: category || "other",
         priority,
         company_id: activeCompanyId ?? null,
       });
@@ -346,10 +346,15 @@ export default function SubmitTicketPage() {
           )}
 
           {/* Continue Button */}
-          <div className="flex justify-end">
+          <div className="flex flex-col items-end gap-2">
+            {description.length > 0 && description.length < 10 && (
+              <p className="text-sm text-muted-foreground">
+                Please add more detail to your description (at least 10 characters).
+              </p>
+            )}
             <Button
               onClick={() => setStep("review")}
-              disabled={!category || description.length < 10}
+              disabled={description.length < 10}
             >
               Continue to Submit
             </Button>
@@ -381,7 +386,7 @@ export default function SubmitTicketPage() {
                 <Label>Category</Label>
                 <div>
                   <Badge variant="secondary">
-                    {TICKET_CATEGORIES.find((c) => c.value === category)?.label}
+                    {TICKET_CATEGORIES.find((c) => c.value === category)?.label || "Other"}
                   </Badge>
                 </div>
               </div>
