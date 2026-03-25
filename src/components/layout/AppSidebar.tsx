@@ -67,11 +67,16 @@ export function AppSidebar() {
   const filterItems = (items: NavItem[]): NavItem[] => {
     if (modulesLoading) return items;
     return items.filter((item) => {
+      // Hide admin-only items for non-admins
+      if (item.adminOnly && !showCompanyAdmin) {
+        return false;
+      }
+
       // Check legacy module system (company_modules table)
       if (item.moduleKey && !isEnabled(item.moduleKey)) {
         return false;
       }
-      
+
       // Check new feature flags system
       if (item.moduleKey) {
         const moduleId = legacyModuleKeyToModuleId(item.moduleKey);
@@ -80,7 +85,7 @@ export function AppSidebar() {
           return false;
         }
       }
-      
+
       return true;
     });
   };
