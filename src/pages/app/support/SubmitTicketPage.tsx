@@ -153,6 +153,7 @@ export default function SubmitTicketPage() {
 
   const handleSubmit = async () => {
     setSubmitError(null);
+    console.log("[SubmitTicket] handleSubmit called", { subject, category, priority, siteId, siteIdLoading, siteIdError, activeCompanyId });
 
     if (!subject) {
       setSubmitError("Subject is required.");
@@ -165,7 +166,7 @@ export default function SubmitTicketPage() {
     }
 
     if (!siteId) {
-      console.error("useSiteId() returned null. siteIdError:", siteIdError);
+      console.error("[SubmitTicket] siteId is null", { siteIdError });
       setSubmitError(
         "Could not determine your site. Please reload the page and try again. " +
         "If this persists, contact your administrator."
@@ -173,6 +174,7 @@ export default function SubmitTicketPage() {
       return;
     }
 
+    console.log("[SubmitTicket] calling createTicket.mutateAsync");
     try {
       const ticket = await createTicket.mutateAsync({
         site_id: siteId,
@@ -180,12 +182,13 @@ export default function SubmitTicketPage() {
         description,
         category,
         priority,
-        company_id: activeCompanyId || undefined,
+        company_id: activeCompanyId ?? null,
       });
 
+      console.log("[SubmitTicket] ticket created successfully", ticket.id);
       navigate(`/app/support/tickets/${ticket.id}`);
     } catch (error) {
-      console.error("Failed to submit ticket:", error);
+      console.error("[SubmitTicket] mutation failed:", error);
       const message = error instanceof Error ? error.message : "An unexpected error occurred";
       setSubmitError(`Failed to submit ticket: ${message}`);
       toast({

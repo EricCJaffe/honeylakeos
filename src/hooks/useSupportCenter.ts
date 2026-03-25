@@ -441,6 +441,8 @@ export function useSupportTicketMutations() {
     }) => {
       if (!user) throw new Error("Not authenticated");
 
+      console.log("[createTicket] inserting ticket", { site_id: input.site_id, user_id: user.id, subject: input.subject, company_id: input.company_id });
+
       const { data, error } = await supabase
         .from("support_tickets")
         .insert({
@@ -450,11 +452,12 @@ export function useSupportTicketMutations() {
           description: input.description,
           category: input.category,
           priority: input.priority || "normal",
-          company_id: input.company_id,
+          company_id: input.company_id ?? null,
         })
         .select()
         .single();
 
+      console.log("[createTicket] insert result", { data: data?.id, error });
       if (error) throw error;
 
       // Fire-and-forget: create event + send notification
