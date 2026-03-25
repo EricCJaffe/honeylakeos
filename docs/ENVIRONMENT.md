@@ -34,6 +34,9 @@ Set in the Supabase dashboard under **Project Settings → Edge Functions → Se
 | `EMAIL_FROM` | No | `send-employee-invite-email`, `exit-survey-notify`, `exit-survey-weekly-digest`, `exit-survey-reminders` | Sender address. Defaults to `BusinessOS <onboarding@resend.dev>` for invites and `Honey Lake Clinic <noreply@honeylake.clinic>` for exit survey alerts. |
 | `SOP_REVIEW_SCHEDULER_SECRET` | Recommended | `sop-review-reminders` | Shared secret expected in `x-scheduler-secret` header for scheduled invocations. |
 | `EXIT_SURVEY_RETENTION_SECRET` | Recommended | `exit-survey-retention` | Shared secret for retention scans initiated by scheduler/automation. |
+| `GITHUB_TOKEN` | Yes (for remediation) | `support-ticket-remediate` | GitHub personal access token with `repo` scope. Used to read files, create branches, and open PRs for AI-generated fixes. |
+| `GITHUB_OWNER` | Yes (for remediation) | `support-ticket-remediate` | GitHub repository owner (e.g. `EricCJaffe`). |
+| `GITHUB_REPO` | Yes (for remediation) | `support-ticket-remediate` | GitHub repository name (e.g. `honeylakeos`). |
 
 ---
 

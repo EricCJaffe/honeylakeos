@@ -83,7 +83,6 @@ export default function SubmitTicketPage() {
   const { createTicket } = useSupportTicketMutations();
   const { toast } = useToast();
 
-  const [step, setStep] = useState<"describe" | "review">("describe");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [subject, setSubject] = useState("");
@@ -106,7 +105,6 @@ export default function SubmitTicketPage() {
     const categoryLabel = TICKET_CATEGORIES.find((c) => c.value === category)?.label || "General";
 
     try {
-      // Try to get AI-powered suggestions via the ai-gateway
       if (activeCompanyId) {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.access_token) {
@@ -140,7 +138,6 @@ export default function SubmitTicketPage() {
       // AI not available — fall through to static suggestions
     }
 
-    // Fallback: static category-based suggestions
     setAiSuggestion(
       `Based on your description regarding "${categoryLabel}", here are some suggestions:\n\n` +
         `1. ${commonFixes[0] || "Try refreshing the page"}\n` +
@@ -151,12 +148,18 @@ export default function SubmitTicketPage() {
     setIsGeneratingAi(false);
   };
 
+  const canSubmit = subject.trim().length > 0 && description.trim().length >= 10 && !createTicket.isPending;
+
   const handleSubmit = async () => {
     setSubmitError(null);
-    console.log("[SubmitTicket] handleSubmit called", { subject, category, priority, siteId, siteIdLoading, siteIdError, activeCompanyId });
 
-    if (!subject) {
+    if (!subject.trim()) {
       setSubmitError("Subject is required.");
+      return;
+    }
+
+    if (description.trim().length < 10) {
+      setSubmitError("Please provide a more detailed description (at least 10 characters).");
       return;
     }
 
@@ -174,18 +177,16 @@ export default function SubmitTicketPage() {
       return;
     }
 
-    console.log("[SubmitTicket] calling createTicket.mutateAsync");
     try {
       const ticket = await createTicket.mutateAsync({
         site_id: siteId,
-        subject,
-        description,
+        subject: subject.trim(),
+        description: description.trim(),
         category: category || "other",
         priority,
         company_id: activeCompanyId ?? null,
       });
 
-      console.log("[SubmitTicket] ticket created successfully", ticket.id);
       navigate(`/app/support/tickets/${ticket.id}`);
     } catch (error) {
       console.error("[SubmitTicket] mutation failed:", error);
@@ -216,17 +217,32 @@ export default function SubmitTicketPage() {
         description="Describe your issue and we'll help you find a solution"
       />
 
-      {step === "describe" && (
-        <div className="space-y-6">
-          {/* Category Selection */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">What area is this about?</CardTitle>
-            </CardHeader>
-            <CardContent>
+      {/* Subject */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Subject *</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Input
+            placeholder="Brief summary of your issue"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Category & Priority */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Category & Priority</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Category</Label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a category" />
+                  <SelectValue placeholder="Select a category (optional)" />
                 </SelectTrigger>
                 <SelectContent>
                   {TICKET_CATEGORIES.map((cat) => (
@@ -236,216 +252,160 @@ export default function SubmitTicketPage() {
                   ))}
                 </SelectContent>
               </Select>
-            </CardContent>
-          </Card>
-
-          {/* Description */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Describe your issue</CardTitle>
-              <CardDescription>
-                Be as specific as possible so we can help you better
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Textarea
-                placeholder="I'm having trouble with..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={5}
-              />
-
-              {description.length >= 20 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleGenerateAiSuggestion}
-                  disabled={isGeneratingAi}
-                >
-                  {isGeneratingAi ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Get AI Suggestions
-                    </>
-                  )}
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* AI Suggestions */}
-          {showAiSuggestions && aiSuggestion && (
-            <Alert>
-              <Lightbulb className="h-4 w-4" />
-              <AlertTitle>AI Assistant Suggestions</AlertTitle>
-              <AlertDescription className="whitespace-pre-line mt-2">
-                {aiSuggestion}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Common Fixes */}
-          {category && commonFixes.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-primary" />
-                  Quick troubleshooting steps
-                </CardTitle>
-                <CardDescription>
-                  Try these before submitting a ticket
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {commonFixes.map((fix, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm">
-                      <span className="text-primary font-medium">{index + 1}.</span>
-                      {fix}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Suggested Articles */}
-          {suggestedArticles && suggestedArticles.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Search className="h-4 w-4 text-primary" />
-                  Related Knowledge Base Articles
-                </CardTitle>
-                <CardDescription>
-                  These articles might help answer your question
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {suggestedArticles.map((article) => (
-                  <button
-                    key={article.id}
-                    onClick={() => navigate(`/app/support/kb/${article.id}`)}
-                    className="block w-full text-left p-3 rounded-md border hover:border-primary transition-colors"
-                  >
-                    <div className="font-medium text-sm">{article.title}</div>
-                    {article.category && (
-                      <Badge variant="secondary" className="text-xs mt-1">
-                        {article.category.name}
-                      </Badge>
-                    )}
-                  </button>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Continue Button */}
-          <div className="flex flex-col items-end gap-2">
-            {description.length > 0 && description.length < 10 && (
-              <p className="text-sm text-muted-foreground">
-                Please add more detail to your description (at least 10 characters).
-              </p>
-            )}
-            <Button
-              onClick={() => setStep("review")}
-              disabled={description.length < 10}
-            >
-              Continue to Submit
-            </Button>
+            </div>
+            <div className="space-y-2">
+              <Label>Priority</Label>
+              <Select
+                value={priority}
+                onValueChange={(v) => setPriority(v as TicketPriority)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="normal">Normal</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="urgent">Urgent</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
-      )}
+        </CardContent>
+      </Card>
 
-      {step === "review" && (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Ticket Details</CardTitle>
-              <CardDescription>
-                Review and complete your ticket submission
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="subject">Subject *</Label>
-                <Input
-                  id="subject"
-                  placeholder="Brief summary of your issue"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                />
-              </div>
+      {/* Description */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Describe your issue *</CardTitle>
+          <CardDescription>
+            Be as specific as possible so we can help you better
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Textarea
+            placeholder="I'm having trouble with..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={5}
+          />
 
-              <div className="space-y-2">
-                <Label>Category</Label>
-                <div>
-                  <Badge variant="secondary">
-                    {TICKET_CATEGORIES.find((c) => c.value === category)?.label || "Other"}
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Description</Label>
-                <div className="p-3 rounded-md bg-muted text-sm whitespace-pre-wrap">
-                  {description}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="priority">Priority</Label>
-                <Select
-                  value={priority}
-                  onValueChange={(v) => setPriority(v as TicketPriority)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="urgent">Urgent</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
-          {submitError && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Submission Error</AlertTitle>
-              <AlertDescription>{submitError}</AlertDescription>
-            </Alert>
-          )}
-
-          <div className="flex justify-between">
-            <Button variant="outline" onClick={() => setStep("describe")}>
-              Back
-            </Button>
+          {description.length >= 20 && (
             <Button
-              onClick={handleSubmit}
-              disabled={!subject || createTicket.isPending}
+              variant="outline"
+              size="sm"
+              onClick={handleGenerateAiSuggestion}
+              disabled={isGeneratingAi}
             >
-              {createTicket.isPending ? (
+              {isGeneratingAi ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Submitting...
+                  Analyzing...
                 </>
               ) : (
-                "Submit Ticket"
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Get AI Suggestions
+                </>
               )}
             </Button>
-          </div>
-        </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* AI Suggestions */}
+      {showAiSuggestions && aiSuggestion && (
+        <Alert>
+          <Lightbulb className="h-4 w-4" />
+          <AlertTitle>AI Assistant Suggestions</AlertTitle>
+          <AlertDescription className="whitespace-pre-line mt-2">
+            {aiSuggestion}
+          </AlertDescription>
+        </Alert>
       )}
+
+      {/* Common Fixes */}
+      {category && commonFixes.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-primary" />
+              Quick troubleshooting steps
+            </CardTitle>
+            <CardDescription>
+              Try these before submitting a ticket
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {commonFixes.map((fix, index) => (
+                <li key={index} className="flex items-start gap-2 text-sm">
+                  <span className="text-primary font-medium">{index + 1}.</span>
+                  {fix}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Suggested Articles */}
+      {suggestedArticles && suggestedArticles.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Search className="h-4 w-4 text-primary" />
+              Related Knowledge Base Articles
+            </CardTitle>
+            <CardDescription>
+              These articles might help answer your question
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {suggestedArticles.map((article) => (
+              <button
+                key={article.id}
+                onClick={() => navigate(`/app/support/kb/${article.id}`)}
+                className="block w-full text-left p-3 rounded-md border hover:border-primary transition-colors"
+              >
+                <div className="font-medium text-sm">{article.title}</div>
+                {article.category && (
+                  <Badge variant="secondary" className="text-xs mt-1">
+                    {article.category.name}
+                  </Badge>
+                )}
+              </button>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Error */}
+      {submitError && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Submission Error</AlertTitle>
+          <AlertDescription>{submitError}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Submit */}
+      <div className="flex justify-end">
+        <Button
+          onClick={handleSubmit}
+          disabled={!canSubmit}
+          size="lg"
+        >
+          {createTicket.isPending ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Submitting...
+            </>
+          ) : (
+            "Submit Ticket"
+          )}
+        </Button>
+      </div>
     </div>
   );
 }

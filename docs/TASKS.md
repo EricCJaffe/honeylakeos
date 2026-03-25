@@ -9,9 +9,10 @@
 - [ ] SECURITY/HIPAA: Finalize secure email content policy (PHI in emails vs summary-only default) now that PHI-safe email mode toggle is shipped.
 
 ## Active
-- [ ] Support Tickets: test submit flow end-to-end — verify ticket creation, admin dashboard visibility, and message threading.
-- [ ] Support Tickets: deploy `support-ticket-notify` edge function and verify email delivery for ticket_created, status_changed, ticket_assigned, message_added events.
-- [ ] Support Tickets: deploy updated `ai-gateway` with `support_triage` task type and test AI suggestions on submit page.
+- [ ] Support Tickets: deploy `support-ticket-remediate` edge function and set `GITHUB_TOKEN`, `GITHUB_OWNER`, `GITHUB_REPO` Supabase secrets.
+- [ ] Support Tickets: deploy updated `ai-gateway` with enhanced `support_triage` prompt and test AI triage from admin ticket detail page.
+- [ ] Support Tickets: test full AI pipeline end-to-end — submit ticket → open in admin → Run AI Triage → Approve & Generate Fix → verify PR on GitHub.
+- [ ] Support Tickets: deploy `support-ticket-notify` edge function and verify email delivery.
 - [ ] At go-live cutover, activate production cron for `exit-survey-scheduler` (recommended every 15 minutes with `{ "mode": "all" }`).
 - [ ] Exit Survey: validate new `Advanced Reports` tab against real data and confirm KPI definitions with leadership.
 - [ ] Define department color configuration (per-deployment mapping vs fixed palette) and implement in leadership dashboard.
@@ -53,6 +54,8 @@
 - [ ] Virus scanning on attachment uploads (`src/hooks/useAttachments.ts:68`).
 
 ## Done
+- [x] Support Tickets: AI Triage + Remediation — admin ticket detail now has "Run AI Triage" (classifies severity, identifies affected code, suggests fix) and "Approve & Generate Fix" (reads GitHub files, generates code changes, creates PR). New edge function `support-ticket-remediate`, new hooks `useTicketAI`, new components `AITriageCard`/`RemediationCard`, smart polling while AI works, admin sidebar controls for status/priority (2026-03-25).
+- [x] Support Tickets: replace two-step submit form with single-page layout; add Ticket Dashboard nav link for admins (2026-03-25).
 - [x] Support Tickets: fix submit bug — `useSiteId()` now waits for membership loading, event inserts are fire-and-forget to prevent blocking, inline error banner on review step (2026-03-25).
 - [x] Support Tickets: update TypeScript types to include AI triage/remediation columns matching production DB schema (2026-03-25).
 - [x] Support Tickets: wire AI suggestions to `ai-gateway` edge function with `support_triage` task type; graceful fallback to static suggestions if AI not configured (2026-03-25).

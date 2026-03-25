@@ -17,6 +17,7 @@ import {
   FileCheck,
   HelpCircle,
   Ticket,
+  TicketCheck,
   BarChart3,
   Download,
   Building2,
@@ -45,6 +46,7 @@ export interface NavItem {
   moduleKey?: ModuleKey;
   terminologyKey?: string; // If set, title is replaced by terminology
   financeMode?: "builtin_books" | "external_reporting"; // Filter by finance mode
+  adminOnly?: boolean; // Only show for site admins / company admins
 }
 
 export interface NavSection {
@@ -201,6 +203,7 @@ export function getNavigationSections(financeMode: "builtin_books" | "external_r
     items: [
       { key: "kb", title: "Help Center", url: "/app/support/kb", icon: HelpCircle },
       { key: "tickets", title: "My Tickets", url: "/app/support/tickets", icon: Ticket },
+      { key: "ticket-dashboard", title: "Ticket Dashboard", url: "/app/support/dashboard", icon: TicketCheck, adminOnly: true },
     ],
   };
 
