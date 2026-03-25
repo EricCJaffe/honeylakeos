@@ -974,6 +974,15 @@ export type Database = {
           created_at: string
           updated_at: string
           closed_at: string | null
+          ai_triage: Json | null
+          ai_triage_status: string
+          remediation_status: string
+          remediation_pr_url: string | null
+          remediation_branch: string | null
+          remediation_result: Json | null
+          remediation_approved_by: string | null
+          remediation_approved_at: string | null
+          status_reason_id: string | null
         }
         Insert: {
           id?: string
@@ -990,6 +999,15 @@ export type Database = {
           created_at?: string
           updated_at?: string
           closed_at?: string | null
+          ai_triage?: Json | null
+          ai_triage_status?: string
+          remediation_status?: string
+          remediation_pr_url?: string | null
+          remediation_branch?: string | null
+          remediation_result?: Json | null
+          remediation_approved_by?: string | null
+          remediation_approved_at?: string | null
+          status_reason_id?: string | null
         }
         Update: {
           id?: string
@@ -1006,6 +1024,15 @@ export type Database = {
           created_at?: string
           updated_at?: string
           closed_at?: string | null
+          ai_triage?: Json | null
+          ai_triage_status?: string
+          remediation_status?: string
+          remediation_pr_url?: string | null
+          remediation_branch?: string | null
+          remediation_result?: Json | null
+          remediation_approved_by?: string | null
+          remediation_approved_at?: string | null
+          status_reason_id?: string | null
         }
         Relationships: []
       }

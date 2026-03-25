@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, Lightbulb, CheckCircle, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, Search, Lightbulb, CheckCircle, Loader2, Sparkles, AlertTriangle } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +17,7 @@ import {
 } from "@/hooks/useSupportCenter";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 
 type TicketPriority = Database["public"]["Enums"]["ticket_priority"];
@@ -90,6 +91,7 @@ export default function SubmitTicketPage() {
   const [showAiSuggestions, setShowAiSuggestions] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState("");
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Search KB based on description
   const { data: suggestedArticles } = useSearchKbArticles(description);
@@ -101,10 +103,44 @@ export default function SubmitTicketPage() {
     setIsGeneratingAi(true);
     setShowAiSuggestions(true);
 
-    // Simulate AI suggestion (in production, this would call an edge function)
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
     const categoryLabel = TICKET_CATEGORIES.find((c) => c.value === category)?.label || "General";
+
+    try {
+      // Try to get AI-powered suggestions via the ai-gateway
+      if (activeCompanyId) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          const response = await supabase.functions.invoke("ai-gateway", {
+            body: {
+              companyId: activeCompanyId,
+              taskType: "support_triage",
+              userPrompt: `Category: ${categoryLabel}\n\nIssue description: ${description}`,
+              context: { category },
+            },
+          });
+
+          if (response.data?.outputJson) {
+            const triage = response.data.outputJson as {
+              suggestions: string[];
+              likely_cause: string;
+            };
+            const suggestions = triage.suggestions
+              .map((s: string, i: number) => `${i + 1}. ${s}`)
+              .join("\n");
+            setAiSuggestion(
+              `${triage.likely_cause}\n\n${suggestions}\n\n` +
+              `If these steps don't resolve your issue, please proceed with submitting your ticket.`
+            );
+            setIsGeneratingAi(false);
+            return;
+          }
+        }
+      }
+    } catch {
+      // AI not available — fall through to static suggestions
+    }
+
+    // Fallback: static category-based suggestions
     setAiSuggestion(
       `Based on your description regarding "${categoryLabel}", here are some suggestions:\n\n` +
         `1. ${commonFixes[0] || "Try refreshing the page"}\n` +
@@ -116,23 +152,24 @@ export default function SubmitTicketPage() {
   };
 
   const handleSubmit = async () => {
+    setSubmitError(null);
+
     if (!subject) {
-      toast({ title: "Subject is required", variant: "destructive" });
+      setSubmitError("Subject is required.");
       return;
     }
 
     if (siteIdLoading) {
-      toast({ title: "Still loading, please try again in a moment", variant: "destructive" });
+      setSubmitError("Still loading your account info. Please wait a moment and try again.");
       return;
     }
 
     if (!siteId) {
       console.error("useSiteId() returned null. siteIdError:", siteIdError);
-      toast({
-        title: "Unable to submit ticket",
-        description: "Could not determine your site. Please reload the page and try again.",
-        variant: "destructive",
-      });
+      setSubmitError(
+        "Could not determine your site. Please reload the page and try again. " +
+        "If this persists, contact your administrator."
+      );
       return;
     }
 
@@ -146,13 +183,14 @@ export default function SubmitTicketPage() {
         company_id: activeCompanyId || undefined,
       });
 
-      // Navigate to the newly created ticket's detail page
       navigate(`/app/support/tickets/${ticket.id}`);
     } catch (error) {
       console.error("Failed to submit ticket:", error);
+      const message = error instanceof Error ? error.message : "An unexpected error occurred";
+      setSubmitError(`Failed to submit ticket: ${message}`);
       toast({
         title: "Failed to submit ticket",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        description: message,
         variant: "destructive",
       });
     }
@@ -371,6 +409,14 @@ export default function SubmitTicketPage() {
               </div>
             </CardContent>
           </Card>
+
+          {submitError && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Submission Error</AlertTitle>
+              <AlertDescription>{submitError}</AlertDescription>
+            </Alert>
+          )}
 
           <div className="flex justify-between">
             <Button variant="outline" onClick={() => setStep("describe")}>

@@ -9,7 +9,9 @@
 - [ ] SECURITY/HIPAA: Finalize secure email content policy (PHI in emails vs summary-only default) now that PHI-safe email mode toggle is shipped.
 
 ## Active
-- [ ] Support Tickets: test submit flow end-to-end after siteId/types fix — verify ticket creation, admin dashboard visibility, and message threading.
+- [ ] Support Tickets: test submit flow end-to-end — verify ticket creation, admin dashboard visibility, and message threading.
+- [ ] Support Tickets: deploy `support-ticket-notify` edge function and verify email delivery for ticket_created, status_changed, ticket_assigned, message_added events.
+- [ ] Support Tickets: deploy updated `ai-gateway` with `support_triage` task type and test AI suggestions on submit page.
 - [ ] At go-live cutover, activate production cron for `exit-survey-scheduler` (recommended every 15 minutes with `{ "mode": "all" }`).
 - [ ] Exit Survey: validate new `Advanced Reports` tab against real data and confirm KPI definitions with leadership.
 - [ ] Define department color configuration (per-deployment mapping vs fixed palette) and implement in leadership dashboard.
@@ -51,7 +53,11 @@
 - [ ] Virus scanning on attachment uploads (`src/hooks/useAttachments.ts:68`).
 
 ## Done
-- [x] Fix support ticket submit: `useSiteId()` now uses `siteMemberships` directly instead of extra company query; added visible error toasts to `handleSubmit`; added missing support ticket types/enums to Supabase types (2026-03-25).
+- [x] Support Tickets: fix submit bug — `useSiteId()` now waits for membership loading, event inserts are fire-and-forget to prevent blocking, inline error banner on review step (2026-03-25).
+- [x] Support Tickets: update TypeScript types to include AI triage/remediation columns matching production DB schema (2026-03-25).
+- [x] Support Tickets: wire AI suggestions to `ai-gateway` edge function with `support_triage` task type; graceful fallback to static suggestions if AI not configured (2026-03-25).
+- [x] Support Tickets: create `support-ticket-notify` edge function for email notifications on ticket_created, status_changed, ticket_assigned, message_added events (2026-03-25).
+- [x] Support Tickets: add notification calls in `useSupportCenter` hooks for all ticket lifecycle events (fire-and-forget pattern) (2026-03-25).
 - [x] Fix: added missing `archived_at` columns to `exit_survey_submissions` and `exit_survey_alerts` tables in production DB — deployed code filtered on these columns but migration was never applied, causing all submission/alert queries to fail silently (2026-03-05).
 - [x] Synced local `main` branch with `origin/main` — local was behind by 20 commits (2026-03-05).
 - [x] Remove Recommendations page and sidebar nav item — coaching is not active on this site (2026-03-05).
