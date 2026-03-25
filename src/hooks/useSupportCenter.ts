@@ -369,7 +369,7 @@ export function useOpenTickets() {
   });
 }
 
-export function useSupportTicket(ticketId: string | undefined) {
+export function useSupportTicket(ticketId: string | undefined, options?: { polling?: boolean }) {
   return useQuery({
     queryKey: ["support-ticket", ticketId],
     queryFn: async () => {
@@ -386,6 +386,15 @@ export function useSupportTicket(ticketId: string | undefined) {
       };
     },
     enabled: !!ticketId,
+    // Smart polling: poll while AI is working, stop when settled
+    refetchInterval: options?.polling
+      ? (query) => {
+          const ticket = query.state.data;
+          if (ticket?.ai_triage_status === "analyzing") return 3000;
+          if (ticket?.remediation_status === "generating") return 3000;
+          return false;
+        }
+      : false,
   });
 }
 

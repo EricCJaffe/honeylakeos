@@ -9,19 +9,23 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   useSupportTicket,
   useTicketMessages,
   useTicketEvents,
   useSupportTicketMutations,
 } from "@/hooks/useSupportCenter";
+import { useTriggerTriage, useApproveRemediation } from "@/hooks/useTicketAI";
+import type { TriageResult, RemediationResult } from "@/hooks/useTicketAI";
+import { AITriageCard } from "@/components/support/AITriageCard";
+import { RemediationCard } from "@/components/support/RemediationCard";
 import { useMembership } from "@/lib/membership";
 import { format } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
 import { AttachmentsPanel } from "@/components/attachments/AttachmentsPanel";
 
-// Lazy load rich text display for consistent rendering
-const RichTextDisplay = React.lazy(() => 
+const RichTextDisplay = React.lazy(() =>
   import("@/components/ui/rich-text-editor").then(m => ({ default: m.RichTextDisplay }))
 );
 
@@ -49,23 +53,36 @@ export default function TicketDetailPage() {
   const navigate = useNavigate();
   const { isSiteAdmin } = useMembership();
 
-  const { data: ticket, isLoading: ticketLoading } = useSupportTicket(ticketId);
+  // Enable smart polling for admins (polls while AI is working)
+  const { data: ticket, isLoading: ticketLoading } = useSupportTicket(ticketId, { polling: isSiteAdmin });
   const { data: messages, isLoading: messagesLoading } = useTicketMessages(ticketId);
   const { data: events } = useTicketEvents(ticketId);
-  const { addMessage } = useSupportTicketMutations();
+  const { addMessage, updateTicket } = useSupportTicketMutations();
+
+  // AI hooks
+  const triggerTriage = useTriggerTriage(ticketId || "");
+  const approveRemediation = useApproveRemediation(ticketId || "");
 
   const [newMessage, setNewMessage] = React.useState("");
 
   const handleSendMessage = async () => {
     if (!ticketId || !newMessage.trim()) return;
-
     await addMessage.mutateAsync({
       ticket_id: ticketId,
       body_rich_text: newMessage,
       author_type: isSiteAdmin ? "agent" : "requester",
     });
-
     setNewMessage("");
+  };
+
+  const handleStatusChange = (newStatus: TicketStatus) => {
+    if (!ticketId) return;
+    updateTicket.mutate({ id: ticketId, status: newStatus });
+  };
+
+  const handlePriorityChange = (newPriority: TicketPriority) => {
+    if (!ticketId) return;
+    updateTicket.mutate({ id: ticketId, priority: newPriority });
   };
 
   const getInitials = (userId: string | null) => {
@@ -94,17 +111,19 @@ export default function TicketDetailPage() {
   }
 
   const isClosed = ticket.status === "closed" || ticket.status === "resolved";
+  const triageResult = ticket.ai_triage as TriageResult | null;
+  const remediationResult = ticket.remediation_result as RemediationResult | null;
 
   return (
     <div className="space-y-6">
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => navigate("/app/support/tickets")}
+        onClick={() => navigate(isSiteAdmin ? "/app/support/dashboard" : "/app/support/tickets")}
         className="mb-2"
       >
         <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to My Tickets
+        {isSiteAdmin ? "Back to Dashboard" : "Back to My Tickets"}
       </Button>
 
       <div className="flex items-start justify-between">
@@ -142,6 +161,33 @@ export default function TicketDetailPage() {
             </CardContent>
           </Card>
 
+          {/* AI Triage Card (admin only) */}
+          {isSiteAdmin && (
+            <AITriageCard
+              triageStatus={ticket.ai_triage_status}
+              triageResult={triageResult}
+              onTriggerTriage={() => triggerTriage.mutate({
+                subject: ticket.subject,
+                description: ticket.description,
+                category: ticket.category,
+                priority: ticket.priority,
+              })}
+              isTriaging={triggerTriage.isPending}
+            />
+          )}
+
+          {/* Remediation Card (admin only, after triage complete) */}
+          {isSiteAdmin && ticket.ai_triage_status === "complete" && (
+            <RemediationCard
+              remediationStatus={ticket.remediation_status}
+              remediationResult={remediationResult}
+              prUrl={ticket.remediation_pr_url}
+              branch={ticket.remediation_branch}
+              onApprove={() => approveRemediation.mutate()}
+              isGenerating={approveRemediation.isPending}
+            />
+          )}
+
           {/* Messages */}
           {messagesLoading ? (
             <div className="space-y-4">
@@ -156,11 +202,7 @@ export default function TicketDetailPage() {
               {messages.map((message) => (
                 <Card
                   key={message.id}
-                  className={
-                    message.author_type === "agent"
-                      ? "border-primary/20 bg-primary/5"
-                      : ""
-                  }
+                  className={message.author_type === "agent" ? "border-primary/20 bg-primary/5" : ""}
                 >
                   <CardHeader className="pb-2">
                     <div className="flex items-center gap-3">
@@ -173,9 +215,7 @@ export default function TicketDetailPage() {
                             {message.author_type === "agent" ? "Support Agent" : "You"}
                           </p>
                           {message.author_type === "agent" && (
-                            <Badge variant="secondary" className="text-xs">
-                              Support
-                            </Badge>
+                            <Badge variant="secondary" className="text-xs">Support</Badge>
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground">
@@ -234,20 +274,52 @@ export default function TicketDetailPage() {
               <CardTitle className="text-base">Ticket Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
+              {/* Status - editable for admins */}
               <div className="flex items-center gap-2">
-                <Tag className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Status:</span>
-                <Badge variant={STATUS_CONFIG[ticket.status].variant}>
-                  {STATUS_CONFIG[ticket.status].label}
-                </Badge>
+                <Tag className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground shrink-0">Status:</span>
+                {isSiteAdmin ? (
+                  <Select value={ticket.status} onValueChange={(v) => handleStatusChange(v as TicketStatus)}>
+                    <SelectTrigger className="h-7 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="new">New</SelectItem>
+                      <SelectItem value="triage">In Review</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="waiting_on_requester">Awaiting Response</SelectItem>
+                      <SelectItem value="resolved">Resolved</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Badge variant={STATUS_CONFIG[ticket.status].variant}>
+                    {STATUS_CONFIG[ticket.status].label}
+                  </Badge>
+                )}
               </div>
 
+              {/* Priority - editable for admins */}
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Priority:</span>
-                <span className={PRIORITY_CONFIG[ticket.priority].className}>
-                  {PRIORITY_CONFIG[ticket.priority].label}
-                </span>
+                <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground shrink-0">Priority:</span>
+                {isSiteAdmin ? (
+                  <Select value={ticket.priority} onValueChange={(v) => handlePriorityChange(v as TicketPriority)}>
+                    <SelectTrigger className="h-7 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="urgent">Urgent</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <span className={PRIORITY_CONFIG[ticket.priority].className}>
+                    {PRIORITY_CONFIG[ticket.priority].label}
+                  </span>
+                )}
               </div>
 
               {ticket.category && (
@@ -277,9 +349,9 @@ export default function TicketDetailPage() {
           </Card>
 
           {/* Attachments */}
-          <AttachmentsPanel 
-            entityType="ticket" 
-            entityId={ticket.id} 
+          <AttachmentsPanel
+            entityType="ticket"
+            entityId={ticket.id}
             title="Screenshots & Attachments"
           />
 
@@ -291,7 +363,7 @@ export default function TicketDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 text-sm">
-                  {events.slice(-5).map((event) => (
+                  {events.slice(-10).map((event) => (
                     <div key={event.id} className="flex gap-2">
                       <div className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" />
                       <div>

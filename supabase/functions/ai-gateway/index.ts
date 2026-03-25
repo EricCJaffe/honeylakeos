@@ -45,7 +45,7 @@ const fallbackPromptByTask: Record<TaskType, string> = {
   insight_summary:
     "You are an insight summarizer. Return strict JSON only with keys: summary, risks[], opportunities[], recommended_actions[].",
   support_triage:
-    "You are a support triage assistant. Analyze the user's issue and return strict JSON with keys: suggestions[] (actionable troubleshooting steps), likely_cause (brief assessment), severity (low/medium/high), recommended_category (crm/lms/calendar/tasks/projects/frameworks/billing/other).",
+    "You are a support triage engine. Analyze the ticket and return strict JSON with keys: classification (bug/feature_request/configuration/access_issue/data_issue/performance/ui_ux/other), severity (low/medium/high/critical), affected_areas[] (file paths), root_cause_hypothesis (string), suggested_fix (string), remediation_prompt (detailed prompt for code generator), investigation_steps[] (ordered list), confidence (0-1 number), estimated_complexity (trivial/small/medium/large).",
 };
 
 const promptCache = new Map<TaskType, string>();
@@ -201,10 +201,15 @@ function validateInsightOutput(obj: Record<string, unknown>): string | null {
 }
 
 function validateSupportTriageOutput(obj: Record<string, unknown>): string | null {
-  if (!isStringArray(obj.suggestions)) return "suggestions must be an array of strings";
-  if (typeof obj.likely_cause !== "string") return "likely_cause must be a string";
-  if (typeof obj.severity !== "string" || !["low", "medium", "high"].includes(obj.severity)) return "severity must be low, medium, or high";
-  if (typeof obj.recommended_category !== "string") return "recommended_category must be a string";
+  if (typeof obj.classification !== "string") return "classification must be a string";
+  if (typeof obj.severity !== "string" || !["low", "medium", "high", "critical"].includes(obj.severity)) return "severity must be low, medium, high, or critical";
+  if (!isStringArray(obj.affected_areas)) return "affected_areas must be an array of strings";
+  if (typeof obj.root_cause_hypothesis !== "string") return "root_cause_hypothesis must be a string";
+  if (typeof obj.suggested_fix !== "string") return "suggested_fix must be a string";
+  if (typeof obj.remediation_prompt !== "string") return "remediation_prompt must be a string";
+  if (!isStringArray(obj.investigation_steps)) return "investigation_steps must be an array of strings";
+  if (typeof obj.confidence !== "number") return "confidence must be a number";
+  if (typeof obj.estimated_complexity !== "string") return "estimated_complexity must be a string";
   return null;
 }
 
