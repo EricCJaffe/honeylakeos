@@ -656,11 +656,18 @@ export function useSearchKbArticles(search: string) {
 // =============================================
 
 export function useSiteId() {
-  const { memberships } = useMembership();
+  const { siteMemberships, memberships } = useMembership();
+
+  // Prefer site_id from siteMemberships (direct, no extra query).
+  // Fall back to querying companies.site_id if no site membership exists.
+  const directSiteId = siteMemberships[0]?.site_id ?? null;
 
   return useQuery({
-    queryKey: ["site-id", memberships[0]?.company_id],
+    queryKey: ["site-id", directSiteId, memberships[0]?.company_id],
     queryFn: async () => {
+      if (directSiteId) return directSiteId;
+
+      // Fallback: look up site_id from the company record
       if (memberships.length === 0) return null;
 
       const { data, error } = await supabase
@@ -670,8 +677,8 @@ export function useSiteId() {
         .single();
 
       if (error) throw error;
-      return data.site_id;
+      return data.site_id as string | null;
     },
-    enabled: memberships.length > 0,
+    enabled: siteMemberships.length > 0 || memberships.length > 0,
   });
 }

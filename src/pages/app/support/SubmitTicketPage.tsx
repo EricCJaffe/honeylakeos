@@ -16,6 +16,7 @@ import {
   useSiteId,
 } from "@/hooks/useSupportCenter";
 import { useActiveCompany } from "@/hooks/useActiveCompany";
+import { useToast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 
 type TicketPriority = Database["public"]["Enums"]["ticket_priority"];
@@ -76,9 +77,10 @@ const COMMON_FIXES: Record<string, string[]> = {
 
 export default function SubmitTicketPage() {
   const navigate = useNavigate();
-  const { data: siteId } = useSiteId();
+  const { data: siteId, isLoading: siteIdLoading, error: siteIdError } = useSiteId();
   const { activeCompanyId } = useActiveCompany();
   const { createTicket } = useSupportTicketMutations();
+  const { toast } = useToast();
 
   const [step, setStep] = useState<"describe" | "review">("describe");
   const [category, setCategory] = useState("");
@@ -114,7 +116,25 @@ export default function SubmitTicketPage() {
   };
 
   const handleSubmit = async () => {
-    if (!siteId || !subject) return;
+    if (!subject) {
+      toast({ title: "Subject is required", variant: "destructive" });
+      return;
+    }
+
+    if (siteIdLoading) {
+      toast({ title: "Still loading, please try again in a moment", variant: "destructive" });
+      return;
+    }
+
+    if (!siteId) {
+      console.error("useSiteId() returned null. siteIdError:", siteIdError);
+      toast({
+        title: "Unable to submit ticket",
+        description: "Could not determine your site. Please reload the page and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       const ticket = await createTicket.mutateAsync({
@@ -129,8 +149,12 @@ export default function SubmitTicketPage() {
       // Navigate to the newly created ticket's detail page
       navigate(`/app/support/tickets/${ticket.id}`);
     } catch (error) {
-      // Error is already handled by the mutation's onError callback
       console.error("Failed to submit ticket:", error);
+      toast({
+        title: "Failed to submit ticket",
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        variant: "destructive",
+      });
     }
   };
 

@@ -874,6 +874,195 @@ export type Database = {
         }
         Relationships: []
       }
+      kb_categories: {
+        Row: {
+          id: string
+          site_id: string
+          name: string
+          description: string | null
+          sort_order: number
+          created_at: string
+          created_by: string | null
+          updated_at: string
+          archived_at: string | null
+        }
+        Insert: {
+          id?: string
+          site_id: string
+          name: string
+          description?: string | null
+          sort_order?: number
+          created_at?: string
+          created_by?: string | null
+          updated_at?: string
+          archived_at?: string | null
+        }
+        Update: {
+          id?: string
+          site_id?: string
+          name?: string
+          description?: string | null
+          sort_order?: number
+          created_at?: string
+          created_by?: string | null
+          updated_at?: string
+          archived_at?: string | null
+        }
+        Relationships: []
+      }
+      kb_articles: {
+        Row: {
+          id: string
+          site_id: string
+          category_id: string | null
+          title: string
+          body_rich_text: string | null
+          tags: string[]
+          status: Database["public"]["Enums"]["kb_article_status"]
+          helpful_yes_count: number
+          helpful_no_count: number
+          created_by: string | null
+          created_at: string
+          updated_at: string
+          published_at: string | null
+        }
+        Insert: {
+          id?: string
+          site_id: string
+          category_id?: string | null
+          title: string
+          body_rich_text?: string | null
+          tags?: string[]
+          status?: Database["public"]["Enums"]["kb_article_status"]
+          helpful_yes_count?: number
+          helpful_no_count?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+          published_at?: string | null
+        }
+        Update: {
+          id?: string
+          site_id?: string
+          category_id?: string | null
+          title?: string
+          body_rich_text?: string | null
+          tags?: string[]
+          status?: Database["public"]["Enums"]["kb_article_status"]
+          helpful_yes_count?: number
+          helpful_no_count?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+          published_at?: string | null
+        }
+        Relationships: []
+      }
+      support_tickets: {
+        Row: {
+          id: string
+          site_id: string
+          ticket_number: number
+          created_by_user_id: string
+          company_id: string | null
+          subject: string
+          description: string | null
+          category: string | null
+          priority: Database["public"]["Enums"]["ticket_priority"]
+          status: Database["public"]["Enums"]["ticket_status"]
+          assigned_to_user_id: string | null
+          created_at: string
+          updated_at: string
+          closed_at: string | null
+        }
+        Insert: {
+          id?: string
+          site_id: string
+          ticket_number?: number
+          created_by_user_id: string
+          company_id?: string | null
+          subject: string
+          description?: string | null
+          category?: string | null
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          status?: Database["public"]["Enums"]["ticket_status"]
+          assigned_to_user_id?: string | null
+          created_at?: string
+          updated_at?: string
+          closed_at?: string | null
+        }
+        Update: {
+          id?: string
+          site_id?: string
+          ticket_number?: number
+          created_by_user_id?: string
+          company_id?: string | null
+          subject?: string
+          description?: string | null
+          category?: string | null
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          status?: Database["public"]["Enums"]["ticket_status"]
+          assigned_to_user_id?: string | null
+          created_at?: string
+          updated_at?: string
+          closed_at?: string | null
+        }
+        Relationships: []
+      }
+      support_ticket_messages: {
+        Row: {
+          id: string
+          ticket_id: string
+          author_user_id: string
+          author_type: Database["public"]["Enums"]["ticket_author_type"]
+          body_rich_text: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          ticket_id: string
+          author_user_id: string
+          author_type?: Database["public"]["Enums"]["ticket_author_type"]
+          body_rich_text: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          ticket_id?: string
+          author_user_id?: string
+          author_type?: Database["public"]["Enums"]["ticket_author_type"]
+          body_rich_text?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      support_ticket_events: {
+        Row: {
+          id: string
+          ticket_id: string
+          event_type: string
+          payload: Json
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          ticket_id: string
+          event_type: string
+          payload?: Json
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          ticket_id?: string
+          event_type?: string
+          payload?: Json
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -895,8 +1084,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "member" | "viewer" | "Company_Admin"
+      kb_article_status: "draft" | "published" | "archived"
       task_priority: "low" | "medium" | "high" | "urgent"
       task_status: "todo" | "in_progress" | "completed" | "cancelled"
+      ticket_author_type: "requester" | "agent"
+      ticket_priority: "low" | "normal" | "high" | "urgent"
+      ticket_status: "new" | "triage" | "in_progress" | "waiting_on_requester" | "resolved" | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1025,8 +1218,12 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "member", "viewer", "Company_Admin"],
+      kb_article_status: ["draft", "published", "archived"],
       task_priority: ["low", "medium", "high", "urgent"],
       task_status: ["todo", "in_progress", "completed", "cancelled"],
+      ticket_author_type: ["requester", "agent"],
+      ticket_priority: ["low", "normal", "high", "urgent"],
+      ticket_status: ["new", "triage", "in_progress", "waiting_on_requester", "resolved", "closed"],
     },
   },
 } as const
