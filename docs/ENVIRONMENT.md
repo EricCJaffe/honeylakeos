@@ -29,9 +29,9 @@ Set in the Supabase dashboard under **Project Settings → Edge Functions → Se
 | `SUPABASE_ANON_KEY` | Yes | `ai-gateway`, `ai-embed-content` | Injected automatically by Supabase runtime. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Most functions | Full DB access; required for admin operations. |
 | `INTEGRATION_SECRET_KEY` | Yes | `_shared/secrets.ts`, `manage-integration-secret` | AES-GCM key for encrypting integration API keys. Must be 16+ chars. Rotate with care — changing it breaks existing encrypted secrets. |
-| `RESEND_API_KEY` | Yes | `send-employee-invite-email`, `exit-survey-notify`, `exit-survey-weekly-digest`, `exit-survey-reminders` | Resend transactional email API key. |
-| `APP_URL` | Yes | `send-employee-invite-email` (required), `exit-survey-notify` (optional), `exit-survey-weekly-digest`, `exit-survey-reminders` | Base URL for links in emails (e.g. `https://app.honeylakeos.com`). |
-| `EMAIL_FROM` | No | `send-employee-invite-email`, `exit-survey-notify`, `exit-survey-weekly-digest`, `exit-survey-reminders` | Sender address. Defaults to `BusinessOS <onboarding@resend.dev>` for invites and `Honey Lake Clinic <noreply@honeylake.clinic>` for exit survey alerts. |
+| `RESEND_API_KEY` | Yes | `send-employee-invite-email`, `exit-survey-notify`, `exit-survey-weekly-digest`, `exit-survey-reminders`, `support-ticket-notify` | Resend transactional email API key. |
+| `APP_URL` | Yes | `send-employee-invite-email` (required), `exit-survey-notify`, `exit-survey-weekly-digest`, `exit-survey-reminders`, `support-ticket-notify` | Base URL for links in emails (e.g. `https://app.honeylakeos.com`). |
+| `EMAIL_FROM` | No | `send-employee-invite-email`, `exit-survey-notify`, `exit-survey-weekly-digest`, `exit-survey-reminders`, `support-ticket-notify` | Sender address. Defaults to `BusinessOS <onboarding@resend.dev>` for invites and `Honey Lake Clinic <noreply@honeylake.clinic>` for support/exit survey alerts. |
 | `SOP_REVIEW_SCHEDULER_SECRET` | Recommended | `sop-review-reminders` | Shared secret expected in `x-scheduler-secret` header for scheduled invocations. |
 | `EXIT_SURVEY_RETENTION_SECRET` | Recommended | `exit-survey-retention` | Shared secret for retention scans initiated by scheduler/automation. |
 | `GITHUB_TOKEN` | Yes (for remediation) | `support-ticket-remediate` | GitHub personal access token with `repo` scope. Used to read files, create branches, and open PRs for AI-generated fixes. |

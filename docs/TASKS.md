@@ -9,10 +9,8 @@
 - [ ] SECURITY/HIPAA: Finalize secure email content policy (PHI in emails vs summary-only default) now that PHI-safe email mode toggle is shipped.
 
 ## Active
-- [ ] Support Tickets: deploy `support-ticket-remediate` edge function and set `GITHUB_TOKEN`, `GITHUB_OWNER`, `GITHUB_REPO` Supabase secrets.
-- [ ] Support Tickets: deploy updated `ai-gateway` with enhanced `support_triage` prompt and test AI triage from admin ticket detail page.
-- [ ] Support Tickets: test full AI pipeline end-to-end — submit ticket → open in admin → Run AI Triage → Approve & Generate Fix → verify PR on GitHub.
-- [ ] Support Tickets: deploy `support-ticket-notify` edge function and verify email delivery.
+- [ ] Support Tickets: verify email delivery for ticket lifecycle events (ticket_created, status_changed, ticket_assigned, message_added).
+- [ ] Support Tickets: review AI-generated PR quality — verify code uses design system tokens, follows project conventions, single atomic commit.
 - [ ] At go-live cutover, activate production cron for `exit-survey-scheduler` (recommended every 15 minutes with `{ "mode": "all" }`).
 - [ ] Exit Survey: validate new `Advanced Reports` tab against real data and confirm KPI definitions with leadership.
 - [ ] Define department color configuration (per-deployment mapping vs fixed palette) and implement in leadership dashboard.
@@ -54,13 +52,15 @@
 - [ ] Virus scanning on attachment uploads (`src/hooks/useAttachments.ts:68`).
 
 ## Done
-- [x] Support Tickets: AI Triage + Remediation — admin ticket detail now has "Run AI Triage" (classifies severity, identifies affected code, suggests fix) and "Approve & Generate Fix" (reads GitHub files, generates code changes, creates PR). New edge function `support-ticket-remediate`, new hooks `useTicketAI`, new components `AITriageCard`/`RemediationCard`, smart polling while AI works, admin sidebar controls for status/priority (2026-03-25).
+- [x] Support Tickets: improve AI remediation — add rich project context (Tailwind CSS variable system, shadcn-ui patterns, component conventions), auto-read config files from GitHub before generating code, single atomic commit via Git Trees API (2026-03-25).
+- [x] Support Tickets: deploy all edge functions to Supabase — `ai-gateway` v18 (support_triage), `support-ticket-notify` v1, `support-ticket-remediate` v3. Set GITHUB_TOKEN/OWNER/REPO secrets (2026-03-25).
+- [x] Support Tickets: AI Triage + Remediation — admin ticket detail has "Run AI Triage" (classifies severity, identifies affected code, suggests fix) and "Approve & Generate Fix" (reads GitHub files, generates code, creates PR). New edge function, hooks (`useTicketAI`), components (`AITriageCard`/`RemediationCard`), smart polling, admin sidebar controls (2026-03-25).
 - [x] Support Tickets: replace two-step submit form with single-page layout; add Ticket Dashboard nav link for admins (2026-03-25).
-- [x] Support Tickets: fix submit bug — `useSiteId()` now waits for membership loading, event inserts are fire-and-forget to prevent blocking, inline error banner on review step (2026-03-25).
-- [x] Support Tickets: update TypeScript types to include AI triage/remediation columns matching production DB schema (2026-03-25).
-- [x] Support Tickets: wire AI suggestions to `ai-gateway` edge function with `support_triage` task type; graceful fallback to static suggestions if AI not configured (2026-03-25).
-- [x] Support Tickets: create `support-ticket-notify` edge function for email notifications on ticket_created, status_changed, ticket_assigned, message_added events (2026-03-25).
-- [x] Support Tickets: add notification calls in `useSupportCenter` hooks for all ticket lifecycle events (fire-and-forget pattern) (2026-03-25).
+- [x] Support Tickets: fix submit bug — `useSiteId()` waits for membership loading, fire-and-forget event inserts, inline error banner (2026-03-25).
+- [x] Support Tickets: update TypeScript types with AI triage/remediation columns (2026-03-25).
+- [x] Support Tickets: wire AI suggestions to `ai-gateway` with `support_triage` task type; graceful fallback (2026-03-25).
+- [x] Support Tickets: create `support-ticket-notify` edge function for ticket lifecycle emails (2026-03-25).
+- [x] Support Tickets: add notification calls in `useSupportCenter` hooks for all lifecycle events (2026-03-25).
 - [x] Fix: added missing `archived_at` columns to `exit_survey_submissions` and `exit_survey_alerts` tables in production DB — deployed code filtered on these columns but migration was never applied, causing all submission/alert queries to fail silently (2026-03-05).
 - [x] Synced local `main` branch with `origin/main` — local was behind by 20 commits (2026-03-05).
 - [x] Remove Recommendations page and sidebar nav item — coaching is not active on this site (2026-03-05).
