@@ -47,7 +47,7 @@ export default function ExitSurveyDashboardPage() {
   }
 
   async function handleCopyLink() {
-    const publicUrl = `${window.location.origin}/exit-survey`;
+    const publicUrl = "https://honeylakeos.vercel.app/exit-survey";
     try {
       await navigator.clipboard.writeText(publicUrl);
       setCopied(true);
