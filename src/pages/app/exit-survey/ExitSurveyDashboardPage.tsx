@@ -2,9 +2,8 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/PageHeader";
-import { ClipboardCheck } from "lucide-react";
+import { ClipboardCheck, Link2, Check } from "lucide-react";
 import { OverviewTab } from "./components/OverviewTab";
-import { TrendsTab } from "./components/TrendsTab";
 import { SubmissionsTab } from "./components/SubmissionsTab";
 import { AlertsTab } from "./components/AlertsTab";
 import { PreviewTab } from "./components/PreviewTab";
@@ -12,10 +11,11 @@ import { QuestionsTab } from "./components/QuestionsTab";
 import { SettingsTab } from "./components/SettingsTab";
 import { PdfExportButton } from "./components/PdfExportButton";
 import { ReportsTab } from "./components/ReportsTab";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 const TABS = [
   { value: "overview", label: "Overview" },
-  { value: "trends", label: "Leadership" },
   { value: "reports", label: "Advanced Reports" },
   { value: "submissions", label: "Submissions" },
   { value: "alerts", label: "Alerts" },
@@ -27,6 +27,8 @@ const TABS = [
 export default function ExitSurveyDashboardPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<string>("overview");
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -44,13 +46,49 @@ export default function ExitSurveyDashboardPage() {
     }
   }
 
+  async function handleCopyLink() {
+    const publicUrl = `${window.location.origin}/exit-survey`;
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      setCopied(true);
+      toast({
+        title: "Link copied!",
+        description: "Public exit survey link copied to clipboard",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast({
+        title: "Failed to copy",
+        description: "Please copy the link manually: " + publicUrl,
+        variant: "destructive",
+      });
+    }
+  }
+
   return (
     <div className="flex flex-col h-full">
       <PageHeader
         title="Exit Survey"
         description="Patient satisfaction surveys and analytics"
         icon={<ClipboardCheck className="w-5 h-5" />}
-        actions={<PdfExportButton activeTab={activeTab} />}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyLink}
+              className="gap-2"
+            >
+              {copied ? (
+                <Check className="w-4 h-4" />
+              ) : (
+                <Link2 className="w-4 h-4" />
+              )}
+              {copied ? "Copied!" : "Get Link to Public Survey"}
+            </Button>
+            <PdfExportButton activeTab={activeTab} />
+          </div>
+        }
       />
 
       <div className="flex-1 overflow-auto p-6">
@@ -65,9 +103,6 @@ export default function ExitSurveyDashboardPage() {
 
           <TabsContent value="overview">
             <OverviewTab />
-          </TabsContent>
-          <TabsContent value="trends">
-            <TrendsTab />
           </TabsContent>
           <TabsContent value="reports">
             <ReportsTab />
