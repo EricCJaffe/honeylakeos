@@ -118,6 +118,7 @@ const DepartmentDetailPage = React.lazy(() => import("@/pages/app/departments/De
 const TemplateFormPage = React.lazy(() => import("@/pages/app/forms/TemplateFormPage"));
 const FormSubmissionsListPage = React.lazy(() => import("@/pages/app/forms/FormSubmissionsListPage"));
 const FormSubmissionDetailPage = React.lazy(() => import("@/pages/app/forms/FormSubmissionDetailPage"));
+const ListeningSessionPage = React.lazy(() => import("@/pages/app/listening/ListeningSessionPage"));
 
 
 const queryClient = new QueryClient();
@@ -203,6 +204,7 @@ function App() {
                     <Route path="forms/submissions/:submissionId" element={<FormSubmissionDetailPage />} />
                     <Route path="workflows" element={<ModuleGuard moduleKey="workflows" moduleName="Workflows"><WorkflowsPage /></ModuleGuard>} />
                     <Route path="board" element={<ModuleGuard moduleKey="board_meetings" moduleName="Board Meetings"><BoardMeetingsPage /></ModuleGuard>} />
+                    <Route path="listening" element={<ListeningSessionPage />} />
                     <Route path="exit-survey" element={<ExitSurveyDashboardPage />} />
                     <Route
                       path="exit-survey/submissions/:submissionId"

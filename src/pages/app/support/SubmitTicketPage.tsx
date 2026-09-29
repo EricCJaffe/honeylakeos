@@ -390,21 +390,46 @@ export default function SubmitTicketPage() {
       )}
 
       {/* Submit */}
-      <div className="flex justify-end">
-        <Button
-          onClick={handleSubmit}
-          disabled={!canSubmit}
-          size="lg"
-        >
-          {createTicket.isPending ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Submitting...
-            </>
-          ) : (
-            "Submit Ticket"
-          )}
-        </Button>
+      <div className="space-y-3">
+        {!canSubmit && (
+          <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
+            <CardContent className="pt-4 pb-3">
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-2">
+                Please complete the following to submit:
+              </p>
+              <ul className="text-sm text-amber-700 dark:text-amber-300 space-y-1">
+                {!subject.trim() && (
+                  <li className="flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                    Enter a subject line
+                  </li>
+                )}
+                {description.trim().length < 10 && (
+                  <li className="flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                    Add a description (at least 10 characters — currently {description.trim().length})
+                  </li>
+                )}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+        <div className="flex justify-end">
+          <Button
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+            size="lg"
+          >
+            {createTicket.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              "Submit Ticket"
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );

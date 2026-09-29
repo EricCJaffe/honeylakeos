@@ -52,6 +52,7 @@
 - [ ] Virus scanning on attachment uploads (`src/hooks/useAttachments.ts:68`).
 
 ## Done
+- [x] Listening Session: build proposals page at `/app/listening` with By Question and By Theme tabs, hook into `listening_sessions`/`listening_items`/`listening_item_comments` tables, add sidebar nav entry (2026-09-29).
 - [x] Support Tickets: improve AI remediation — add rich project context (Tailwind CSS variable system, shadcn-ui patterns, component conventions), auto-read config files from GitHub before generating code, single atomic commit via Git Trees API (2026-03-25).
 - [x] Support Tickets: deploy all edge functions to Supabase — `ai-gateway` v18 (support_triage), `support-ticket-notify` v1, `support-ticket-remediate` v3. Set GITHUB_TOKEN/OWNER/REPO secrets (2026-03-25).
 - [x] Support Tickets: AI Triage + Remediation — admin ticket detail has "Run AI Triage" (classifies severity, identifies affected code, suggests fix) and "Approve & Generate Fix" (reads GitHub files, generates code, creates PR). New edge function, hooks (`useTicketAI`), components (`AITriageCard`/`RemediationCard`), smart polling, admin sidebar controls (2026-03-25).
