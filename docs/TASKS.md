@@ -9,6 +9,10 @@
 - [ ] SECURITY/HIPAA: Finalize secure email content policy (PHI in emails vs summary-only default) now that PHI-safe email mode toggle is shipped.
 
 ## Active
+- [ ] Monday.com Migration: apply migration `20261001150000_monday_board_migration_grant_alumni.sql` to production — creates `grant_tracking`, `alumni_marketing_tasks`, `alumni_event_registrations` tables with RLS, form_registry entries, module admins, and data migration from monday_import_items.
+- [ ] Monday.com Migration: verify migrated data counts match source boards (Ashes to Glory: 8, Conrad's Claws: 7, Alumni Marketing: 41, Alumni Weekend: 64).
+- [ ] Monday.com Migration: look up "HLC Construction Honey Lake Clinic" board in monday_boards — confirm whether it was migrated.
+- [ ] Monday.com Migration: full audit of all monday_boards to identify any boards not yet migrated to HoneylakeOS.
 - [ ] Support Tickets: verify email delivery for ticket lifecycle events (ticket_created, status_changed, ticket_assigned, message_added).
 - [ ] Support Tickets: review AI-generated PR quality — verify code uses design system tokens, follows project conventions, single atomic commit.
 - [ ] At go-live cutover, activate production cron for `exit-survey-scheduler` (recommended every 15 minutes with `{ "mode": "all" }`).
